@@ -1,26 +1,63 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * Tokens from DESIGN.md. Warm paper, warm ink, one accent, and olive reserved
+ * for the home base marker. Never pure white, never pure black, no dark theme.
+ */
+@theme {
+  --color-paper: #f7f2e8;
+  --color-paper-raised: #fdfaf3;
+  --color-paper-sunken: #ede6d8;
+  --color-rule: #d9cfbb;
+  --color-rule-strong: #c4b79c;
+
+  --color-ink: #23201b;
+  --color-ink-muted: #5c554a;
+  --color-ink-faint: #8a8173;
+
+  --color-terracotta: #b4552f;
+  --color-terracotta-deep: #8e4225;
+  --color-terracotta-wash: #f0ddd2;
+
+  --color-olive: #4a5233;
+
+  --font-display: var(--font-bitter), Georgia, "Times New Roman", serif;
+  --font-body: var(--font-source-sans), "Segoe UI", system-ui, sans-serif;
+
+  --text-time-lead: 32px;
+  --text-time-lead--line-height: 36px;
+  --text-time: 20px;
+  --text-time--line-height: 24px;
+  --text-place: 18px;
+  --text-place--line-height: 24px;
+  --text-body: 16px;
+  --text-body--line-height: 24px;
+  --text-meta: 14px;
+  --text-meta--line-height: 20px;
+  --text-label: 12px;
+  --text-label--line-height: 16px;
+
+  --radius-card: 6px;
+  --radius-panel: 10px;
+  --radius-pill: 999px;
+
+  --shadow-map-control: 0 1px 3px rgba(35, 32, 27, 0.18);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html {
+    color-scheme: light;
   }
-}
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+  }
+
+  ::selection {
+    background-color: var(--color-terracotta-wash);
+  }
 }
