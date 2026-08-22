@@ -24,6 +24,13 @@ export type Conflict =
       readonly waitMinutes: number;
     }
   | {
+      readonly kind: "closed-all-day";
+      readonly stopId: StopId;
+      readonly placeName: string;
+      /** The weekday the day falls on, Sunday is 0. */
+      readonly weekday: number;
+    }
+  | {
       readonly kind: "stay-overruns-close";
       readonly stopId: StopId;
       readonly placeName: string;
