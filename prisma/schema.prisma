@@ -1,0 +1,141 @@
+// plan2go schema.
+//
+// There is no DATABASE_URL yet and no migration has been run. The provider is
+// postgresql and stays that way, including in development.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum TravelMode {
+  WALK
+  CYCLE
+  DRIVE
+  TRANSIT
+}
+
+model Trip {
+  id       String @id @default(cuid())
+  /// Random and unguessable. The only identifier that appears in a URL.
+  slug     String @unique
+  title    String
+  /// IANA zone for every day in the trip, for example "Australia/Adelaide".
+  timeZone String
+
+  /// sha256 of the edit token. The token itself is only ever in the cookie.
+  editTokenHash String
+
+  /// Null until accounts exist. Present now so ownership needs no migration of meaning.
+  userId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  days   Day[]
+  places Place[]
+
+  @@index([userId])
+}
+
+model Place {
+  id     String @id @default(cuid())
+  tripId String
+  trip   Trip   @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  /// Identifier from the places provider. Null for a pin the user dropped.
+  providerPlaceId String?
+  name            String
+  address         String?
+  lat             Float
+  lng             Float
+
+  /// WeeklyOpeningHours from the core model. Null means the hours are unknown,
+  /// which is not the same as being closed. Parsed with zod on the way out.
+  openingHours Json?
+
+  createdAt DateTime @default(now())
+
+  stops           Stop[]
+  homeBaseForDays Day[]  @relation("DayHomeBase")
+
+  @@index([tripId])
+  @@index([providerPlaceId])
+}
+
+model Day {
+  id     String @id @default(cuid())
+  tripId String
+  trip   Trip   @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  /// YYYY-MM-DD in the trip time zone. Held as text so no UTC conversion can
+  /// move the date by a day.
+  date     String
+  label    String?
+  /// Order of this day within the trip, starting at 0.
+  position Int
+
+  /// Minutes from local midnight on date.
+  leaveAtMinutes Int
+
+  homeBasePlaceId String?
+  homeBase        Place?  @relation("DayHomeBase", fields: [homeBasePlaceId], references: [id], onDelete: SetNull)
+
+  returnTravelMode TravelMode @default(WALK)
+
+  stops Stop[]
+
+  @@unique([tripId, position])
+  @@index([tripId])
+}
+
+model Stop {
+  id    String @id @default(cuid())
+  dayId String
+  day   Day    @relation(fields: [dayId], references: [id], onDelete: Cascade)
+
+  placeId String
+  place   Place  @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  /// Order within the day, starting at 0.
+  position    Int
+  /// Whole minutes at the place. Zero is legal.
+  stayMinutes Int
+  /// Mode used to travel from the previous point to this stop.
+  travelMode  TravelMode
+  note        String?
+
+  @@unique([dayId, position])
+  @@index([dayId])
+}
+
+/// One answer from the travel provider, kept so the same question is never paid
+/// for twice. Keyed by exactly the four inputs that determine the answer.
+model LegCache {
+  id String @id @default(cuid())
+
+  /// Stable identity of the endpoint, shared across trips: the provider place id
+  /// when we have one, otherwise "lat,lng" rounded to four decimal places.
+  originKey      String
+  destinationKey String
+  mode           TravelMode
+  /// Coarse departure bucket as "<weekday 0-6>-<hour 0-23>" in the trip time
+  /// zone, or "any" for modes whose answer does not move with traffic.
+  timeBucket     String
+
+  durationMinutes Int
+  distanceMeters  Int
+  /// Which provider answered, so a cached row can be aged out per provider.
+  source          String
+
+  fetchedAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@unique([originKey, destinationKey, mode, timeBucket])
+  @@index([expiresAt])
+}
