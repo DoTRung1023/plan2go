@@ -1,1 +1,29 @@
+# dependencies
+/node_modules
+.pnpm-store
+
+# next.js
+/.next/
+/out/
+/build
+
+# testing
+/coverage
+
+# env: .env.example is committed, everything with real values is not
+.env
+.env.local
+.env*.local
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# vercel
+.vercel
+
+# misc
 .DS_Store
+*.pem
+npm-debug.log*
+.pnpm-debug.log*
