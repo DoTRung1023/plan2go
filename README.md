@@ -102,13 +102,3 @@ not import each other. Tests sit beside their source as `thing.test.ts`.
 
 `CLAUDE.md` holds the working rules. `DESIGN.md` is the source of truth for
 `src/app/t/`, `src/features/` and `src/ui/`.
-
-## Vendored design skill
-
-`.agents/skills/design-taste-frontend/SKILL.md` is committed rather than tracked as a
-dependency, so an upstream change cannot silently alter what the agent does. It came
-from [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) at commit
-[`3c7017d`](https://github.com/Leonxlnx/taste-skill/blob/3c7017d636c3a4aad378433ea6d0cfa6c921da4a/skills/taste-skill/SKILL.md),
-plus an eight line project override saying `DESIGN.md` wins inside the app shell.
-
-To re-sync: download the upstream file, re-apply the override, read the diff.
