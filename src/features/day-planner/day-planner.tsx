@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import type { PlannedDay } from "./compute-trip";
 import { DayItinerary } from "./day-itinerary";
 import { DayTabs } from "./day-tabs";
@@ -10,6 +9,8 @@ import { formatDayDate } from "./format-day-date";
 interface DayPlannerProps {
   readonly title: string;
   readonly days: readonly PlannedDay[];
+  readonly selectedIndex: number;
+  readonly onSelect: (index: number) => void;
 }
 
 function dateRange(days: readonly PlannedDay[]): string | null {
@@ -24,23 +25,25 @@ function dateRange(days: readonly PlannedDay[]): string | null {
   return `${formatDayDate(first.plan.date)} to ${formatDayDate(last.plan.date)}`;
 }
 
-export function DayPlanner({ title, days }: DayPlannerProps) {
-  const [selectedIndex, setSelectedIndex] = useState(0);
+export function DayPlanner({ title, days, selectedIndex, onSelect }: DayPlannerProps) {
   const selected = days[selectedIndex] ?? days[0];
   const range = dateRange(days);
 
   return (
-    <main className="mx-auto w-full max-w-[520px] px-5 py-8">
-      <header className="mb-6">
+    <div className="mx-auto w-full max-w-[520px]">
+      <header className="px-5 pt-8 pb-6">
         <h1 className="font-display text-time-lead font-semibold text-ink">{title}</h1>
         {range === null ? null : <p className="mt-1 text-meta text-ink-muted">{range}</p>}
       </header>
 
-      <DayTabs
-        days={days.map((day) => day.plan)}
-        selectedIndex={selectedIndex}
-        onSelect={setSelectedIndex}
-      />
+      {/* 140px is the height of the map strip on a phone, from DESIGN.md. */}
+      <div className="sticky top-[140px] z-10 bg-paper px-5 lg:top-0">
+        <DayTabs
+          days={days.map((day) => day.plan)}
+          selectedIndex={selectedIndex}
+          onSelect={onSelect}
+        />
+      </div>
 
       {selected === undefined ? null : (
         <section
@@ -48,7 +51,7 @@ export function DayPlanner({ title, days }: DayPlannerProps) {
           role="tabpanel"
           aria-labelledby={`day-tab-${selected.plan.id}`}
           tabIndex={0}
-          className="pt-6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+          className="px-5 pt-6 pb-12 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
         >
           {selected.plan.stops.length === 0 ? (
             <EmptyDay />
@@ -57,6 +60,6 @@ export function DayPlanner({ title, days }: DayPlannerProps) {
           )}
         </section>
       )}
-    </main>
+    </div>
   );
 }

@@ -1,7 +1,7 @@
 import { createHaversineTravelProvider } from "@/adapters/travel/haversine";
 import { computeTrip } from "@/features/day-planner/compute-trip";
-import { DayPlanner } from "@/features/day-planner/day-planner";
 import { PLACEHOLDER_TRIP } from "@/features/day-planner/placeholder-trip";
+import { TripWorkspace } from "./trip-workspace";
 
 /**
  * Times come from the straight line provider until the Google Routes adapter
@@ -17,5 +17,5 @@ export default async function TripEditorPage({
   const trip = { ...PLACEHOLDER_TRIP, slug };
   const days = await computeTrip(trip, createHaversineTravelProvider());
 
-  return <DayPlanner title={trip.title} days={days} />;
+  return <TripWorkspace title={trip.title} days={days} />;
 }
