@@ -9,13 +9,13 @@ const FIELD =
 
 const LABEL = "text-label font-semibold tracking-[0.08em] text-ink-faint uppercase";
 
-interface NewTripFormProps {
+interface CreateTripFormProps {
   /** Every IANA zone this machine knows, rendered as options on the server. */
   readonly timeZones: readonly string[];
   readonly today: string;
 }
 
-export function NewTripForm({ timeZones, today }: NewTripFormProps) {
+export function CreateTripForm({ timeZones, today }: CreateTripFormProps) {
   const [state, submit, pending] = useActionState(createTripAction, NO_ERROR);
 
   return (

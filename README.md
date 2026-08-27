@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="logo/logo-no-background.png" alt="plan2go" width="360">
+  <img src="logo/logo+text.png" alt="plan2go" width="360">
 </div>
 
 > A no-login planner for a multi-day trip. Add places, see how far apart they really are, and see how long a day actually takes.

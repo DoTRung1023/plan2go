@@ -4,7 +4,7 @@ import { computeTrip } from "@/features/day-planner/compute-trip";
 import { checkEditAccess } from "@/server/ownership/edit-access";
 import { readEditToken } from "@/server/ownership/edit-token-cookie";
 import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
-import { TripWorkspace } from "./trip-workspace";
+import { TripEditor } from "./trip-editor";
 
 /**
  * A read, so no edit token is asked for. Anyone with the link sees the trip.
@@ -36,7 +36,7 @@ export default async function TripEditorPage({
   });
 
   return (
-    <TripWorkspace
+    <TripEditor
       title={trip.title}
       slug={trip.slug}
       days={days}

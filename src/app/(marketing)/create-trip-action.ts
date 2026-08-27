@@ -6,16 +6,16 @@ import { prismaTripRepository } from "@/server/repositories/prisma-trip-reposito
 import { createTrip } from "@/server/trips/create-trip";
 import { newTripInputSchema } from "@/server/trips/new-trip-input";
 
-export interface NewTripFormState {
+export interface CreateTripFormState {
   readonly error: string | null;
 }
 
-export const NO_ERROR: NewTripFormState = { error: null };
+export const NO_ERROR: CreateTripFormState = { error: null };
 
 export async function createTripAction(
-  _previous: NewTripFormState,
+  _previous: CreateTripFormState,
   formData: FormData,
-): Promise<NewTripFormState> {
+): Promise<CreateTripFormState> {
   const parsed = newTripInputSchema.safeParse({
     title: formData.get("title"),
     timeZone: formData.get("timeZone"),

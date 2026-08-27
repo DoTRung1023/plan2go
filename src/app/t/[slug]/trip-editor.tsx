@@ -1,7 +1,10 @@
 "use client";
 
+import Image from "next/image";
+import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useState } from "react";
+import lockup from "../../../../logo/logo+text.png";
 import type { PlannedDay } from "@/features/day-planner/compute-trip";
 import { DayPlanner } from "@/features/day-planner/day-planner";
 import { PlaceSearch } from "@/features/place-search/place-search";
@@ -23,7 +26,7 @@ const TripMap = dynamic(
   },
 );
 
-interface TripWorkspaceProps {
+interface TripEditorProps {
   readonly title: string;
   readonly slug: string;
   readonly days: readonly PlannedDay[];
@@ -39,7 +42,7 @@ interface TripWorkspaceProps {
  * The selected day is held here because both panes show it and neither feature
  * may reach into the other.
  */
-export function TripWorkspace({ title, slug, days, canEdit }: TripWorkspaceProps) {
+export function TripEditor({ title, slug, days, canEdit }: TripEditorProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [expanded, setExpanded] = useState(false);
   const selected = days[selectedIndex] ?? days[0];
@@ -75,6 +78,14 @@ export function TripWorkspace({ title, slug, days, canEdit }: TripWorkspaceProps
       </section>
 
       <section className="lg:h-dvh lg:overflow-y-auto">
+        <div className="mx-auto w-full max-w-[520px] px-5 pt-6">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+          >
+            <Image src={lockup} alt="plan2go" width={150} height={55} priority />
+          </Link>
+        </div>
         <DayPlanner
           title={title}
           days={days}
