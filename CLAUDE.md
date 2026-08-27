@@ -45,9 +45,13 @@ new top-level folder without asking.
 
 ## State of the repo
 
-There is no `DATABASE_URL` yet and that is deliberate. The first migration has not been
-run. Do not create a local database, do not switch the provider to sqlite, and do not
-run `prisma migrate` until the hosted Postgres exists.
+Postgres is hosted on Neon and the first migration is applied. Credentials live in
+`.env`, which the Prisma CLI reads and Next.js reads as well, so one file serves both.
+`DATABASE_URL` is the pooled connection and `DIRECT_URL` is the direct one that
+migrations need.
+
+Do not create a local database and do not switch the provider to sqlite. Development
+and production run the same dialect.
 
 ## Commands
 

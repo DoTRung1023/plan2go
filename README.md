@@ -23,18 +23,20 @@ pnpm test         # vitest run
 pnpm build        # next build
 ```
 
-## The database is not connected yet
+## The database
 
-**The first migration is pending.** There is no `DATABASE_URL` and that is deliberate.
-`prisma/schema.prisma` is written against Postgres and `.env.example` names the two
-variables it needs, with no values.
+Postgres, hosted on Neon. The first migration is committed under `prisma/migrations`,
+so a fresh checkout applies it rather than authoring it.
 
-When the hosted Postgres exists, copy `.env.example` to `.env`, fill in
-`DATABASE_URL` and `DIRECT_URL`, and run the first migration:
+Credentials are not committed. Copy `.env.example` to `.env`, fill in `DATABASE_URL`
+and `DIRECT_URL` from your own Neon project, then apply what is already written:
 
 ```
-pnpm exec prisma migrate dev --name init
+pnpm exec prisma migrate deploy
 ```
+
+`pnpm db:migrate` is for the next schema change, not for this. It runs
+`prisma migrate dev`, which authors a new migration from a changed schema.
 
 The file is `.env` rather than `.env.local` because the Prisma CLI reads only `.env`.
 Next.js reads both, so one file serves the app and the migrations.
