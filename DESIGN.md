@@ -1,4 +1,93 @@
+---
+name: plan2go
+description: A printed travel guide, not a dashboard. Warm paper under warm ink, one accent, and the times louder than anything else on the page.
+omitted:
+  - spacing
+colors:
+  paper: "#F7F2E8"
+  paper-raised: "#FDFAF3"
+  paper-sunken: "#EDE6D8"
+  rule: "#D9CFBB"
+  rule-strong: "#C4B79C"
+  ink: "#23201B"
+  ink-muted: "#5C554A"
+  ink-faint: "#8A8173"
+  terracotta: "#B4552F"
+  terracotta-deep: "#8E4225"
+  terracotta-wash: "#F0DDD2"
+  olive: "#4A5233"
+typography:
+  time-lead:
+    fontFamily: Bitter
+    fontSize: 32px
+    lineHeight: 36px
+    fontWeight: 600
+    fontVariantNumeric: tabular-nums
+  time:
+    fontFamily: Bitter
+    fontSize: 20px
+    lineHeight: 24px
+    fontWeight: 600
+    fontVariantNumeric: tabular-nums
+  place:
+    fontFamily: Bitter
+    fontSize: 18px
+    lineHeight: 24px
+    fontWeight: 600
+  body:
+    fontFamily: Source Sans 3
+    fontSize: 16px
+    lineHeight: 24px
+    fontWeight: 400
+  meta:
+    fontFamily: Source Sans 3
+    fontSize: 14px
+    lineHeight: 20px
+    fontWeight: 400
+  label:
+    fontFamily: Source Sans 3
+    fontSize: 12px
+    lineHeight: 16px
+    fontWeight: 600
+    letterSpacing: 0.08em
+    textTransform: uppercase
+rounded:
+  card: 6px
+  panel: 10px
+  pill: 999px
+components:
+  stop-card:
+    backgroundColor: "{colors.paper-raised}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.card}"
+  day-tab-active:
+    backgroundColor: "{colors.paper-raised}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.card}"
+  day-tab-inactive:
+    backgroundColor: "{colors.paper-sunken}"
+    textColor: "{colors.ink-muted}"
+    rounded: "{rounded.card}"
+  conflict-block:
+    backgroundColor: "{colors.terracotta-wash}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.card}"
+  stop-marker:
+    backgroundColor: "{colors.paper-raised}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.pill}"
+  home-base-marker:
+    backgroundColor: "{colors.olive}"
+    textColor: "{colors.paper}"
+  map-control:
+    backgroundColor: "{colors.paper-raised}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.pill}"
+---
+
 # plan2go design
+
+## Overview
 
 A printed travel guide, not a dashboard. Warm paper under warm ink, one accent, and
 the times louder than anything else on the page.
@@ -6,29 +95,27 @@ the times louder than anything else on the page.
 This file is the source of truth for `src/app/t/`, `src/features/`, and `src/ui/`. It
 overrides the vendored `design-taste-frontend` skill inside the app shell.
 
-## Colour
+The token values above are mirrored in the `@theme` block of `src/app/globals.css`.
+When one changes the other changes in the same commit.
+
+## Colors
 
 There is one accent. Terracotta. Olive appears in exactly one place, the home base
 marker. Everything else is paper and ink.
 
-```
---paper            #F7F2E8   page surface
---paper-raised     #FDFAF3   stop cards, tab strip, floating map controls
---paper-sunken     #EDE6D8   wells, the map gutter, the inactive tab strip
---rule             #D9CFBB   hairlines, card borders
---rule-strong      #C4B79C   the rule under an active tab, table dividers
-
---ink              #23201B   primary text, times, place names
---ink-muted        #5C554A   travel legs, durations, secondary text
---ink-faint        #8A8173   labels, units, the "min" after a number
-
---terracotta       #B4552F   the accent: active tab, selected stop, route lines,
-                             the rule beside a conflict, primary action
---terracotta-deep  #8E4225   hover and active states of the accent
---terracotta-wash  #F0DDD2   selected row background, conflict block background
-
---olive            #4A5233   the home base marker and its label. Nothing else.
-```
+- **paper:** page surface.
+- **paper-raised:** stop cards, tab strip, floating map controls.
+- **paper-sunken:** wells, the map gutter, the inactive tab strip.
+- **rule:** hairlines, card borders.
+- **rule-strong:** the rule under an active tab, table dividers.
+- **ink:** primary text, times, place names.
+- **ink-muted:** travel legs, durations, secondary text.
+- **ink-faint:** labels, units, the "min" after a number.
+- **terracotta:** the accent. Active tab, selected stop, route lines, the rule beside
+  a conflict, primary action.
+- **terracotta-deep:** hover and active states of the accent.
+- **terracotta-wash:** selected row background, conflict block background.
+- **olive:** the home base marker and its label. Nothing else.
 
 Never `#FFFFFF`, never `#000000`, on any surface, border, or text.
 
@@ -38,57 +125,30 @@ No dark theme. The surface is paper, and paper does not invert. Do not add a
 No status hues. There is no red, no amber, no green. A conflict is carried by a
 terracotta left rule plus the sentence naming it, never by colour alone.
 
-Contrast floor: `--ink` on `--paper` is the body pairing. `--ink-faint` is only for
-text at 12px or larger that repeats information available elsewhere.
+Contrast floor: `ink` on `paper` is the body pairing. `ink-faint` is only for text at
+12px or larger that repeats information available elsewhere.
 
-## Type
+## Typography
 
-Two families, no more.
-
-```
---font-display  "Bitter", Georgia, "Times New Roman", serif
---font-body     "Source Sans 3", "Segoe UI", system-ui, sans-serif
-```
+Two families, no more. Bitter for display, falling back to Georgia, "Times New Roman",
+serif. Source Sans 3 for body, falling back to "Segoe UI", system-ui, sans-serif.
 
 Display slab carries times, place names, and the day date. Body sans carries
 everything else. Every element that renders a time or a duration sets
 `font-variant-numeric: tabular-nums` so numbers stack in a column.
 
-```
---text-time-lead   32px / 36px   display 600   tabular   arrival time on a stop card
---text-time        20px / 24px   display 600   tabular   departure, leg durations, totals
---text-place       18px / 24px   display 600             place name
---text-body        16px / 24px   body 400
---text-meta        14px / 20px   body 400      --ink-muted
---text-label       12px / 16px   body 600      0.08em tracking, uppercase, --ink-faint
-```
+- **time-lead:** arrival time on a stop card.
+- **time:** departure, leg durations, totals.
+- **place:** place name.
+- **body:** running text.
+- **meta:** secondary text, set in `ink-muted`.
+- **label:** set in `ink-faint`.
 
 Inside a stop card the arrival time is the largest element and the place name is one
 step smaller. If a design puts the place name above the time in size or weight, it is
 wrong.
 
 Body text is left aligned. Never centred, except a single line inside an empty state.
-
-## Radius
-
-One system, three stops, nothing else.
-
-```
---radius        6px    cards, tabs, inputs, buttons, the conflict block
---radius-panel  10px   the map pane, the mobile map sheet
---radius-pill   999px  map markers and the map expand toggle only
-```
-
-## Elevation
-
-No shadows. The one exception is a control floating over the map:
-
-```
---shadow-map-control  0 1px 3px rgba(35, 32, 27, 0.18)
-```
-
-Everything else separates with `--rule` or with a change of surface between `--paper`,
-`--paper-raised`, and `--paper-sunken`.
 
 ## Layout
 
@@ -109,16 +169,38 @@ The strip carries one control, a pill button reading **Expand map**. Expanded, t
 covers the viewport and the same button reads **Collapse map**. Both states show the
 word. Neither is an icon on its own.
 
+## Elevation & Depth
+
+No shadows. The one exception is a control floating over the map:
+
+```
+--shadow-map-control  0 1px 3px rgba(35, 32, 27, 0.18)
+```
+
+Everything else separates with `rule` or with a change of surface between `paper`,
+`paper-raised`, and `paper-sunken`.
+
+## Shapes
+
+One radius system, three stops, nothing else. `card` for cards, tabs, inputs, buttons,
+and the conflict block. `panel` for the map pane and the mobile map sheet. `pill` for
+map markers and the map expand toggle only.
+
+## Components
+
+Token values for each component are in the front matter. The rules the token schema
+cannot express are here.
+
+The home base marker is a different shape from the stop markers, not merely a different
+colour. Stop markers carry a 2px `terracotta` ring and the stop number in `ink`.
+
+A conflict block is identified by a terracotta left rule plus the sentence naming the
+conflict. The wash background alone is never the signal.
+
 ## The map
 
-Stop markers are `--paper-raised` circles with a 2px `--terracotta` ring and the stop
-number in `--ink`.
-
-The home base marker is `--olive`, and it is a different shape from the stop markers,
-not merely a different colour.
-
-Route lines are all `--terracotta`. The transport mode is carried by the stroke
-pattern, so that colour is never the only thing distinguishing them:
+Route lines are all `terracotta`. The transport mode is carried by the stroke pattern,
+so that colour is never the only thing distinguishing them:
 
 ```
 walk      2px   dash 1 6     round caps
@@ -140,7 +222,7 @@ displacing around it. Nothing else, no opacity, no scale.
 No transitions on hover, focus, tab switching, panel opening, or map interaction. Those
 changes are instant.
 
-Focus is a 2px `--terracotta` ring at 2px offset, visible immediately, on every
+Focus is a 2px `terracotta` ring at 2px offset, visible immediately, on every
 interactive element.
 
 Under `prefers-reduced-motion: reduce`, reordering is instant too.
@@ -159,8 +241,8 @@ Every stop card sets `break-inside: avoid`. Every day after the first sets
 `break-before: page`.
 
 Surfaces print as unpainted paper. Backgrounds are removed, hairlines drop to 0.5pt in
-`--rule-strong`, and text stays `--ink`. Times keep the display slab and stay the
-loudest thing on the page.
+`rule-strong`, and text stays `ink`. Times keep the display slab and stay the loudest
+thing on the page.
 
 A footer on every page carries the trip title and the date of the day. The share link
 is printed once, in the footer of the first page.

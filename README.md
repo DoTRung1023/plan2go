@@ -56,8 +56,27 @@ source of truth for anything under `src/app/t/`, `src/features/`, or `src/ui/`.
 ## Vendored design skill
 
 `.agents/skills/design-taste-frontend/SKILL.md` came from
-[Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) (`skills/taste-skill/SKILL.md`,
-sha256 `6d838b246d0e35d0b53f4f23f98ba7a1dd561937e64f7d0c7553b0928e376c3e`). It is
-committed rather than tracked as a dependency, and carries a project override at the
-top saying that `DESIGN.md` wins inside the app shell. Do not re-sync it from upstream
-without reading the diff.
+[Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill), file
+`skills/taste-skill/SKILL.md`, at commit `3c7017d636c3a4aad378433ea6d0cfa6c921da4a`.
+It is committed rather than tracked as a dependency, so a change upstream cannot
+silently alter what the agent does.
+
+| | sha256 | bytes |
+| --- | --- | --- |
+| Upstream at that commit | `aa194351b246b8b4799099d4ed7b033d29eab6e6e3d58d8d2172978be7b3ec89` | 87,253 |
+| The file in this repo | `30987722d8fa1dd28daa9a1cec4ec172bb17ca9e268bda7835c1ac6b5cd4a580` | 87,658 |
+
+The two differ by one addition and nothing else: an eight line project override after
+the frontmatter, saying that `DESIGN.md` is dominant for anything under `src/app/t/`,
+`src/features/`, or `src/ui/`, and that the skill governs the marketing page and the
+share view only. Verified against upstream on 2026-08-27, when `main` still pointed at
+the same bytes as the pinned commit.
+
+To check the committed copy has not drifted:
+
+```
+shasum -a 256 .agents/skills/design-taste-frontend/SKILL.md
+```
+
+To re-sync, download the upstream file, re-apply the override block, and read the diff
+before accepting it. These are standing instructions to an agent, not a library.

@@ -88,9 +88,4 @@ Durations are integer minutes. No floats, no seconds, no milliseconds in the dom
 
 Conflicts are returned as data. Never thrown, never silently corrected.
 
-No em-dashes or en-dashes in any file, including code comments and commit messages.
-
-No marketing voice inside the application. The marketing page is the only place for it.
-
-Errors say what happened, then what to do, in that order. Warnings name the specific
-conflict with the actual numbers in it.
+Every word in the product follows `.claude/rules/writing.md`, which is always loaded.
