@@ -1,91 +1,114 @@
-# plan2go
+<div align="center">
+  <img src="logo/logo-no-background.png" alt="plan2go" width="360">
+</div>
 
-A no-login planner for a multi-day trip. Drop stops on a map, see real distances and
-travel times, reorder until the day works, then share a read-only link or a printed
-page.
+> A no-login planner for a multi-day trip. Add places, see how far apart they really are, and see how long a day actually takes.
 
-A trip lives at `/t/[slug]`. There are no accounts. The slug identifies the trip and an
-edit token in an httpOnly cookie authorises changes to it.
+A trip lives at `/t/[slug]`. The slug is the whole read capability, so anyone with the
+link can see the trip. An edit token in an httpOnly cookie authorises changes.
 
-## Running it
+## Features
 
-```
+- **Times a whole day.** Arrival and departure per stop, waiting, travel, and totals, in
+  whole minutes.
+- **Names conflicts in sentences**, with the numbers in them: "Fish Market closes at
+  4:00 pm and you arrive at 4:30 pm". Never "Timing issue detected".
+- **Gets time zones right.** Midnight rollover and daylight saving in the trip's own
+  zone, not the browser's.
+- **Days start and end where you choose**, and the two need not be the same place.
+  Neither is required.
+- **Pays for a place once.** Google Places results are stored in our own tables, so a
+  saved trip renders without touching a paid API again.
+- **No accounts.** A slug in the URL, an edit token in a cookie.
+
+Not built yet: real routing, so travel times are straight line estimates. The share and
+print pages. Reordering or removing stops. Changing stay length. Route lines on the map,
+and dropping a pin to add a stop.
+
+## Getting started
+
+Node 20.9 or newer, pnpm 9.15.9, a Neon Postgres database, and a Google Maps Platform
+key with Places API (New) enabled.
+
+```bash
 pnpm install
+cp .env.example .env    # then fill in the three values below
+pnpm exec prisma migrate deploy
 pnpm dev
 ```
 
-Node 20.9 or newer, pnpm 9.15.9 (pinned in `packageManager`).
+### Environment
 
-```
-pnpm typecheck    # tsc --noEmit
-pnpm lint         # eslint, zero warnings tolerated
-pnpm test         # vitest run
+| Variable | |
+| --- | --- |
+| `DATABASE_URL` | Pooled Postgres, the `-pooler` host, with `pgbouncer=true` |
+| `DIRECT_URL` | Same host, no pooler, no `pgbouncer` |
+| `GOOGLE_MAPS_API_KEY` | Places API (New) enabled. Server side only, never `NEXT_PUBLIC_` |
+
+> [!NOTE]
+> The file is `.env`, not `.env.local`, because the Prisma CLI reads only `.env`.
+> Next.js reads both, so one file serves the app and the migrations.
+
+The app runs without the Google key. Place search answers 503 and says so.
+
+### Database
+
+Postgres on Neon. Migrations are committed, so a fresh checkout applies them with
+`prisma migrate deploy`. `DIRECT_URL` exists because migrations run DDL a pooler cannot
+carry. Postgres in development too, never sqlite.
+
+> [!WARNING]
+> `pnpm db:migrate` authors a new migration from a changed schema and resets a database
+> it finds out of step. Never point it at production.
+
+## Scripts
+
+```bash
+pnpm dev          # next dev
 pnpm build        # next build
+pnpm typecheck    # tsc --noEmit
+pnpm lint         # eslint, zero warnings
+pnpm test         # vitest run
+pnpm db:generate  # prisma generate
 ```
 
-## The database
+## Deploying
 
-Postgres, hosted on Neon. The first migration is committed under `prisma/migrations`,
-so a fresh checkout applies it rather than authoring it.
+Vercel, from `main`.
 
-Credentials are not committed. Copy `.env.example` to `.env`, fill in `DATABASE_URL`
-and `DIRECT_URL` from your own Neon project, then apply what is already written:
+> [!IMPORTANT]
+> Set all three variables for Production and Preview. The build succeeds without them,
+> because nothing touches Postgres at build time, and then every trip page fails at
+> request time. Variables are baked into a deployment, so redeploy after changing one.
+
+The build does not run migrations. Apply them to production before shipping a schema
+change.
+
+## Architecture
 
 ```
-pnpm exec prisma migrate deploy
+src/core       time engine and domain model, pure TypeScript
+src/core/ports interfaces for anything external
+src/adapters   implementations: haversine travel, Google Places
+src/server     storage, ownership, rate limiting
+src/features   interface, one folder per feature
+src/app        routes, which compose the features
 ```
 
-`pnpm db:migrate` is for the next schema change, not for this. It runs
-`prisma migrate dev`, which authors a new migration from a changed schema.
+Dependencies point one way, `app` to `features` to `server` and `adapters` to `core`,
+and ESLint fails the build otherwise. `src/core` has no framework, database or network
+in it. `src/server` returns core types, so no Prisma type travels above it. Features do
+not import each other. Tests sit beside their source as `thing.test.ts`.
 
-The file is `.env` rather than `.env.local` because the Prisma CLI reads only `.env`.
-Next.js reads both, so one file serves the app and the migrations.
-
-`DATABASE_URL` is the pooled connection, the host with `-pooler` in it, and carries
-`pgbouncer=true`. `DIRECT_URL` is the same host without the pooler and without that
-parameter, because migrations run DDL that a pooler in transaction mode cannot carry.
-
-Do not switch the provider to sqlite and do not create a local database to get around
-this. Development and production run the same dialect.
-
-`pnpm exec prisma generate` works today without a connection string, which is why the
-project typechecks.
-
-## Layout
-
-`src/core` is the time engine and the domain model, pure TypeScript with no framework,
-database, or network in it. Everything external is an interface in `src/core/ports`
-with an implementation in `src/adapters`. Dependencies point one way, from `app`
-through `features` to `server` and `adapters` and down to `core`, and ESLint fails the
-build if they do not.
-
-`CLAUDE.md` holds the working rules. `DESIGN.md` holds the visual direction and is the
-source of truth for anything under `src/app/t/`, `src/features/`, or `src/ui/`.
+`CLAUDE.md` holds the working rules. `DESIGN.md` is the source of truth for
+`src/app/t/`, `src/features/` and `src/ui/`.
 
 ## Vendored design skill
 
-`.agents/skills/design-taste-frontend/SKILL.md` came from
-[Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill), file
-`skills/taste-skill/SKILL.md`, at commit `3c7017d636c3a4aad378433ea6d0cfa6c921da4a`.
-It is committed rather than tracked as a dependency, so a change upstream cannot
-silently alter what the agent does.
+`.agents/skills/design-taste-frontend/SKILL.md` is committed rather than tracked as a
+dependency, so an upstream change cannot silently alter what the agent does. It came
+from [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) at commit
+[`3c7017d`](https://github.com/Leonxlnx/taste-skill/blob/3c7017d636c3a4aad378433ea6d0cfa6c921da4a/skills/taste-skill/SKILL.md),
+plus an eight line project override saying `DESIGN.md` wins inside the app shell.
 
-| | sha256 | bytes |
-| --- | --- | --- |
-| Upstream at that commit | `aa194351b246b8b4799099d4ed7b033d29eab6e6e3d58d8d2172978be7b3ec89` | 87,253 |
-| The file in this repo | `30987722d8fa1dd28daa9a1cec4ec172bb17ca9e268bda7835c1ac6b5cd4a580` | 87,658 |
-
-The two differ by one addition and nothing else: an eight line project override after
-the frontmatter, saying that `DESIGN.md` is dominant for anything under `src/app/t/`,
-`src/features/`, or `src/ui/`, and that the skill governs the marketing page and the
-share view only. Verified against upstream on 2026-08-27, when `main` still pointed at
-the same bytes as the pinned commit.
-
-To check the committed copy has not drifted:
-
-```
-shasum -a 256 .agents/skills/design-taste-frontend/SKILL.md
-```
-
-To re-sync, download the upstream file, re-apply the override block, and read the diff
-before accepting it. These are standing instructions to an agent, not a library.
+To re-sync: download the upstream file, re-apply the override, read the diff.
