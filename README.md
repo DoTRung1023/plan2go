@@ -29,12 +29,19 @@ pnpm build        # next build
 `prisma/schema.prisma` is written against Postgres and `.env.example` names the two
 variables it needs, with no values.
 
-When the hosted Postgres exists, copy `.env.example` to `.env.local`, fill in
+When the hosted Postgres exists, copy `.env.example` to `.env`, fill in
 `DATABASE_URL` and `DIRECT_URL`, and run the first migration:
 
 ```
 pnpm exec prisma migrate dev --name init
 ```
+
+The file is `.env` rather than `.env.local` because the Prisma CLI reads only `.env`.
+Next.js reads both, so one file serves the app and the migrations.
+
+`DATABASE_URL` is the pooled connection, the host with `-pooler` in it, and carries
+`pgbouncer=true`. `DIRECT_URL` is the same host without the pooler and without that
+parameter, because migrations run DDL that a pooler in transaction mode cannot carry.
 
 Do not switch the provider to sqlite and do not create a local database to get around
 this. Development and production run the same dialect.
