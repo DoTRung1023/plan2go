@@ -12,20 +12,17 @@ export default function MarketingPage() {
   const today = new Date().toISOString().slice(0, 10);
 
   return (
-    <main className="mx-auto w-full max-w-[560px] px-5 py-16">
+    <>
       <h1>
         <Image src={lockup} alt="plan2go" width={300} height={111} priority />
       </h1>
       <p className="mt-4 text-body text-ink-muted">
-        Drop the places you want to visit on a map, see how far apart they really are, and
-        reorder the day until it works. No account needed.
+        Add the places you want to visit and see what the day actually takes: how far
+        apart they are, how long you spend getting between them, and what time you would
+        arrive. If a place is shut when you get there, it says so.
       </p>
 
       <CreateTripForm timeZones={timeZones()} today={today} />
-
-      <p className="mt-6 text-meta text-ink-faint">
-        Your trip lives at its own link. Keep the link and you can come back to it.
-      </p>
-    </main>
+    </>
   );
 }
