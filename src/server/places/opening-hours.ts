@@ -40,3 +40,21 @@ export function parseOpeningHours(value: unknown): WeeklyOpeningHours | null {
   const parsed = weeklyOpeningHoursSchema.safeParse(value);
   return parsed.success ? parsed.data : null;
 }
+
+/**
+ * The other direction, on the way into the Json column. Copied into plain
+ * objects because Prisma's Json input will not take our readonly domain type.
+ */
+export function openingHoursToJson(
+  hours: WeeklyOpeningHours | null,
+): Record<string, { opensAt: number; closesAt: number }[]> | undefined {
+  if (hours === null) {
+    return undefined;
+  }
+  return Object.fromEntries(
+    Object.entries(hours).map(([day, windows]) => [
+      day,
+      windows.map((window) => ({ opensAt: window.opensAt, closesAt: window.closesAt })),
+    ]),
+  );
+}

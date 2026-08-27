@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { createHaversineTravelProvider } from "@/adapters/travel/haversine";
 import { computeTrip } from "@/features/day-planner/compute-trip";
+import { checkEditAccess } from "@/server/ownership/edit-access";
+import { readEditToken } from "@/server/ownership/edit-token-cookie";
 import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
 import { TripWorkspace } from "./trip-workspace";
 
@@ -24,5 +26,21 @@ export default async function TripEditorPage({
   }
 
   const days = await computeTrip(trip, createHaversineTravelProvider());
-  return <TripWorkspace title={trip.title} days={days} />;
+
+  // The read above did not need a token. This only decides whether to offer the
+  // controls that change the trip, so a shared link still renders in full.
+  const access = await checkEditAccess({
+    slug,
+    presentedToken: await readEditToken(),
+    repository: prismaTripRepository,
+  });
+
+  return (
+    <TripWorkspace
+      title={trip.title}
+      slug={trip.slug}
+      days={days}
+      canEdit={access.status === "granted"}
+    />
+  );
 }

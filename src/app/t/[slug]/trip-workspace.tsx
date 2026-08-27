@@ -4,6 +4,8 @@ import dynamic from "next/dynamic";
 import { useState } from "react";
 import type { PlannedDay } from "@/features/day-planner/compute-trip";
 import { DayPlanner } from "@/features/day-planner/day-planner";
+import { PlaceSearch } from "@/features/place-search/place-search";
+import { addStopAction } from "./add-stop-action";
 
 /** Leaflet reads the document as it loads, so the map never renders on the server. */
 const TripMap = dynamic(
@@ -23,7 +25,10 @@ const TripMap = dynamic(
 
 interface TripWorkspaceProps {
   readonly title: string;
+  readonly slug: string;
   readonly days: readonly PlannedDay[];
+  /** Whether this browser holds the edit token for the trip. */
+  readonly canEdit: boolean;
 }
 
 /**
@@ -34,7 +39,7 @@ interface TripWorkspaceProps {
  * The selected day is held here because both panes show it and neither feature
  * may reach into the other.
  */
-export function TripWorkspace({ title, days }: TripWorkspaceProps) {
+export function TripWorkspace({ title, slug, days, canEdit }: TripWorkspaceProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [expanded, setExpanded] = useState(false);
   const selected = days[selectedIndex] ?? days[0];
@@ -75,6 +80,11 @@ export function TripWorkspace({ title, days }: TripWorkspaceProps) {
           days={days}
           selectedIndex={selectedIndex}
           onSelect={setSelectedIndex}
+          search={
+            canEdit && selected !== undefined ? (
+              <PlaceSearch slug={slug} dayId={selected.plan.id} onAdd={addStopAction} />
+            ) : null
+          }
         />
       </section>
     </main>

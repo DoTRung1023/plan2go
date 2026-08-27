@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import type { PlannedDay } from "./compute-trip";
 import { DayItinerary } from "./day-itinerary";
 import { DayTabs } from "./day-tabs";
@@ -11,6 +12,8 @@ interface DayPlannerProps {
   readonly days: readonly PlannedDay[];
   readonly selectedIndex: number;
   readonly onSelect: (index: number) => void;
+  /** Passed in by the route, because features do not reach into each other. */
+  readonly search: ReactNode;
 }
 
 function dateRange(days: readonly PlannedDay[]): string | null {
@@ -25,7 +28,7 @@ function dateRange(days: readonly PlannedDay[]): string | null {
   return `${formatDayDate(first.plan.date)} to ${formatDayDate(last.plan.date)}`;
 }
 
-export function DayPlanner({ title, days, selectedIndex, onSelect }: DayPlannerProps) {
+export function DayPlanner({ title, days, selectedIndex, onSelect, search }: DayPlannerProps) {
   const selected = days[selectedIndex] ?? days[0];
   const range = dateRange(days);
 
@@ -53,6 +56,7 @@ export function DayPlanner({ title, days, selectedIndex, onSelect }: DayPlannerP
           tabIndex={0}
           className="px-5 pt-6 pb-12 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
         >
+          {search}
           {selected.plan.stops.length === 0 ? (
             <EmptyDay />
           ) : (

@@ -13,9 +13,15 @@ import type { Stop } from "@/core/model/stop";
 import type { Trip } from "@/core/model/trip";
 import { addDays } from "@/core/time/zoned";
 import { db } from "../db";
-import { parseOpeningHours } from "../places/opening-hours";
+import { openingHoursToJson, parseOpeningHours } from "../places/opening-hours";
 import { createTripSlug } from "../trips/slug";
-import type { CreatedTrip, NewTrip, TripRepository } from "./trip-repository";
+import type {
+  CreatedTrip,
+  NewStop,
+  NewTrip,
+  StopAdded,
+  TripRepository,
+} from "./trip-repository";
 
 /** Two slugs colliding is a lottery win, so a handful of attempts is plenty. */
 const SLUG_ATTEMPTS = 5;
@@ -27,6 +33,13 @@ const TRAVEL_MODE_FROM_DB: Readonly<Record<DbTravelMode, TravelMode>> = {
   CYCLE: "cycle",
   DRIVE: "drive",
   TRANSIT: "transit",
+};
+
+const TRAVEL_MODE_TO_DB: Readonly<Record<TravelMode, DbTravelMode>> = {
+  walk: "WALK",
+  cycle: "CYCLE",
+  drive: "DRIVE",
+  transit: "TRANSIT",
 };
 
 const tripInclude = {
@@ -140,6 +153,59 @@ export const prismaTripRepository: TripRepository = {
   async findEditTokenHash(slug: string): Promise<string | null> {
     const row = await db.trip.findUnique({ where: { slug }, select: { editTokenHash: true } });
     return row === null ? null : row.editTokenHash;
+  },
+
+  async findPlaceByProviderId(slug: string, providerPlaceId: string): Promise<Place | null> {
+    const row = await db.place.findFirst({
+      where: { providerPlaceId, trip: { slug } },
+    });
+    return row === null ? null : toPlace(row);
+  },
+
+  async addStop(stop: NewStop): Promise<StopAdded> {
+    const day = await db.day.findFirst({
+      where: { id: stop.dayId, trip: { slug: stop.slug } },
+      select: { id: true, tripId: true, _count: { select: { stops: true } } },
+    });
+    if (day === null) {
+      return { status: "no-such-day" };
+    }
+
+    // The place carries the provider's identifier, not one of ours, so it is
+    // matched on that rather than upserted by primary key.
+    const existing =
+      stop.place.providerPlaceId === null
+        ? null
+        : await db.place.findFirst({
+            where: { tripId: day.tripId, providerPlaceId: stop.place.providerPlaceId },
+            select: { id: true },
+          });
+
+    const place =
+      existing ??
+      (await db.place.create({
+        data: {
+          tripId: day.tripId,
+          providerPlaceId: stop.place.providerPlaceId,
+          name: stop.place.name,
+          address: stop.place.address,
+          lat: stop.place.position.lat,
+          lng: stop.place.position.lng,
+          openingHours: openingHoursToJson(stop.place.openingHours),
+        },
+        select: { id: true },
+      }));
+
+    await db.stop.create({
+      data: {
+        dayId: day.id,
+        placeId: place.id,
+        position: day._count.stops,
+        stayMinutes: stop.stayMinutes,
+        travelMode: TRAVEL_MODE_TO_DB[stop.travelMode],
+      },
+    });
+    return { status: "added" };
   },
 
   async create(trip: NewTrip): Promise<CreatedTrip> {

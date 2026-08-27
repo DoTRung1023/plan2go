@@ -1,23 +1,28 @@
 import { describe, expect, it } from "vitest";
 import type { Trip } from "@/core/model/trip";
-import type { CreatedTrip, TripRepository } from "../repositories/trip-repository";
+import type { CreatedTrip, StopAdded, TripRepository } from "../repositories/trip-repository";
 import { checkEditAccess } from "./edit-access";
 import { createEditToken, hashEditToken } from "./edit-token";
 
 const TOKEN = createEditToken();
 
-function repositoryHolding(hashes: Readonly<Record<string, string>>): TripRepository {
+const NOT_STUBBED = "This stub only answers the edit token question.";
+
+function stubRepository(overrides: Partial<TripRepository>): TripRepository {
   return {
-    findBySlug(): Promise<Trip | null> {
-      return Promise.resolve(null);
-    },
-    findEditTokenHash(slug: string): Promise<string | null> {
-      return Promise.resolve(hashes[slug] ?? null);
-    },
-    create(): Promise<CreatedTrip> {
-      return Promise.reject(new Error("This stub does not create trips."));
-    },
+    findBySlug: () => Promise.resolve<Trip | null>(null),
+    findEditTokenHash: () => Promise.resolve<string | null>(null),
+    create: () => Promise.reject<CreatedTrip>(new Error(NOT_STUBBED)),
+    findPlaceByProviderId: () => Promise.resolve(null),
+    addStop: () => Promise.reject<StopAdded>(new Error(NOT_STUBBED)),
+    ...overrides,
   };
+}
+
+function repositoryHolding(hashes: Readonly<Record<string, string>>): TripRepository {
+  return stubRepository({
+    findEditTokenHash: (slug: string) => Promise.resolve(hashes[slug] ?? null),
+  });
 }
 
 const repository = repositoryHolding({ "amber-quay-4k7n2q9mrv": hashEditToken(TOKEN) });
@@ -61,18 +66,12 @@ describe("checkEditAccess", () => {
 
   it("never asks storage for anything when no token was presented", async () => {
     let asked = false;
-    const watched: TripRepository = {
-      findBySlug(): Promise<Trip | null> {
-        return Promise.resolve(null);
-      },
-      findEditTokenHash(): Promise<string | null> {
+    const watched = stubRepository({
+      findEditTokenHash: () => {
         asked = true;
         return Promise.resolve(null);
       },
-      create(): Promise<CreatedTrip> {
-        return Promise.reject(new Error("This stub does not create trips."));
-      },
-    };
+    });
     await checkEditAccess({ slug: "amber-quay-4k7n2q9mrv", presentedToken: null, repository: watched });
     expect(asked).toBe(false);
   });

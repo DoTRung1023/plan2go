@@ -150,3 +150,41 @@ model LegCache {
   @@unique([originKey, destinationKey, mode, timeBucket])
   @@index([expiresAt])
 }
+
+/// One answer from the places provider, kept so the same question is never paid
+/// for twice. Short lived on purpose: the provider's terms allow caching place
+/// identifiers indefinitely but not the rest, so this expires quickly.
+model PlaceSearchCache {
+  id String @id @default(cuid())
+
+  /// Trimmed and lowercased query text.
+  query   String
+  /// "lat,lng" rounded to two decimal places, or "anywhere". Coarse on purpose:
+  /// a cache keyed by something the caller can vary freely is not a cache.
+  biasKey String
+  size    Int
+
+  /// PlaceSuggestion[] as stored. Parsed with zod on the way out.
+  suggestions Json
+
+  fetchedAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@unique([query, biasKey, size])
+  @@index([expiresAt])
+}
+
+/// A fixed window request counter. One row per caller, route and window.
+model RateLimit {
+  id String @id @default(cuid())
+
+  /// sha256 of the client address. The address itself is never stored.
+  clientKey   String
+  route       String
+  /// Start of the window the count belongs to.
+  windowStart DateTime
+  count       Int      @default(1)
+
+  @@unique([clientKey, route, windowStart])
+  @@index([windowStart])
+}
