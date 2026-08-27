@@ -87,13 +87,28 @@ change.
 ## Architecture
 
 ```
-src/core       time engine and domain model, pure TypeScript
-src/core/ports interfaces for anything external
-src/adapters   implementations: haversine travel, Google Places
-src/server     storage, ownership, rate limiting
-src/features   interface, one folder per feature
-src/app        routes, which compose the features
+src/core/model            domain types: trip, day, stop, place, leg, conflict
+src/core/time             the engine: compute-day, day-points, conflicts, zoned
+src/core/ports            interfaces for anything external
+src/adapters/travel       haversine, the working fake for travel times
+src/adapters/places       Google Places, autocomplete and details
+src/server/trips          create a trip, add a stop, slugs, input schemas
+src/server/ownership      the edit token, its cookie, the mutation guard
+src/server/places         opening hours codec, search cache, the API key
+src/server/rate-limit     a fixed window counter per address
+src/server/repositories   the storage contract and its Prisma implementation
+src/features/day-planner  the itinerary: stop cards, leg rows, conflicts, totals
+src/features/place-search the search combobox
+src/features/trip-map     Leaflet, loaded client side only
+src/ui                    generic primitives, no domain knowledge, empty so far
+src/app                   routes, which compose the features
 ```
+
+`src/app` also holds three files Next.js resolves **by name**: `layout.tsx`,
+`globals.css` which carries the DESIGN.md tokens, and `icon.png`, which becomes the
+favicon and is `logo/logo.png` cropped square and downscaled. Renaming any of them
+switches the feature off with no error. Files ending `-action.ts` are server actions,
+which are the only way the browser writes anything.
 
 Dependencies point one way, `app` to `features` to `server` and `adapters` to `core`,
 and ESLint fails the build otherwise. `src/core` has no framework, database or network
