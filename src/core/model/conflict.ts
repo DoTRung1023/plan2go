@@ -41,12 +41,12 @@ export type Conflict =
       readonly kind: "unresolved-leg";
       readonly fromName: string;
       readonly toName: string;
-      /** Index into the day's legs, 0 is home base to the first stop. */
+      /** Index into the day's legs, in travel order. */
       readonly legIndex: number;
     }
   | {
-      readonly kind: "returns-next-day";
-      readonly returnMinutes: number;
+      readonly kind: "ends-next-day";
+      readonly endMinutes: number;
       readonly dayOffset: number;
     };
 

@@ -41,7 +41,7 @@ const UNRESOLVED_LEG: Conflict = {
   legIndex: 0,
 };
 
-const RETURNS_NEXT_DAY: Conflict = { kind: "returns-next-day", returnMinutes: 40, dayOffset: 1 };
+const ENDS_NEXT_DAY: Conflict = { kind: "ends-next-day", endMinutes: 40, dayOffset: 1 };
 
 const EVERY_KIND: readonly Conflict[] = [
   ARRIVES_AFTER_CLOSE,
@@ -49,7 +49,7 @@ const EVERY_KIND: readonly Conflict[] = [
   CLOSED_ALL_DAY,
   STAY_OVERRUNS_CLOSE,
   UNRESOLVED_LEG,
-  RETURNS_NEXT_DAY,
+  ENDS_NEXT_DAY,
 ];
 
 /** Hyphen, en dash, em dash, written as escapes so this file contains none. */
@@ -85,12 +85,12 @@ describe("conflictSentence", () => {
   });
 
   it("says the time and that it is the next day", () => {
-    expect(conflictSentence(RETURNS_NEXT_DAY)).toBe("You get back at 12:40 am, the next day.");
+    expect(conflictSentence(ENDS_NEXT_DAY)).toBe("The day ends at 12:40 am, the next day.");
   });
 
-  it("counts the days when the return is further out than one", () => {
-    expect(conflictSentence({ kind: "returns-next-day", returnMinutes: 90, dayOffset: 2 })).toBe(
-      "You get back at 1:30 am, 2 days later.",
+  it("counts the days when the end is further out than one", () => {
+    expect(conflictSentence({ kind: "ends-next-day", endMinutes: 90, dayOffset: 2 })).toBe(
+      "The day ends at 1:30 am, 2 days later.",
     );
   });
 

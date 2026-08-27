@@ -76,7 +76,7 @@ components:
     backgroundColor: "{colors.paper-raised}"
     textColor: "{colors.ink}"
     rounded: "{rounded.pill}"
-  home-base-marker:
+  endpoint-marker:
     backgroundColor: "{colors.olive}"
     textColor: "{colors.paper}"
   map-control:
@@ -100,8 +100,8 @@ When one changes the other changes in the same commit.
 
 ## Colors
 
-There is one accent. Terracotta. Olive appears in exactly one place, the home base
-marker. Everything else is paper and ink.
+There is one accent. Terracotta. Olive appears in exactly one place, the markers for
+the ends of a day. Everything else is paper and ink.
 
 - **paper:** page surface.
 - **paper-raised:** stop cards, tab strip, floating map controls.
@@ -115,7 +115,8 @@ marker. Everything else is paper and ink.
   a conflict, primary action.
 - **terracotta-deep:** hover and active states of the accent.
 - **terracotta-wash:** selected row background, conflict block background.
-- **olive:** the home base marker and its label. Nothing else.
+- **olive:** the markers for where a day starts and where it ends, and their
+  labels. Nothing else.
 
 Never `#FFFFFF`, never `#000000`, on any surface, border, or text.
 
@@ -191,8 +192,10 @@ map markers and the map expand toggle only.
 Token values for each component are in the front matter. The rules the token schema
 cannot express are here.
 
-The home base marker is a different shape from the stop markers, not merely a different
-colour. Stop markers carry a 2px `terracotta` ring and the stop number in `ink`.
+The start and end markers are a different shape from the stop markers, not merely a
+different colour. A day may start and end in the same place, in which case there is one
+marker rather than two on top of each other. Stop markers carry a 2px `terracotta` ring
+and the stop number in `ink`.
 
 A conflict block is identified by a terracotta left rule plus the sentence naming the
 conflict. The wash background alone is never the signal.

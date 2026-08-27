@@ -127,6 +127,14 @@ export function epochMinutesToWallClock(epochMinutes: number, timeZone: string):
   };
 }
 
+/** A calendar date shifted by whole days. Calendar arithmetic, not clock arithmetic. */
+export function addDays(date: IsoDate, days: number): IsoDate {
+  const { year, month, day } = parseIsoDate(date);
+  return isoDateFromDayIndex(
+    Math.round(Date.UTC(year, month - 1, day) / MILLIS_PER_DAY) + days,
+  );
+}
+
 /** Whole days from one calendar date to another. Negative if `to` is earlier. */
 export function daysBetween(from: IsoDate, to: IsoDate): number {
   const start = parseIsoDate(from);

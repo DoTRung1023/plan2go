@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  addDays,
   daysBetween,
   epochMinutesToWallClock,
   parseIsoDate,
@@ -60,5 +61,21 @@ describe("weekdayOf and daysBetween", () => {
 describe("parseIsoDate", () => {
   it("rejects anything that is not YYYY-MM-DD", () => {
     expect(() => parseIsoDate("22/08/2026")).toThrow(RangeError);
+  });
+});
+
+describe("addDays", () => {
+  it("moves forward and backward across a month boundary", () => {
+    expect(addDays("2026-08-30", 3)).toBe("2026-09-02");
+    expect(addDays("2026-09-02", -3)).toBe("2026-08-30");
+  });
+
+  it("counts a leap day", () => {
+    expect(addDays("2028-02-28", 1)).toBe("2028-02-29");
+    expect(addDays("2027-02-28", 1)).toBe("2027-03-01");
+  });
+
+  it("returns the same date for no shift", () => {
+    expect(addDays("2026-08-22", 0)).toBe("2026-08-22");
   });
 });

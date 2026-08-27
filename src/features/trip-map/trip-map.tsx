@@ -2,7 +2,7 @@
 
 import * as L from "leaflet";
 import { useEffect, useRef } from "react";
-import type { Place } from "@/core/model/place";
+import type { DayEndpoint } from "@/core/model/day";
 import type { Stop } from "@/core/model/stop";
 import "leaflet/dist/leaflet.css";
 import "./trip-map.css";
@@ -35,16 +35,19 @@ function stopIcon(position: number, name: string): L.DivIcon {
   });
 }
 
-function homeBaseIcon(name: string): L.DivIcon {
+/** Sized from the word it carries, since it may say Start, End, or both. */
+function endpointIcon(word: string, name: string): L.DivIcon {
+  const width = Math.round(18 + word.length * 7.5);
   return L.divIcon({
-    html: `<span class="trip-map-base"><span aria-hidden="true">Base</span><span class="trip-map-name">Home base, ${escapeHtml(name)}</span></span>`,
-    iconSize: [46, 24],
-    iconAnchor: [23, 12],
+    html: `<span class="trip-map-endpoint" style="width:${String(width)}px"><span aria-hidden="true">${escapeHtml(word)}</span><span class="trip-map-name">${escapeHtml(word)} of the day, ${escapeHtml(name)}</span></span>`,
+    iconSize: [width, 24],
+    iconAnchor: [Math.round(width / 2), 12],
   });
 }
 
 interface TripMapProps {
-  readonly homeBase: Place;
+  readonly start: DayEndpoint | null;
+  readonly end: DayEndpoint | null;
   readonly stops: readonly Stop[];
 }
 
@@ -55,7 +58,7 @@ interface TripMapProps {
  * Every animation Leaflet offers is turned off. The motion policy allows one,
  * reordering a stop, and this is not it.
  */
-export function TripMap({ homeBase, stops }: TripMapProps) {
+export function TripMap({ start, end, stops }: TripMapProps) {
   const container = useRef<HTMLDivElement | null>(null);
   const map = useRef<L.Map | null>(null);
   const markers = useRef<L.LayerGroup | null>(null);
@@ -105,9 +108,24 @@ export function TripMap({ homeBase, stops }: TripMapProps) {
     layer.clearLayers();
     const points: L.LatLngTuple[] = [];
 
-    const base: L.LatLngTuple = [homeBase.position.lat, homeBase.position.lng];
-    L.marker(base, { icon: homeBaseIcon(homeBase.name) }).addTo(layer);
-    points.push(base);
+    const drawEndpoint = (endpoint: DayEndpoint, word: string): void => {
+      const point: L.LatLngTuple = [endpoint.place.position.lat, endpoint.place.position.lng];
+      L.marker(point, { icon: endpointIcon(word, endpoint.place.name) }).addTo(layer);
+      points.push(point);
+    };
+
+    // A day that starts and ends in the same place gets one marker, not two on
+    // top of each other.
+    if (start !== null && end !== null && start.place.id === end.place.id) {
+      drawEndpoint(start, "Start and end");
+    } else {
+      if (start !== null) {
+        drawEndpoint(start, "Start");
+      }
+      if (end !== null) {
+        drawEndpoint(end, "End");
+      }
+    }
 
     stops.forEach((stop, index) => {
       const point: L.LatLngTuple = [stop.place.position.lat, stop.place.position.lng];
@@ -116,12 +134,15 @@ export function TripMap({ homeBase, stops }: TripMapProps) {
     });
 
     const only = points[0];
+    if (points.length === 0) {
+      return;
+    }
     if (points.length === 1 && only !== undefined) {
       drawn.setView(only, SINGLE_POINT_ZOOM, { animate: false });
       return;
     }
     drawn.fitBounds(L.latLngBounds(points), { padding: [48, 48], animate: false });
-  }, [homeBase, stops]);
+  }, [start, end, stops]);
 
   return (
     <div className="trip-map relative h-full w-full overflow-hidden rounded-panel border border-rule">
@@ -137,10 +158,10 @@ export function TripMap({ homeBase, stops }: TripMapProps) {
           Stops, in the order you visit them
         </p>
         <p className="mt-1 flex items-center gap-2 text-meta text-ink">
-          <span className="trip-map-base" aria-hidden="true">
-            Base
+          <span className="trip-map-endpoint" aria-hidden="true">
+            Start
           </span>
-          Where the day starts and ends
+          Where the day starts, and where it ends
         </p>
       </div>
     </div>

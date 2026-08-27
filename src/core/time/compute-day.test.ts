@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { DayPlan } from "../model/day";
+import type { DayEndpoint, DayPlan } from "../model/day";
 import type { LegResolution, TravelMode } from "../model/leg";
 import type { LatLng, OpeningWindow, Place, WeeklyOpeningHours } from "../model/place";
 import type { Stop } from "../model/stop";
@@ -37,16 +37,21 @@ function stop(
   };
 }
 
+function endpoint(name: string): DayEndpoint {
+  return { place: place(name), label: null };
+}
+
 function day(overrides: Partial<DayPlan> = {}): DayPlan {
   return {
     id: "day-1",
     date: "2026-08-22",
     timeZone: ADELAIDE,
     label: null,
-    homeBase: place("Home"),
-    leaveAtMinutes: 9 * 60,
+    start: endpoint("Home"),
+    end: endpoint("Home"),
+    startAtMinutes: 9 * 60,
     stops: [],
-    returnTravelMode: "walk",
+    endTravelMode: "walk",
     ...overrides,
   };
 }
@@ -61,14 +66,14 @@ function leg(durationMinutes: number, mode: TravelMode = "walk"): LegResolution 
 const unresolved: LegResolution = { status: "unresolved", reason: "no-route" };
 
 describe("computeDay, ordinary days", () => {
-  it("returns a result for a day with no stops", () => {
-    const result = computeDay({ day: day(), legs: [] });
+  it("returns a result for a day with nothing in it at all", () => {
+    const result = computeDay({ day: day({ start: null, end: null }), legs: [] });
 
     expect(result.stops).toEqual([]);
     expect(result.legs).toEqual([]);
     expect(result.conflicts).toEqual([]);
-    expect(result.leave.minutesFromMidnight).toBe(540);
-    expect(result.returnHome?.minutesFromMidnight).toBe(540);
+    expect(result.begins.minutesFromMidnight).toBe(540);
+    expect(result.ends?.minutesFromMidnight).toBe(540);
     expect(result.totals).toEqual({
       timeOutMinutes: 0,
       timeAtPlacesMinutes: 0,
@@ -78,7 +83,7 @@ describe("computeDay, ordinary days", () => {
     });
   });
 
-  it("walks two stops and comes home", () => {
+  it("walks two stops and comes back", () => {
     const plan = day({ stops: [stop("Museum", 90), stop("Market", 45)] });
     const result = computeDay({ day: plan, legs: [leg(20), leg(15), leg(25)] });
 
@@ -90,7 +95,7 @@ describe("computeDay, ordinary days", () => {
       10 * 60 + 50,
       11 * 60 + 50,
     ]);
-    expect(result.returnHome?.minutesFromMidnight).toBe(12 * 60 + 15);
+    expect(result.ends?.minutesFromMidnight).toBe(12 * 60 + 15);
     expect(result.totals).toEqual({
       timeOutMinutes: 195,
       timeAtPlacesMinutes: 135,
@@ -112,19 +117,19 @@ describe("computeDay, ordinary days", () => {
 
 describe("computeDay, midnight rollover", () => {
   it("carries a day offset when the day ends after midnight", () => {
-    const plan = day({ leaveAtMinutes: 23 * 60, stops: [stop("Night Market", 30)] });
+    const plan = day({ startAtMinutes: 23 * 60, stops: [stop("Night Market", 30)] });
     const result = computeDay({ day: plan, legs: [leg(60), leg(60)] });
     const first = result.stops[0];
 
     expect(first?.arrival?.minutesFromMidnight).toBe(0);
     expect(first?.arrival?.dayOffset).toBe(1);
     expect(first?.departure?.minutesFromMidnight).toBe(30);
-    expect(result.returnHome?.minutesFromMidnight).toBe(90);
-    expect(result.returnHome?.dayOffset).toBe(1);
+    expect(result.ends?.minutesFromMidnight).toBe(90);
+    expect(result.ends?.dayOffset).toBe(1);
     expect(result.totals.timeOutMinutes).toBe(150);
     expect(result.conflicts).toContainEqual({
-      kind: "returns-next-day",
-      returnMinutes: 90,
+      kind: "ends-next-day",
+      endMinutes: 90,
       dayOffset: 1,
     });
   });
@@ -134,7 +139,7 @@ describe("computeDay, daylight saving in the trip time zone", () => {
   it("reads two hours on the clock for one hour of travel on the day that loses an hour", () => {
     const plan = day({
       date: "2026-10-04",
-      leaveAtMinutes: 90,
+      startAtMinutes: 90,
       stops: [stop("Sunrise Lookout", 30)],
     });
     const result = computeDay({ day: plan, legs: [leg(60), leg(60)] });
@@ -142,7 +147,7 @@ describe("computeDay, daylight saving in the trip time zone", () => {
 
     expect(first?.arrival?.minutesFromMidnight).toBe(3 * 60 + 30);
     expect(first?.arrival?.dayOffset).toBe(0);
-    expect(result.returnHome?.minutesFromMidnight).toBe(5 * 60);
+    expect(result.ends?.minutesFromMidnight).toBe(5 * 60);
     expect(result.totals.timeOutMinutes).toBe(150);
     expect(result.totals.travelMinutes).toBe(120);
   });
@@ -150,7 +155,7 @@ describe("computeDay, daylight saving in the trip time zone", () => {
   it("reads the same clock time after an hour of travel on the day that gains one", () => {
     const plan = day({
       date: "2026-04-05",
-      leaveAtMinutes: 150,
+      startAtMinutes: 150,
       stops: [stop("Bakery", 30)],
     });
     const result = computeDay({ day: plan, legs: [leg(60), leg(60)] });
@@ -158,7 +163,7 @@ describe("computeDay, daylight saving in the trip time zone", () => {
 
     expect(first?.arrival?.minutesFromMidnight).toBe(150);
     expect(first?.departure?.minutesFromMidnight).toBe(180);
-    expect(result.returnHome?.minutesFromMidnight).toBe(240);
+    expect(result.ends?.minutesFromMidnight).toBe(240);
     expect(result.totals.timeOutMinutes).toBe(150);
   });
 });
@@ -171,7 +176,7 @@ describe("computeDay, zero duration stay", () => {
 
     expect(first?.arrival?.minutesFromMidnight).toBe(9 * 60 + 20);
     expect(first?.departure?.minutesFromMidnight).toBe(9 * 60 + 20);
-    expect(result.returnHome?.minutesFromMidnight).toBe(9 * 60 + 40);
+    expect(result.ends?.minutesFromMidnight).toBe(9 * 60 + 40);
     expect(result.totals.timeAtPlacesMinutes).toBe(0);
     expect(result.conflicts).toEqual([]);
   });
@@ -199,7 +204,7 @@ describe("computeDay, an unresolvable leg", () => {
     expect(result.stops[0]?.arrival?.minutesFromMidnight).toBe(9 * 60 + 20);
     expect(result.stops[1]?.arrival).toBeNull();
     expect(result.stops[1]?.departure).toBeNull();
-    expect(result.returnHome).toBeNull();
+    expect(result.ends).toBeNull();
     expect(result.totals.complete).toBe(false);
     expect(result.totals.travelMinutes).toBeNull();
     expect(result.totals.timeOutMinutes).toBeNull();
@@ -225,7 +230,7 @@ describe("computeDay, an unresolvable leg", () => {
 describe("computeDay, opening hours", () => {
   it("names the place, the closing time, and the arrival time", () => {
     const hours = openEveryDay([{ opensAt: 7 * 60, closesAt: 16 * 60 }]);
-    const plan = day({ leaveAtMinutes: 16 * 60, stops: [stop("Fish Market", 45, hours)] });
+    const plan = day({ startAtMinutes: 16 * 60, stops: [stop("Fish Market", 45, hours)] });
     const result = computeDay({ day: plan, legs: [leg(30), leg(30)] });
 
     expect(result.conflicts).toContainEqual({
@@ -239,7 +244,7 @@ describe("computeDay, opening hours", () => {
 
   it("does not quietly move an impossible arrival to a time that works", () => {
     const hours = openEveryDay([{ opensAt: 7 * 60, closesAt: 16 * 60 }]);
-    const plan = day({ leaveAtMinutes: 16 * 60, stops: [stop("Fish Market", 45, hours)] });
+    const plan = day({ startAtMinutes: 16 * 60, stops: [stop("Fish Market", 45, hours)] });
     const result = computeDay({ day: plan, legs: [leg(30), leg(30)] });
 
     expect(result.stops[0]?.arrival?.minutesFromMidnight).toBe(16 * 60 + 30);
@@ -253,7 +258,7 @@ describe("computeDay, opening hours", () => {
 
     expect(result.stops[0]?.waitMinutes).toBe(40);
     expect(result.stops[0]?.departure?.minutesFromMidnight).toBe(11 * 60);
-    expect(result.returnHome?.minutesFromMidnight).toBe(11 * 60 + 20);
+    expect(result.ends?.minutesFromMidnight).toBe(11 * 60 + 20);
     expect(result.totals.waitingMinutes).toBe(40);
     expect(result.conflicts).toContainEqual({
       kind: "arrives-before-open",
@@ -267,7 +272,7 @@ describe("computeDay, opening hours", () => {
 
   it("flags a stay that runs past closing", () => {
     const hours = openEveryDay([{ opensAt: 10 * 60, closesAt: 17 * 60 }]);
-    const plan = day({ leaveAtMinutes: 16 * 60, stops: [stop("Gallery", 60, hours)] });
+    const plan = day({ startAtMinutes: 16 * 60, stops: [stop("Gallery", 60, hours)] });
     const result = computeDay({ day: plan, legs: [leg(30), leg(30)] });
 
     expect(result.conflicts).toContainEqual({
@@ -300,5 +305,77 @@ describe("computeDay, opening hours", () => {
     const result = computeDay({ day: plan, legs: [leg(20), leg(20)] });
 
     expect(result.conflicts).toEqual([]);
+  });
+});
+
+describe("computeDay, days that do not start or end anywhere in particular", () => {
+  it("begins at the first stop when there is no start point", () => {
+    const plan = day({ start: null, stops: [stop("Museum", 60), stop("Market", 30)] });
+    const result = computeDay({ day: plan, legs: [leg(15), leg(25)] });
+
+    expect(result.begins.minutesFromMidnight).toBe(9 * 60);
+    expect(result.stops[0]?.arrival?.minutesFromMidnight).toBe(9 * 60);
+    expect(result.legs.map((entry) => [entry.fromName, entry.toName])).toEqual([
+      ["Museum", "Market"],
+      ["Market", "Home"],
+    ]);
+    expect(result.conflicts).toEqual([]);
+  });
+
+  it("is over when it leaves the last stop, if there is no end point", () => {
+    const plan = day({ end: null, stops: [stop("Museum", 60)] });
+    const result = computeDay({ day: plan, legs: [leg(20)] });
+
+    expect(result.legs).toHaveLength(1);
+    expect(result.ends?.minutesFromMidnight).toBe(10 * 60 + 20);
+    expect(result.totals.timeOutMinutes).toBe(80);
+    expect(result.conflicts).toEqual([]);
+  });
+
+  it("ends somewhere other than where it started", () => {
+    const plan = day({
+      start: { place: place("Hotel"), label: "Hotel" },
+      end: { place: place("Airport"), label: "Airport" },
+      stops: [stop("Market", 45)],
+    });
+    const result = computeDay({ day: plan, legs: [leg(10), leg(35)] });
+
+    expect(result.legs.map((entry) => [entry.fromName, entry.toName])).toEqual([
+      ["Hotel", "Market"],
+      ["Market", "Airport"],
+    ]);
+    expect(result.ends?.minutesFromMidnight).toBe(10 * 60 + 30);
+  });
+
+  it("still travels between a start and an end with no stops in between", () => {
+    const plan = day({
+      start: { place: place("Hotel"), label: "Hotel" },
+      end: { place: place("Airport"), label: "Airport" },
+    });
+    const result = computeDay({ day: plan, legs: [leg(40)] });
+
+    expect(result.legs).toHaveLength(1);
+    expect(result.ends?.minutesFromMidnight).toBe(9 * 60 + 40);
+    expect(result.totals.travelMinutes).toBe(40);
+  });
+
+  it("has no legs and no conflicts when neither end of the day is set", () => {
+    const result = computeDay({ day: day({ start: null, end: null, stops: [] }), legs: [] });
+
+    expect(result.legs).toEqual([]);
+    expect(result.conflicts).toEqual([]);
+    expect(result.ends?.epochMinutes).toBe(result.begins.epochMinutes);
+  });
+
+  it("calls a point by the traveller's own label, and by the place name without one", () => {
+    const plan = day({
+      start: { place: place("Ibis Adelaide"), label: "Hotel" },
+      end: { place: place("Ibis Adelaide"), label: null },
+      stops: [stop("Market", 30)],
+    });
+    const result = computeDay({ day: plan, legs: [leg(10), leg(10)] });
+
+    expect(result.legs[0]?.fromName).toBe("Hotel");
+    expect(result.legs[1]?.toName).toBe("Ibis Adelaide");
   });
 });

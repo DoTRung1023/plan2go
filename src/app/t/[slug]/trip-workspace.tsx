@@ -51,7 +51,11 @@ export function TripWorkspace({ title, days }: TripWorkspaceProps) {
       >
         <div className="relative h-full w-full">
           {selected === undefined ? null : (
-            <TripMap homeBase={selected.plan.homeBase} stops={selected.plan.stops} />
+            <TripMap
+              start={selected.plan.start}
+              end={selected.plan.end}
+              stops={selected.plan.stops}
+            />
           )}
           <button
             type="button"

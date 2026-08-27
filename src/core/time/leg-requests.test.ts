@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { DayPlan } from "../model/day";
+import type { DayEndpoint, DayPlan } from "../model/day";
 import type { TravelMode } from "../model/leg";
 import type { LatLng, Place } from "../model/place";
 import type { Stop } from "../model/stop";
@@ -24,22 +24,47 @@ function stop(name: string, position: LatLng, travelMode: TravelMode): Stop {
   return { id: `stop-${name}`, place: place(name, position), stayMinutes: 30, travelMode, note: null };
 }
 
-function day(stops: readonly Stop[], returnTravelMode: TravelMode = "walk"): DayPlan {
+function endpoint(name: string, position: LatLng): DayEndpoint {
+  return { place: place(name, position), label: null };
+}
+
+function day(
+  stops: readonly Stop[],
+  endTravelMode: TravelMode = "walk",
+  overrides: Partial<DayPlan> = {},
+): DayPlan {
   return {
     id: "day-1",
     date: "2026-08-22",
     timeZone: "Australia/Adelaide",
     label: null,
-    homeBase: place("Home", HOME),
-    leaveAtMinutes: 9 * 60,
+    start: endpoint("Home", HOME),
+    end: endpoint("Home", HOME),
+    startAtMinutes: 9 * 60,
     stops,
-    returnTravelMode,
+    endTravelMode,
+    ...overrides,
   };
 }
 
 describe("legRequestsFor", () => {
-  it("asks for nothing when the day is empty", () => {
-    expect(legRequestsFor(day([]))).toEqual([]);
+  it("asks for nothing when neither end of the day is set and there are no stops", () => {
+    expect(legRequestsFor(day([], "walk", { start: null, end: null }))).toEqual([]);
+  });
+
+  it("skips the leading leg when the day has no start point", () => {
+    const requests = legRequestsFor(
+      day([stop("Market", MARKET, "walk"), stop("Zoo", ZOO, "walk")], "walk", { start: null }),
+    );
+    expect(requests.map((request) => [request.from, request.to])).toEqual([
+      [MARKET, ZOO],
+      [ZOO, HOME],
+    ]);
+  });
+
+  it("skips the trailing leg when the day has no end point", () => {
+    const requests = legRequestsFor(day([stop("Market", MARKET, "walk")], "walk", { end: null }));
+    expect(requests.map((request) => [request.from, request.to])).toEqual([[HOME, MARKET]]);
   });
 
   it("returns one more leg than there are stops", () => {
@@ -47,7 +72,7 @@ describe("legRequestsFor", () => {
     expect(requests).toHaveLength(3);
   });
 
-  it("runs home base, stops in order, then home again", () => {
+  it("runs the start point, the stops in order, then the end point", () => {
     const requests = legRequestsFor(day([stop("Market", MARKET, "walk"), stop("Zoo", ZOO, "walk")]));
     expect(requests.map((request) => [request.from, request.to])).toEqual([
       [HOME, MARKET],
@@ -56,7 +81,7 @@ describe("legRequestsFor", () => {
     ]);
   });
 
-  it("carries each stop's own mode, and the day's mode for the way home", () => {
+  it("carries each stop's own mode, and the day's mode for the last leg", () => {
     const requests = legRequestsFor(
       day([stop("Market", MARKET, "walk"), stop("Zoo", ZOO, "transit")], "drive"),
     );

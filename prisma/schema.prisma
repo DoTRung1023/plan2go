@@ -61,8 +61,9 @@ model Place {
 
   createdAt DateTime @default(now())
 
-  stops           Stop[]
-  homeBaseForDays Day[]  @relation("DayHomeBase")
+  stops      Stop[]
+  startsDays Day[]  @relation("DayStart")
+  endsDays   Day[]  @relation("DayEnd")
 
   @@index([tripId])
   @@index([providerPlaceId])
@@ -80,13 +81,23 @@ model Day {
   /// Order of this day within the trip, starting at 0.
   position Int
 
-  /// Minutes from local midnight on date.
-  leaveAtMinutes Int
+  /// Minutes from local midnight on date, when the day begins.
+  startAtMinutes Int
 
-  homeBasePlaceId String?
-  homeBase        Place?  @relation("DayHomeBase", fields: [homeBasePlaceId], references: [id], onDelete: SetNull)
+  /// Where the day starts. Null means it starts at the first stop.
+  startPlaceId String?
+  startPlace   Place?  @relation("DayStart", fields: [startPlaceId], references: [id], onDelete: SetNull)
+  /// What the traveller calls that point, for example "Hotel". Theirs to write.
+  startLabel   String?
 
-  returnTravelMode TravelMode @default(WALK)
+  /// Where the day ends, which need not be where it started. Null means it
+  /// ends at the last stop.
+  endPlaceId String?
+  endPlace   Place?  @relation("DayEnd", fields: [endPlaceId], references: [id], onDelete: SetNull)
+  endLabel   String?
+
+  /// The mode used to travel from the last stop to the end point.
+  endTravelMode TravelMode @default(WALK)
 
   stops Stop[]
 

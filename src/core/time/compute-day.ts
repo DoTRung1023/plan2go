@@ -4,6 +4,8 @@ import type { LegResolution, TravelMode } from "../model/leg";
 import type { OpeningWindow, Place } from "../model/place";
 import type { StopId } from "../model/stop";
 import { checkOpeningWindows } from "./conflicts";
+import type { DayPoint } from "./day-points";
+import { dayPoints, modeArrivingAt, pointName } from "./day-points";
 import {
   daysBetween,
   epochMinutesToWallClock,
@@ -21,7 +23,7 @@ export interface ClockTime {
 }
 
 export interface ComputedLeg {
-  /** 0 is home base to the first stop. The last index is the return home. */
+  /** Position in travel order. Which points it joins depends on the day. */
   readonly index: number;
   readonly fromName: string;
   readonly toName: string;
@@ -43,7 +45,7 @@ export interface ComputedStop {
 }
 
 export interface DayTotals {
-  /** Leaving to being home again, in real elapsed minutes. */
+  /** Beginning to end, in real elapsed minutes. */
   readonly timeOutMinutes: number | null;
   readonly timeAtPlacesMinutes: number;
   readonly travelMinutes: number | null;
@@ -56,10 +58,12 @@ export interface ComputedDay {
   readonly dayId: string;
   readonly date: IsoDate;
   readonly timeZone: string;
-  readonly leave: ClockTime;
+  /** When the day begins, at the start point or at the first stop. */
+  readonly begins: ClockTime;
   readonly stops: readonly ComputedStop[];
   readonly legs: readonly ComputedLeg[];
-  readonly returnHome: ClockTime | null;
+  /** When the day is over. Null when a leg could not be answered. */
+  readonly ends: ClockTime | null;
   readonly totals: DayTotals;
   readonly conflicts: readonly Conflict[];
 }
@@ -67,10 +71,8 @@ export interface ComputedDay {
 export interface ComputeDayInput {
   readonly day: DayPlan;
   /**
-   * One entry per leg, in order: home base to the first stop, each stop to the
-   * next, then the last stop back to home base. That is `stops.length + 1`
-   * entries, or none at all when the day has no stops. A missing entry counts
-   * as unresolved rather than as an error.
+   * One entry per leg, in travel order, which is one fewer than the day has
+   * points. A missing entry counts as unresolved rather than as an error.
    */
   readonly legs: readonly LegResolution[];
 }
@@ -85,15 +87,16 @@ function windowsFor(place: Place, date: IsoDate): readonly OpeningWindow[] | nul
 }
 
 /**
- * Turn a home base, an ordered list of stops, and a leave time into the times a
- * person actually reads, plus everything wrong with the result.
+ * Turn an ordered day into the times a person actually reads, plus everything
+ * wrong with the result.
  *
- * Total by construction. An empty day, a leg the provider could not answer, and
- * a stop that opens after you get there all return a result. Nothing throws for
- * a plan that a user could have built, and nothing is quietly corrected.
+ * Total by construction. A day with no start point, no end point, no stops, a
+ * leg the provider could not answer, and a stop that opens after you get there
+ * all return a result. Nothing throws for a plan that a user could have built,
+ * and nothing is quietly corrected.
  */
 export function computeDay({ day, legs }: ComputeDayInput): ComputedDay {
-  const { timeZone, date, stops, homeBase } = day;
+  const { timeZone, date } = day;
 
   const clockAt = (epochMinutes: number): ClockTime => {
     const wall = epochMinutesToWallClock(epochMinutes, timeZone);
@@ -104,47 +107,41 @@ export function computeDay({ day, legs }: ComputeDayInput): ComputedDay {
     };
   };
 
-  const leaveEpoch = wallClockToEpochMinutes(date, day.leaveAtMinutes, timeZone);
-  const leave = clockAt(leaveEpoch);
+  const beginEpoch = wallClockToEpochMinutes(date, day.startAtMinutes, timeZone);
+  const begins = clockAt(beginEpoch);
+  const points = dayPoints(day);
 
   const conflicts: Conflict[] = [];
   const computedStops: ComputedStop[] = [];
   const computedLegs: ComputedLeg[] = [];
 
-  let cursor: number | null = leaveEpoch;
+  let cursor: number | null = beginEpoch;
   let travelMinutes = 0;
   let waitingMinutes = 0;
   let timeAtPlacesMinutes = 0;
   let blocked = false;
 
-  const nameBefore = (index: number): string => {
-    const previous = stops[index - 1];
-    return previous === undefined ? homeBase.name : previous.place.name;
-  };
-
-  const walkLeg = (index: number, toName: string, mode: TravelMode): number | null => {
-    const resolution = legs[index] ?? NOT_REQUESTED;
+  const travelTo = (point: DayPoint, from: DayPoint, legIndex: number): void => {
+    const resolution = legs[legIndex] ?? NOT_REQUESTED;
     const departure = cursor === null ? null : clockAt(cursor);
+    const fromName = pointName(from);
+    const toName = pointName(point);
 
     if (resolution.status === "unresolved") {
-      conflicts.push({
-        kind: "unresolved-leg",
-        fromName: nameBefore(index),
-        toName,
-        legIndex: index,
-      });
+      conflicts.push({ kind: "unresolved-leg", fromName, toName, legIndex });
       blocked = true;
       computedLegs.push({
-        index,
-        fromName: nameBefore(index),
+        index: legIndex,
+        fromName,
         toName,
-        mode,
+        mode: modeArrivingAt(point, day),
         durationMinutes: null,
         distanceMeters: null,
         departure,
         arrival: null,
       });
-      return null;
+      cursor = null;
+      return;
     }
 
     const { estimate } = resolution;
@@ -154,8 +151,8 @@ export function computeDay({ day, legs }: ComputeDayInput): ComputedDay {
     }
 
     computedLegs.push({
-      index,
-      fromName: nameBefore(index),
+      index: legIndex,
+      fromName,
       toName,
       mode: estimate.mode,
       durationMinutes: estimate.durationMinutes,
@@ -163,14 +160,14 @@ export function computeDay({ day, legs }: ComputeDayInput): ComputedDay {
       departure,
       arrival: arrivalEpoch === null ? null : clockAt(arrivalEpoch),
     });
-    return arrivalEpoch;
+    cursor = arrivalEpoch;
   };
 
-  stops.forEach((stop, index) => {
+  const stayAt = (point: Extract<DayPoint, { kind: "stop" }>): void => {
+    const { stop } = point;
     timeAtPlacesMinutes += stop.stayMinutes;
-    const arrivalEpoch = walkLeg(index, stop.place.name, stop.travelMode);
 
-    if (arrivalEpoch === null) {
+    if (cursor === null) {
       computedStops.push({
         stopId: stop.id,
         placeName: stop.place.name,
@@ -179,12 +176,11 @@ export function computeDay({ day, legs }: ComputeDayInput): ComputedDay {
         stayMinutes: stop.stayMinutes,
         waitMinutes: 0,
       });
-      cursor = null;
       return;
     }
 
-    const arrival = clockAt(arrivalEpoch);
-    const arrivalWall = epochMinutesToWallClock(arrivalEpoch, timeZone);
+    const arrival = clockAt(cursor);
+    const arrivalWall = epochMinutesToWallClock(cursor, timeZone);
     const check = checkOpeningWindows({
       stopId: stop.id,
       placeName: stop.place.name,
@@ -196,7 +192,7 @@ export function computeDay({ day, legs }: ComputeDayInput): ComputedDay {
     conflicts.push(...check.conflicts);
     waitingMinutes += check.waitMinutes;
 
-    const departureEpoch = arrivalEpoch + check.waitMinutes + stop.stayMinutes;
+    const departureEpoch = cursor + check.waitMinutes + stop.stayMinutes;
     computedStops.push({
       stopId: stop.id,
       placeName: stop.place.name,
@@ -206,19 +202,25 @@ export function computeDay({ day, legs }: ComputeDayInput): ComputedDay {
       waitMinutes: check.waitMinutes,
     });
     cursor = departureEpoch;
+  };
+
+  points.forEach((point, index) => {
+    const previous = points[index - 1];
+    if (index > 0 && previous !== undefined) {
+      travelTo(point, previous, index - 1);
+    }
+    if (point.kind === "stop") {
+      stayAt(point);
+    }
   });
 
-  let returnHome: ClockTime | null = leave;
-  if (stops.length > 0) {
-    const homeEpoch = walkLeg(stops.length, homeBase.name, day.returnTravelMode);
-    returnHome = homeEpoch === null ? null : clockAt(homeEpoch);
-  }
+  const ends = cursor === null ? null : clockAt(cursor);
 
-  if (returnHome !== null && returnHome.dayOffset > 0) {
+  if (ends !== null && ends.dayOffset > 0) {
     conflicts.push({
-      kind: "returns-next-day",
-      returnMinutes: returnHome.minutesFromMidnight,
-      dayOffset: returnHome.dayOffset,
+      kind: "ends-next-day",
+      endMinutes: ends.minutesFromMidnight,
+      dayOffset: ends.dayOffset,
     });
   }
 
@@ -226,12 +228,12 @@ export function computeDay({ day, legs }: ComputeDayInput): ComputedDay {
     dayId: day.id,
     date,
     timeZone,
-    leave,
+    begins,
     stops: computedStops,
     legs: computedLegs,
-    returnHome,
+    ends,
     totals: {
-      timeOutMinutes: returnHome === null ? null : returnHome.epochMinutes - leaveEpoch,
+      timeOutMinutes: ends === null ? null : ends.epochMinutes - beginEpoch,
       timeAtPlacesMinutes,
       travelMinutes: blocked ? null : travelMinutes,
       waitingMinutes,

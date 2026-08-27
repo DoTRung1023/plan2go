@@ -4,6 +4,7 @@ import type { LegResolution } from "@/core/model/leg";
 import type { LatLng, Place } from "@/core/model/place";
 import type { TravelProvider } from "@/core/ports/travel-provider";
 import { computeDay } from "@/core/time/compute-day";
+import { legRequestsFor } from "@/core/time/leg-requests";
 import {
   DEFAULT_HAVERSINE_OPTIONS,
   createHaversineTravelProvider,
@@ -26,17 +27,9 @@ function place(name: string, position: LatLng): Place {
 }
 
 async function resolveLegs(provider: TravelProvider, day: DayPlan): Promise<LegResolution[]> {
-  const points = [day.homeBase, ...day.stops.map((entry) => entry.place), day.homeBase];
-  const modes = [...day.stops.map((entry) => entry.travelMode), day.returnTravelMode];
   const legs: LegResolution[] = [];
-
-  for (const [index, mode] of modes.entries()) {
-    const from = points[index];
-    const to = points[index + 1];
-    if (from === undefined || to === undefined) {
-      continue;
-    }
-    legs.push(await provider.estimate({ from: from.position, to: to.position, mode }));
+  for (const request of legRequestsFor(day)) {
+    legs.push(await provider.estimate(request));
   }
   return legs;
 }
@@ -147,8 +140,9 @@ describe("computeDay driven by the haversine provider", () => {
       date: "2026-08-22",
       timeZone: "Australia/Adelaide",
       label: null,
-      homeBase: place("Apartment", ADELAIDE_GPO),
-      leaveAtMinutes: 9 * 60,
+      start: { place: place("Apartment", ADELAIDE_GPO), label: "Apartment" },
+      end: { place: place("Apartment", ADELAIDE_GPO), label: "Apartment" },
+      startAtMinutes: 9 * 60,
       stops: [
         {
           id: "stop-garden",
@@ -165,7 +159,7 @@ describe("computeDay driven by the haversine provider", () => {
           note: null,
         },
       ],
-      returnTravelMode: "transit",
+      endTravelMode: "transit",
     };
 
     const legs = await resolveLegs(provider, plan);
@@ -180,12 +174,12 @@ describe("computeDay driven by the haversine provider", () => {
     );
 
     const moments = [
-      result.leave.epochMinutes,
+      result.begins.epochMinutes,
       ...result.stops.flatMap((entry) => [
         entry.arrival?.epochMinutes ?? 0,
         entry.departure?.epochMinutes ?? 0,
       ]),
-      result.returnHome?.epochMinutes ?? 0,
+      result.ends?.epochMinutes ?? 0,
     ];
     const sorted = [...moments].sort((a, b) => a - b);
     expect(moments).toEqual(sorted);
