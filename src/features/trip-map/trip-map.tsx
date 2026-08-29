@@ -15,6 +15,15 @@ const ATTRIBUTION =
 /** Zoom used when a day has one point and there is no extent to fit. */
 const SINGLE_POINT_ZOOM = 14;
 
+/**
+ * A day with nothing on it still needs a view. Leaflet draws no tiles at all
+ * until the map has a centre and a zoom, so an empty day starts on the world
+ * and the first stop moves it.
+ */
+const WHOLE_WORLD: L.LatLngTuple = [20, 0];
+
+const WHOLE_WORLD_ZOOM = 2;
+
 const ESCAPES: Readonly<Record<string, string>> = {
   "&": "&amp;",
   "<": "&lt;",
@@ -70,6 +79,8 @@ export function TripMap({ start, end, stops }: TripMapProps) {
     }
 
     const created = L.map(element, {
+      center: WHOLE_WORLD,
+      zoom: WHOLE_WORLD_ZOOM,
       zoomAnimation: false,
       fadeAnimation: false,
       markerZoomAnimation: false,
