@@ -1,6 +1,6 @@
 import Image from "next/image";
 // Imported rather than served from public/, so Next sizes and hashes it.
-import lockup from "../../../logo/logo+text.png";
+import lockup from "../../../logo/logo-text.png";
 import { CreateTripForm } from "./create-trip-form";
 
 /** The zone list is read on the server so the browser is not asked to build it. */
