@@ -49,5 +49,3 @@ export type Conflict =
       readonly endMinutes: number;
       readonly dayOffset: number;
     };
-
-export type ConflictKind = Conflict["kind"];

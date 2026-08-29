@@ -104,10 +104,9 @@ src/ui                    generic primitives, no domain knowledge, empty so far
 src/app                   routes, which compose the features
 ```
 
-`src/app` also holds three files Next.js resolves **by name**: `layout.tsx`,
-`globals.css` which carries the DESIGN.md tokens, and `icon.png`, which becomes the
-favicon and is `logo/logo.png` cropped square and downscaled. Renaming any of them
-switches the feature off with no error. Files ending `-action.ts` are server actions,
+`src/app` also holds two files Next.js resolves **by name**: `layout.tsx` and
+`globals.css`, which carries the DESIGN.md tokens. Renaming either one switches the
+feature off with no error. Files ending `-action.ts` are server actions,
 which are the only way the browser writes anything.
 
 Dependencies point one way, `app` to `features` to `server` and `adapters` to `core`,
