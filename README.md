@@ -27,7 +27,7 @@ and dropping a pin to add a stop.
 
 ## Getting started
 
-Node 20.9 or newer, pnpm 9.15.9, a Neon Postgres database, and a Google Maps Platform
+Node 24, pnpm 9.15.9, a Neon Postgres database, and a Google Maps Platform
 key with Places API (New) enabled.
 
 ```bash
