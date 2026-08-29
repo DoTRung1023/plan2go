@@ -10,8 +10,6 @@ export interface CreateTripFormState {
   readonly error: string | null;
 }
 
-export const NO_ERROR: CreateTripFormState = { error: null };
-
 export async function createTripAction(
   _previous: CreateTripFormState,
   formData: FormData,

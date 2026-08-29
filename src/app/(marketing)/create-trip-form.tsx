@@ -2,7 +2,12 @@
 
 import { useActionState } from "react";
 import { MAX_TRIP_DAYS } from "@/server/trips/new-trip-input";
-import { NO_ERROR, createTripAction } from "./create-trip-action";
+import { createTripAction } from "./create-trip-action";
+import type { CreateTripFormState } from "./create-trip-action";
+
+// Lives here, not beside the action: a "use server" file may export only async
+// functions, so the starting state cannot sit next to it.
+const NO_ERROR: CreateTripFormState = { error: null };
 
 const FIELD =
   "mt-1 w-full rounded-card border border-rule bg-paper-raised px-3 py-2 text-body text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
