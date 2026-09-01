@@ -14,13 +14,21 @@ page. The hard part of this product is the time engine, everything else is typin
 token in an httpOnly cookie authorises mutations. `Trip.userId` is nullable and stays
 that way until accounts exist.
 
-**Stack.** Next.js App Router, TypeScript, Prisma, Tailwind, Leaflet, Vitest. Postgres
-only, never SQLite, deployed to Vercel. Package manager is pnpm.
+**Stack.** Next.js App Router, TypeScript, Prisma, Tailwind, the Google Maps
+JavaScript API, Vitest. Postgres only, never SQLite, deployed to Vercel. Package
+manager is pnpm.
 
 **Paid APIs.** Google Places and Google Routes are server side only. Never
 `NEXT_PUBLIC_`. Every call goes through our own route handler, is rate limited by IP,
 and is cached in our own table keyed by the inputs that determine the answer. Check the
 cache before any paid call.
+
+The map is the one exception, and it is a separate key. The Maps JavaScript API
+authenticates from the browser, so `NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY` is exposed on
+purpose and is restricted in the Google Cloud console to that one API and to our own
+referrers. It never authorises Places or Routes. `GOOGLE_MAPS_API_KEY` is the server
+key, is read only by `src/server/places/google-key.ts`, and never reaches the browser.
+Two keys, and the rule above holds for everything the server pays for.
 
 **The time engine.** `src/core` is pure TypeScript. No React, no Next, no Prisma, no
 network, no `Date.now()`. Anything external is an interface in `src/core/ports` with an

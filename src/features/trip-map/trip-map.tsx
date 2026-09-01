@@ -1,58 +1,44 @@
 "use client";
 
-import * as L from "leaflet";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { DayEndpoint } from "@/core/model/day";
 import type { Stop } from "@/core/model/stop";
-import "leaflet/dist/leaflet.css";
+import {
+  endpointMarkerElement,
+  placeDomMarker,
+  stopMarkerElement,
+} from "./dom-marker";
+import { googleMapsBrowserKey, loadGoogleMaps } from "./load-google-maps";
+import { paperMapStyle } from "./map-style";
 import "./trip-map.css";
-
-const CARTO_TILES = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
-
-const ATTRIBUTION =
-  '<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="https://carto.com/attributions">CARTO</a>';
 
 /** Zoom used when a day has one point and there is no extent to fit. */
 const SINGLE_POINT_ZOOM = 14;
 
 /**
- * A day with nothing on it still needs a view. Leaflet draws no tiles at all
- * until the map has a centre and a zoom, so an empty day starts on the world
- * and the first stop moves it.
+ * A day with nothing on it still needs a view, so an empty day starts on the
+ * world and the first stop moves it.
  */
-const WHOLE_WORLD: L.LatLngTuple = [20, 0];
+const WHOLE_WORLD: google.maps.LatLngLiteral = { lat: 20, lng: 0 };
 
 const WHOLE_WORLD_ZOOM = 2;
 
-const ESCAPES: Readonly<Record<string, string>> = {
-  "&": "&amp;",
-  "<": "&lt;",
-  ">": "&gt;",
-  '"': "&quot;",
-};
+/** Room for a marker and its label inside the pane when the day is fitted. */
+const FIT_PADDING = 56;
 
-/** Place names reach Leaflet as markup, so they are escaped on the way in. */
-function escapeHtml(value: string): string {
-  return value.replace(/[&<>"]/g, (character) => ESCAPES[character] ?? character);
-}
+/**
+ * Inlined at build time, so whether this deployment has a map at all is settled
+ * before the first render rather than discovered in an effect.
+ */
+const BROWSER_KEY = googleMapsBrowserKey();
 
-function stopIcon(position: number, name: string): L.DivIcon {
-  return L.divIcon({
-    html: `<span class="trip-map-stop"><span aria-hidden="true">${String(position)}</span><span class="trip-map-name">Stop ${String(position)}, ${escapeHtml(name)}</span></span>`,
-    iconSize: [30, 30],
-    iconAnchor: [15, 15],
-  });
-}
+type MapState =
+  | { readonly status: "loading" }
+  | { readonly status: "ready"; readonly map: google.maps.Map }
+  | { readonly status: "failed" };
 
-/** Sized from the word it carries, since it may say Start, End, or both. */
-function endpointIcon(word: string, name: string): L.DivIcon {
-  const width = Math.round(18 + word.length * 7.5);
-  return L.divIcon({
-    html: `<span class="trip-map-endpoint" style="width:${String(width)}px"><span aria-hidden="true">${escapeHtml(word)}</span><span class="trip-map-name">${escapeHtml(word)} of the day, ${escapeHtml(name)}</span></span>`,
-    iconSize: [width, 24],
-    iconAnchor: [Math.round(width / 2), 12],
-  });
-}
+const CONTROL =
+  "flex h-[34px] w-[34px] items-center justify-center rounded-pill border border-rule bg-paper-raised text-ink shadow-map-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 interface TripMapProps {
   readonly start: DayEndpoint | null;
@@ -60,68 +46,88 @@ interface TripMapProps {
   readonly stops: readonly Stop[];
 }
 
+function Notice({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex h-full w-full items-center justify-center rounded-panel border border-rule bg-paper-sunken p-6">
+      <p className="max-w-[36ch] text-center text-body text-ink-muted">{children}</p>
+    </div>
+  );
+}
+
 /**
- * The day's points on a map. Loaded through a dynamic import with ssr false,
- * because Leaflet reaches for the document the moment it is imported.
+ * The day's points on a Google map. Loaded through a dynamic import with ssr
+ * false, because the Maps script reaches for the document as it runs.
  *
- * Every animation Leaflet offers is turned off. The motion policy allows one,
- * reordering a stop, and this is not it.
+ * Google's own controls are off and ours are drawn over the map instead, so the
+ * one floating control token in DESIGN.md is the only thing on it. Camera moves
+ * use fitBounds and setCenter rather than panTo, which keeps them instant: the
+ * motion policy allows one animation, reordering a stop, and this is not it.
  */
 export function TripMap({ start, end, stops }: TripMapProps) {
   const container = useRef<HTMLDivElement | null>(null);
-  const map = useRef<L.Map | null>(null);
-  const markers = useRef<L.LayerGroup | null>(null);
+  const overlays = useRef<google.maps.OverlayView[]>([]);
+  const [state, setState] = useState<MapState>({ status: "loading" });
 
   useEffect(() => {
     const element = container.current;
-    if (element === null) {
+    if (element === null || BROWSER_KEY === null) {
       return;
     }
 
-    const created = L.map(element, {
-      center: WHOLE_WORLD,
-      zoom: WHOLE_WORLD_ZOOM,
-      zoomAnimation: false,
-      fadeAnimation: false,
-      markerZoomAnimation: false,
-      attributionControl: true,
-    });
-    L.tileLayer(CARTO_TILES, {
-      attribution: ATTRIBUTION,
-      subdomains: "abcd",
-      maxZoom: 20,
-    }).addTo(created);
+    let cancelled = false;
 
-    map.current = created;
-    markers.current = L.layerGroup().addTo(created);
+    const open = async (): Promise<void> => {
+      const maps = await loadGoogleMaps(BROWSER_KEY);
+      if (cancelled) {
+        return;
+      }
+      setState({
+        status: "ready",
+        map: new maps.Map(element, {
+          center: WHOLE_WORLD,
+          zoom: WHOLE_WORLD_ZOOM,
+          disableDefaultUI: true,
+          // Google's place cards open Google's own interface over ours, and the
+          // stops for the day are already listed beside the map.
+          clickableIcons: false,
+          styles: paperMapStyle(),
+        }),
+      });
+    };
 
-    // The pane changes height when the map is expanded on a phone.
-    const resize = new ResizeObserver(() => {
-      created.invalidateSize();
+    open().catch(() => {
+      if (!cancelled) {
+        setState({ status: "failed" });
+      }
     });
-    resize.observe(element);
 
     return () => {
-      resize.disconnect();
-      created.remove();
-      map.current = null;
-      markers.current = null;
+      cancelled = true;
     };
   }, []);
 
   useEffect(() => {
-    const drawn = map.current;
-    const layer = markers.current;
-    if (drawn === null || layer === null) {
+    if (state.status !== "ready") {
       return;
     }
+    const { map } = state;
+    const maps = google.maps;
 
-    layer.clearLayers();
-    const points: L.LatLngTuple[] = [];
+    for (const overlay of overlays.current) {
+      overlay.setMap(null);
+    }
+    overlays.current = [];
+
+    const points: google.maps.LatLngLiteral[] = [];
 
     const drawEndpoint = (endpoint: DayEndpoint, word: string): void => {
-      const point: L.LatLngTuple = [endpoint.place.position.lat, endpoint.place.position.lng];
-      L.marker(point, { icon: endpointIcon(word, endpoint.place.name) }).addTo(layer);
+      const point = {
+        lat: endpoint.place.position.lat,
+        lng: endpoint.place.position.lng,
+      };
+      overlays.current.push(
+        placeDomMarker(maps, map, point, endpointMarkerElement(word, endpoint.place.name)),
+      );
       points.push(point);
     };
 
@@ -139,26 +145,91 @@ export function TripMap({ start, end, stops }: TripMapProps) {
     }
 
     stops.forEach((stop, index) => {
-      const point: L.LatLngTuple = [stop.place.position.lat, stop.place.position.lng];
-      L.marker(point, { icon: stopIcon(index + 1, stop.place.name) }).addTo(layer);
+      const point = { lat: stop.place.position.lat, lng: stop.place.position.lng };
+      overlays.current.push(
+        placeDomMarker(maps, map, point, stopMarkerElement(index + 1, stop.place.name)),
+      );
       points.push(point);
     });
 
     const only = points[0];
-    if (points.length === 0) {
+    if (only === undefined) {
       return;
     }
-    if (points.length === 1 && only !== undefined) {
-      drawn.setView(only, SINGLE_POINT_ZOOM, { animate: false });
+    if (points.length === 1) {
+      map.setCenter(only);
+      map.setZoom(SINGLE_POINT_ZOOM);
       return;
     }
-    drawn.fitBounds(L.latLngBounds(points), { padding: [48, 48], animate: false });
-  }, [start, end, stops]);
+
+    const bounds = new maps.LatLngBounds();
+    for (const point of points) {
+      bounds.extend(point);
+    }
+    map.fitBounds(bounds, FIT_PADDING);
+  }, [state, start, end, stops]);
+
+  const zoomBy = (step: number): void => {
+    if (state.status !== "ready") {
+      return;
+    }
+    const current = state.map.getZoom();
+    if (current !== undefined) {
+      state.map.setZoom(current + step);
+    }
+  };
 
   return (
     <div className="trip-map relative h-full w-full overflow-hidden rounded-panel border border-rule">
-      <div ref={container} className="h-full w-full" aria-label="Map of this day" />
-      <div className="pointer-events-none absolute bottom-3 left-3 z-[1000] rounded-card border border-rule bg-paper-raised px-3 py-2 shadow-map-control">
+      <div
+        ref={container}
+        className="h-full w-full bg-paper-sunken"
+        aria-label="Map of this day"
+      />
+
+      {BROWSER_KEY === null ? (
+        <div className="absolute inset-0">
+          <Notice>
+            The map is not switched on for this server. The stops for this day are listed
+            beside it, in the order you visit them.
+          </Notice>
+        </div>
+      ) : null}
+
+      {state.status === "failed" ? (
+        <div className="absolute inset-0">
+          <Notice>
+            Could not load the map. Your stops are saved, reload the page to try again.
+          </Notice>
+        </div>
+      ) : null}
+
+      {state.status === "ready" ? (
+        <div className="absolute top-3 left-3 z-[2] flex flex-col gap-[6px]">
+          <button
+            type="button"
+            onClick={() => {
+              zoomBy(1);
+            }}
+            className={CONTROL}
+          >
+            <span aria-hidden="true">+</span>
+            <span className="trip-map-name">Zoom in</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              zoomBy(-1);
+            }}
+            className={CONTROL}
+          >
+            <span aria-hidden="true">&minus;</span>
+            <span className="trip-map-name">Zoom out</span>
+          </button>
+        </div>
+      ) : null}
+
+      <div className="pointer-events-none absolute bottom-3 left-3 z-[2] rounded-card border border-rule bg-paper-raised px-3 py-2 shadow-map-control">
         <p className="text-label font-semibold tracking-[0.08em] text-ink-faint uppercase">
           Map key
         </p>

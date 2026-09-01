@@ -1,58 +1,27 @@
 /*
- * Leaflet builds its own DOM, so its parts are styled here with the tokens from
- * DESIGN.md rather than with utility classes. Nothing in this file introduces a
- * value that is not already a token.
+ * The Maps script builds its own DOM, so its parts are styled here with the
+ * tokens from DESIGN.md rather than with utility classes. Nothing in this file
+ * introduces a value that is not already a token.
  */
 
-.trip-map .leaflet-container {
+/* The ground shown while tiles are still arriving. */
+.trip-map .gm-style,
+.trip-map .gm-style > div:first-child {
   background-color: var(--color-paper-sunken);
+}
+
+/* Google's attribution and terms stay, warmed onto the paper palette. */
+.trip-map .gm-style-cc {
   font-family: var(--font-body);
 }
 
-/* CARTO ships a neutral grey basemap. This warms it onto the paper palette. */
-.trip-map .leaflet-tile-pane {
-  filter: sepia(0.34) saturate(0.86) hue-rotate(-6deg) brightness(1.03) contrast(0.96);
-}
-
-.trip-map .leaflet-control-zoom {
-  border: none;
-  box-shadow: none;
-}
-
-.trip-map .leaflet-control-zoom a,
-.trip-map .leaflet-control-zoom a:hover {
-  width: 34px;
-  height: 34px;
-  line-height: 32px;
-  margin-bottom: 6px;
-  border: 1px solid var(--color-rule);
-  border-radius: var(--radius-pill);
-  background-color: var(--color-paper-raised);
-  box-shadow: var(--shadow-map-control);
-  color: var(--color-ink);
-  font-family: var(--font-body);
-}
-
-.trip-map .leaflet-control-zoom a:focus-visible {
-  outline: 2px solid var(--color-terracotta);
-  outline-offset: 2px;
-}
-
-.trip-map .leaflet-control-attribution {
-  border-radius: var(--radius-card) 0 0 0;
-  background-color: var(--color-paper-raised);
-  color: var(--color-ink-faint);
-  font-size: 11px;
-}
-
-.trip-map .leaflet-control-attribution a {
-  color: var(--color-ink-muted);
-}
-
-/* Leaflet paints its own white box behind a div icon. */
-.trip-map .leaflet-div-icon {
-  border: none;
-  background: transparent;
+/*
+ * A marker is our own element positioned by the overlay, so the point it names
+ * sits at its centre rather than at its corner.
+ */
+.trip-map-marker {
+  position: absolute;
+  transform: translate(-50%, -50%);
 }
 
 .trip-map-stop,
