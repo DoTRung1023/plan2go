@@ -23,8 +23,11 @@ const ROUTE = "open-trip";
 /** What a trip is called until the traveller names it. */
 const UNTITLED = "Untitled trip";
 
-/** A long weekend. Changed in the trip details, along with everything else. */
-const OPENING_DAYS = 3;
+/**
+ * How far the last day sits from the first when a trip opens. Changed in the
+ * trip details, along with everything else.
+ */
+const OPENING_SPAN_DAYS = 5;
 
 /**
  * The front door. There is no page in front of the planner, so opening the site
@@ -66,7 +69,8 @@ export async function GET(request: Request): Promise<Response> {
       title: UNTITLED,
       timeZone,
       startDate: todayIn(timeZone),
-      dayCount: OPENING_DAYS,
+      // A span of five days is six days counted, the first one included.
+      dayCount: OPENING_SPAN_DAYS + 1,
     },
     prismaTripRepository,
   );
