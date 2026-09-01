@@ -22,8 +22,6 @@ interface TripSettingsProps {
   readonly title: string;
   readonly startDate: string;
   readonly endDate: string;
-  /** How many stops sit on each day, in order. Its length is the day count. */
-  readonly stopsPerDay: readonly number[];
   /**
    * Passed in rather than imported, because a feature may not reach into the
    * route that owns the mutation.
@@ -49,25 +47,6 @@ function spanOf(first: string, last: string): number | null {
 }
 
 /**
- * What pulling the last day earlier would take with it, as a sentence with the
- * real numbers in it, shown before the form is sent rather than after.
- */
-function removalWarning(
-  stopsPerDay: readonly number[],
-  requestedDays: number,
-): string | null {
-  if (requestedDays >= stopsPerDay.length) {
-    return null;
-  }
-  const dropped = stopsPerDay.slice(requestedDays);
-  const stops = dropped.reduce((total, count) => total + count, 0);
-  if (stops === 0) {
-    return `Saving this removes ${counted(dropped.length, "empty day", "empty days")} from the end of the trip.`;
-  }
-  return `Saving this removes ${counted(dropped.length, "day", "days")} from the end of the trip, and the ${counted(stops, "stop", "stops")} on ${dropped.length === 1 ? "it" : "them"}.`;
-}
-
-/**
  * The trip's name and the two ends of it, edited where they are read. There is
  * no page in front of the planner asking for them, so this is the only place
  * they are set, and a trip that runs through more than one city is named for
@@ -83,7 +62,6 @@ export function TripSettings({
   title,
   startDate,
   endDate,
-  stopsPerDay,
   onSave,
 }: TripSettingsProps) {
   const [state, submit, pending] = useActionState(onSave, UNSAVED);
@@ -94,7 +72,6 @@ export function TripSettings({
   const form = useRef<HTMLFormElement | null>(null);
 
   const span = spanOf(first, last);
-  const warning = span === null ? null : removalWarning(stopsPerDay, span);
   const datesChanged = first !== startDate || last !== endDate;
   const changed = name !== title || datesChanged;
 
@@ -117,20 +94,13 @@ export function TripSettings({
 
   const saveDates =
     datesChanged || pending ? (
-      <>
-        {warning === null ? null : (
-          <p className="mb-3 rounded-card border-l-2 border-terracotta bg-terracotta-wash px-3 py-2 text-body text-ink">
-            {warning}
-          </p>
-        )}
-        <button
-          type="submit"
-          disabled={pending}
-          className="w-full rounded-card bg-terracotta px-5 py-3 text-body font-semibold text-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
-        >
-          {pending ? "Saving" : "Save dates"}
-        </button>
-      </>
+      <button
+        type="submit"
+        disabled={pending}
+        className="w-full rounded-card bg-terracotta px-5 py-3 text-body font-semibold text-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+      >
+        {pending ? "Saving" : "Save dates"}
+      </button>
     ) : null;
 
   return (

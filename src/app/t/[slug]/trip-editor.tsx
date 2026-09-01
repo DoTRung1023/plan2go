@@ -108,7 +108,6 @@ export function TripEditor({
                 title={title}
                 startDate={first.plan.date}
                 endDate={last.plan.date}
-                stopsPerDay={days.map((day) => day.plan.stops.length)}
                 onSave={updateTripAction}
               />
             ) : null
