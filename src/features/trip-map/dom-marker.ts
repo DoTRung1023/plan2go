@@ -22,7 +22,13 @@ export function placeDomMarker(
   };
 
   overlay.draw = () => {
-    const point = overlay.getProjection().fromLatLngToDivPixel(new maps.LatLng(position));
+    // Typed as always present, but it is not: draw fires before the panes are
+    // ready, and again when the map never authenticated at all.
+    const projection: google.maps.MapCanvasProjection | undefined = overlay.getProjection();
+    if (projection === undefined) {
+      return;
+    }
+    const point = projection.fromLatLngToDivPixel(new maps.LatLng(position));
     if (point === null) {
       return;
     }
