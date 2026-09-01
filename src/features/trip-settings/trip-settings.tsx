@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useId, useState } from "react";
+import { useActionState, useId, useRef, useState } from "react";
 import { daysBetween } from "@/core/time/zoned";
 import { DateField } from "./date-field";
 
@@ -73,8 +73,10 @@ function removalWarning(
  * they are set, and a trip that runs through more than one city is named for
  * the trip rather than for a place in it.
  *
- * The save button appears only once something has changed, so a panel nobody is
- * editing stays quiet above the day it is describing.
+ * Nothing here has a standing save button. The name commits when you leave the
+ * field or press enter, and the dates commit from inside the calendar that
+ * changed them, so a panel nobody is editing stays quiet above the day it is
+ * describing.
  */
 export function TripSettings({
   slug,
@@ -89,13 +91,50 @@ export function TripSettings({
   const [first, setFirst] = useState(startDate);
   const [last, setLast] = useState(endDate);
   const fieldId = useId();
+  const form = useRef<HTMLFormElement | null>(null);
 
   const span = spanOf(first, last);
   const warning = span === null ? null : removalWarning(stopsPerDay, span);
-  const changed = name !== title || first !== startDate || last !== endDate;
+  const datesChanged = first !== startDate || last !== endDate;
+  const changed = name !== title || datesChanged;
+
+  /** The name has no button of its own, so leaving the field is the commit. */
+  const commitName = (): void => {
+    if (!pending && name !== title) {
+      form.current?.requestSubmit();
+    }
+  };
+
+  /**
+   * Closing the calendar without saving puts the dates back. Otherwise a change
+   * would sit in the form with the only button that could save it hidden inside
+   * the panel that has just closed.
+   */
+  const abandonDates = (): void => {
+    setFirst(startDate);
+    setLast(endDate);
+  };
+
+  const saveDates =
+    datesChanged || pending ? (
+      <>
+        {warning === null ? null : (
+          <p className="mb-3 rounded-card border-l-2 border-terracotta bg-terracotta-wash px-3 py-2 text-body text-ink">
+            {warning}
+          </p>
+        )}
+        <button
+          type="submit"
+          disabled={pending}
+          className="w-full rounded-card bg-terracotta px-5 py-3 text-body font-semibold text-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+        >
+          {pending ? "Saving" : "Save dates"}
+        </button>
+      </>
+    ) : null;
 
   return (
-    <form action={submit}>
+    <form action={submit} ref={form}>
       <input type="hidden" name="slug" value={slug} />
 
       <label className="sr-only" htmlFor={`${fieldId}-title`}>
@@ -111,6 +150,16 @@ export function TripSettings({
         onChange={(event) => {
           setName(event.target.value);
         }}
+        onBlur={commitName}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            // The browser would submit anyway, but only sometimes: implicit
+            // submission depends on the form having a submit button, and this
+            // one only has one while a calendar is open.
+            event.preventDefault();
+            commitName();
+          }
+        }}
         className={NAME_FIELD}
       />
 
@@ -122,6 +171,8 @@ export function TripSettings({
           value={first}
           max={last}
           onChange={setFirst}
+          footer={saveDates}
+          onClose={abandonDates}
         />
         <DateField
           id={`${fieldId}-last`}
@@ -130,6 +181,8 @@ export function TripSettings({
           value={last}
           min={first}
           onChange={setLast}
+          footer={saveDates}
+          onClose={abandonDates}
         />
       </div>
 
@@ -137,13 +190,8 @@ export function TripSettings({
         {span === null
           ? "The last day is before the first day."
           : counted(span, "day", "days")}
+        {state.saved && !pending && !changed ? " \u00b7 Saved." : ""}
       </p>
-
-      {warning === null ? null : (
-        <p className="mt-4 rounded-card border-l-2 border-terracotta bg-terracotta-wash px-3 py-2 text-body text-ink">
-          {warning}
-        </p>
-      )}
 
       {state.error === null ? null : (
         <p
@@ -153,18 +201,6 @@ export function TripSettings({
           {state.error}
         </p>
       )}
-
-      {changed || pending ? (
-        <p className="mt-4">
-          <button
-            type="submit"
-            disabled={pending}
-            className="rounded-card bg-terracotta px-5 py-3 text-body font-semibold text-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
-          >
-            {pending ? "Saving" : "Save trip details"}
-          </button>
-        </p>
-      ) : null}
     </form>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import type { IsoDate } from "@/core/model/day";
 import { addDays, parseIsoDate, weekdayOf } from "@/core/time/zoned";
@@ -91,6 +92,13 @@ interface DateFieldProps {
   /** Latest day that may be chosen, on the same terms. */
   readonly max?: string;
   readonly onChange: (value: IsoDate) => void;
+  /** Sits under the grid, inside the panel. Where the save button lives. */
+  readonly footer?: ReactNode;
+  /**
+   * Called whenever the panel closes. Choosing a day does not commit anything,
+   * so this is the caller's chance to put back what was there.
+   */
+  readonly onClose?: () => void;
 }
 
 const TRIGGER =
@@ -109,7 +117,17 @@ const MONTH_STEP =
  * The month is stepped by two buttons that say which month they go to, because
  * a bare arrow is an icon without a text label.
  */
-export function DateField({ id, name, label, value, min, max, onChange }: DateFieldProps) {
+export function DateField({
+  id,
+  name,
+  label,
+  value,
+  min,
+  max,
+  onChange,
+  footer,
+  onClose,
+}: DateFieldProps) {
   const [open, setOpen] = useState(false);
   const [focused, setFocused] = useState<IsoDate>(value);
   /** The field on the right of a row would open off the side of the window. */
@@ -117,6 +135,11 @@ export function DateField({ id, name, label, value, min, max, onChange }: DateFi
   const container = useRef<HTMLDivElement | null>(null);
   const trigger = useRef<HTMLButtonElement | null>(null);
   const grid = useRef<HTMLDivElement | null>(null);
+  /** Read by the dismiss listener, which outlives the render that set it up. */
+  const closing = useRef(onClose);
+  useEffect(() => {
+    closing.current = onClose;
+  });
 
   // The roving focus follows the arrow keys, so the focused cell has to be the
   // one the browser is actually on.
@@ -137,6 +160,7 @@ export function DateField({ id, name, label, value, min, max, onChange }: DateFi
         target instanceof Node && container.current !== null && container.current.contains(target);
       if (!inside) {
         setOpen(false);
+        closing.current?.();
       }
     };
     document.addEventListener("mousedown", dismiss);
@@ -152,12 +176,16 @@ export function DateField({ id, name, label, value, min, max, onChange }: DateFi
 
   const close = (): void => {
     setOpen(false);
-    container.current?.querySelector<HTMLButtonElement>(`#${CSS.escape(id)}`)?.focus();
+    onClose?.();
+    trigger.current?.focus();
   };
 
+  /**
+   * Choosing a day does not close the panel. The save button sits under the
+   * grid, and it cannot be under something that has just disappeared.
+   */
   const choose = (date: IsoDate): void => {
     onChange(date);
-    close();
   };
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>): void => {
@@ -203,12 +231,16 @@ export function DateField({ id, name, label, value, min, max, onChange }: DateFi
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => {
+          if (open) {
+            close();
+            return;
+          }
           const box = trigger.current?.getBoundingClientRect();
           if (box !== undefined) {
             setAlignEnd(box.left + CALENDAR_WIDTH > window.innerWidth - EDGE_GAP);
           }
           setFocused(value);
-          setOpen(!open);
+          setOpen(true);
         }}
         className={TRIGGER}
       >
@@ -322,6 +354,10 @@ export function DateField({ id, name, label, value, min, max, onChange }: DateFi
               </div>
             ))}
           </div>
+
+          {footer === undefined || footer === null ? null : (
+            <div className="mt-3 border-t border-rule pt-3">{footer}</div>
+          )}
         </div>
       ) : null}
     </div>
