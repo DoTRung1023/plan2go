@@ -40,7 +40,7 @@ export function DayTabs({ days, selectedIndex, onSelect }: DayTabsProps) {
     <div
       role="tablist"
       aria-label="Days of this trip"
-      className="flex gap-1 border-b border-rule-strong bg-paper-sunken px-1 pt-1"
+      className="flex gap-1 overflow-x-auto border-b border-rule-strong bg-paper-sunken px-1 pt-1"
     >
       {days.map((day, index) => {
         const selected = index === selectedIndex;
@@ -62,7 +62,7 @@ export function DayTabs({ days, selectedIndex, onSelect }: DayTabsProps) {
             onKeyDown={(event) => {
               move(event, index);
             }}
-            className={`-mb-px rounded-t-card border-b-2 px-3 pt-2 pb-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
+            className={`-mb-px shrink-0 rounded-t-card border-b-2 px-3 pt-2 pb-2 text-left whitespace-nowrap focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${
               selected
                 ? "border-terracotta bg-paper-raised"
                 : "border-transparent bg-transparent"
