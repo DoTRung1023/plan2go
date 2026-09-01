@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { Trip } from "@/core/model/trip";
-import type { CreatedTrip, StopAdded, TripRepository } from "../repositories/trip-repository";
+import type {
+  CreatedTrip,
+  SettingsUpdated,
+  StopAdded,
+  TripRepository,
+} from "../repositories/trip-repository";
 import { checkEditAccess } from "./edit-access";
 import { createEditToken, hashEditToken } from "./edit-token";
 
@@ -12,7 +17,9 @@ function stubRepository(overrides: Partial<TripRepository>): TripRepository {
   return {
     findBySlug: () => Promise.resolve<Trip | null>(null),
     findEditTokenHash: () => Promise.resolve<string | null>(null),
+    findSlugByEditTokenHash: () => Promise.resolve<string | null>(null),
     create: () => Promise.reject<CreatedTrip>(new Error(NOT_STUBBED)),
+    updateSettings: () => Promise.reject<SettingsUpdated>(new Error(NOT_STUBBED)),
     findPlaceByProviderId: () => Promise.resolve(null),
     addStop: () => Promise.reject<StopAdded>(new Error(NOT_STUBBED)),
     ...overrides,

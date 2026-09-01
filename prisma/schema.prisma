@@ -1,7 +1,6 @@
 // plan2go schema.
 //
-// There is no DATABASE_URL yet and no migration has been run. The provider is
-// postgresql and stays that way, including in development.
+// The provider is postgresql and stays that way, including in development.
 
 generator client {
   provider = "prisma-client-js"
@@ -41,6 +40,9 @@ model Trip {
   places Place[]
 
   @@index([userId])
+  /// A browser presents a token and nothing else, so this is the lookup that
+  /// gets it back to its own trip.
+  @@index([editTokenHash])
 }
 
 model Place {

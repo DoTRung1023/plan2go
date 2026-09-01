@@ -1,25 +1,28 @@
 import { z } from "zod";
 import { addDays } from "@/core/time/zoned";
+import { isSupportedTimeZone } from "./time-zones";
 
 /** Long enough for a real holiday, short enough that nobody scripts it. */
 export const MAX_TRIP_DAYS = 30;
 
-const supportedTimeZones = new Set(Intl.supportedValuesOf("timeZone"));
-
 /**
- * What a person may send when they open a trip. Messages say what happened and
- * then what to do, because they are read by someone who has just been stopped.
+ * The four things a traveller may change about a trip once it is open. A trip
+ * is not one city, so the name is whatever they call the whole thing rather
+ * than a place, and the zone is the one they are travelling to.
+ *
+ * Messages say what happened and then what to do, because they are read by
+ * someone who has just been stopped.
  */
-export const newTripInputSchema = z.object({
+export const tripSettingsSchema = z.object({
   title: z
     .string()
     .trim()
-    .min(1, "The city is missing. Enter where you are going.")
-    .max(80, "That city name is too long. Use 80 characters or fewer."),
+    .min(1, "The trip has no name. Enter what you want to call it.")
+    .max(80, "That name is too long. Use 80 characters or fewer."),
   timeZone: z
     .string()
     .refine(
-      (value) => supportedTimeZones.has(value),
+      isSupportedTimeZone,
       "That is not a time zone we know. Choose one from the list.",
     ),
   startDate: z
@@ -33,4 +36,4 @@ export const newTripInputSchema = z.object({
     .max(MAX_TRIP_DAYS, `A trip runs to ${String(MAX_TRIP_DAYS)} days at most.`),
 });
 
-export type NewTripInput = z.infer<typeof newTripInputSchema>;
+export type TripSettings = z.infer<typeof tripSettingsSchema>;

@@ -8,14 +8,15 @@ export default function TripNotFound() {
       </h1>
       <p className="mt-3 text-body text-ink-muted">
         The link may have a character wrong, or the trip may have been removed. Check the
-        link you were sent, or start a new trip.
+        link you were sent, or open your own planner.
       </p>
       <p className="mt-6">
         <Link
           href="/"
+          prefetch={false}
           className="text-body font-semibold text-terracotta focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
         >
-          Start a new trip
+          Start planning
         </Link>
       </p>
     </main>

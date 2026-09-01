@@ -1,13 +1,10 @@
 import type { IsoDate } from "@/core/model/day";
-import { clockToMinutes } from "@/core/time/minutes";
 import { createEditToken, hashEditToken } from "../ownership/edit-token";
 import type { TripRepository } from "../repositories/trip-repository";
-
-/** A new day begins at 9:00 am until the traveller says otherwise. */
-const DEFAULT_START_AT_MINUTES = clockToMinutes(9, 0);
+import { DEFAULT_START_AT_MINUTES } from "./day-start";
 
 export interface NewTripRequest {
-  /** The city, as the traveller wrote it. */
+  /** What the traveller calls the trip. A trip is not one city. */
   readonly title: string;
   readonly timeZone: string;
   readonly startDate: IsoDate;

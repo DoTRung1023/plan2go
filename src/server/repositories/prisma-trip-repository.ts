@@ -19,8 +19,10 @@ import type {
   CreatedTrip,
   NewStop,
   NewTrip,
+  SettingsUpdated,
   StopAdded,
   TripRepository,
+  TripSettingsUpdate,
 } from "./trip-repository";
 
 /** Two slugs colliding is a lottery win, so a handful of attempts is plenty. */
@@ -155,6 +157,11 @@ export const prismaTripRepository: TripRepository = {
     return row === null ? null : row.editTokenHash;
   },
 
+  async findSlugByEditTokenHash(editTokenHash: string): Promise<string | null> {
+    const row = await db.trip.findFirst({ where: { editTokenHash }, select: { slug: true } });
+    return row === null ? null : row.slug;
+  },
+
   async findPlaceByProviderId(slug: string, providerPlaceId: string): Promise<Place | null> {
     const row = await db.place.findFirst({
       where: { providerPlaceId, trip: { slug } },
@@ -206,6 +213,54 @@ export const prismaTripRepository: TripRepository = {
       },
     });
     return { status: "added" };
+  },
+
+  async updateSettings(update: TripSettingsUpdate): Promise<SettingsUpdated> {
+    const trip = await db.trip.findUnique({
+      where: { slug: update.slug },
+      select: {
+        id: true,
+        days: { orderBy: { position: "asc" }, select: { id: true, position: true } },
+      },
+    });
+    if (trip === null) {
+      return { status: "no-such-trip" };
+    }
+
+    const kept = trip.days.filter((day) => day.position < update.dayCount);
+    const dropped = trip.days.filter((day) => day.position >= update.dayCount);
+    const added = Array.from(
+      { length: Math.max(0, update.dayCount - trip.days.length) },
+      (_unused, index) => {
+        const position = trip.days.length + index;
+        return {
+          tripId: trip.id,
+          date: addDays(update.startDate, position),
+          position,
+          startAtMinutes: update.startAtMinutes,
+        };
+      },
+    );
+
+    // One transaction, because a trip whose days half moved is not a trip.
+    await db.$transaction([
+      db.trip.update({
+        where: { id: trip.id },
+        data: { title: update.title, timeZone: update.timeZone },
+      }),
+      ...kept.map((day) =>
+        db.day.update({
+          where: { id: day.id },
+          data: { date: addDays(update.startDate, day.position) },
+        }),
+      ),
+      ...(dropped.length === 0
+        ? []
+        : [db.day.deleteMany({ where: { id: { in: dropped.map((day) => day.id) } } })]),
+      ...(added.length === 0 ? [] : [db.day.createMany({ data: added })]),
+    ]);
+
+    return { status: "updated" };
   },
 
   async create(trip: NewTrip): Promise<CreatedTrip> {

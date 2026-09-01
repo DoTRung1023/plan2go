@@ -5,7 +5,7 @@ import type { Trip } from "@/core/model/trip";
 
 /** Everything storage needs to open a new trip. The raw token never comes here. */
 export interface NewTrip {
-  /** The city, as the traveller wrote it. */
+  /** What the traveller calls the trip. A trip is not one city. */
   readonly title: string;
   readonly timeZone: string;
   readonly startDate: IsoDate;
@@ -28,6 +28,22 @@ export interface NewStop {
   readonly travelMode: TravelMode;
 }
 
+/** Everything storage needs to change a trip's settings. */
+export interface TripSettingsUpdate {
+  readonly slug: string;
+  readonly title: string;
+  readonly timeZone: string;
+  /** The date of the first day. Later days follow it in order. */
+  readonly startDate: IsoDate;
+  readonly dayCount: number;
+  /** Minutes from local midnight that a day added by this change begins at. */
+  readonly startAtMinutes: number;
+}
+
+export type SettingsUpdated =
+  | { readonly status: "updated" }
+  | { readonly status: "no-such-trip" };
+
 export type StopAdded =
   | { readonly status: "added" }
   | { readonly status: "no-such-day" };
@@ -46,8 +62,20 @@ export interface TripRepository {
    */
   findEditTokenHash(slug: string): Promise<string | null>;
 
+  /**
+   * The trip a stored token hash belongs to, or null. This is how a browser
+   * holding a token finds its way back to its own trip without the slug.
+   */
+  findSlugByEditTokenHash(editTokenHash: string): Promise<string | null>;
+
   /** Allocates the slug, because only storage can see a collision. */
   create(trip: NewTrip): Promise<CreatedTrip>;
+
+  /**
+   * Renames a trip, moves its dates, and adds or removes days from the end.
+   * Removing a day removes the stops on it.
+   */
+  updateSettings(update: TripSettingsUpdate): Promise<SettingsUpdated>;
 
   /**
    * A place this trip has already stored, or null. Checked before any paid

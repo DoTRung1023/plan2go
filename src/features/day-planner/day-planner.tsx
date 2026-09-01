@@ -14,6 +14,8 @@ interface DayPlannerProps {
   readonly onSelect: (index: number) => void;
   /** Passed in by the route, because features do not reach into each other. */
   readonly search: ReactNode;
+  /** The trip's name and dates, edited under the heading that shows them. */
+  readonly settings: ReactNode;
 }
 
 function dateRange(days: readonly PlannedDay[]): string | null {
@@ -28,7 +30,14 @@ function dateRange(days: readonly PlannedDay[]): string | null {
   return `${formatDayDate(first.plan.date)} to ${formatDayDate(last.plan.date)}`;
 }
 
-export function DayPlanner({ title, days, selectedIndex, onSelect, search }: DayPlannerProps) {
+export function DayPlanner({
+  title,
+  days,
+  selectedIndex,
+  onSelect,
+  search,
+  settings,
+}: DayPlannerProps) {
   const selected = days[selectedIndex] ?? days[0];
   const range = dateRange(days);
 
@@ -37,6 +46,7 @@ export function DayPlanner({ title, days, selectedIndex, onSelect, search }: Day
       <header className="px-5 pt-8 pb-6">
         <h1 className="font-display text-time-lead font-semibold text-ink">{title}</h1>
         {range === null ? null : <p className="mt-1 text-meta text-ink-muted">{range}</p>}
+        {settings}
       </header>
 
       {/* 140px is the height of the map strip on a phone, from DESIGN.md. */}
