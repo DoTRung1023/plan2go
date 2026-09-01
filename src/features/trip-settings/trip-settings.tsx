@@ -2,6 +2,7 @@
 
 import { useActionState, useId, useState } from "react";
 import { addDays, daysBetween } from "@/core/time/zoned";
+import { DateField } from "./date-field";
 
 export interface TripSettingsOutcome {
   readonly saved: boolean;
@@ -11,11 +12,6 @@ export interface TripSettingsOutcome {
 const UNSAVED: TripSettingsOutcome = { saved: false, error: null };
 
 const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/;
-
-const FIELD =
-  "mt-1 w-full rounded-card border border-rule bg-paper-raised px-3 py-2 text-body text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
-
-const LABEL = "text-label font-semibold tracking-[0.08em] text-ink-faint uppercase";
 
 /** The name is the heading, so it is set in the heading's own type. */
 const NAME_FIELD =
@@ -124,40 +120,22 @@ export function TripSettings({
       />
 
       <div className="mt-4 grid grid-cols-2 gap-3">
-        <p>
-          <label className={LABEL} htmlFor={`${fieldId}-first`}>
-            First day
-          </label>
-          <input
-            id={`${fieldId}-first`}
-            name="startDate"
-            type="date"
-            required
-            value={first}
-            onChange={(event) => {
-              setFirst(event.target.value);
-            }}
-            className={FIELD}
-          />
-        </p>
-        <p>
-          <label className={LABEL} htmlFor={`${fieldId}-last`}>
-            Last day
-          </label>
-          <input
-            id={`${fieldId}-last`}
-            name="endDate"
-            type="date"
-            required
-            min={CALENDAR_DATE.test(first) ? first : undefined}
-            max={latest}
-            value={last}
-            onChange={(event) => {
-              setLast(event.target.value);
-            }}
-            className={FIELD}
-          />
-        </p>
+        <DateField
+          id={`${fieldId}-first`}
+          name="startDate"
+          label="First day"
+          value={first}
+          onChange={setFirst}
+        />
+        <DateField
+          id={`${fieldId}-last`}
+          name="endDate"
+          label="Last day"
+          value={last}
+          min={first}
+          max={latest}
+          onChange={setLast}
+        />
       </div>
 
       <p className="mt-2 text-meta text-ink-muted">
