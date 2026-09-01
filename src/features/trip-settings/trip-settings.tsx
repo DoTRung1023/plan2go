@@ -120,6 +120,7 @@ export function TripSettings({
           name="startDate"
           label="First day"
           value={first}
+          max={last}
           onChange={setFirst}
         />
         <DateField
