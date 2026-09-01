@@ -189,10 +189,7 @@ export function TripMap({ start, end, stops }: TripMapProps) {
 
       {BROWSER_KEY === null ? (
         <div className="absolute inset-0">
-          <Notice>
-            The map is not switched on for this server. The stops for this day are listed
-            beside it, in the order you visit them.
-          </Notice>
+          <Notice>The map is not switched on for this server.</Notice>
         </div>
       ) : null}
 
