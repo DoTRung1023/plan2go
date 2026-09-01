@@ -31,9 +31,6 @@ const TripMap = dynamic(
 interface TripEditorProps {
   readonly title: string;
   readonly slug: string;
-  readonly timeZone: string;
-  /** Every zone the server knows, for the list in the trip details. */
-  readonly timeZones: readonly string[];
   readonly maxDays: number;
   readonly days: readonly PlannedDay[];
   /** Whether this browser holds the edit token for the trip. */
@@ -51,8 +48,6 @@ interface TripEditorProps {
 export function TripEditor({
   title,
   slug,
-  timeZone,
-  timeZones,
   maxDays,
   days,
   canEdit,
@@ -120,8 +115,6 @@ export function TripEditor({
               <TripSettings
                 slug={slug}
                 title={title}
-                timeZone={timeZone}
-                timeZones={timeZones}
                 startDate={first.plan.date}
                 endDate={last.plan.date}
                 stopsPerDay={days.map((day) => day.plan.stops.length)}

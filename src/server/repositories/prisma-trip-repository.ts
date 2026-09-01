@@ -246,7 +246,7 @@ export const prismaTripRepository: TripRepository = {
     await db.$transaction([
       db.trip.update({
         where: { id: trip.id },
-        data: { title: update.title, timeZone: update.timeZone },
+        data: { title: update.title },
       }),
       ...kept.map((day) =>
         db.day.update({

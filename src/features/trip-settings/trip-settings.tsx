@@ -24,9 +24,6 @@ const NAME_FIELD =
 interface TripSettingsProps {
   readonly slug: string;
   readonly title: string;
-  readonly timeZone: string;
-  /** Every zone the server knows, rendered as options. */
-  readonly timeZones: readonly string[];
   readonly startDate: string;
   readonly endDate: string;
   /** How many stops sit on each day, in order. Its length is the day count. */
@@ -87,8 +84,6 @@ function removalWarning(
 export function TripSettings({
   slug,
   title,
-  timeZone,
-  timeZones,
   startDate,
   endDate,
   stopsPerDay,
@@ -99,13 +94,11 @@ export function TripSettings({
   const [name, setName] = useState(title);
   const [first, setFirst] = useState(startDate);
   const [last, setLast] = useState(endDate);
-  const [zone, setZone] = useState(timeZone);
   const fieldId = useId();
 
   const span = spanOf(first, last);
   const warning = span === null ? null : removalWarning(stopsPerDay, span);
-  const changed =
-    name !== title || first !== startDate || last !== endDate || zone !== timeZone;
+  const changed = name !== title || first !== startDate || last !== endDate;
 
   // The last day a trip of the longest allowed length could reach from here.
   const latest = CALENDAR_DATE.test(first) ? addDays(first, maxDays - 1) : undefined;
@@ -171,28 +164,6 @@ export function TripSettings({
         {span === null
           ? "The last day is before the first day."
           : counted(span, "day", "days")}
-      </p>
-
-      <p className="mt-4">
-        <label className={LABEL} htmlFor={`${fieldId}-zone`}>
-          Time zone where you are going
-        </label>
-        <select
-          id={`${fieldId}-zone`}
-          name="timeZone"
-          required
-          value={zone}
-          onChange={(event) => {
-            setZone(event.target.value);
-          }}
-          className={FIELD}
-        >
-          {timeZones.map((available) => (
-            <option key={available} value={available}>
-              {available.replace(/_/g, " ")}
-            </option>
-          ))}
-        </select>
       </p>
 
       {warning === null ? null : (

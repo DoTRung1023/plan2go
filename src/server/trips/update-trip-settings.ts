@@ -21,7 +21,6 @@ export function updateTripSettings(
   return repository.updateSettings({
     slug: change.slug,
     title: change.title,
-    timeZone: change.timeZone,
     startDate: change.startDate,
     dayCount: daysBetween(change.startDate, change.endDate) + 1,
     startAtMinutes: DEFAULT_START_AT_MINUTES,

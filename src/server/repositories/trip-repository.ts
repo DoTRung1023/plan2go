@@ -32,7 +32,6 @@ export interface NewStop {
 export interface TripSettingsUpdate {
   readonly slug: string;
   readonly title: string;
-  readonly timeZone: string;
   /** The date of the first day. Later days follow it in order. */
   readonly startDate: IsoDate;
   readonly dayCount: number;

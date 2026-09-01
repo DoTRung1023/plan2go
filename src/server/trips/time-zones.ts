@@ -13,11 +13,6 @@ export function isSupportedTimeZone(value: string): boolean {
   return supported.has(value);
 }
 
-/** Every zone this machine knows, for the list in the trip details. */
-export function supportedTimeZones(): readonly string[] {
-  return [...supported];
-}
-
 /**
  * The zone a trip opens in. A traveller planning a holiday is usually not in
  * the place they are planning, so this is only an opening guess and the trip

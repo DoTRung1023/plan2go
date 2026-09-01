@@ -24,7 +24,6 @@ export async function updateTripAction(
   const parsed = tripSettingsSchema.safeParse({
     slug: formData.get("slug"),
     title: formData.get("title"),
-    timeZone: formData.get("timeZone"),
     startDate: formData.get("startDate"),
     endDate: formData.get("endDate"),
   });
