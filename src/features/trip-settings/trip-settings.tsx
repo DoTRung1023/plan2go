@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useId, useState } from "react";
+import { addDays, daysBetween } from "@/core/time/zoned";
 
 export interface TripSettingsOutcome {
   readonly saved: boolean;
@@ -9,10 +10,16 @@ export interface TripSettingsOutcome {
 
 const UNSAVED: TripSettingsOutcome = { saved: false, error: null };
 
+const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
 const FIELD =
   "mt-1 w-full rounded-card border border-rule bg-paper-raised px-3 py-2 text-body text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 const LABEL = "text-label font-semibold tracking-[0.08em] text-ink-faint uppercase";
+
+/** The name is the heading, so it is set in the heading's own type. */
+const NAME_FIELD =
+  "w-full rounded-card border border-rule bg-paper-raised px-3 py-2 font-display text-time-lead font-semibold text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 interface TripSettingsProps {
   readonly slug: string;
@@ -21,6 +28,7 @@ interface TripSettingsProps {
   /** Every zone the server knows, rendered as options. */
   readonly timeZones: readonly string[];
   readonly startDate: string;
+  readonly endDate: string;
   /** How many stops sit on each day, in order. Its length is the day count. */
   readonly stopsPerDay: readonly number[];
   readonly maxDays: number;
@@ -39,19 +47,27 @@ function counted(value: number, singular: string, plural: string): string {
   return `${String(value)} ${value === 1 ? singular : plural}`;
 }
 
+/** Whole days from one end of the trip to the other, or null while it is unreadable. */
+function spanOf(first: string, last: string): number | null {
+  if (!CALENDAR_DATE.test(first) || !CALENDAR_DATE.test(last)) {
+    return null;
+  }
+  const days = daysBetween(first, last) + 1;
+  return days < 1 ? null : days;
+}
+
 /**
- * What shortening the trip would take with it, as a sentence with the real
- * numbers in it, shown before the form is sent rather than after.
+ * What pulling the last day earlier would take with it, as a sentence with the
+ * real numbers in it, shown before the form is sent rather than after.
  */
 function removalWarning(
   stopsPerDay: readonly number[],
-  requestedDays: string,
+  requestedDays: number,
 ): string | null {
-  const requested = Number(requestedDays);
-  if (!Number.isInteger(requested) || requested < 1 || requested >= stopsPerDay.length) {
+  if (requestedDays >= stopsPerDay.length) {
     return null;
   }
-  const dropped = stopsPerDay.slice(requested);
+  const dropped = stopsPerDay.slice(requestedDays);
   const stops = dropped.reduce((total, count) => total + count, 0);
   if (stops === 0) {
     return `Saving this removes ${counted(dropped.length, "empty day", "empty days")} from the end of the trip.`;
@@ -60,10 +76,13 @@ function removalWarning(
 }
 
 /**
- * The trip's name, its dates and the zone it is planned in, edited where they
- * are read. There is no page in front of the planner asking for them, so this
- * is the only place they are set, and a trip that runs through more than one
- * city is named for the trip rather than for a place in it.
+ * The trip's name and the two ends of it, edited where they are read. There is
+ * no page in front of the planner asking for them, so this is the only place
+ * they are set, and a trip that runs through more than one city is named for
+ * the trip rather than for a place in it.
+ *
+ * The save button appears only once something has changed, so a panel nobody is
+ * editing stays quiet above the day it is describing.
  */
 export function TripSettings({
   slug,
@@ -71,108 +90,128 @@ export function TripSettings({
   timeZone,
   timeZones,
   startDate,
+  endDate,
   stopsPerDay,
   maxDays,
   onSave,
 }: TripSettingsProps) {
   const [state, submit, pending] = useActionState(onSave, UNSAVED);
-  const [days, setDays] = useState(String(stopsPerDay.length));
+  const [name, setName] = useState(title);
+  const [first, setFirst] = useState(startDate);
+  const [last, setLast] = useState(endDate);
+  const [zone, setZone] = useState(timeZone);
   const fieldId = useId();
 
-  const warning = removalWarning(stopsPerDay, days);
+  const span = spanOf(first, last);
+  const warning = span === null ? null : removalWarning(stopsPerDay, span);
+  const changed =
+    name !== title || first !== startDate || last !== endDate || zone !== timeZone;
+
+  // The last day a trip of the longest allowed length could reach from here.
+  const latest = CALENDAR_DATE.test(first) ? addDays(first, maxDays - 1) : undefined;
 
   return (
-    <details className="mt-4 border-t border-rule pt-3">
-      <summary className="cursor-pointer text-meta text-terracotta focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta">
-        Trip details
-      </summary>
+    <form action={submit}>
+      <input type="hidden" name="slug" value={slug} />
 
-      <form action={submit} className="mt-4 grid gap-4 sm:grid-cols-2">
-        <input type="hidden" name="slug" value={slug} />
+      <label className="sr-only" htmlFor={`${fieldId}-title`}>
+        Trip name
+      </label>
+      <input
+        id={`${fieldId}-title`}
+        name="title"
+        type="text"
+        required
+        maxLength={80}
+        value={name}
+        onChange={(event) => {
+          setName(event.target.value);
+        }}
+        className={NAME_FIELD}
+      />
 
-        <p className="sm:col-span-2">
-          <label className={LABEL} htmlFor={`${fieldId}-title`}>
-            Trip name
-          </label>
-          <input
-            id={`${fieldId}-title`}
-            name="title"
-            type="text"
-            required
-            maxLength={80}
-            defaultValue={title}
-            className={FIELD}
-          />
-        </p>
-
-        <p className="sm:col-span-2">
-          <label className={LABEL} htmlFor={`${fieldId}-zone`}>
-            Time zone where you are going
-          </label>
-          <select
-            id={`${fieldId}-zone`}
-            name="timeZone"
-            required
-            defaultValue={timeZone}
-            className={FIELD}
-          >
-            {timeZones.map((zone) => (
-              <option key={zone} value={zone}>
-                {zone.replace(/_/g, " ")}
-              </option>
-            ))}
-          </select>
-        </p>
-
+      <div className="mt-4 grid grid-cols-2 gap-3">
         <p>
-          <label className={LABEL} htmlFor={`${fieldId}-start`}>
+          <label className={LABEL} htmlFor={`${fieldId}-first`}>
             First day
           </label>
           <input
-            id={`${fieldId}-start`}
+            id={`${fieldId}-first`}
             name="startDate"
             type="date"
             required
-            defaultValue={startDate}
-            className={FIELD}
-          />
-        </p>
-
-        <p>
-          <label className={LABEL} htmlFor={`${fieldId}-days`}>
-            How many days
-          </label>
-          <input
-            id={`${fieldId}-days`}
-            name="dayCount"
-            type="number"
-            required
-            min={1}
-            max={maxDays}
-            value={days}
+            value={first}
             onChange={(event) => {
-              setDays(event.target.value);
+              setFirst(event.target.value);
             }}
             className={FIELD}
           />
         </p>
+        <p>
+          <label className={LABEL} htmlFor={`${fieldId}-last`}>
+            Last day
+          </label>
+          <input
+            id={`${fieldId}-last`}
+            name="endDate"
+            type="date"
+            required
+            min={CALENDAR_DATE.test(first) ? first : undefined}
+            max={latest}
+            value={last}
+            onChange={(event) => {
+              setLast(event.target.value);
+            }}
+            className={FIELD}
+          />
+        </p>
+      </div>
 
-        {warning === null ? null : (
-          <p className="rounded-card border-l-2 border-terracotta bg-terracotta-wash px-3 py-2 text-body text-ink sm:col-span-2">
-            {warning}
-          </p>
-        )}
+      <p className="mt-2 text-meta text-ink-muted">
+        {span === null
+          ? "The last day is before the first day."
+          : counted(span, "day", "days")}
+      </p>
 
-        {state.error === null ? null : (
-          <p
-            role="alert"
-            className="rounded-card border-l-2 border-terracotta bg-terracotta-wash px-3 py-2 text-body text-ink sm:col-span-2"
-          >
-            {state.error}
-          </p>
-        )}
+      <p className="mt-4">
+        <label className={LABEL} htmlFor={`${fieldId}-zone`}>
+          Time zone where you are going
+        </label>
+        <select
+          id={`${fieldId}-zone`}
+          name="timeZone"
+          required
+          value={zone}
+          onChange={(event) => {
+            setZone(event.target.value);
+          }}
+          className={FIELD}
+        >
+          {timeZones.map((available) => (
+            <option key={available} value={available}>
+              {available.replace(/_/g, " ")}
+            </option>
+          ))}
+        </select>
+      </p>
 
-        <p className="flex items-center gap-3 sm:col-span-2">
+      {warning === null ? null : (
+        <p className="mt-4 rounded-card border-l-2 border-terracotta bg-terracotta-wash px-3 py-2 text-body text-ink">
+          {warning}
+        </p>
+      )}
+
+      {state.error === null ? null : (
+        <p
+          role="alert"
+          className="mt-4 rounded-card border-l-2 border-terracotta bg-terracotta-wash px-3 py-2 text-body text-ink"
+        >
+          {state.error}
+        </p>
+      )}
+
+      {changed || pending ? (
+        <p className="mt-4">
           <button
             type="submit"
             disabled={pending}
@@ -180,11 +219,8 @@ export function TripSettings({
           >
             {pending ? "Saving" : "Save trip details"}
           </button>
-          {state.saved && !pending ? (
-            <span className="text-meta text-ink-muted">Saved.</span>
-          ) : null}
         </p>
-      </form>
-    </details>
+      ) : null}
+    </form>
   );
 }

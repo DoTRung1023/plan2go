@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
 import { checkEditAccess } from "@/server/ownership/edit-access";
 import { readEditToken } from "@/server/ownership/edit-token-cookie";
 import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
@@ -13,10 +12,6 @@ export interface TripSettingsState {
   readonly error: string | null;
 }
 
-const submissionSchema = tripSettingsSchema.extend({
-  slug: z.string().min(1).max(80),
-});
-
 /**
  * A mutation, so it verifies the edit token before it writes anything. Someone
  * reading a shared link is not offered this form at all, and is told the same
@@ -26,12 +21,12 @@ export async function updateTripAction(
   _previous: TripSettingsState,
   formData: FormData,
 ): Promise<TripSettingsState> {
-  const parsed = submissionSchema.safeParse({
+  const parsed = tripSettingsSchema.safeParse({
     slug: formData.get("slug"),
     title: formData.get("title"),
     timeZone: formData.get("timeZone"),
     startDate: formData.get("startDate"),
-    dayCount: formData.get("dayCount"),
+    endDate: formData.get("endDate"),
   });
 
   if (!parsed.success) {

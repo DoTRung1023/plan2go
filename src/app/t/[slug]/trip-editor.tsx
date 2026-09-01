@@ -61,6 +61,7 @@ export function TripEditor({
   const [expanded, setExpanded] = useState(false);
   const selected = days[selectedIndex] ?? days[0];
   const first = days[0];
+  const last = days[days.length - 1];
 
   return (
     <main className="lg:grid lg:h-dvh lg:grid-cols-[minmax(420px,1fr)_minmax(400px,480px)]">
@@ -115,13 +116,14 @@ export function TripEditor({
             ) : null
           }
           settings={
-            canEdit && first !== undefined ? (
+            canEdit && first !== undefined && last !== undefined ? (
               <TripSettings
                 slug={slug}
                 title={title}
                 timeZone={timeZone}
                 timeZones={timeZones}
                 startDate={first.plan.date}
+                endDate={last.plan.date}
                 stopsPerDay={days.map((day) => day.plan.stops.length)}
                 maxDays={maxDays}
                 onSave={updateTripAction}

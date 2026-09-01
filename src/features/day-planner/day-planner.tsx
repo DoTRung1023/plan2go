@@ -14,7 +14,10 @@ interface DayPlannerProps {
   readonly onSelect: (index: number) => void;
   /** Passed in by the route, because features do not reach into each other. */
   readonly search: ReactNode;
-  /** The trip's name and dates, edited under the heading that shows them. */
+  /**
+   * The trip's name and the two ends of it, editable. Null for a reader who
+   * holds no edit token, who gets the heading and the range as plain text.
+   */
   readonly settings: ReactNode;
 }
 
@@ -44,9 +47,14 @@ export function DayPlanner({
   return (
     <div className="mx-auto w-full max-w-[520px]">
       <header className="px-5 pt-8 pb-6">
-        <h1 className="font-display text-time-lead font-semibold text-ink">{title}</h1>
-        {range === null ? null : <p className="mt-1 text-meta text-ink-muted">{range}</p>}
-        {settings}
+        {settings ?? (
+          <>
+            <h1 className="font-display text-time-lead font-semibold text-ink">{title}</h1>
+            {range === null ? null : (
+              <p className="mt-1 text-meta text-ink-muted">{range}</p>
+            )}
+          </>
+        )}
       </header>
 
       {/* 140px is the height of the map strip on a phone, from DESIGN.md. */}
