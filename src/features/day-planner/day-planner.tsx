@@ -12,8 +12,6 @@ interface DayPlannerProps {
   readonly days: readonly PlannedDay[];
   readonly selectedIndex: number;
   readonly onSelect: (index: number) => void;
-  /** Passed in by the route, because features do not reach into each other. */
-  readonly search: ReactNode;
   /**
    * The trip's name and the two ends of it, editable. Null for a reader who
    * holds no edit token, who gets the heading and the range as plain text.
@@ -38,7 +36,6 @@ export function DayPlanner({
   days,
   selectedIndex,
   onSelect,
-  search,
   settings,
 }: DayPlannerProps) {
   const selected = days[selectedIndex] ?? days[0];
@@ -74,7 +71,6 @@ export function DayPlanner({
           tabIndex={0}
           className="px-5 pt-6 pb-12 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
         >
-          {search}
           {selected.plan.stops.length === 0 ? (
             <EmptyDay />
           ) : (

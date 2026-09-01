@@ -7,9 +7,7 @@ import { useState } from "react";
 import lockup from "../../../../logo/logo-text.png";
 import type { PlannedDay } from "@/features/day-planner/compute-trip";
 import { DayPlanner } from "@/features/day-planner/day-planner";
-import { PlaceSearch } from "@/features/place-search/place-search";
 import { TripSettings } from "@/features/trip-settings/trip-settings";
-import { addStopAction } from "./add-stop-action";
 import { updateTripAction } from "./update-trip-action";
 
 /** Leaflet reads the document as it loads, so the map never renders on the server. */
@@ -105,11 +103,6 @@ export function TripEditor({
           days={days}
           selectedIndex={selectedIndex}
           onSelect={setSelectedIndex}
-          search={
-            canEdit && selected !== undefined ? (
-              <PlaceSearch slug={slug} dayId={selected.plan.id} onAdd={addStopAction} />
-            ) : null
-          }
           settings={
             canEdit && first !== undefined && last !== undefined ? (
               <TripSettings
