@@ -60,4 +60,18 @@
   ::selection {
     background-color: var(--color-terracotta-wash);
   }
+
+  /*
+   * Tailwind v4 leaves buttons on the arrow the rest of the page uses, so
+   * nothing in this product read as pressable under the pointer. A day that
+   * cannot be chosen says so here too, which is the one piece of feedback the
+   * calendar's quiet palette does not carry on its own.
+   */
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
 }
