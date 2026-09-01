@@ -1,9 +1,6 @@
 import { z } from "zod";
 import { addDays, daysBetween } from "@/core/time/zoned";
 
-/** Long enough for a real holiday, short enough that nobody scripts it. */
-export const MAX_TRIP_DAYS = 30;
-
 function calendarDate(missing: string): z.ZodType<string> {
   return z
     .string()
@@ -38,10 +35,6 @@ export const tripSettingsSchema = z
   })
   .refine((value) => daysBetween(value.startDate, value.endDate) >= 0, {
     message: "The last day is before the first day. Choose a later last day.",
-    path: ["endDate"],
-  })
-  .refine((value) => daysBetween(value.startDate, value.endDate) < MAX_TRIP_DAYS, {
-    message: `A trip runs to ${String(MAX_TRIP_DAYS)} days at most. Choose an earlier last day.`,
     path: ["endDate"],
   });
 

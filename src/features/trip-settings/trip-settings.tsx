@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useId, useState } from "react";
-import { addDays, daysBetween } from "@/core/time/zoned";
+import { daysBetween } from "@/core/time/zoned";
 import { DateField } from "./date-field";
 
 export interface TripSettingsOutcome {
@@ -24,7 +24,6 @@ interface TripSettingsProps {
   readonly endDate: string;
   /** How many stops sit on each day, in order. Its length is the day count. */
   readonly stopsPerDay: readonly number[];
-  readonly maxDays: number;
   /**
    * Passed in rather than imported, because a feature may not reach into the
    * route that owns the mutation.
@@ -83,7 +82,6 @@ export function TripSettings({
   startDate,
   endDate,
   stopsPerDay,
-  maxDays,
   onSave,
 }: TripSettingsProps) {
   const [state, submit, pending] = useActionState(onSave, UNSAVED);
@@ -95,9 +93,6 @@ export function TripSettings({
   const span = spanOf(first, last);
   const warning = span === null ? null : removalWarning(stopsPerDay, span);
   const changed = name !== title || first !== startDate || last !== endDate;
-
-  // The last day a trip of the longest allowed length could reach from here.
-  const latest = CALENDAR_DATE.test(first) ? addDays(first, maxDays - 1) : undefined;
 
   return (
     <form action={submit}>
@@ -133,7 +128,6 @@ export function TripSettings({
           label="Last day"
           value={last}
           min={first}
-          max={latest}
           onChange={setLast}
         />
       </div>

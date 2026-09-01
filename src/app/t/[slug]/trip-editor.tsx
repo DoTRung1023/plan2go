@@ -29,7 +29,6 @@ const TripMap = dynamic(
 interface TripEditorProps {
   readonly title: string;
   readonly slug: string;
-  readonly maxDays: number;
   readonly days: readonly PlannedDay[];
   /** Whether this browser holds the edit token for the trip. */
   readonly canEdit: boolean;
@@ -46,7 +45,6 @@ interface TripEditorProps {
 export function TripEditor({
   title,
   slug,
-  maxDays,
   days,
   canEdit,
 }: TripEditorProps) {
@@ -111,7 +109,6 @@ export function TripEditor({
                 startDate={first.plan.date}
                 endDate={last.plan.date}
                 stopsPerDay={days.map((day) => day.plan.stops.length)}
-                maxDays={maxDays}
                 onSave={updateTripAction}
               />
             ) : null

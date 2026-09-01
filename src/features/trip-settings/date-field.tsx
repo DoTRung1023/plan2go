@@ -72,8 +72,8 @@ function gridStart(first: IsoDate): IsoDate {
 }
 
 /** ISO dates sort chronologically as text, so a range test needs no parsing. */
-function outOfRange(date: IsoDate, min: string | undefined, max: string | undefined): boolean {
-  return (min !== undefined && date < min) || (max !== undefined && date > max);
+function beforeEarliest(date: IsoDate, min: string | undefined): boolean {
+  return min !== undefined && date < min;
 }
 
 interface DateFieldProps {
@@ -83,7 +83,6 @@ interface DateFieldProps {
   readonly label: string;
   readonly value: IsoDate;
   readonly min?: string;
-  readonly max?: string;
   readonly onChange: (value: IsoDate) => void;
 }
 
@@ -103,7 +102,7 @@ const MONTH_STEP =
  * The month is stepped by two buttons that say which month they go to, because
  * a bare arrow is an icon without a text label.
  */
-export function DateField({ id, name, label, value, min, max, onChange }: DateFieldProps) {
+export function DateField({ id, name, label, value, min, onChange }: DateFieldProps) {
   const [open, setOpen] = useState(false);
   const [focused, setFocused] = useState<IsoDate>(value);
   /** The field on the right of a row would open off the side of the window. */
@@ -270,7 +269,7 @@ export function DateField({ id, name, label, value, min, max, onChange }: DateFi
                 {cells
                   .slice(week * DAYS_IN_WEEK, week * DAYS_IN_WEEK + DAYS_IN_WEEK)
                   .map((date) => {
-                    const disabled = outOfRange(date, min, max);
+                    const disabled = beforeEarliest(date, min);
                     const selected = date === value;
                     const thisMonth = parseIsoDate(date).month === shownMonth;
 

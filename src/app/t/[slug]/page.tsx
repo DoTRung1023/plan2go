@@ -4,7 +4,6 @@ import { computeTrip } from "@/features/day-planner/compute-trip";
 import { checkEditAccess } from "@/server/ownership/edit-access";
 import { readEditToken } from "@/server/ownership/edit-token-cookie";
 import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
-import { MAX_TRIP_DAYS } from "@/server/trips/trip-settings-input";
 import { TripEditor } from "./trip-editor";
 
 /**
@@ -40,7 +39,6 @@ export default async function TripEditorPage({
     <TripEditor
       title={trip.title}
       slug={trip.slug}
-      maxDays={MAX_TRIP_DAYS}
       days={days}
       canEdit={access.status === "granted"}
     />
