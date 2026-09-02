@@ -22,11 +22,6 @@ interface DayPlannerProps {
    * tabs. Null for a reader who holds no edit token.
    */
   readonly search: ReactNode;
-  /**
-   * Clearing this trip and starting another, at the foot of the list. Null for
-   * a reader who holds no edit token, who has nothing here to do.
-   */
-  readonly actions: ReactNode;
 }
 
 function dateRange(days: readonly PlannedDay[]): string | null {
@@ -48,7 +43,6 @@ export function DayPlanner({
   onSelect,
   settings,
   search,
-  actions,
 }: DayPlannerProps) {
   const selected = days[selectedIndex] ?? days[0];
   const range = dateRange(days);
@@ -91,8 +85,6 @@ export function DayPlanner({
           )}
         </section>
       )}
-
-      {actions}
     </div>
   );
 }

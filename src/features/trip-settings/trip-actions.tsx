@@ -16,9 +16,7 @@ export interface NewTripOutcome {
 
 /** Neither of these is the primary action on the page, so neither is terracotta. */
 const BUTTON =
-  "w-full rounded-card border border-rule bg-paper-raised px-4 py-3 text-body font-semibold text-ink hover:border-rule-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta disabled:text-ink-faint";
-
-const NOTE = "mt-2 text-meta text-ink-muted";
+  "rounded-card border border-rule bg-paper-raised px-3 py-2 text-meta font-semibold text-ink hover:border-rule-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta disabled:text-ink-faint";
 
 interface TripActionsProps {
   readonly slug: string;
@@ -31,14 +29,15 @@ interface TripActionsProps {
 }
 
 /**
- * The two ways to begin again. They are not the same thing and are named apart,
- * because the difference between them is the link.
+ * The two ways to begin again, at the top of the page beside the logo. They are
+ * not the same thing and are named apart, because the difference between them
+ * is the link.
  *
  * Clearing keeps the slug, so anything already sent to the people travelling
  * still opens the planner they were given. Starting another opens a trip at a
  * new slug and takes this browser's one edit token with it, which leaves the
- * trip behind readable by its link and no longer editable here. Each button
- * says which of those it is under the button, rather than after the click.
+ * trip behind readable by its link and no longer editable here. The two names
+ * carry that difference on their own, so nothing is written under them.
  */
 export function TripActions({ slug, onClear, onStartAnother }: TripActionsProps) {
   const router = useRouter();
@@ -65,35 +64,20 @@ export function TripActions({ slug, onClear, onStartAnother }: TripActionsProps)
   };
 
   return (
-    <div className="border-t border-rule px-5 py-8">
-      <h2 className="text-label font-semibold tracking-[0.08em] text-ink-faint uppercase">
-        Start again
-      </h2>
-
-      <div className="mt-4">
+    <div>
+      <div className="flex flex-wrap items-center gap-2">
         <button type="button" onClick={clear} disabled={clearing} className={BUTTON}>
-          {clearing ? "Clearing this trip" : "Clear this trip"}
+          {clearing ? "Clearing" : "Clear this trip"}
         </button>
-        <p className={NOTE}>
-          Takes off every stop and starts the days again from today. The link stays the
-          same.
-        </p>
-      </div>
-
-      <div className="mt-6">
         <button type="button" onClick={another} disabled={starting} className={BUTTON}>
-          {starting ? "Starting another trip" : "Start another trip"}
+          {starting ? "Starting" : "Start another trip"}
         </button>
-        <p className={NOTE}>
-          Opens an empty trip at a new link. This one keeps its stops and stays where it
-          is, and this browser will no longer be able to change it.
-        </p>
       </div>
 
       {message === null ? null : (
         <p
           role="alert"
-          className="mt-4 rounded-card border-l-2 border-terracotta bg-terracotta-wash px-3 py-2 text-body text-ink"
+          className="mt-2 rounded-card border-l-2 border-terracotta bg-terracotta-wash px-3 py-2 text-body text-ink"
         >
           {message}
         </p>

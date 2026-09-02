@@ -95,7 +95,7 @@ export function TripEditor({
       </section>
 
       <section className="lg:h-dvh lg:overflow-y-auto">
-        <div className="mx-auto w-full max-w-[520px] px-5 pt-6">
+        <div className="mx-auto flex w-full max-w-[520px] flex-wrap items-center justify-between gap-3 px-5 pt-6">
           {/* Not prefetched: "/" opens a trip, and prefetching would open it
               for a reader who never clicked. */}
           <Link
@@ -105,6 +105,13 @@ export function TripEditor({
           >
             <Image src={lockup} alt="plan2go" width={150} height={55} priority />
           </Link>
+          {canEdit ? (
+            <TripActions
+              slug={slug}
+              onClear={clearTripAction}
+              onStartAnother={newTripAction}
+            />
+          ) : null}
         </div>
         <DayPlanner
           title={title}
@@ -133,15 +140,6 @@ export function TripEditor({
                   selectedIndex,
                 )}
                 onAdd={addStopAction}
-              />
-            ) : null
-          }
-          actions={
-            canEdit ? (
-              <TripActions
-                slug={slug}
-                onClear={clearTripAction}
-                onStartAnother={newTripAction}
               />
             ) : null
           }
