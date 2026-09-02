@@ -231,7 +231,10 @@ export const prismaTripRepository: TripRepository = {
     await db.$transaction([
       db.day.deleteMany({ where: { tripId: trip.id } }),
       db.place.deleteMany({ where: { tripId: trip.id } }),
-      db.trip.update({ where: { id: trip.id }, data: { title: reset.title } }),
+      db.trip.update({
+        where: { id: trip.id },
+        data: { title: reset.title, timeZone: reset.timeZone },
+      }),
       db.day.createMany({
         data: Array.from({ length: reset.dayCount }, (_unused, index) => ({
           tripId: trip.id,

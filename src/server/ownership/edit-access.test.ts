@@ -40,7 +40,7 @@ describe("checkEditAccess", () => {
   it("allows the browser that created the trip", async () => {
     const access = await checkEditAccess({
       slug: "amber-quay-4k7n2q9mrv",
-      presentedToken: TOKEN,
+      presentedTokens: [TOKEN],
       repository,
     });
     expect(access.status).toBe("granted");
@@ -49,7 +49,7 @@ describe("checkEditAccess", () => {
   it("rejects a mutation that arrives without the cookie", async () => {
     const access = await checkEditAccess({
       slug: "amber-quay-4k7n2q9mrv",
-      presentedToken: null,
+      presentedTokens: [],
       repository,
     });
     expect(access.status).toBe("no-token");
@@ -58,16 +58,25 @@ describe("checkEditAccess", () => {
   it("rejects a token that belongs to some other trip", async () => {
     const access = await checkEditAccess({
       slug: "amber-quay-4k7n2q9mrv",
-      presentedToken: createEditToken(),
+      presentedTokens: [createEditToken()],
       repository,
     });
     expect(access.status).toBe("wrong-token");
   });
 
+  it("allows a browser holding several trips to edit any one of them", async () => {
+    const access = await checkEditAccess({
+      slug: "amber-quay-4k7n2q9mrv",
+      presentedTokens: [createEditToken(), TOKEN, createEditToken()],
+      repository,
+    });
+    expect(access.status).toBe("granted");
+  });
+
   it("rejects a slug that does not exist, even with a real token", async () => {
     const access = await checkEditAccess({
       slug: "olive-jetty-0000000000",
-      presentedToken: TOKEN,
+      presentedTokens: [TOKEN],
       repository,
     });
     expect(access.status).toBe("unknown-trip");
@@ -81,7 +90,11 @@ describe("checkEditAccess", () => {
         return Promise.resolve(null);
       },
     });
-    await checkEditAccess({ slug: "amber-quay-4k7n2q9mrv", presentedToken: null, repository: watched });
+    await checkEditAccess({
+      slug: "amber-quay-4k7n2q9mrv",
+      presentedTokens: [],
+      repository: watched,
+    });
     expect(asked).toBe(false);
   });
 });

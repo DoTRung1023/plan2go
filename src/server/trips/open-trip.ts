@@ -1,4 +1,4 @@
-import { setEditToken } from "../ownership/edit-token-cookie";
+import { addEditToken } from "../ownership/edit-token-cookie";
 import { consumeRateLimit } from "../rate-limit/ip-rate-limit";
 import type { RateLimitPolicy } from "../rate-limit/window";
 import type { TripRepository } from "../repositories/trip-repository";
@@ -21,12 +21,12 @@ export type TripOpened =
   | { readonly status: "too-many"; readonly retryAfterSeconds: number };
 
 /**
- * Opens a blank trip and moves this browser's edit token to it.
+ * Opens a blank trip and adds its edit token to the ones this browser holds.
  *
  * The front door and the button that starts another trip from inside one both
  * come through here, so the two share a budget and neither is a way around the
- * other. The cookie holds one token, so whatever this browser was editing is
- * left readable by its link and no longer editable here.
+ * other. The token is added to the ones the browser already holds rather than
+ * replacing them, so a trip left open in another tab stays editable there.
  */
 export async function openTrip(
   headers: Headers,
@@ -42,6 +42,6 @@ export async function openTrip(
     { ...blankTrip(timeZone), timeZone },
     repository,
   );
-  await setEditToken(editToken);
+  await addEditToken(editToken);
   return { status: "opened", slug };
 }

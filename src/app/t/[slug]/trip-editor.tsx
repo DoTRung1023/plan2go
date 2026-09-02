@@ -13,7 +13,6 @@ import { TripActions } from "@/features/trip-settings/trip-actions";
 import { TripSettings } from "@/features/trip-settings/trip-settings";
 import { addStopAction } from "./add-stop-action";
 import { clearTripAction } from "./clear-trip-action";
-import { newTripAction } from "./new-trip-action";
 import { updateTripAction } from "./update-trip-action";
 
 /** Leaflet reads the document as it loads, so the map never renders on the server. */
@@ -106,11 +105,7 @@ export function TripEditor({
             <Image src={lockup} alt="plan2go" width={150} height={55} priority />
           </Link>
           {canEdit ? (
-            <TripActions
-              slug={slug}
-              onClear={clearTripAction}
-              onStartAnother={newTripAction}
-            />
+            <TripActions slug={slug} onClear={clearTripAction} startAnotherPath="/new" />
           ) : null}
         </div>
         <DayPlanner

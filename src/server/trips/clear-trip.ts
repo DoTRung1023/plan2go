@@ -2,27 +2,30 @@ import type { TripCleared, TripRepository } from "../repositories/trip-repositor
 import { blankTrip } from "./blank-trip";
 import { DEFAULT_START_AT_MINUTES } from "./day-start";
 
+export interface ClearTripRequest {
+  readonly slug: string;
+  /** Guessed from the request, exactly as it is when a trip is opened. */
+  readonly timeZone: string;
+}
+
 /**
  * Empties a trip back to the state it opened in, on the slug it already has.
  * The link handed to the people travelling keeps working, which is the whole
  * reason this sits next to the button that starts another trip instead.
  *
- * The time zone is kept. It describes the place being planned rather than the
- * planning, so it outlives the stops that are thrown away.
+ * Nothing survives but the slug and the edit token: the name, the dates, the
+ * stops, the places and the time zone all come back as a new trip would have
+ * them. A reset that left the old dates behind would be a different button.
  */
-export async function clearTrip(
-  slug: string,
+export function clearTrip(
+  request: ClearTripRequest,
   repository: TripRepository,
   now: Date = new Date(),
 ): Promise<TripCleared> {
-  const trip = await repository.findBySlug(slug);
-  if (trip === null) {
-    return { status: "no-such-trip" };
-  }
-
   return repository.clear({
-    slug,
-    ...blankTrip(trip.timeZone, now),
+    slug: request.slug,
+    timeZone: request.timeZone,
+    ...blankTrip(request.timeZone, now),
     startAtMinutes: DEFAULT_START_AT_MINUTES,
   });
 }

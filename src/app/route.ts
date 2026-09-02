@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { hashEditToken } from "@/server/ownership/edit-token";
-import { readEditToken } from "@/server/ownership/edit-token-cookie";
+import { readEditTokens } from "@/server/ownership/edit-token-cookie";
 import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
 import { openTrip } from "@/server/trips/open-trip";
 
@@ -11,18 +11,16 @@ export const dynamic = "force-dynamic";
  * The front door. There is no page in front of the planner, so opening the site
  * puts you inside one.
  *
- * A browser that already holds an edit token goes back to the trip that token
- * belongs to instead of starting another. There is one token per browser, so
- * creating on every visit would mean a refresh or a click on the logo quietly
- * stranding the trip you were just editing without its token. Starting another
- * one on purpose is a button inside the planner, which says what it costs.
+ * A browser that already holds an edit token goes back to the newest trip that
+ * token belongs to instead of starting another, because a refresh or a click on
+ * the logo is not someone asking for a second trip. Asking for one on purpose
+ * is a button inside the planner, and it opens in its own tab.
  */
 export async function GET(request: Request): Promise<Response> {
-  const presented = await readEditToken();
-  if (presented !== null) {
-    const held = await prismaTripRepository.findSlugByEditTokenHash(
-      hashEditToken(presented),
-    );
+  // Newest first, so a browser holding several trips lands on the last one it
+  // opened rather than the first one it ever did.
+  for (const token of await readEditTokens()) {
+    const held = await prismaTripRepository.findSlugByEditTokenHash(hashEditToken(token));
     if (held !== null) {
       redirect(`/t/${held}`);
     }

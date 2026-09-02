@@ -1,16 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 /** Emptying this trip either happened or it did not. */
 export interface ClearTripOutcome {
-  readonly error: string | null;
-}
-
-/** A trip opened somewhere else, or the reason none was. */
-export interface NewTripOutcome {
-  readonly slug: string | null;
   readonly error: string | null;
 }
 
@@ -25,41 +18,33 @@ interface TripActionsProps {
    * route that owns the mutation.
    */
   readonly onClear: (input: { slug: string }) => Promise<ClearTripOutcome>;
-  readonly onStartAnother: () => Promise<NewTripOutcome>;
+  /**
+   * Where the form that starts another trip posts. A path rather than an
+   * import, for the same reason: a feature does not know the app's routes.
+   */
+  readonly startAnotherPath: string;
 }
 
 /**
  * The two ways to begin again, at the top of the page beside the logo. They are
  * not the same thing and are named apart, because the difference between them
- * is the link.
+ * is which trip you are left in front of.
  *
- * Clearing keeps the slug, so anything already sent to the people travelling
- * still opens the planner they were given. Starting another opens a trip at a
- * new slug and takes this browser's one edit token with it, which leaves the
- * trip behind readable by its link and no longer editable here. The two names
- * carry that difference on their own, so nothing is written under them.
+ * Clearing empties this trip where it stands. The slug does not change, so a
+ * link already sent to the people travelling still opens the planner they were
+ * given, and everything on it is gone. Starting another leaves this trip
+ * untouched and opens an empty one in its own tab, so both are in front of you
+ * and both can still be edited. The two names carry that on their own, so
+ * nothing is written under them.
  */
-export function TripActions({ slug, onClear, onStartAnother }: TripActionsProps) {
-  const router = useRouter();
+export function TripActions({ slug, onClear, startAnotherPath }: TripActionsProps) {
   const [message, setMessage] = useState<string | null>(null);
   const [clearing, startClearing] = useTransition();
-  const [starting, startAnother] = useTransition();
 
   const clear = (): void => {
     startClearing(async () => {
       const outcome = await onClear({ slug });
       setMessage(outcome.error);
-    });
-  };
-
-  const another = (): void => {
-    startAnother(async () => {
-      const outcome = await onStartAnother();
-      if (outcome.slug === null) {
-        setMessage(outcome.error);
-        return;
-      }
-      router.push(`/t/${outcome.slug}`);
     });
   };
 
@@ -69,9 +54,12 @@ export function TripActions({ slug, onClear, onStartAnother }: TripActionsProps)
         <button type="button" onClick={clear} disabled={clearing} className={BUTTON}>
           {clearing ? "Clearing" : "Clear this trip"}
         </button>
-        <button type="button" onClick={another} disabled={starting} className={BUTTON}>
-          {starting ? "Starting" : "Start another trip"}
-        </button>
+        {/* Its own tab, so the trip being read is still there behind it. */}
+        <form action={startAnotherPath} method="post" target="_blank">
+          <button type="submit" className={BUTTON}>
+            Start another trip
+          </button>
+        </form>
       </div>
 
       {message === null ? null : (

@@ -17,8 +17,8 @@ export type EditAccess =
 
 export interface EditAccessCheck {
   readonly slug: string;
-  /** The raw token from the cookie, or null when the browser sent none. */
-  readonly presentedToken: string | null;
+  /** The raw tokens from the cookie, one for every trip this browser opened. */
+  readonly presentedTokens: readonly string[];
   readonly repository: TripRepository;
 }
 
@@ -28,10 +28,10 @@ export interface EditAccessCheck {
  */
 export async function checkEditAccess({
   slug,
-  presentedToken,
+  presentedTokens,
   repository,
 }: EditAccessCheck): Promise<EditAccess> {
-  if (presentedToken === null) {
+  if (presentedTokens.length === 0) {
     return { status: "no-token" };
   }
 
@@ -40,7 +40,9 @@ export async function checkEditAccess({
     return { status: "unknown-trip" };
   }
 
-  if (!editTokenMatches(presentedToken, storedHash)) {
+  // A browser holds a token for every trip it opened, and any one of them
+  // granting this trip is enough.
+  if (!presentedTokens.some((token) => editTokenMatches(token, storedHash))) {
     return { status: "wrong-token" };
   }
 

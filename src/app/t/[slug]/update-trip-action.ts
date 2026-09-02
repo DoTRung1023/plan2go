@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { checkEditAccess } from "@/server/ownership/edit-access";
-import { readEditToken } from "@/server/ownership/edit-token-cookie";
+import { readEditTokens } from "@/server/ownership/edit-token-cookie";
 import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
 import { tripSettingsSchema } from "@/server/trips/trip-settings-input";
 import { updateTripSettings } from "@/server/trips/update-trip-settings";
@@ -38,7 +38,7 @@ export async function updateTripAction(
 
   const access = await checkEditAccess({
     slug: parsed.data.slug,
-    presentedToken: await readEditToken(),
+    presentedTokens: await readEditTokens(),
     repository: prismaTripRepository,
   });
 

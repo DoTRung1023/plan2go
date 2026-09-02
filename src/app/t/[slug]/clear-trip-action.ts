@@ -1,11 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { z } from "zod";
 import { checkEditAccess } from "@/server/ownership/edit-access";
-import { readEditToken } from "@/server/ownership/edit-token-cookie";
+import { readEditTokens } from "@/server/ownership/edit-token-cookie";
 import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
 import { clearTrip } from "@/server/trips/clear-trip";
+import { openingTimeZone } from "@/server/trips/time-zones";
 
 export interface ClearTripState {
   readonly error: string | null;
@@ -15,6 +17,8 @@ const clearTripSchema = z.object({ slug: z.string().min(1).max(80) });
 
 /**
  * Empties the trip the browser is looking at and leaves it on the same link.
+ * What comes back is what opening a new trip would have given, dates and time
+ * zone included, which is why the zone is guessed from this request.
  *
  * A mutation, so it verifies the edit token before it writes anything, and it
  * refuses in the same words whoever is holding the wrong one.
@@ -27,7 +31,7 @@ export async function clearTripAction(input: unknown): Promise<ClearTripState> {
 
   const access = await checkEditAccess({
     slug: parsed.data.slug,
-    presentedToken: await readEditToken(),
+    presentedTokens: await readEditTokens(),
     repository: prismaTripRepository,
   });
 
@@ -38,7 +42,10 @@ export async function clearTripAction(input: unknown): Promise<ClearTripState> {
     };
   }
 
-  const result = await clearTrip(parsed.data.slug, prismaTripRepository);
+  const result = await clearTrip(
+    { slug: parsed.data.slug, timeZone: openingTimeZone(await headers()) },
+    prismaTripRepository,
+  );
   if (result.status === "no-such-trip") {
     return { error: "This trip is no longer here. Reload the page." };
   }

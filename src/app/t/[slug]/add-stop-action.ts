@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createGooglePlacesProvider } from "@/adapters/places/google-places";
 import { checkEditAccess } from "@/server/ownership/edit-access";
-import { readEditToken } from "@/server/ownership/edit-token-cookie";
+import { readEditTokens } from "@/server/ownership/edit-token-cookie";
 import { googleMapsApiKey } from "@/server/places/google-key";
 import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
 import { addStopFromSearch } from "@/server/trips/add-stop";
@@ -35,7 +35,7 @@ export async function addStopAction(input: unknown): Promise<AddStopState> {
 
   const access = await checkEditAccess({
     slug: parsed.data.slug,
-    presentedToken: await readEditToken(),
+    presentedTokens: await readEditTokens(),
     repository: prismaTripRepository,
   });
 

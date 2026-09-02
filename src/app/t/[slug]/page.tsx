@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { createHaversineTravelProvider } from "@/adapters/travel/haversine";
 import { computeTrip } from "@/features/day-planner/compute-trip";
 import { checkEditAccess } from "@/server/ownership/edit-access";
-import { readEditToken } from "@/server/ownership/edit-token-cookie";
+import { readEditTokens } from "@/server/ownership/edit-token-cookie";
 import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
 import { TripEditor } from "./trip-editor";
 
@@ -31,7 +31,7 @@ export default async function TripEditorPage({
   // controls that change the trip, so a shared link still renders in full.
   const access = await checkEditAccess({
     slug,
-    presentedToken: await readEditToken(),
+    presentedTokens: await readEditTokens(),
     repository: prismaTripRepository,
   });
 
