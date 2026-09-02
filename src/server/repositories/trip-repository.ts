@@ -39,6 +39,24 @@ export interface TripSettingsUpdate {
   readonly startAtMinutes: number;
 }
 
+/**
+ * Everything storage needs to empty a trip and lay it out again on the slug it
+ * already has. No token: the trip keeps the one it was opened with.
+ */
+export interface TripReset {
+  readonly slug: string;
+  readonly title: string;
+  /** The date of the first day. Later days follow it in order. */
+  readonly startDate: IsoDate;
+  readonly dayCount: number;
+  /** Minutes from local midnight that each new day begins at. */
+  readonly startAtMinutes: number;
+}
+
+export type TripCleared =
+  | { readonly status: "cleared" }
+  | { readonly status: "no-such-trip" };
+
 export type SettingsUpdated =
   | { readonly status: "updated" }
   | { readonly status: "no-such-trip" };
@@ -75,6 +93,13 @@ export interface TripRepository {
    * Removing a day removes the stops on it.
    */
   updateSettings(update: TripSettingsUpdate): Promise<SettingsUpdated>;
+
+  /**
+   * Throws away every day, stop and place on a trip and lays down empty days
+   * again. The slug and the edit token survive, so a link already shared keeps
+   * working and keeps pointing at the same planner.
+   */
+  clear(reset: TripReset): Promise<TripCleared>;
 
   /**
    * A place this trip has already stored, or null. Checked before any paid

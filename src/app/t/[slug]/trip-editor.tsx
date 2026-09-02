@@ -7,7 +7,10 @@ import { useState } from "react";
 import lockup from "../../../../logo/logo-text.png";
 import type { PlannedDay } from "@/features/day-planner/compute-trip";
 import { DayPlanner } from "@/features/day-planner/day-planner";
+import { TripActions } from "@/features/trip-settings/trip-actions";
 import { TripSettings } from "@/features/trip-settings/trip-settings";
+import { clearTripAction } from "./clear-trip-action";
+import { newTripAction } from "./new-trip-action";
 import { updateTripAction } from "./update-trip-action";
 
 /** Leaflet reads the document as it loads, so the map never renders on the server. */
@@ -48,8 +51,12 @@ export function TripEditor({
   days,
   canEdit,
 }: TripEditorProps) {
-  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [chosenIndex, setChosenIndex] = useState(0);
   const [expanded, setExpanded] = useState(false);
+  // Clearing the trip, or pulling its last day earlier, can leave fewer days
+  // than the one being read. Without this the tab strip shows none of them as
+  // chosen and the keyboard cannot reach any of them.
+  const selectedIndex = Math.min(chosenIndex, days.length - 1);
   const selected = days[selectedIndex] ?? days[0];
   const first = days[0];
   const last = days[days.length - 1];
@@ -100,7 +107,7 @@ export function TripEditor({
           title={title}
           days={days}
           selectedIndex={selectedIndex}
-          onSelect={setSelectedIndex}
+          onSelect={setChosenIndex}
           settings={
             canEdit && first !== undefined && last !== undefined ? (
               <TripSettings
@@ -109,6 +116,15 @@ export function TripEditor({
                 startDate={first.plan.date}
                 endDate={last.plan.date}
                 onSave={updateTripAction}
+              />
+            ) : null
+          }
+          actions={
+            canEdit ? (
+              <TripActions
+                slug={slug}
+                onClear={clearTripAction}
+                onStartAnother={newTripAction}
               />
             ) : null
           }

@@ -21,7 +21,9 @@ import type {
   NewTrip,
   SettingsUpdated,
   StopAdded,
+  TripCleared,
   TripRepository,
+  TripReset,
   TripSettingsUpdate,
 } from "./trip-repository";
 
@@ -213,6 +215,34 @@ export const prismaTripRepository: TripRepository = {
       },
     });
     return { status: "added" };
+  },
+
+  async clear(reset: TripReset): Promise<TripCleared> {
+    const trip = await db.trip.findUnique({
+      where: { slug: reset.slug },
+      select: { id: true },
+    });
+    if (trip === null) {
+      return { status: "no-such-trip" };
+    }
+
+    // One transaction, and in this order. Deleting the days takes the stops
+    // with them, which leaves the places unreferenced and safe to delete next.
+    await db.$transaction([
+      db.day.deleteMany({ where: { tripId: trip.id } }),
+      db.place.deleteMany({ where: { tripId: trip.id } }),
+      db.trip.update({ where: { id: trip.id }, data: { title: reset.title } }),
+      db.day.createMany({
+        data: Array.from({ length: reset.dayCount }, (_unused, index) => ({
+          tripId: trip.id,
+          date: addDays(reset.startDate, index),
+          position: index,
+          startAtMinutes: reset.startAtMinutes,
+        })),
+      }),
+    ]);
+
+    return { status: "cleared" };
   },
 
   async updateSettings(update: TripSettingsUpdate): Promise<SettingsUpdated> {
