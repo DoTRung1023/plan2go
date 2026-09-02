@@ -18,6 +18,11 @@ interface DayPlannerProps {
    */
   readonly settings: ReactNode;
   /**
+   * The search bar that puts a place on the day being read, stuck under the
+   * tabs. Null for a reader who holds no edit token.
+   */
+  readonly search: ReactNode;
+  /**
    * Clearing this trip and starting another, at the foot of the list. Null for
    * a reader who holds no edit token, who has nothing here to do.
    */
@@ -42,6 +47,7 @@ export function DayPlanner({
   selectedIndex,
   onSelect,
   settings,
+  search,
   actions,
 }: DayPlannerProps) {
   const selected = days[selectedIndex] ?? days[0];
@@ -67,6 +73,7 @@ export function DayPlanner({
           selectedIndex={selectedIndex}
           onSelect={onSelect}
         />
+        {search === null ? null : <div className="py-3">{search}</div>}
       </div>
 
       {selected === undefined ? null : (

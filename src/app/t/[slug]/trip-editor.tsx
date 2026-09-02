@@ -7,8 +7,11 @@ import { useState } from "react";
 import lockup from "../../../../logo/logo-text.png";
 import type { PlannedDay } from "@/features/day-planner/compute-trip";
 import { DayPlanner } from "@/features/day-planner/day-planner";
+import { PlaceSearch } from "@/features/place-search/place-search";
+import { searchBias } from "@/features/place-search/search-bias";
 import { TripActions } from "@/features/trip-settings/trip-actions";
 import { TripSettings } from "@/features/trip-settings/trip-settings";
+import { addStopAction } from "./add-stop-action";
 import { clearTripAction } from "./clear-trip-action";
 import { newTripAction } from "./new-trip-action";
 import { updateTripAction } from "./update-trip-action";
@@ -116,6 +119,20 @@ export function TripEditor({
                 startDate={first.plan.date}
                 endDate={last.plan.date}
                 onSave={updateTripAction}
+              />
+            ) : null
+          }
+          search={
+            canEdit && selected !== undefined ? (
+              <PlaceSearch
+                slug={slug}
+                dayId={selected.plan.id}
+                dayName={`Day ${String(selectedIndex + 1)}`}
+                near={searchBias(
+                  days.map((day) => day.plan),
+                  selectedIndex,
+                )}
+                onAdd={addStopAction}
               />
             ) : null
           }
