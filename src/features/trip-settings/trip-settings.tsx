@@ -68,8 +68,31 @@ export function TripSettings({
   const [name, setName] = useState(title);
   const [first, setFirst] = useState(startDate);
   const [last, setLast] = useState(endDate);
+  /** What the trip last said, so a change arriving from it can be recognised. */
+  const [stored, setStored] = useState({ title, startDate, endDate });
   const fieldId = useId();
   const form = useRef<HTMLFormElement | null>(null);
+
+  /**
+   * The trip can change underneath this form: saving from it, or clearing the
+   * trip, which puts the name and both dates back to what a new trip has. These
+   * three fields hold what is being typed, so they have to follow it, or the
+   * form goes on showing a trip that no longer exists while the days beside it
+   * show the real one.
+   *
+   * Adjusted during the render that carries the new value rather than in an
+   * effect, because an effect would paint the stale one first.
+   */
+  if (
+    stored.title !== title ||
+    stored.startDate !== startDate ||
+    stored.endDate !== endDate
+  ) {
+    setStored({ title, startDate, endDate });
+    setName(title);
+    setFirst(startDate);
+    setLast(endDate);
+  }
 
   const span = spanOf(first, last);
   const datesChanged = first !== startDate || last !== endDate;
