@@ -1,6 +1,14 @@
 import type { LatLng } from "./place";
 
-export type TravelMode = "walk" | "cycle" | "drive" | "transit" | "flight";
+/**
+ * Every way of getting from one point to the next, in the order they are
+ * offered. The type is read off the list rather than written twice, so a mode
+ * that is added here is a mode every exhaustive table in the product has to
+ * answer for.
+ */
+export const TRAVEL_MODES = ["drive", "transit", "walk", "cycle", "flight"] as const;
+
+export type TravelMode = (typeof TRAVEL_MODES)[number];
 
 /** Where an estimate came from, so the UI can say how trustworthy it is. */
 export type TravelSource = "haversine" | "google-routes";

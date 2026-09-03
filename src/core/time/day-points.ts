@@ -1,7 +1,7 @@
 import type { DayEndpoint, DayPlan } from "../model/day";
 import type { TravelMode } from "../model/leg";
 import type { LatLng } from "../model/place";
-import type { Stop } from "../model/stop";
+import type { Stop, StopId } from "../model/stop";
 
 /**
  * One place the day passes through, in the order it is reached. A day may have
@@ -29,6 +29,38 @@ export function dayPoints(day: DayPlan): readonly DayPoint[] {
     points.push({ kind: "end", endpoint: day.end });
   }
   return points;
+}
+
+/**
+ * What a leg's mode is stored on. A stop owns the mode of the leg that arrives
+ * at it, and the day owns the mode of the leg out to where it ends.
+ */
+export type LegTarget =
+  | { readonly kind: "stop"; readonly stopId: StopId }
+  | { readonly kind: "day-end" };
+
+/**
+ * One target per leg, in the same order as legRequestsFor and computeDay read
+ * them, so a leg on screen can be traced back to the row that decides how it is
+ * travelled without anyone counting points again.
+ */
+export function legTargets(day: DayPlan): readonly LegTarget[] {
+  const points = dayPoints(day);
+  const targets: LegTarget[] = [];
+
+  for (let index = 1; index < points.length; index += 1) {
+    const arrivedAt = points[index];
+    if (arrivedAt === undefined) {
+      continue;
+    }
+    targets.push(
+      arrivedAt.kind === "stop"
+        ? { kind: "stop", stopId: arrivedAt.stop.id }
+        : { kind: "day-end" },
+    );
+  }
+
+  return targets;
 }
 
 /** What the traveller calls this point. Their own label wins over the place name. */

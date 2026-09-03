@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Trip } from "@/core/model/trip";
 import type {
   CreatedTrip,
+  LegModeSet,
   SettingsUpdated,
   StopAdded,
   TripCleared,
@@ -24,6 +25,7 @@ function stubRepository(overrides: Partial<TripRepository>): TripRepository {
     clear: () => Promise.reject<TripCleared>(new Error(NOT_STUBBED)),
     findPlaceByProviderId: () => Promise.resolve(null),
     addStop: () => Promise.reject<StopAdded>(new Error(NOT_STUBBED)),
+    setLegMode: () => Promise.reject<LegModeSet>(new Error(NOT_STUBBED)),
     ...overrides,
   };
 }

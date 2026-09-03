@@ -13,6 +13,7 @@ import { TripActions } from "@/features/trip-settings/trip-actions";
 import { TripSettings } from "@/features/trip-settings/trip-settings";
 import { addStopAction } from "./add-stop-action";
 import { clearTripAction } from "./clear-trip-action";
+import { setLegModeAction } from "./set-leg-mode-action";
 import { updateTripAction } from "./update-trip-action";
 
 /** The Maps script reaches for the document as it runs, so it never renders on the server. */
@@ -137,6 +138,12 @@ export function TripEditor({
           days={days}
           selectedIndex={selectedIndex}
           onSelect={setChosenIndex}
+          onChangeMode={
+            canEdit && selected !== undefined
+              ? ({ stopId, mode }) =>
+                  setLegModeAction({ slug, dayId: selected.plan.id, stopId, mode })
+              : null
+          }
           settings={
             canEdit && first !== undefined && last !== undefined ? (
               <TripSettings

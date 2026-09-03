@@ -5,13 +5,19 @@ import type { StopId } from "@/core/model/stop";
 import type { ComputedDay } from "@/core/time/compute-day";
 import { formatClock } from "@/core/time/minutes";
 import { HomeIcon } from "@/ui/icons";
+import type { PlannedDay } from "./compute-trip";
 import { ConflictNotice } from "./conflict-notice";
+import type { ChangeLegMode } from "./leg-row";
 import { LegRow } from "./leg-row";
 import { StopCard } from "./stop-card";
 
 interface DayItineraryProps {
   readonly day: DayPlan;
   readonly computed: ComputedDay;
+  /** Every leg with the ways of covering it. In the computed legs' order. */
+  readonly legs: PlannedDay["legs"];
+  /** Null for a reader who holds no edit token. */
+  readonly onChangeMode: ChangeLegMode | null;
 }
 
 function conflictsAtStop(conflicts: readonly Conflict[], stopId: StopId): readonly Conflict[] {
@@ -72,12 +78,18 @@ function Anchor({
  * anywhere, every leg and every stop in order, and where it ends if it ends
  * anywhere. Every conflict sits against the stop or the leg it belongs to.
  */
-export function DayItinerary({ day, computed }: DayItineraryProps) {
+export function DayItinerary({
+  day,
+  computed,
+  legs,
+  onChangeMode,
+}: DayItineraryProps) {
   const notes = new Map(day.stops.map((stop) => [stop.id, stop.note]));
   const addresses = new Map(day.stops.map((stop) => [stop.id, stop.place.address]));
   /** With no start point the first stop has no leg arriving at it. */
   const legOffset = day.start === null ? -1 : 0;
   const legToEnd = day.end === null ? undefined : computed.legs[computed.legs.length - 1];
+  const plannedToEnd = legToEnd === undefined ? undefined : legs[legToEnd.index];
   const endConflicts = computed.conflicts.filter((conflict) => conflict.kind === "ends-next-day");
 
   return (
@@ -92,10 +104,16 @@ export function DayItinerary({ day, computed }: DayItineraryProps) {
 
       {computed.stops.map((stop, index) => {
         const leg = computed.legs[index + legOffset];
+        const planned = leg === undefined ? undefined : legs[leg.index];
         return (
           <Fragment key={stop.stopId}>
-            {leg === undefined ? null : (
-              <LegRow leg={leg} conflicts={conflictsOnLeg(computed.conflicts, leg.index)} />
+            {leg === undefined || planned === undefined ? null : (
+              <LegRow
+                leg={leg}
+                planned={planned}
+                conflicts={conflictsOnLeg(computed.conflicts, leg.index)}
+                onChange={onChangeMode}
+              />
             )}
             <StopCard
               position={index + 1}
@@ -108,8 +126,13 @@ export function DayItinerary({ day, computed }: DayItineraryProps) {
         );
       })}
 
-      {legToEnd === undefined ? null : (
-        <LegRow leg={legToEnd} conflicts={conflictsOnLeg(computed.conflicts, legToEnd.index)} />
+      {legToEnd === undefined || plannedToEnd === undefined ? null : (
+        <LegRow
+          leg={legToEnd}
+          planned={plannedToEnd}
+          conflicts={conflictsOnLeg(computed.conflicts, legToEnd.index)}
+          onChange={onChangeMode}
+        />
       )}
 
       {day.end === null ? null : (

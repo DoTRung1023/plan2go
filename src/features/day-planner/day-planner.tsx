@@ -5,6 +5,7 @@ import type { PlannedDay } from "./compute-trip";
 import { DayItinerary } from "./day-itinerary";
 import { DayTabs } from "./day-tabs";
 import { EmptyDay } from "./empty-day";
+import type { ChangeLegMode } from "./leg-row";
 import { formatDayDate } from "./format-day-date";
 
 interface DayPlannerProps {
@@ -17,6 +18,11 @@ interface DayPlannerProps {
    * holds no edit token, who gets the heading and the range as plain text.
    */
   readonly settings: ReactNode;
+  /**
+   * Changing how one leg is travelled. Null for a reader who holds no edit
+   * token, whose legs are read rather than chosen.
+   */
+  readonly onChangeMode: ChangeLegMode | null;
 }
 
 /** The panel's own gutter. Wider on a desktop, where the panel is wider. */
@@ -49,6 +55,7 @@ export function DayPlanner({
   selectedIndex,
   onSelect,
   settings,
+  onChangeMode,
 }: DayPlannerProps) {
   const selected = days[selectedIndex] ?? days[0];
   const range = dateRange(days);
@@ -88,7 +95,12 @@ export function DayPlanner({
           {selected.plan.stops.length === 0 ? (
             <EmptyDay dayName={formatDayDate(selected.plan.date)} />
           ) : (
-            <DayItinerary day={selected.plan} computed={selected.computed} />
+            <DayItinerary
+              day={selected.plan}
+              computed={selected.computed}
+              legs={selected.legs}
+              onChangeMode={onChangeMode}
+            />
           )}
         </section>
       )}

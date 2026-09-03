@@ -17,6 +17,8 @@ import { openingHoursToJson, parseOpeningHours } from "../places/opening-hours";
 import { createTripSlug } from "../trips/slug";
 import type {
   CreatedTrip,
+  LegModeSet,
+  LegModeUpdate,
   NewStop,
   NewTrip,
   SettingsUpdated,
@@ -229,6 +231,36 @@ export const prismaTripRepository: TripRepository = {
       },
     });
     return { status: "added" };
+  },
+
+  async setLegMode(update: LegModeUpdate): Promise<LegModeSet> {
+    // Scoped to the tokens the browser holds, so finding the day is also the
+    // check that this trip may be changed.
+    const day = await db.day.findFirst({
+      where: {
+        id: update.dayId,
+        trip: { slug: update.slug, editTokenHash: { in: [...update.editTokenHashes] } },
+      },
+      select: { id: true },
+    });
+    if (day === null) {
+      return { status: "refused" };
+    }
+
+    const mode = TRAVEL_MODE_TO_DB[update.mode];
+
+    if (update.stopId === null) {
+      await db.day.update({ where: { id: day.id }, data: { endTravelMode: mode } });
+      return { status: "set" };
+    }
+
+    // Scoped to the day as well as the stop, so a stop id from another trip
+    // updates nothing rather than being taken on trust.
+    const changed = await db.stop.updateMany({
+      where: { id: update.stopId, dayId: day.id },
+      data: { travelMode: mode },
+    });
+    return changed.count === 0 ? { status: "refused" } : { status: "set" };
   },
 
   async clear(reset: TripReset): Promise<TripCleared> {

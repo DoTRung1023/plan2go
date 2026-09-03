@@ -36,6 +36,19 @@ export interface NewStop {
   readonly travelMode: TravelMode;
 }
 
+/**
+ * Everything storage needs to change how one leg is travelled. The mode lives
+ * on the stop the leg arrives at, or on the day itself for the leg out to where
+ * the day ends, which is what the null stop means.
+ */
+export interface LegModeUpdate {
+  readonly slug: string;
+  readonly editTokenHashes: EditTokenHashes;
+  readonly dayId: DayId;
+  readonly stopId: string | null;
+  readonly mode: TravelMode;
+}
+
 /** Everything storage needs to change a trip's settings. */
 export interface TripSettingsUpdate {
   readonly slug: string;
@@ -78,6 +91,10 @@ export type SettingsUpdated =
 
 export type StopAdded =
   | { readonly status: "added" }
+  | { readonly status: "refused" };
+
+export type LegModeSet =
+  | { readonly status: "set" }
   | { readonly status: "refused" };
 
 /**
@@ -124,4 +141,7 @@ export interface TripRepository {
 
   /** Appends a stop to the end of a day, storing the place if it is new. */
   addStop(stop: NewStop): Promise<StopAdded>;
+
+  /** Changes how one leg of a day is travelled. */
+  setLegMode(update: LegModeUpdate): Promise<LegModeSet>;
 }
