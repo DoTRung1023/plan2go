@@ -82,7 +82,7 @@ export function DayPlanner({
       {selected === undefined ? null : (
         <div className={`shrink-0 ${GUTTER}`}>
           <DaySummary day={selected.plan} computed={selected.computed} />
-          <DayTimeline computed={selected.computed} />
+          <DayTimeline day={selected.plan} computed={selected.computed} />
         </div>
       )}
 

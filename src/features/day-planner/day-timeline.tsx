@@ -1,45 +1,45 @@
+import type { DayPlan } from "@/core/model/day";
 import type { ComputedDay } from "@/core/time/compute-day";
 import { formatClock, formatDuration } from "@/core/time/minutes";
 import { epochMinutesToWallClock } from "@/core/time/zoned";
+import type { TimelineKind } from "./timeline";
 import { timelineBands, timelineHours } from "./timeline";
 
 interface DayTimelineProps {
+  readonly day: DayPlan;
   readonly computed: ComputedDay;
 }
 
-const BAND_FILL: Readonly<Record<string, string>> = {
+const FILL: Readonly<Record<TimelineKind, string>> = {
   "at-places": "bg-terracotta",
   travelling: "bg-sage-400",
   waiting: "bg-neutral-300",
 };
 
-const BAND_WORDS: Readonly<Record<string, string>> = {
+const WORDS: Readonly<Record<TimelineKind, string>> = {
   "at-places": "at places",
   travelling: "travelling",
   waiting: "waiting",
 };
 
-function bandMinutes(kind: string, computed: ComputedDay): number {
-  if (kind === "at-places") {
-    return computed.totals.timeAtPlacesMinutes;
-  }
-  if (kind === "waiting") {
-    return computed.totals.waitingMinutes;
-  }
-  return computed.totals.travelMinutes ?? 0;
+/** The key under the bar, which adds each kind up rather than listing it again. */
+function legendOf(computed: ComputedDay): readonly { kind: TimelineKind; minutes: number }[] {
+  const totals: { kind: TimelineKind; minutes: number }[] = [
+    { kind: "at-places", minutes: computed.totals.timeAtPlacesMinutes },
+    { kind: "travelling", minutes: computed.totals.travelMinutes ?? 0 },
+    { kind: "waiting", minutes: computed.totals.waitingMinutes },
+  ];
+  return totals.filter((total) => total.minutes > 0);
 }
 
 /**
- * The whole day as one bar: how much of it is spent at places, how much getting
- * between them, and how much waiting for somewhere to open. The hour marks
- * underneath say when, so the bar is read against the clock rather than as a
+ * The whole day as one bar, in the order it happens: every stretch of
+ * travelling, every wait, and every stop, drawn end to end. The clock readings
+ * underneath say when, so the bar is read against the day rather than as a
  * proportion in the abstract.
- *
- * A day with an unresolved leg draws nothing. A partial bar would read as a
- * shorter day rather than an unknown one, and the leg says so where it sits.
  */
-export function DayTimeline({ computed }: DayTimelineProps) {
-  const bands = timelineBands(computed.totals);
+export function DayTimeline({ day, computed }: DayTimelineProps) {
+  const bands = timelineBands({ computed, startsAtAPoint: day.start !== null });
   if (bands.length === 0 || computed.ends === null) {
     return null;
   }
@@ -55,9 +55,9 @@ export function DayTimeline({ computed }: DayTimelineProps) {
       <div className="flex h-[15px] overflow-hidden rounded-pill bg-paper-sunken">
         {bands.map((band) => (
           <div
-            key={band.kind}
+            key={band.key}
             style={{ width: `${String(band.percent)}%` }}
-            className={`h-full ${BAND_FILL[band.kind] ?? ""}`}
+            className={`h-full ${FILL[band.kind]}`}
           />
         ))}
       </div>
@@ -88,13 +88,13 @@ export function DayTimeline({ computed }: DayTimelineProps) {
       </div>
 
       <ul className="mt-[6px] flex flex-wrap gap-x-4 gap-y-1 text-label text-ink-muted">
-        {bands.map((band) => (
-          <li key={band.kind} className="flex items-center gap-[5px] tabular-nums">
+        {legendOf(computed).map((total) => (
+          <li key={total.kind} className="flex items-center gap-[5px] tabular-nums">
             <span
               aria-hidden="true"
-              className={`h-[9px] w-[9px] rounded-[2px] ${BAND_FILL[band.kind] ?? ""}`}
+              className={`h-[9px] w-[9px] rounded-[2px] ${FILL[total.kind]}`}
             />
-            {`${formatDuration(bandMinutes(band.kind, computed))} ${BAND_WORDS[band.kind] ?? ""}`}
+            {`${formatDuration(total.minutes)} ${WORDS[total.kind]}`}
           </li>
         ))}
       </ul>

@@ -1,45 +1,84 @@
-import type { DayTotals } from "@/core/time/compute-day";
-import { MINUTES_PER_HOUR } from "@/core/time/minutes";
+import type { ComputedDay } from "@/core/time/compute-day";
 
-/** How the day divides up, as widths of one bar. */
+/** What a stretch of the day was spent on. */
+export type TimelineKind = "at-places" | "travelling" | "waiting";
+
+/** One stretch of the day, in the order it happens, as a width of one bar. */
 export interface TimelineBand {
-  readonly kind: "at-places" | "travelling" | "waiting";
+  readonly key: string;
+  readonly kind: TimelineKind;
   readonly percent: number;
 }
 
-/** A whole hour inside the day, and how far along the bar it falls. */
+/** A clock reading inside the day, and how far along the bar it falls. */
 export interface TimelineHour {
   readonly epochMinutes: number;
   readonly percent: number;
 }
 
-/** Hour marks are a reminder of the shape of the day, not a ruler. */
-const MOST_HOUR_MARKS = 6;
+/** Past this many minutes the marks go to three hours, so they stay readable. */
+const LONG_DAY_MINUTES = 520;
+
+const CLOSE_STEP_MINUTES = 120;
+
+const WIDE_STEP_MINUTES = 180;
+
+interface TimelineInput {
+  readonly computed: ComputedDay;
+  /**
+   * Whether the day begins at a point of its own rather than at its first stop,
+   * which is what decides whether the first leg arrives at the first stop or
+   * leads into the second.
+   */
+  readonly startsAtAPoint: boolean;
+}
 
 /**
- * The bar under the day: time at places, time travelling, and time waiting for
- * somewhere to open. The three are disjoint in the engine and together they are
- * the whole of the day, so they fill the bar exactly.
+ * The day as one bar, in the order it happens: travelling, then the wait for
+ * somewhere to open, then the time at the place, over and over. Read against
+ * the hour marks underneath it, the shape of the bar is the shape of the day.
  *
- * An empty band is dropped rather than drawn at zero width, and a day whose
- * legs are unresolved has no bar at all, because a partial one would read as a
- * shorter day rather than an unknown one.
+ * A day with a leg the provider could not answer draws nothing. A partial bar
+ * would read as a shorter day rather than an unknown one.
  */
-export function timelineBands(totals: DayTotals): readonly TimelineBand[] {
-  const travel = totals.travelMinutes;
+export function timelineBands({
+  computed,
+  startsAtAPoint,
+}: TimelineInput): readonly TimelineBand[] {
+  const travel = computed.totals.travelMinutes;
   if (travel === null) {
     return [];
   }
-  const total = totals.timeAtPlacesMinutes + travel + totals.waitingMinutes;
+  const total = computed.totals.timeAtPlacesMinutes + travel + computed.totals.waitingMinutes;
   if (total <= 0) {
     return [];
   }
-  const bands: TimelineBand[] = [
-    { kind: "at-places", percent: (totals.timeAtPlacesMinutes / total) * 100 },
-    { kind: "travelling", percent: (travel / total) * 100 },
-    { kind: "waiting", percent: (totals.waitingMinutes / total) * 100 },
-  ];
-  return bands.filter((band) => band.percent > 0);
+
+  const bands: TimelineBand[] = [];
+  const add = (kind: TimelineKind, key: string, minutes: number): void => {
+    if (minutes > 0) {
+      bands.push({ key, kind, percent: (minutes / total) * 100 });
+    }
+  };
+
+  /** With no start point the first stop has no leg arriving at it. */
+  const legOffset = startsAtAPoint ? 0 : -1;
+
+  computed.stops.forEach((stop, index) => {
+    const leg = computed.legs[index + legOffset];
+    if (leg !== undefined) {
+      add("travelling", `leg-${String(leg.index)}`, leg.durationMinutes ?? 0);
+    }
+    add("waiting", `wait-${stop.stopId}`, stop.waitMinutes);
+    add("at-places", `stay-${stop.stopId}`, stop.stayMinutes);
+  });
+
+  // Whatever is left is the leg out to the point the day ends at.
+  for (const leg of computed.legs.slice(computed.stops.length + legOffset)) {
+    add("travelling", `leg-${String(leg.index)}`, leg.durationMinutes ?? 0);
+  }
+
+  return bands;
 }
 
 interface HourMarkInput {
@@ -50,13 +89,15 @@ interface HourMarkInput {
 }
 
 /**
- * The whole hours the day passes through, spaced out enough to be read.
+ * The clock readings the day passes through, every two hours, or every three
+ * once the day is long enough that two would crowd them.
  *
- * The phase comes from the wall clock rather than from the instant, because a
- * zone half an hour off UTC has its hours half an hour off the epoch's. Each
- * mark is returned as the instant it falls on, so whoever draws it reads the
- * clock for that instant and a day crossing a daylight saving change is still
- * labelled with the times a person would have seen.
+ * The marks sit on the clock rather than on the start of the day, so they read
+ * as times a person recognises. The phase comes from the wall clock for the
+ * same reason: a zone half an hour off UTC has its hours half an hour off the
+ * epoch's. Each mark is returned as the instant it falls on, so whoever draws
+ * it reads the clock for that instant and a day crossing a daylight saving
+ * change is still labelled with the times a person would have seen.
  */
 export function timelineHours({
   beginEpochMinutes,
@@ -68,17 +109,11 @@ export function timelineHours({
     return [];
   }
 
-  const toFirstHour =
-    (MINUTES_PER_HOUR - (beginMinutesFromMidnight % MINUTES_PER_HOUR)) % MINUTES_PER_HOUR;
-  const hoursInSpan = Math.floor((span - toFirstHour) / MINUTES_PER_HOUR) + 1;
-  if (hoursInSpan < 1) {
-    return [];
-  }
-  const step = Math.max(1, Math.ceil(hoursInSpan / MOST_HOUR_MARKS));
+  const step = span >= LONG_DAY_MINUTES ? WIDE_STEP_MINUTES : CLOSE_STEP_MINUTES;
+  const toFirstMark = (step - (beginMinutesFromMidnight % step)) % step;
 
   const marks: TimelineHour[] = [];
-  for (let hour = 0; hour < hoursInSpan; hour += step) {
-    const offset = toFirstHour + hour * MINUTES_PER_HOUR;
+  for (let offset = toFirstMark; offset <= span; offset += step) {
     marks.push({
       epochMinutes: beginEpochMinutes + offset,
       percent: (offset / span) * 100,

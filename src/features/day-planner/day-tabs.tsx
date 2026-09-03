@@ -12,6 +12,20 @@ interface DayTabsProps {
   readonly onSelect: (index: number) => void;
 }
 
+/**
+ * The day being read says which day it is. The rest say what is on them, which
+ * is what you are choosing between when you reach for another day.
+ */
+function subLine(day: DayPlan, selected: boolean): string {
+  if (selected) {
+    return formatDayDate(day.date);
+  }
+  if (day.stops.length === 0) {
+    return "empty";
+  }
+  return `${String(day.stops.length)} ${day.stops.length === 1 ? "stop" : "stops"}`;
+}
+
 const TAB =
   "flex shrink-0 flex-col items-center gap-px rounded-pill border px-[13px] pt-[6px] pb-[7px] whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
@@ -73,7 +87,9 @@ export function DayTabs({ days, selectedIndex, onSelect }: DayTabsProps) {
             }`}
           >
             <span className="text-meta font-semibold">Day {index + 1}</span>
-            <span className="text-tick opacity-70">{formatDayDate(day.date)}</span>
+            <span className="text-tick tabular-nums opacity-70">
+              {subLine(day, selected)}
+            </span>
           </button>
         );
       })}
