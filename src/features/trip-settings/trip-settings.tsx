@@ -32,11 +32,6 @@ interface TripSettingsProps {
   ) => Promise<TripSettingsOutcome>;
 }
 
-/** "1 day", "3 days". Sentences that carry a number have to read as English. */
-function counted(value: number, singular: string, plural: string): string {
-  return `${String(value)} ${value === 1 ? singular : plural}`;
-}
-
 /** Whole days from one end of the trip to the other, or null while it is unreadable. */
 function spanOf(first: string, last: string): number | null {
   if (!CALENDAR_DATE.test(first) || !CALENDAR_DATE.test(last)) {
@@ -97,6 +92,13 @@ export function TripSettings({
   const span = spanOf(first, last);
   const datesChanged = first !== startDate || last !== endDate;
   const changed = name !== title || datesChanged;
+  /** A range that cannot be read comes first, because it is the one to fix. */
+  const note =
+    span === null
+      ? "The last day is before the first day."
+      : state.saved && !pending && !changed
+        ? "Saved."
+        : null;
 
   /** The name has no button of its own, so leaving the field is the commit. */
   const commitName = (): void => {
@@ -179,12 +181,8 @@ export function TripSettings({
         />
       </div>
 
-      <p className="mt-2 text-meta text-ink-muted tabular-nums">
-        {span === null
-          ? "The last day is before the first day."
-          : counted(span, "day", "days")}
-        {state.saved && !pending && !changed ? " \u00b7 Saved." : ""}
-      </p>
+      {/* Only when there is something to say. The days themselves are the count. */}
+      {note === null ? null : <p className="mt-2 text-meta text-ink-muted">{note}</p>}
 
       {state.error === null ? null : (
         <p
