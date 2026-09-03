@@ -80,6 +80,7 @@ export function TripEditor({
               start={selected.plan.start}
               end={selected.plan.end}
               stops={selected.plan.stops}
+              endTravelMode={selected.plan.endTravelMode}
             />
           )}
           {/* The corner of the map, where a map search belongs. The row itself

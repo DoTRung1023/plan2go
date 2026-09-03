@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { DayEndpoint } from "@/core/model/day";
+import type { TravelMode } from "@/core/model/leg";
 import type { Stop } from "@/core/model/stop";
 import {
   endpointMarkerElement,
@@ -10,6 +11,8 @@ import {
 } from "./dom-marker";
 import { googleMapsBrowserKey, loadGoogleMaps } from "./load-google-maps";
 import { paperMapStyle } from "./map-style";
+import type { RouteStroke } from "./route-style";
+import { ROUTE_STROKES, routeStroke } from "./route-style";
 import "./trip-map.css";
 
 /** Zoom used when a day has one point and there is no extent to fit. */
@@ -48,6 +51,83 @@ interface TripMapProps {
   readonly start: DayEndpoint | null;
   readonly end: DayEndpoint | null;
   readonly stops: readonly Stop[];
+  /** The mode used to travel from the last stop out to where the day ends. */
+  readonly endTravelMode: TravelMode;
+}
+
+interface RouteLeg {
+  readonly from: google.maps.LatLngLiteral;
+  readonly to: google.maps.LatLngLiteral;
+  readonly mode: TravelMode;
+}
+
+function pointOf(endpoint: { place: { position: { lat: number; lng: number } } }): google.maps.LatLngLiteral {
+  return { lat: endpoint.place.position.lat, lng: endpoint.place.position.lng };
+}
+
+/**
+ * The day in travel order. A stop carries the mode used to reach it, and the
+ * day carries the mode out to where it ends, so every line knows how it is
+ * drawn. With no start point the first stop has no line arriving at it.
+ */
+function routeLegs(
+  start: DayEndpoint | null,
+  end: DayEndpoint | null,
+  stops: readonly Stop[],
+  endTravelMode: TravelMode,
+): readonly RouteLeg[] {
+  const legs: RouteLeg[] = [];
+  let previous = start === null ? null : pointOf(start);
+
+  for (const stop of stops) {
+    const here = pointOf(stop);
+    if (previous !== null) {
+      legs.push({ from: previous, to: here, mode: stop.travelMode });
+    }
+    previous = here;
+  }
+
+  if (end !== null && previous !== null) {
+    legs.push({ from: previous, to: pointOf(end), mode: endTravelMode });
+  }
+  return legs;
+}
+
+/**
+ * Google draws a dash or a dot as a symbol it repeats along an invisible line,
+ * not as a stroke pattern, so a patterned mode hides its own stroke and hands
+ * the shape over to the icons.
+ */
+function polylineOptions(
+  maps: typeof google.maps,
+  stroke: RouteStroke,
+  color: string,
+): google.maps.PolylineOptions {
+  if (stroke.drawn.kind === "solid") {
+    return { strokeColor: color, strokeOpacity: 1, strokeWeight: stroke.weight };
+  }
+
+  const icon: google.maps.Symbol =
+    stroke.drawn.kind === "dots"
+      ? {
+          path: maps.SymbolPath.CIRCLE,
+          fillColor: color,
+          fillOpacity: 1,
+          strokeOpacity: 0,
+          scale: stroke.weight / 2,
+        }
+      : {
+          path: "M 0,-1 0,1",
+          strokeColor: color,
+          strokeOpacity: 1,
+          strokeWeight: stroke.weight,
+          scale: stroke.drawn.scale,
+        };
+
+  return {
+    strokeOpacity: 0,
+    icons: [{ icon, offset: "0", repeat: stroke.drawn.repeat }],
+  };
 }
 
 function Notice({ children }: { children: React.ReactNode }) {
@@ -68,9 +148,10 @@ function Notice({ children }: { children: React.ReactNode }) {
  * use fitBounds and setCenter rather than panTo, which keeps them instant: the
  * motion policy allows one animation, reordering a stop, and this is not it.
  */
-export function TripMap({ start, end, stops }: TripMapProps) {
+export function TripMap({ start, end, stops, endTravelMode }: TripMapProps) {
   const container = useRef<HTMLDivElement | null>(null);
   const overlays = useRef<google.maps.OverlayView[]>([]);
+  const lines = useRef<google.maps.Polyline[]>([]);
   const [state, setState] = useState<MapState>({ status: "loading" });
 
   useEffect(() => {
@@ -122,6 +203,25 @@ export function TripMap({ start, end, stops }: TripMapProps) {
       overlay.setMap(null);
     }
     overlays.current = [];
+    for (const line of lines.current) {
+      line.setMap(null);
+    }
+    lines.current = [];
+
+    // Under the markers, so a line never crosses the number it belongs to.
+    const palette = getComputedStyle(document.documentElement);
+    for (const leg of routeLegs(start, end, stops, endTravelMode)) {
+      const stroke = routeStroke(leg.mode);
+      const color = palette.getPropertyValue(stroke.colorProperty).trim();
+      lines.current.push(
+        new maps.Polyline({
+          map,
+          path: [leg.from, leg.to],
+          clickable: false,
+          ...polylineOptions(maps, stroke, color),
+        }),
+      );
+    }
 
     const points: google.maps.LatLngLiteral[] = [];
 
@@ -172,7 +272,9 @@ export function TripMap({ start, end, stops }: TripMapProps) {
       bounds.extend(point);
     }
     map.fitBounds(bounds, FIT_PADDING);
-  }, [state, start, end, stops]);
+  }, [state, start, end, stops, endTravelMode]);
+
+  const drawnLegs = routeLegs(start, end, stops, endTravelMode).length;
 
   const zoomBy = (step: number): void => {
     if (state.status !== "ready") {
@@ -231,21 +333,33 @@ export function TripMap({ start, end, stops }: TripMapProps) {
         </div>
       ) : null}
 
-      <div className="pointer-events-none absolute bottom-[22px] left-[22px] z-[2] rounded-row border border-rule bg-paper-raised px-[15px] pt-3 pb-[13px]">
-        <p className="text-label font-semibold text-ink-muted">Map key</p>
-        <p className="mt-[9px] flex items-center gap-2 text-micro text-ink-muted">
-          <span className="trip-map-stop" aria-hidden="true">
-            1
-          </span>
-          Stops, in the order you visit them
-        </p>
-        <p className="mt-[7px] flex items-center gap-2 text-micro text-ink-muted">
-          <span className="trip-map-endpoint" aria-hidden="true">
-            Start
-          </span>
-          Where the day starts, and where it ends
-        </p>
-      </div>
+      {drawnLegs === 0 ? null : (
+        <div className="pointer-events-none absolute bottom-[22px] left-[22px] z-[2] rounded-row border border-rule bg-paper-raised px-[15px] pt-3 pb-[13px]">
+          <p className="text-label font-semibold text-ink-muted">Route key</p>
+          <ul className="mt-[9px] flex flex-col gap-[6px] text-micro text-ink-muted">
+            {ROUTE_STROKES.map((stroke) => (
+              <li key={stroke.mode} className="flex items-center gap-3">
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 42 7"
+                  width="42"
+                  height="7"
+                  className={stroke.inkClass}
+                >
+                  <path
+                    d="M0 3.5h42"
+                    stroke="currentColor"
+                    strokeWidth={stroke.weight}
+                    strokeDasharray={stroke.dashArray ?? undefined}
+                    strokeLinecap={stroke.roundCaps ? "round" : "butt"}
+                  />
+                </svg>
+                <span>{stroke.label}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

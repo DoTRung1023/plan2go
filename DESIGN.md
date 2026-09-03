@@ -280,23 +280,38 @@ shorter day rather than an unknown one.
 
 ## The map
 
-Route lines are terracotta and sage, and the transport mode is carried by the stroke
-pattern as well, so colour is never the only thing distinguishing them:
+A line is drawn between each pair of points in travel order, under the markers. The
+mode is carried by the stroke pattern as well as by the colour, so colour is never the
+only thing distinguishing them:
 
 ```
-walk      2px   dash 1 6     round caps
-cycle     2px   dash 4 4
-drive     3px   solid
-transit   3px   dash 12 6
+drive      3.4px  solid                terracotta-700
+transit    3.4px  dash 11 6            sage-700
+walk       4px    dash 0.5 8, round    terracotta-600
+cycle      3.4px  dash 6 5             neutral-700
 ```
+
+One table in `src/features/trip-map/route-style.ts` holds those four rows, and both the
+map and the key read from it, so a line and the sample that explains it cannot drift
+apart. Google draws a dash or a dot as a symbol repeated along an invisible line rather
+than as a stroke pattern, which is why each row also says what shape it repeats.
 
 Every leg also states its mode in words in the list, so the pattern is a reminder and
 not the only source of the fact.
 
+The route key sits in the bottom left and lists all four modes, in the order Google
+lists them, whenever the day has a line on it. It is the notation, so it does not
+change with the modes this particular day happens to use. Flights are the one mode
+Google offers that this product does not: a day is planned point to point on the
+ground, and the travel provider has no flight to estimate. The markers have no key of
+their own, because a numbered disc in the order you visit them and a named marker for
+the ends of the day explain themselves.
+
 The map's own geometry is styled onto the warm ramp: cream ground, raised roads, sunken
 parks, and water in neutral 300 rather than a blue. Google's controls are off and ours
-are drawn over it, so the only things on the map are the day's markers, the search in
-the top left corner, the zoom pair in the bottom right, and the key in the bottom left.
+are drawn over it, so the only things on the map are the day's lines and markers, the
+search in the top left corner, the zoom pair in the bottom right, and the route key in
+the bottom left.
 
 ## Motion
 
