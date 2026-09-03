@@ -268,10 +268,11 @@ words. The tint alone is never the signal.
 A leg opens. Closed it is one line, the mode and how long it takes, with **Change** at
 the end of it. Open it is a sunken panel of every way of covering the same ground, one
 tile each, carrying the mode, the time and the distance, with the one in use outlined
-in terracotta and its dot filled. The panel closes on a choice, because the row it
-returns to is the answer. While the new times are being worked out the tiles stay on
-screen at reduced opacity under a line of text saying what is happening, which is what
-this product does instead of a skeleton.
+in terracotta and its dot filled. Choosing leaves the panel open, because the outline
+moving and the times below changing are the answer and trying a second mode should not
+mean opening it again. Collapse is what closes it. While the new times are being worked
+out the tiles stay on screen at reduced opacity under a line of text saying what is
+happening, which is what this product does instead of a skeleton.
 
 ## The map
 

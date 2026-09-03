@@ -116,8 +116,10 @@ function Option({
  * one costs in time, so the choice is made by reading the alternatives rather
  * than by trying them one at a time.
  *
- * The panel closes on a choice. The row underneath it then says what was
- * chosen, and the times down the rest of the day have moved to match.
+ * Choosing leaves the panel open. The outline moves to what was picked and the
+ * times down the rest of the day move with it, both of which are worth seeing
+ * before deciding whether that is the mode you wanted, and trying a second one
+ * should not mean opening the panel again. Collapse is what closes it.
  */
 export function LegRow({ leg, planned, conflicts, onChange }: LegRowProps) {
   const [open, setOpen] = useState(false);
@@ -126,19 +128,12 @@ export function LegRow({ leg, planned, conflicts, onChange }: LegRowProps) {
   const Icon = MODE_ICON[leg.mode];
 
   const choose = (mode: TravelMode): void => {
-    if (onChange === null || saving) {
-      return;
-    }
-    if (mode === planned.chosen) {
-      setOpen(false);
+    if (onChange === null || saving || mode === planned.chosen) {
       return;
     }
     startSaving(async () => {
       const outcome = await onChange({ stopId: stopIdOf(planned), mode });
       setError(outcome.error);
-      if (outcome.error === null) {
-        setOpen(false);
-      }
     });
   };
 
