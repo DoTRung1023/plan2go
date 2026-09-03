@@ -30,7 +30,7 @@ interface TripActionsProps {
  * not the same thing and are named apart, because the difference between them
  * is which trip you are left in front of.
  *
- * Clearing empties this trip where it stands. The slug does not change, so a
+ * Resetting empties this trip where it stands. The slug does not change, so a
  * link already sent to the people travelling still opens the planner they were
  * given, and everything on it is gone. Starting another leaves this trip
  * untouched and opens an empty one in its own tab, so both are in front of you
@@ -52,7 +52,7 @@ export function TripActions({ slug, onClear, startAnotherPath }: TripActionsProp
     <div>
       <div className="flex flex-wrap items-center gap-2">
         <button type="button" onClick={clear} disabled={clearing} className={BUTTON}>
-          {clearing ? "Clearing" : "Clear this trip"}
+          {clearing ? "Resetting" : "Reset this trip"}
         </button>
         {/* Its own tab, so the trip being read is still there behind it. */}
         <form action={startAnotherPath} method="post" target="_blank">
