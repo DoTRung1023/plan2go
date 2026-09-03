@@ -53,13 +53,21 @@ new top-level folder without asking.
 
 ## State of the repo
 
-Postgres is hosted on Neon and the first migration is applied. Credentials live in
-`.env`, which the Prisma CLI reads and Next.js reads as well, so one file serves both.
-`DATABASE_URL` is the pooled connection and `DIRECT_URL` is the direct one that
-migrations need.
+Postgres is hosted on Neon and there is no local database. Development, the tests and
+anything deployed all read the one Neon database, so a schema change or a stray write
+lands everywhere at once. Credentials live in `.env`, which the Prisma CLI reads and
+Next.js reads as well, so one file serves both. `DATABASE_URL` is the pooled connection
+and `DIRECT_URL` is the direct one that schema changes need.
 
 Do not create a local database and do not switch the provider to sqlite. Development
 and production run the same dialect.
+
+The schema is pushed rather than migrated. `pnpm db:push` syncs `prisma/schema.prisma`
+straight to the database and there is no migrations folder. That is the prototyping
+workflow, and its cost is that a change dropping or renaming a column takes the data in
+it, with Prisma offering to reset the database rather than carrying anything across.
+Anything that has to keep existing rows is a migration, and the first deployment with
+real users is the point to baseline one.
 
 ## Commands
 
@@ -71,6 +79,7 @@ pnpm lint         # eslint, zero warnings tolerated
 pnpm test         # vitest run
 pnpm test:watch   # vitest
 pnpm db:generate  # prisma generate
+pnpm db:push      # prisma db push, schema straight to the database
 ```
 
 ## Definition of done
