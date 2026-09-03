@@ -113,7 +113,7 @@ export function TripEditor({
         </div>
       </section>
 
-      <section className="lg:h-dvh lg:overflow-y-auto">
+      <section className="scroll-quiet lg:h-dvh lg:overflow-y-auto">
         <div className="mx-auto flex w-full max-w-[520px] flex-wrap items-center justify-between gap-3 px-5 pt-6">
           {/* Not prefetched: "/" opens a trip, and prefetching would open it
               for a reader who never clicked. */}

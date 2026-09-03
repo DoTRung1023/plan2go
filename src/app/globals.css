@@ -44,6 +44,44 @@
   --shadow-map-control: 0 1px 3px rgba(35, 32, 27, 0.18);
 }
 
+/*
+ * The scrollbar on the page and on the list pane. A browser's own arrives in
+ * system grey and there is no grey in this palette, so it is drawn in tokens
+ * instead: a thin rule-strong thumb that darkens to ink-faint under the
+ * pointer, over the surface it happens to be sitting on. The tab strip does
+ * the same for its sideways bar in day-tabs.css.
+ */
+@utility scroll-quiet {
+  /* Firefox, which has these two properties and no pseudo-elements. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-rule-strong) transparent;
+
+  /* The rest is Chrome and Safari, which ignore the two above. */
+  &::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background-color: transparent;
+  }
+
+  /*
+   * Four pixels of paint inside a ten pixel track. The border is transparent
+   * and the paint is clipped to the content box, which is the only way a
+   * scrollbar thumb gets a margin.
+   */
+  &::-webkit-scrollbar-thumb {
+    border: 3px solid transparent;
+    border-radius: var(--radius-pill);
+    background-color: var(--color-rule-strong);
+    background-clip: content-box;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-ink-faint);
+  }
+}
+
 @layer base {
   html {
     color-scheme: light;
