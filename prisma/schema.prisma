@@ -20,6 +20,7 @@ enum TravelMode {
   CYCLE
   DRIVE
   TRANSIT
+  FLIGHT
 }
 
 model Trip {

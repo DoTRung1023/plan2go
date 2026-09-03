@@ -82,6 +82,20 @@ describe("createHaversineTravelProvider", () => {
     );
   });
 
+  it("flies the straight line it measured, with no detour added to it", async () => {
+    const result = await provider.estimate({
+      from: ADELAIDE_GPO,
+      to: GLENELG,
+      mode: "flight",
+    });
+
+    expect(result.status).toBe("resolved");
+    if (result.status !== "resolved") {
+      return;
+    }
+    expect(result.estimate.distanceMeters).toBe(haversineMeters(ADELAIDE_GPO, GLENELG));
+  });
+
   it("is slower on foot than behind a wheel over the same ground", async () => {
     const onFoot = await provider.estimate({ from: ADELAIDE_GPO, to: GLENELG, mode: "walk" });
     const driving = await provider.estimate({ from: ADELAIDE_GPO, to: GLENELG, mode: "drive" });

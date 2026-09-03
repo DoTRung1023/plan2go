@@ -289,23 +289,24 @@ drive      3.4px  solid                terracotta-700
 transit    3.4px  dash 11 6            sage-700
 walk       4px    dash 0.5 8, round    terracotta-600
 cycle      3.4px  dash 6 5             neutral-700
+flight     3.4px  dash 16 10           terracotta-800
 ```
 
-One table in `src/features/trip-map/route-style.ts` holds those four rows, and both the
+One table in `src/features/trip-map/route-style.ts` holds those five rows, and both the
 map and the key read from it, so a line and the sample that explains it cannot drift
 apart. Google draws a dash or a dot as a symbol repeated along an invisible line rather
-than as a stroke pattern, which is why each row also says what shape it repeats.
+than as a stroke pattern, which is why each row also says what shape it repeats, and a
+dash in the key is the length the map actually draws.
 
 Every leg also states its mode in words in the list, so the pattern is a reminder and
 not the only source of the fact.
 
-The route key sits in the bottom left and lists all four modes, in the order Google
+The route key sits in the bottom left and lists all five modes, in the order Google
 lists them, whenever the day has a line on it. It is the notation, so it does not
-change with the modes this particular day happens to use. Flights are the one mode
-Google offers that this product does not: a day is planned point to point on the
-ground, and the travel provider has no flight to estimate. The markers have no key of
-their own, because a numbered disc in the order you visit them and a named marker for
-the ends of the day explain themselves.
+change with the modes this particular day happens to use. The longest dash is flying,
+which reads as the longest stride between two points. The markers have no key of their
+own, because a numbered disc in the order you visit them and a named marker for the
+ends of the day explain themselves.
 
 The map's own geometry is styled onto the warm ramp: cream ground, raised roads, sunken
 parks, and water in neutral 300 rather than a blue. Google's controls are off and ours

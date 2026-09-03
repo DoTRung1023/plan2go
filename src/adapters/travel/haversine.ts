@@ -12,10 +12,21 @@ export interface HaversineOptions {
   readonly detourFactor: number;
 }
 
+/**
+ * Flying is so much slower than an aircraft because this is a door to door
+ * speed: getting out to the airport, waiting at it, and getting in from the one
+ * at the other end are most of a short flight and all of the reason a short one
+ * is rarely worth taking.
+ */
 export const DEFAULT_HAVERSINE_OPTIONS: HaversineOptions = {
-  speedsKmh: { walk: 4.8, cycle: 15, drive: 30, transit: 20 },
+  speedsKmh: { walk: 4.8, cycle: 15, drive: 30, transit: 20, flight: 250 },
   detourFactor: 1.3,
 };
+
+/** The one mode whose route really is the straight line this provider measures. */
+function detourFor(mode: TravelMode, options: HaversineOptions): number {
+  return mode === "flight" ? 1 : options.detourFactor;
+}
 
 function toRadians(degrees: number): number {
   return (degrees * Math.PI) / 180;
@@ -59,7 +70,9 @@ export function createHaversineTravelProvider(
       }
 
       const straightLine = haversineMeters(request.from, request.to);
-      const distanceMeters = Math.round(straightLine * options.detourFactor);
+      const distanceMeters = Math.round(
+        straightLine * detourFor(request.mode, options),
+      );
       const speedKmh = options.speedsKmh[request.mode];
       const rawMinutes = (distanceMeters / 1000 / speedKmh) * 60;
       const durationMinutes =

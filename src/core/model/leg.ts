@@ -1,6 +1,6 @@
 import type { LatLng } from "./place";
 
-export type TravelMode = "walk" | "cycle" | "drive" | "transit";
+export type TravelMode = "walk" | "cycle" | "drive" | "transit" | "flight";
 
 /** Where an estimate came from, so the UI can say how trustworthy it is. */
 export type TravelSource = "haversine" | "google-routes";

@@ -8,9 +8,9 @@ import type { TravelMode } from "@/core/model/leg";
  * stroke pattern as well as by the colour, and every leg says its mode in words
  * in the list, so the pattern is a reminder rather than the only source.
  *
- * Flights are the one mode Google offers that this table does not: a day in a
- * city is planned point to point on the ground, and the engine has no flight to
- * estimate. Adding one is a change to the travel provider first.
+ * A dash in the sample is the length the map actually draws, because the two
+ * are read one after the other and a sample that only resembled the line would
+ * be worse than none.
  */
 export interface RouteStroke {
   readonly mode: TravelMode;
@@ -53,7 +53,7 @@ const STROKES: Readonly<Record<TravelMode, RouteStroke>> = {
     weight: 3.4,
     dashArray: "11 6",
     roundCaps: false,
-    drawn: { kind: "dashes", scale: 3, repeat: "17px" },
+    drawn: { kind: "dashes", scale: 5.5, repeat: "17px" },
   },
   walk: {
     mode: "walk",
@@ -73,7 +73,17 @@ const STROKES: Readonly<Record<TravelMode, RouteStroke>> = {
     weight: 3.4,
     dashArray: "6 5",
     roundCaps: false,
-    drawn: { kind: "dashes", scale: 1.6, repeat: "10px" },
+    drawn: { kind: "dashes", scale: 3, repeat: "11px" },
+  },
+  flight: {
+    mode: "flight",
+    label: "Flying",
+    colorProperty: "--color-terracotta-800",
+    inkClass: "text-terracotta-800",
+    weight: 3.4,
+    dashArray: "16 10",
+    roundCaps: false,
+    drawn: { kind: "dashes", scale: 8, repeat: "26px" },
   },
 };
 
@@ -83,6 +93,7 @@ export const ROUTE_STROKES: readonly RouteStroke[] = [
   STROKES.transit,
   STROKES.walk,
   STROKES.cycle,
+  STROKES.flight,
 ];
 
 /** Total by construction: the table has a row for every mode there is. */
