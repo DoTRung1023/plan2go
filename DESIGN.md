@@ -201,7 +201,7 @@ everything else. Every element that renders a time or a duration sets
 - **meta:** secondary text, addresses, the words in a leg row.
 - **micro:** the second line of a search result, and the sentence in a conflict.
 - **label:** the small heading above a value. Sentence case, 600, never uppercase.
-- **tick:** the second line inside a day tab, which says the date or the stop count.
+- **tick:** the two lines under the name of a day tab, the date and the stop count.
 
 Body text is left aligned. Never centred, except a single line inside an empty state.
 

@@ -13,13 +13,11 @@ interface DayTabsProps {
 }
 
 /**
- * The day being read says which day it is. The rest say what is on them, which
- * is what you are choosing between when you reach for another day.
+ * What is on the day, under the date. Every tab says both, because which day it
+ * is and how full it is are two different questions and a reader choosing a tab
+ * is usually asking them together.
  */
-function subLine(day: DayPlan, selected: boolean): string {
-  if (selected) {
-    return formatDayDate(day.date);
-  }
+function stopLine(day: DayPlan): string {
   if (day.stops.length === 0) {
     return "empty";
   }
@@ -27,7 +25,7 @@ function subLine(day: DayPlan, selected: boolean): string {
 }
 
 const TAB =
-  "flex shrink-0 flex-col items-center gap-px rounded-pill border px-[13px] pt-[6px] pb-[7px] whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "flex shrink-0 flex-col items-center gap-[2px] rounded-pill border px-[15px] pt-[7px] pb-2 whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 export function DayTabs({ days, selectedIndex, onSelect }: DayTabsProps) {
   const tabs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -87,9 +85,10 @@ export function DayTabs({ days, selectedIndex, onSelect }: DayTabsProps) {
             }`}
           >
             <span className="text-meta font-semibold">Day {index + 1}</span>
-            <span className="text-tick tabular-nums opacity-70">
-              {subLine(day, selected)}
+            <span className="text-tick tabular-nums opacity-80">
+              {formatDayDate(day.date)}
             </span>
+            <span className="text-tick tabular-nums opacity-65">{stopLine(day)}</span>
           </button>
         );
       })}
