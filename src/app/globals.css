@@ -1,55 +1,100 @@
 @import "tailwindcss";
 
 /*
- * Tokens from DESIGN.md. Warm paper, warm ink, one accent, and olive reserved
- * for the home base marker. Never pure white, never pure black, no dark theme.
+ * Tokens from DESIGN.md. Warm cream ground under warm ink, terracotta as the
+ * accent and sage as a genuine second voice. Every role carries a 100 to 900
+ * ramp generated on one shared lightness scale, so the same step of any ramp
+ * has the same visual weight. Never pure white, never pure black, no dark
+ * theme.
  */
 @theme {
-  --color-paper: #f7f2e8;
-  --color-paper-raised: #fdfaf3;
-  --color-paper-sunken: #ede6d8;
-  --color-rule: #d9cfbb;
-  --color-rule-strong: #c4b79c;
+  --color-paper: #f5ead8;
+  --color-paper-raised: #f9f4ed;
+  --color-paper-sunken: #ebddc5;
 
-  --color-ink: #23201b;
-  --color-ink-muted: #5c554a;
-  --color-ink-faint: #8a8173;
+  --color-ink: #201e1d;
+  --color-ink-muted: color-mix(in srgb, #201e1d 68%, transparent);
+  --color-ink-faint: color-mix(in srgb, #201e1d 55%, transparent);
 
-  --color-terracotta: #b4552f;
-  --color-terracotta-deep: #8e4225;
-  --color-terracotta-wash: #f0ddd2;
+  --color-rule: color-mix(in srgb, #201e1d 13%, transparent);
+  --color-rule-strong: color-mix(in srgb, #201e1d 28%, transparent);
 
-  --color-olive: #4a5233;
+  --color-neutral-100: #f9f4ed;
+  --color-neutral-200: #eee7db;
+  --color-neutral-300: #dcd3c4;
+  --color-neutral-400: #c0b6a5;
+  --color-neutral-500: #a19786;
+  --color-neutral-600: #82796a;
+  --color-neutral-700: #645c50;
+  --color-neutral-800: #474238;
+  --color-neutral-900: #2e2b25;
 
-  --font-display: var(--font-bitter), Georgia, "Times New Roman", serif;
-  --font-body: var(--font-source-sans), "Segoe UI", system-ui, sans-serif;
+  --color-terracotta: #c67139;
+  --color-terracotta-100: #fff2eb;
+  --color-terracotta-200: #ffe1d0;
+  --color-terracotta-300: #ffc6a5;
+  --color-terracotta-400: #f6a06b;
+  --color-terracotta-500: #d67f48;
+  --color-terracotta-600: #b2622d;
+  --color-terracotta-700: #8c491a;
+  --color-terracotta-800: #643312;
+  --color-terracotta-900: #402310;
 
-  --text-time-lead: 32px;
-  --text-time-lead--line-height: 36px;
-  --text-time: 20px;
-  --text-time--line-height: 24px;
-  --text-place: 18px;
-  --text-place--line-height: 24px;
-  --text-body: 16px;
-  --text-body--line-height: 24px;
-  --text-meta: 14px;
-  --text-meta--line-height: 20px;
-  --text-label: 12px;
-  --text-label--line-height: 16px;
+  --color-sage: #7a8a5e;
+  --color-sage-100: #f0fae1;
+  --color-sage-200: #e1eecc;
+  --color-sage-300: #ccdbb2;
+  --color-sage-400: #aebf92;
+  --color-sage-500: #8fa073;
+  --color-sage-600: #728157;
+  --color-sage-700: #56633f;
+  --color-sage-800: #3d472b;
+  --color-sage-900: #272e1b;
 
-  --radius-card: 6px;
-  --radius-panel: 10px;
+  --font-display: var(--font-caprasimo), Georgia, "Times New Roman", serif;
+  --font-body: var(--font-figtree), "Segoe UI", system-ui, sans-serif;
+
+  --text-hero: 44px;
+  --text-hero--line-height: 0.95;
+  --text-title: 24px;
+  --text-title--line-height: 1.14;
+  --text-place: 17.5px;
+  --text-place--line-height: 1.2;
+  --text-time: 15px;
+  --text-time--line-height: 1.1;
+  --text-body: 14px;
+  --text-body--line-height: 1.5;
+  --text-meta: 12px;
+  --text-meta--line-height: 1.45;
+  --text-micro: 11.5px;
+  --text-micro--line-height: 1.4;
+  --text-label: 10.5px;
+  --text-label--line-height: 1;
+  --text-tick: 9.5px;
+  --text-tick--line-height: 1;
+
+  /*
+   * One radius system. Rounded to the point of softness, and small controls go
+   * all the way to a pill.
+   */
+  --radius-chip: 14px;
+  --radius-row: 18px;
+  --radius-panel: 20px;
+  --radius-card: 22px;
   --radius-pill: 999px;
 
-  --shadow-map-control: 0 1px 3px rgba(35, 32, 27, 0.18);
+  /* Elevation, tuned to the cream ground rather than to a white one. */
+  --shadow-sm: 0 1px 3px color-mix(in srgb, #2e2b25 16%, transparent);
+  --shadow-md: 0 3px 10px color-mix(in srgb, #2e2b25 16%, transparent);
+  --shadow-lg: 0 12px 32px color-mix(in srgb, #2e2b25 22%, transparent);
 }
 
 /*
  * The scrollbar on the page and on the list pane. A browser's own arrives in
  * system grey and there is no grey in this palette, so it is drawn in tokens
- * instead: a thin rule-strong thumb that darkens to ink-faint under the
- * pointer, over the surface it happens to be sitting on. The tab strip does
- * the same for its sideways bar in day-tabs.css.
+ * instead: a thin thumb that darkens under the pointer, over whichever surface
+ * it happens to be sitting on. The tab strip does the same for its sideways bar
+ * in day-tabs.css.
  */
 @utility scroll-quiet {
   /* Firefox, which has these two properties and no pseudo-elements. */
@@ -78,8 +123,23 @@
   }
 
   &::-webkit-scrollbar-thumb:hover {
-    background-color: var(--color-ink-faint);
+    background-color: var(--color-ink-muted);
   }
+}
+
+/*
+ * The dotted thread that runs down the left of the day, joining a stop to the
+ * leg under it. Drawn rather than bordered, because a dotted border rounds its
+ * dots off at this width and a gradient keeps them square.
+ */
+@utility thread {
+  width: 2px;
+  border-radius: var(--radius-pill);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--color-ink) 16%, transparent) 0 4px,
+    transparent 4px 9px
+  );
 }
 
 @layer base {
@@ -93,10 +153,27 @@
     font-family: var(--font-body);
     font-size: var(--text-body);
     line-height: var(--text-body--line-height);
+    text-wrap: pretty;
+  }
+
+  /*
+   * The display face has one weight and it is already heavy. Asking for bold on
+   * top of it substitutes a synthesised weight in some browsers, so headings
+   * set their family here and never their weight.
+   */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: -0.015em;
   }
 
   ::selection {
-    background-color: var(--color-terracotta-wash);
+    background-color: var(--color-terracotta-200);
   }
 
   /*

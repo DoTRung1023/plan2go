@@ -15,7 +15,7 @@
   overflow-x: auto;
   overflow-y: hidden;
 
-  /* Firefox. The track is left as the strip's own surface. */
+  /* Firefox. The track is left as the surface the strip is sitting on. */
   scrollbar-width: thin;
   scrollbar-color: var(--color-rule-strong) transparent;
 }
@@ -35,5 +35,5 @@
 }
 
 .day-tabs::-webkit-scrollbar-thumb:hover {
-  background-color: var(--color-ink-faint);
+  background-color: var(--color-ink-muted);
 }

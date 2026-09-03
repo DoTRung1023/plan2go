@@ -1,16 +1,18 @@
 import type { Metadata } from "next";
-import { Bitter, Source_Sans_3 } from "next/font/google";
+import { Caprasimo, Figtree } from "next/font/google";
 import "./globals.css";
 
-const display = Bitter({
+/** The display voice. One weight is all it has, and all this product asks for. */
+const display = Caprasimo({
   subsets: ["latin"],
-  variable: "--font-bitter",
+  weight: "400",
+  variable: "--font-caprasimo",
   display: "swap",
 });
 
-const body = Source_Sans_3({
+const body = Figtree({
   subsets: ["latin"],
-  variable: "--font-source-sans",
+  variable: "--font-figtree",
   display: "swap",
 });
 

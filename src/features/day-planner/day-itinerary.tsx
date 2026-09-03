@@ -4,12 +4,10 @@ import type { DayEndpoint, DayPlan } from "@/core/model/day";
 import type { StopId } from "@/core/model/stop";
 import type { ComputedDay } from "@/core/time/compute-day";
 import { formatClock } from "@/core/time/minutes";
+import { HomeIcon } from "@/ui/icons";
 import { ConflictNotice } from "./conflict-notice";
-import { DayTotals } from "./day-totals";
 import { LegRow } from "./leg-row";
 import { StopCard } from "./stop-card";
-
-const LABEL = "text-label font-semibold tracking-[0.08em] text-ink-faint uppercase";
 
 interface DayItineraryProps {
   readonly day: DayPlan;
@@ -34,34 +32,49 @@ function endpointName(endpoint: DayEndpoint): string {
   return `${endpoint.label}, ${endpoint.place.name}`;
 }
 
-function Endpoint({
-  label,
-  time,
+/**
+ * Where the day starts and where it ends. A different shape from a stop, not
+ * merely a different colour: a rounded square in sage against the numbered
+ * terracotta discs of the stops between them.
+ */
+function Anchor({
   endpoint,
+  fallback,
+  time,
 }: {
-  readonly label: string;
-  readonly time: string | null;
   readonly endpoint: DayEndpoint;
+  /** Said when the place has no address of its own. */
+  readonly fallback: string;
+  readonly time: string | null;
 }) {
   return (
-    <div className="flex flex-wrap items-baseline gap-x-3">
-      <span className={LABEL}>{label}</span>
-      <span className="font-display text-time font-semibold text-ink tabular-nums">
+    <div className="flex items-center gap-3 rounded-row px-[2px] py-[14px]">
+      <span className="ml-2 grid h-[30px] w-[30px] shrink-0 place-items-center rounded-[12px_12px_12px_4px] bg-sage-600 text-paper">
+        <HomeIcon size={15} strokeWidth={2.75} />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-meta font-semibold text-ink">
+          {endpointName(endpoint)}
+        </span>
+        <span className="block text-micro text-ink-muted">
+          {endpoint.place.address ?? fallback}
+        </span>
+      </span>
+      <span className="ml-auto pr-2 font-display text-place whitespace-nowrap text-ink-muted tabular-nums">
         {time ?? "Time not known"}
       </span>
-      <span className="text-body text-ink-muted">{endpointName(endpoint)}</span>
     </div>
   );
 }
 
 /**
  * The day as a person reads it, top to bottom: where it starts if it starts
- * anywhere, every leg and every stop in order, where it ends if it ends
- * anywhere, and what it all adds up to. Every conflict sits against the stop or
- * the leg it belongs to.
+ * anywhere, every leg and every stop in order, and where it ends if it ends
+ * anywhere. Every conflict sits against the stop or the leg it belongs to.
  */
 export function DayItinerary({ day, computed }: DayItineraryProps) {
   const notes = new Map(day.stops.map((stop) => [stop.id, stop.note]));
+  const addresses = new Map(day.stops.map((stop) => [stop.id, stop.place.address]));
   /** With no start point the first stop has no leg arriving at it. */
   const legOffset = day.start === null ? -1 : 0;
   const legToEnd = day.end === null ? undefined : computed.legs[computed.legs.length - 1];
@@ -70,10 +83,10 @@ export function DayItinerary({ day, computed }: DayItineraryProps) {
   return (
     <div>
       {day.start === null ? null : (
-        <Endpoint
-          label="Start"
-          time={formatClock(computed.begins.minutesFromMidnight)}
+        <Anchor
           endpoint={day.start}
+          fallback="Where the day starts"
+          time={formatClock(computed.begins.minutesFromMidnight)}
         />
       )}
 
@@ -87,6 +100,7 @@ export function DayItinerary({ day, computed }: DayItineraryProps) {
             <StopCard
               position={index + 1}
               stop={stop}
+              address={addresses.get(stop.stopId) ?? null}
               note={notes.get(stop.stopId) ?? null}
               conflicts={conflictsAtStop(computed.conflicts, stop.stopId)}
             />
@@ -99,17 +113,20 @@ export function DayItinerary({ day, computed }: DayItineraryProps) {
       )}
 
       {day.end === null ? null : (
-        <Endpoint
-          label="End"
-          time={computed.ends === null ? null : formatClock(computed.ends.minutesFromMidnight)}
+        <Anchor
           endpoint={day.end}
+          fallback="Where the day ends"
+          time={
+            computed.ends === null ? null : formatClock(computed.ends.minutesFromMidnight)
+          }
         />
       )}
-      {endConflicts.map((conflict) => (
-        <ConflictNotice key={conflict.kind} conflict={conflict} />
-      ))}
 
-      <DayTotals totals={computed.totals} />
+      {endConflicts.map((conflict) => (
+        <div key={conflict.kind} className="mt-2">
+          <ConflictNotice conflict={conflict} />
+        </div>
+      ))}
     </div>
   );
 }

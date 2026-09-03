@@ -15,7 +15,7 @@ import { addStopAction } from "./add-stop-action";
 import { clearTripAction } from "./clear-trip-action";
 import { updateTripAction } from "./update-trip-action";
 
-/** Leaflet reads the document as it loads, so the map never renders on the server. */
+/** The Maps script reaches for the document as it runs, so it never renders on the server. */
 const TripMap = dynamic(
   async () => {
     const loaded = await import("@/features/trip-map/trip-map");
@@ -24,7 +24,7 @@ const TripMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-full w-full items-center justify-center rounded-panel border border-rule bg-paper-sunken">
+      <div className="flex h-full w-full items-center justify-center bg-paper-sunken">
         <p className="text-meta text-ink-muted">Loading the map.</p>
       </div>
     ),
@@ -65,13 +65,13 @@ export function TripEditor({
   const last = days[days.length - 1];
 
   return (
-    <main className="lg:grid lg:h-dvh lg:grid-cols-[minmax(420px,1fr)_minmax(400px,480px)]">
+    <main className="lg:grid lg:h-dvh lg:grid-cols-[minmax(0,1fr)_clamp(520px,40%,660px)]">
       <section
         aria-label="Map of this day"
         className={
           expanded
-            ? "fixed inset-0 z-40 bg-paper-sunken p-3 lg:static lg:h-dvh"
-            : "sticky top-0 z-20 h-[140px] bg-paper-sunken p-3 lg:static lg:h-dvh"
+            ? "fixed inset-0 z-40 bg-paper-sunken lg:static lg:h-dvh"
+            : "sticky top-0 z-20 h-[140px] border-b border-rule bg-paper-sunken lg:static lg:h-dvh lg:border-b-0"
         }
       >
         <div className="relative h-full w-full">
@@ -85,9 +85,9 @@ export function TripEditor({
           {/* The corner of the map, where a map search belongs. The row itself
               takes no clicks, so the map still drags in the gap between the
               search and the toggle. */}
-          <div className="pointer-events-none absolute inset-x-3 top-3 z-[3] flex items-start gap-2">
+          <div className="pointer-events-none absolute inset-x-[14px] top-[14px] z-[3] flex items-start gap-2 lg:inset-x-[22px] lg:top-[22px]">
             {canEdit && selected !== undefined ? (
-              <div className="pointer-events-auto w-full max-w-[360px] min-w-0">
+              <div className="pointer-events-auto w-full max-w-[346px] min-w-0">
                 <PlaceSearch
                   slug={slug}
                   dayId={selected.plan.id}
@@ -105,7 +105,7 @@ export function TripEditor({
               onClick={() => {
                 setExpanded(!expanded);
               }}
-              className="pointer-events-auto ml-auto shrink-0 rounded-pill border border-rule bg-paper-raised px-4 py-2 text-meta text-ink shadow-map-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:hidden"
+              className="pointer-events-auto ml-auto shrink-0 rounded-pill border border-rule bg-paper-raised px-4 py-2 text-meta font-semibold text-ink shadow-sm hover:bg-paper-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:hidden"
             >
               {expanded ? "Collapse map" : "Expand map"}
             </button>
@@ -113,21 +113,24 @@ export function TripEditor({
         </div>
       </section>
 
-      <section className="scroll-quiet lg:h-dvh lg:overflow-y-auto">
-        <div className="mx-auto flex w-full max-w-[520px] flex-wrap items-center justify-between gap-3 px-5 pt-6">
+      <section className="flex min-h-0 flex-col border-rule lg:h-dvh lg:border-l">
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 px-5 pt-[18px] pb-4 lg:px-[26px]">
           {/* Not prefetched: "/" opens a trip, and prefetching would open it
               for a reader who never clicked. */}
           <Link
             href="/"
             prefetch={false}
-            className="inline-flex items-center gap-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+            className="inline-flex items-center gap-2 rounded-chip focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
           >
             <Image src={lockup} alt="plan2go" width={150} height={55} priority />
           </Link>
           {canEdit ? (
             <TripActions slug={slug} onClear={clearTripAction} startAnotherPath="/new" />
-          ) : null}
+          ) : (
+            <p className="text-meta text-ink-muted">Shared with you, read only</p>
+          )}
         </div>
+
         <DayPlanner
           title={title}
           days={days}

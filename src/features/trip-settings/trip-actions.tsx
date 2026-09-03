@@ -9,7 +9,7 @@ export interface ClearTripOutcome {
 
 /** Neither of these is the primary action on the page, so neither is terracotta. */
 const BUTTON =
-  "rounded-card border border-rule bg-paper-raised px-3 py-2 text-meta font-semibold text-ink hover:border-rule-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta disabled:text-ink-faint";
+  "rounded-pill border border-rule bg-paper-raised px-[13px] py-[7px] text-meta font-semibold text-ink hover:border-rule-strong hover:bg-paper-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta disabled:opacity-45";
 
 interface TripActionsProps {
   readonly slug: string;
@@ -65,7 +65,7 @@ export function TripActions({ slug, onClear, startAnotherPath }: TripActionsProp
       {message === null ? null : (
         <p
           role="alert"
-          className="mt-2 rounded-card border-l-2 border-terracotta bg-terracotta-wash px-3 py-2 text-body text-ink"
+          className="mt-2 rounded-chip bg-terracotta-200 px-3 py-2 text-meta text-terracotta-900"
         >
           {message}
         </p>

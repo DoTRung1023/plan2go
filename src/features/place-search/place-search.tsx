@@ -4,6 +4,7 @@ import type { KeyboardEvent } from "react";
 import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { z } from "zod";
 import type { LatLng } from "@/core/model/place";
+import { CloseIcon, PinIcon, SearchIcon } from "@/ui/icons";
 
 /** Long enough that typing does not spend money on every letter. */
 const DEBOUNCE_MS = 250;
@@ -50,30 +51,13 @@ interface PlaceSearchProps {
 }
 
 /**
- * The field floats over the map, so it carries its own surface and the one
- * shadow token DESIGN.md allows a control on the map.
+ * The field floats over the map, so it carries its own surface and an elevation
+ * step. A pill, like every other small control in this product.
  */
 const FIELD =
-  "rounded-card border border-rule bg-paper-raised px-3 py-2 shadow-map-control focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-terracotta";
+  "flex items-center gap-[9px] rounded-pill border border-rule bg-paper-raised py-0 pr-2 pl-[15px] shadow-sm focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-terracotta";
 
-const PANEL_LINE = "px-4 py-3 text-meta text-ink-muted";
-
-/** Decorative. The field has a label of its own, which is what is read out. */
-function Magnifier() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 16 16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      className="h-4 w-4 shrink-0 text-ink-faint"
-    >
-      <circle cx="6.75" cy="6.75" r="4.75" />
-      <path d="M10.5 10.5 14 14" strokeLinecap="round" />
-    </svg>
-  );
-}
+const PANEL_LINE = "px-[11px] py-[10px] text-meta text-ink-muted";
 
 /**
  * Search for a place and put it on the day that is open.
@@ -266,91 +250,98 @@ export function PlaceSearch({ slug, dayId, dayName, near, onAdd }: PlaceSearchPr
   return (
     <div className="relative" ref={container}>
       <div className={FIELD}>
-        <label
-          className="text-label font-semibold tracking-[0.08em] text-ink-faint uppercase"
-          htmlFor={fieldId}
-        >
+        <label className="sr-only" htmlFor={fieldId}>
           Add a place to {dayName}
         </label>
-
-        <div className="mt-1 flex items-center gap-2">
-          <Magnifier />
-          <input
-            id={fieldId}
-            ref={input}
-            type="text"
-            role="combobox"
-            autoComplete="off"
-            aria-expanded={listed}
-            aria-controls={listId}
-            aria-autocomplete="list"
-            aria-activedescendant={
-              listed ? `${listId}-option-${String(active)}` : undefined
-            }
-            value={query}
-            onChange={(event) => {
-              setQuery(event.target.value);
-              setLanded(null);
-              setOpen(true);
-            }}
-            onFocus={() => {
-              setOpen(true);
-            }}
-            onKeyDown={onKeyDown}
-            className="min-w-0 flex-1 py-1 text-body text-ink outline-none"
-          />
-          {query === "" ? null : (
-            <button
-              type="button"
-              onClick={clear}
-              className="shrink-0 text-meta text-ink-faint hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
-            >
-              Clear
-            </button>
-          )}
-        </div>
+        <SearchIcon size={16} strokeWidth={2.75} className="shrink-0 text-ink-muted" />
+        <input
+          id={fieldId}
+          ref={input}
+          type="text"
+          role="combobox"
+          autoComplete="off"
+          placeholder={`Add a place to ${dayName}`}
+          aria-expanded={listed}
+          aria-controls={listId}
+          aria-autocomplete="list"
+          aria-activedescendant={
+            listed ? `${listId}-option-${String(active)}` : undefined
+          }
+          value={query}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setLanded(null);
+            setOpen(true);
+          }}
+          onFocus={() => {
+            setOpen(true);
+          }}
+          onKeyDown={onKeyDown}
+          className="min-w-0 flex-1 py-[11px] text-body text-ink caret-terracotta outline-none placeholder:text-ink-faint"
+        />
+        {query === "" ? null : (
+          <button
+            type="button"
+            onClick={clear}
+            aria-label="Clear the search"
+            className="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-pill text-ink-muted hover:bg-neutral-200 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+          >
+            <CloseIcon size={14} strokeWidth={2.75} />
+          </button>
+        )}
       </div>
 
       {panel ? (
-        <div className="absolute top-full right-0 left-0 z-30 mt-1 overflow-hidden rounded-card border border-rule bg-paper-raised shadow-map-control">
+        <div className="scroll-quiet absolute top-full right-0 left-0 z-30 mt-2 max-h-[330px] overflow-x-hidden overflow-y-auto rounded-panel border border-rule bg-paper-raised p-[7px] shadow-md">
           {adding === null ? null : (
             <p className={PANEL_LINE}>{`Adding ${adding} to ${dayName}.`}</p>
           )}
 
           {listed ? (
-            <ul id={listId} role="listbox" aria-label="Places that match">
-              {visible.map((suggestion, index) => (
-                <li
-                  key={suggestion.providerPlaceId}
-                  id={`${listId}-option-${String(index)}`}
-                  role="option"
-                  aria-selected={index === active}
-                  className={index === 0 ? "" : "border-t border-rule"}
-                >
-                  <button
-                    type="button"
-                    onMouseEnter={() => {
-                      setActive(index);
-                    }}
-                    onClick={() => {
-                      choose(suggestion);
-                    }}
-                    className={`block w-full px-4 py-3 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${
-                      index === active ? "bg-terracotta-wash" : ""
-                    }`}
+            <>
+              <p className="px-[11px] pt-1 pb-[9px] text-label font-semibold text-ink-muted">
+                Matching places
+              </p>
+              <ul id={listId} role="listbox" aria-label="Places that match">
+                {visible.map((suggestion, index) => (
+                  <li
+                    key={suggestion.providerPlaceId}
+                    id={`${listId}-option-${String(index)}`}
+                    role="option"
+                    aria-selected={index === active}
                   >
-                    <span className="block font-display text-place font-semibold text-ink">
-                      {suggestion.name}
-                    </span>
-                    {suggestion.address === null ? null : (
-                      <span className="block text-meta text-ink-muted">
-                        {suggestion.address}
+                    <button
+                      type="button"
+                      onMouseEnter={() => {
+                        setActive(index);
+                      }}
+                      onClick={() => {
+                        choose(suggestion);
+                      }}
+                      className={`flex w-full items-start gap-[10px] rounded-chip px-[11px] py-2 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${
+                        index === active ? "bg-terracotta-100" : ""
+                      }`}
+                    >
+                      <PinIcon
+                        size={15}
+                        strokeWidth={2.75}
+                        className="mt-[2px] shrink-0 text-terracotta"
+                      />
+                      <span className="min-w-0">
+                        <span className="block text-meta font-semibold text-ink">
+                          {suggestion.name}
+                        </span>
+                        {suggestion.address === null ? null : (
+                          <span className="block text-micro text-ink-muted">
+                            {suggestion.address}
+                          </span>
+                        )}
                       </span>
-                    )}
-                  </button>
-                </li>
-              ))}
-            </ul>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
           ) : null}
 
           {adding === null && searchMessage !== null ? (
@@ -370,7 +361,7 @@ export function PlaceSearch({ slug, dayId, dayName, near, onAdd }: PlaceSearchPr
       {addError === null ? null : (
         <p
           role="alert"
-          className="mt-2 rounded-card border-l-2 border-terracotta bg-terracotta-wash px-3 py-2 text-body text-ink shadow-map-control"
+          className="mt-2 rounded-chip bg-terracotta-200 px-3 py-2 text-meta text-terracotta-900 shadow-sm"
         >
           {addError}
         </p>

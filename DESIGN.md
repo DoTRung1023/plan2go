@@ -1,87 +1,139 @@
 ---
 name: plan2go
-description: A printed travel guide, not a dashboard. Warm paper under warm ink, one accent, and the times louder than anything else on the page.
+description: Warm cream paper, over-rounded shapes, a terracotta accent with sage as a second voice, and the times louder than anything else on the page.
 omitted:
   - spacing
 colors:
-  paper: "#F7F2E8"
-  paper-raised: "#FDFAF3"
-  paper-sunken: "#EDE6D8"
-  rule: "#D9CFBB"
-  rule-strong: "#C4B79C"
-  ink: "#23201B"
-  ink-muted: "#5C554A"
-  ink-faint: "#8A8173"
-  terracotta: "#B4552F"
-  terracotta-deep: "#8E4225"
-  terracotta-wash: "#F0DDD2"
-  olive: "#4A5233"
+  paper: "#F5EAD8"
+  paper-raised: "#F9F4ED"
+  paper-sunken: "#EBDDC5"
+  ink: "#201E1D"
+  ink-muted: "ink at 68 percent"
+  ink-faint: "ink at 55 percent"
+  rule: "ink at 13 percent"
+  rule-strong: "ink at 28 percent"
+  terracotta: "#C67139"
+  terracotta-ramp:
+    100: "#FFF2EB"
+    200: "#FFE1D0"
+    300: "#FFC6A5"
+    400: "#F6A06B"
+    500: "#D67F48"
+    600: "#B2622D"
+    700: "#8C491A"
+    800: "#643312"
+    900: "#402310"
+  sage: "#7A8A5E"
+  sage-ramp:
+    100: "#F0FAE1"
+    200: "#E1EECC"
+    300: "#CCDBB2"
+    400: "#AEBF92"
+    500: "#8FA073"
+    600: "#728157"
+    700: "#56633F"
+    800: "#3D472B"
+    900: "#272E1B"
+  neutral-ramp:
+    100: "#F9F4ED"
+    200: "#EEE7DB"
+    300: "#DCD3C4"
+    400: "#C0B6A5"
+    500: "#A19786"
+    600: "#82796A"
+    700: "#645C50"
+    800: "#474238"
+    900: "#2E2B25"
 typography:
-  time-lead:
-    fontFamily: Bitter
-    fontSize: 32px
-    lineHeight: 36px
-    fontWeight: 600
+  hero:
+    fontFamily: Caprasimo
+    fontSize: 44px
+    lineHeight: 0.95
     fontVariantNumeric: tabular-nums
-  time:
-    fontFamily: Bitter
-    fontSize: 20px
-    lineHeight: 24px
-    fontWeight: 600
-    fontVariantNumeric: tabular-nums
+  title:
+    fontFamily: Caprasimo
+    fontSize: 24px
+    lineHeight: 1.14
   place:
-    fontFamily: Bitter
-    fontSize: 18px
-    lineHeight: 24px
-    fontWeight: 600
+    fontFamily: Caprasimo
+    fontSize: 17.5px
+    lineHeight: 1.2
+  time:
+    fontFamily: Caprasimo
+    fontSize: 15px
+    lineHeight: 1.1
+    fontVariantNumeric: tabular-nums
   body:
-    fontFamily: Source Sans 3
-    fontSize: 16px
-    lineHeight: 24px
+    fontFamily: Figtree
+    fontSize: 14px
+    lineHeight: 1.5
     fontWeight: 400
   meta:
-    fontFamily: Source Sans 3
-    fontSize: 14px
-    lineHeight: 20px
+    fontFamily: Figtree
+    fontSize: 12px
+    lineHeight: 1.45
+    fontWeight: 400
+  micro:
+    fontFamily: Figtree
+    fontSize: 11.5px
+    lineHeight: 1.4
     fontWeight: 400
   label:
-    fontFamily: Source Sans 3
-    fontSize: 12px
-    lineHeight: 16px
+    fontFamily: Figtree
+    fontSize: 10.5px
+    lineHeight: 1
     fontWeight: 600
-    letterSpacing: 0.08em
-    textTransform: uppercase
+  tick:
+    fontFamily: Figtree
+    fontSize: 9.5px
+    lineHeight: 1
+    fontVariantNumeric: tabular-nums
 rounded:
-  card: 6px
-  panel: 10px
+  chip: 14px
+  row: 18px
+  panel: 20px
+  card: 22px
   pill: 999px
+shadows:
+  sm: "0 1px 3px neutral-900 at 16 percent"
+  md: "0 3px 10px neutral-900 at 16 percent"
+  lg: "0 12px 32px neutral-900 at 22 percent"
 components:
   stop-card:
     backgroundColor: "{colors.paper-raised}"
     textColor: "{colors.ink}"
     rounded: "{rounded.card}"
+  stop-number:
+    backgroundColor: "{colors.terracotta}"
+    textColor: "{colors.paper}"
+    rounded: "{rounded.pill}"
+  leg-row:
+    backgroundColor: transparent
+    textColor: "{colors.ink}"
+    rounded: "{rounded.row}"
   day-tab-active:
-    backgroundColor: "{colors.paper-raised}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.card}"
+    backgroundColor: "{colors.terracotta-ramp.800}"
+    textColor: "{colors.paper}"
+    rounded: "{rounded.pill}"
   day-tab-inactive:
-    backgroundColor: "{colors.paper-sunken}"
+    backgroundColor: transparent
     textColor: "{colors.ink-muted}"
-    rounded: "{rounded.card}"
+    rounded: "{rounded.pill}"
   conflict-block:
-    backgroundColor: "{colors.terracotta-wash}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.card}"
+    backgroundColor: "{colors.sage-ramp.200}"
+    textColor: "{colors.sage-ramp.900}"
+    rounded: "{rounded.chip}"
   stop-marker:
-    backgroundColor: "{colors.paper-raised}"
-    textColor: "{colors.ink}"
+    backgroundColor: "{colors.terracotta}"
+    textColor: "{colors.paper}"
     rounded: "{rounded.pill}"
   endpoint-marker:
-    backgroundColor: "{colors.olive}"
+    backgroundColor: "{colors.sage-ramp.600}"
     textColor: "{colors.paper}"
+    rounded: "13px 13px 13px 4px"
   map-control:
     backgroundColor: "{colors.paper-raised}"
-    textColor: "{colors.ink}"
+    textColor: "{colors.ink-muted}"
     rounded: "{rounded.pill}"
 ---
 
@@ -89,8 +141,8 @@ components:
 
 ## Overview
 
-A printed travel guide, not a dashboard. Warm paper under warm ink, one accent, and
-the times louder than anything else on the page.
+Warm cream paper, over-rounded shapes, a terracotta accent with sage as a second
+voice, and the times louder than anything else on the page.
 
 This file is the source of truth for `src/app/t/`, `src/features/`, and `src/ui/`. It
 overrides the vendored `design-taste-frontend` skill inside the app shell.
@@ -100,110 +152,136 @@ When one changes the other changes in the same commit.
 
 ## Colors
 
-There is one accent. Terracotta. Olive appears in exactly one place, the markers for
-the ends of a day. Everything else is paper and ink.
+There are two accents and they are not interchangeable. Terracotta is the product: the
+stop numbers, the active day, the primary action, the route lines. Sage is the second
+voice and it carries the ends of a day and anything the plan wants to tell you about
+itself, which in this product means a conflict. Everything else is paper and ink.
 
-- **paper:** page surface.
-- **paper-raised:** stop cards, tab strip, floating map controls.
-- **paper-sunken:** wells, the map gutter, the inactive tab strip.
-- **rule:** hairlines, card borders.
-- **rule-strong:** the rule under an active tab, table dividers.
-- **ink:** primary text, times, place names.
-- **ink-muted:** travel legs, durations, secondary text.
-- **ink-faint:** labels, units, the "min" after a number.
-- **terracotta:** the accent. Active tab, selected stop, route lines, the rule beside
-  a conflict, primary action.
-- **terracotta-deep:** hover and active states of the accent.
-- **terracotta-wash:** selected row background, conflict block background.
-- **olive:** the markers for where a day starts and where it ends, and their
-  labels. Nothing else.
+- **paper:** the page, and the ground the whole product sits on.
+- **paper-raised:** stop cards, floating controls, inputs, the search panel.
+- **paper-sunken:** wells, the map gutter, the timeline track, a hovered control.
+- **rule:** hairlines and card borders, drawn as ink at low opacity so one value works
+  over all three surfaces.
+- **rule-strong:** the border of a control under the pointer, and dashed outlines.
+- **ink, ink-muted, ink-faint:** primary text, secondary text, and placeholders.
+- **terracotta:** the accent, with a 100 to 900 ramp. 100 and 200 are tinted fills, the
+  base is the accent itself, 600 is hover, 700 is pressed and is the step to use for
+  accent coloured text, 800 is the active day tab.
+- **sage:** the second accent, with the same ramp. 200 is the conflict block, 600 is
+  the marker for the ends of a day, 400 is the travelling band of the timeline.
+- **neutral 100 to 900:** the warm greys behind everything, used for the drive tint,
+  the waiting band, and the map's own geometry.
+
+Each ramp is generated in OKLCH on one shared lightness scale, so the same step of any
+ramp carries the same visual weight. Prefer a ramp step to an ad hoc `color-mix()`.
 
 Never `#FFFFFF`, never `#000000`, on any surface, border, or text.
 
-No dark theme. The surface is paper, and paper does not invert. Do not add a
+No dark theme. The ground is warm paper, and paper does not invert. Do not add a
 `prefers-color-scheme: dark` block.
 
-No status hues. There is no red, no amber, no green. A conflict is carried by a
-terracotta left rule plus the sentence naming it, never by colour alone.
+No status hues. There is no red, no amber, no green. A conflict is carried by the sage
+block plus the sentence naming it, with the real numbers in the sentence.
 
-Contrast floor: `ink` on `paper` is the body pairing. `ink-faint` is only for text at
-12px or larger that repeats information available elsewhere.
+Contrast floor: `ink` on `paper` is the body pairing. The accent to ground pair is
+tuned to 3:1, which is enough for icons, large type and interface chrome and not enough
+for paragraphs, so accent coloured text at body size uses `terracotta-700`.
 
 ## Typography
 
-Two families, no more. Bitter for display, falling back to Georgia, "Times New Roman",
-serif. Source Sans 3 for body, falling back to "Segoe UI", system-ui, sans-serif.
+Two families, no more. Caprasimo for display, falling back to Georgia, "Times New
+Roman", serif. Figtree for body, falling back to "Segoe UI", system-ui, sans-serif.
 
-Display slab carries times, place names, and the day date. Body sans carries
+Caprasimo has one weight and it is already heavy. Headings never ask for bold on top of
+it, because a browser with only the one weight will synthesise the rest.
+
+Display carries times, place names, durations and the day heading. Body carries
 everything else. Every element that renders a time or a duration sets
 `font-variant-numeric: tabular-nums` so numbers stack in a column.
 
-- **time-lead:** arrival time on a stop card.
-- **time:** departure, leg durations, totals.
-- **place:** place name.
+- **hero:** the time the day gets back. The largest thing in the product.
+- **title:** the trip name, and the heading of an empty day.
+- **place:** a place name, and the time against an anchor row.
+- **time:** the arrival time on a stop card.
 - **body:** running text.
-- **meta:** secondary text, set in `ink-muted`.
-- **label:** set in `ink-faint`.
-
-Inside a stop card the arrival time is the largest element and the place name is one
-step smaller. If a design puts the place name above the time in size or weight, it is
-wrong.
+- **meta:** secondary text, addresses, the words in a leg row.
+- **micro:** the second line of a search result, and the sentence in a conflict.
+- **label:** the small heading above a value. Sentence case, 600, never uppercase.
+- **tick:** the hour marks under the timeline.
 
 Body text is left aligned. Never centred, except a single line inside an empty state.
 
 ## Layout
 
-**Desktop, 1024px and up.** Two panes. Map left, list right.
+**Desktop, 1024px and up.** Two panes, map left and list right.
 
 ```
-grid-template-columns: minmax(420px, 1fr) minmax(400px, 480px);
+grid-template-columns: minmax(0, 1fr) clamp(520px, 40%, 660px);
 ```
 
-The map pane is sticky and fills the viewport height. The list pane scrolls on its own.
-Day tabs sit at the top of the list pane and stay stuck while the list scrolls.
+The map fills its pane edge to edge, with no frame of its own. The list pane is a
+column the height of the viewport: the trip name, the day tabs, the time the day gets
+back and the timeline are fixed at the top, and only the day itself scrolls. The time
+you get back is the answer the page exists for, so it does not scroll away from the
+reasoning underneath it.
 
 **Mobile, below 1024px.** One column. The map collapses to a sticky strip 140px tall at
-the top of the viewport, with the day tabs stuck directly beneath it. The list is the
-scrolling surface underneath.
+the top of the viewport, with the day tabs stuck directly beneath it. The page is the
+scrolling surface.
 
 The strip carries one control, a pill button reading **Expand map**. Expanded, the map
 covers the viewport and the same button reads **Collapse map**. Both states show the
 word. Neither is an icon on its own.
 
-## Elevation & Depth
+## Elevation and depth
 
-No shadows. The one exception is a control floating over the map:
+Three steps, all tuned to the cream ground rather than to a white one.
 
 ```
---shadow-map-control  0 1px 3px rgba(35, 32, 27, 0.18)
+--shadow-sm   a floating control: the search field, the zoom pair, a map marker
+--shadow-md   a panel that opens over the page: the search results, the calendar
+--shadow-lg   reserved, for a layer over the whole viewport
 ```
 
-Everything else separates with `rule` or with a change of surface between `paper`,
-`paper-raised`, and `paper-sunken`.
+Everything that is not floating separates with `rule` or with a change of surface
+between `paper`, `paper-raised`, and `paper-sunken`.
 
 ## Shapes
 
-One radius system, three stops, nothing else. `card` for cards, tabs, inputs, buttons,
-and the conflict block. `panel` for the map pane and the mobile map sheet. `pill` for
-map markers and the map expand toggle only.
+Over-round, and never sharp. `chip` for tinted inline blocks, `row` for the leg row and
+the anchor rows, `panel` for a panel that opens over the page, `card` for a stop card,
+and `pill` for every button, input, tab, and marker.
+
+Round shapes need air to read as soft, so nothing is crowded and nothing is drawn with
+hairline only geometry.
 
 ## Components
 
 Token values for each component are in the front matter. The rules the token schema
 cannot express are here.
 
-The start and end markers are a different shape from the stop markers, not merely a
-different colour. A day may start and end in the same place, in which case there is one
-marker rather than two on top of each other. Stop markers carry a 2px `terracotta` ring
-and the stop number in `ink`.
+The day runs down a dotted thread on the left, drawn as a repeating gradient rather
+than a dotted border, which rounds its dots off at this width. A stop hangs on the
+thread behind a numbered terracotta disc. A leg hangs on the same thread with no card
+of its own, because it is what happens between two stops rather than a thing in itself.
 
-A conflict block is identified by a terracotta left rule plus the sentence naming the
-conflict. The wash background alone is never the signal.
+The start and end of a day are a different shape from a stop, not merely a different
+colour: a sage square with one corner cut, against the terracotta discs. A day may
+start and end in the same place, in which case there is one marker rather than two on
+top of each other.
+
+A conflict is a sage block carrying the sentence that names it, with a clock beside the
+words. The tint alone is never the signal.
+
+The timeline under the day heading is one bar: time at places in terracotta, travelling
+in sage 400, waiting in neutral 300, with the hours marked underneath. A day with a leg
+the provider could not answer draws no bar at all, because a partial bar reads as a
+shorter day rather than an unknown one.
 
 ## The map
 
-Route lines are all `terracotta`. The transport mode is carried by the stroke pattern,
-so that colour is never the only thing distinguishing them:
+Route lines are terracotta and sage, and the transport mode is carried by the stroke
+pattern as well, so colour is never the only thing distinguishing them:
 
 ```
 walk      2px   dash 1 6     round caps
@@ -214,6 +292,11 @@ transit   3px   dash 12 6
 
 Every leg also states its mode in words in the list, so the pattern is a reminder and
 not the only source of the fact.
+
+The map's own geometry is styled onto the warm ramp: cream ground, raised roads, sunken
+parks, and water in neutral 300 rather than a blue. Google's controls are off and ours
+are drawn over it, so the only things on the map are the day's markers, the search in
+the top left corner, the zoom pair in the bottom right, and the key in the bottom left.
 
 ## Motion
 
@@ -244,7 +327,7 @@ Every stop card sets `break-inside: avoid`. Every day after the first sets
 `break-before: page`.
 
 Surfaces print as unpainted paper. Backgrounds are removed, hairlines drop to 0.5pt in
-`rule-strong`, and text stays `ink`. Times keep the display slab and stay the loudest
+neutral 400, and text stays `ink`. Times keep the display face and stay the loudest
 thing on the page.
 
 A footer on every page carries the trip title and the date of the day. The share link
@@ -257,15 +340,19 @@ single line of text saying what is being worked out.
 
 Toasts for anything already visible on screen.
 
-Icons without a text label.
+An icon standing in for a word. An icon only control is allowed where its meaning is
+conventional, which in this product means close, clear, and zoom, and it carries an
+accessible name. Nothing this product actually knows about, a mode of travel, a day, a
+conflict, is ever an icon alone.
 
 Pure white or pure black, anywhere.
 
-A second accent hue, or red, amber, and green used as status.
+A third accent, or red, amber, and green used as status.
 
-Gradients, glassmorphism, backdrop blur, mesh backgrounds.
+Decorative gradients, glassmorphism, backdrop blur, mesh backgrounds. The dotted thread
+is a rule drawn as a gradient, which is the only gradient in the product.
 
-Shadows outside the one floating map control token.
+Shadows on anything that is not floating over something else.
 
 Numbers that count up or animate into place. Times appear at their value.
 
@@ -277,7 +364,9 @@ Full width hero imagery inside the app shell.
 
 A modal for anything that could be edited in place.
 
-Placeholder text standing in for a label.
+Placeholder text standing in for a label. A field whose label would crowd the shape it
+lives in, the search pill on the map, carries a visually hidden label and repeats it in
+the placeholder.
 
 Card grids of three equal boxes.
 

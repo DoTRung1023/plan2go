@@ -15,7 +15,7 @@ const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 /** The name is the heading, so it is set in the heading's own type. */
 const NAME_FIELD =
-  "w-full rounded-card border border-rule bg-paper-raised px-3 py-2 font-display text-time-lead font-semibold text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "w-full rounded-pill border border-rule bg-paper-raised px-[18px] py-[9px] font-display text-title text-ink caret-terracotta hover:border-rule-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 interface TripSettingsProps {
   readonly slug: string;
@@ -120,7 +120,7 @@ export function TripSettings({
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-card bg-terracotta px-5 py-3 text-body font-semibold text-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+        className="w-full rounded-pill bg-terracotta px-5 py-[10px] text-body font-semibold text-paper hover:bg-terracotta-600 active:bg-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
       >
         {pending ? "Saving" : "Save dates"}
       </button>
@@ -156,7 +156,7 @@ export function TripSettings({
         className={NAME_FIELD}
       />
 
-      <div className="mt-4 grid grid-cols-2 gap-3">
+      <div className="mt-3 grid grid-cols-2 gap-3">
         <DateField
           id={`${fieldId}-first`}
           name="startDate"
@@ -179,7 +179,7 @@ export function TripSettings({
         />
       </div>
 
-      <p className="mt-2 text-meta text-ink-muted">
+      <p className="mt-2 text-meta text-ink-muted tabular-nums">
         {span === null
           ? "The last day is before the first day."
           : counted(span, "day", "days")}
@@ -189,7 +189,7 @@ export function TripSettings({
       {state.error === null ? null : (
         <p
           role="alert"
-          className="mt-4 rounded-card border-l-2 border-terracotta bg-terracotta-wash px-3 py-2 text-body text-ink"
+          className="mt-3 rounded-chip bg-terracotta-200 px-3 py-2 text-meta text-terracotta-900"
         >
           {state.error}
         </p>

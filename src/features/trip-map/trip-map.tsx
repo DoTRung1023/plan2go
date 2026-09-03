@@ -37,8 +37,12 @@ type MapState =
   | { readonly status: "ready"; readonly map: google.maps.Map }
   | { readonly status: "failed" };
 
+/**
+ * The zoom pair is one pill with a rule between the halves, the way every other
+ * grouped control in this product is drawn.
+ */
 const CONTROL =
-  "flex h-[34px] w-[34px] items-center justify-center rounded-pill border border-rule bg-paper-raised text-ink shadow-map-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "flex h-[30px] w-[30px] items-center justify-center bg-paper-raised text-[17px] text-ink-muted hover:bg-paper-sunken hover:text-ink focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta";
 
 interface TripMapProps {
   readonly start: DayEndpoint | null;
@@ -48,7 +52,7 @@ interface TripMapProps {
 
 function Notice({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-full w-full items-center justify-center rounded-panel border border-rule bg-paper-sunken p-6">
+    <div className="flex h-full w-full items-center justify-center bg-paper-sunken p-6">
       <p className="max-w-[36ch] text-center text-body text-ink-muted">{children}</p>
     </div>
   );
@@ -181,7 +185,7 @@ export function TripMap({ start, end, stops }: TripMapProps) {
   };
 
   return (
-    <div className="trip-map relative h-full w-full overflow-hidden rounded-panel border border-rule">
+    <div className="trip-map relative h-full w-full overflow-hidden">
       <div
         ref={container}
         className="h-full w-full bg-paper-sunken"
@@ -203,13 +207,13 @@ export function TripMap({ start, end, stops }: TripMapProps) {
       ) : null}
 
       {state.status === "ready" ? (
-        <div className="absolute right-3 bottom-3 z-[2] flex flex-col gap-[6px]">
+        <div className="absolute right-[22px] bottom-[22px] z-[2] flex flex-col overflow-hidden rounded-pill border border-rule shadow-sm">
           <button
             type="button"
             onClick={() => {
               zoomBy(1);
             }}
-            className={CONTROL}
+            className={`${CONTROL} border-b border-rule`}
           >
             <span aria-hidden="true">+</span>
             <span className="trip-map-name">Zoom in</span>
@@ -227,17 +231,15 @@ export function TripMap({ start, end, stops }: TripMapProps) {
         </div>
       ) : null}
 
-      <div className="pointer-events-none absolute bottom-3 left-3 z-[2] rounded-card border border-rule bg-paper-raised px-3 py-2 shadow-map-control">
-        <p className="text-label font-semibold tracking-[0.08em] text-ink-faint uppercase">
-          Map key
-        </p>
-        <p className="mt-1 flex items-center gap-2 text-meta text-ink">
+      <div className="pointer-events-none absolute bottom-[22px] left-[22px] z-[2] rounded-row border border-rule bg-paper-raised px-[15px] pt-3 pb-[13px]">
+        <p className="text-label font-semibold text-ink-muted">Map key</p>
+        <p className="mt-[9px] flex items-center gap-2 text-micro text-ink-muted">
           <span className="trip-map-stop" aria-hidden="true">
             1
           </span>
           Stops, in the order you visit them
         </p>
-        <p className="mt-1 flex items-center gap-2 text-meta text-ink">
+        <p className="mt-[7px] flex items-center gap-2 text-micro text-ink-muted">
           <span className="trip-map-endpoint" aria-hidden="true">
             Start
           </span>

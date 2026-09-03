@@ -102,10 +102,10 @@ interface DateFieldProps {
 }
 
 const TRIGGER =
-  "mt-1 flex w-full items-center justify-between rounded-card border border-rule bg-paper-raised px-3 py-2 text-left text-body text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "mt-[6px] flex w-full items-center justify-between gap-2 rounded-pill border border-rule bg-paper-raised px-[14px] py-[7px] text-left text-meta text-ink hover:border-rule-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 const MONTH_STEP =
-  "rounded-card px-2 py-1 text-meta text-terracotta focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "rounded-pill px-[10px] py-1 text-meta font-semibold text-terracotta-700 hover:bg-terracotta-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 /**
  * A date field with our own calendar behind it.
@@ -219,9 +219,7 @@ export function DateField({
 
   return (
     <div className="relative" ref={container}>
-      <label className="text-label font-semibold tracking-[0.08em] text-ink-faint uppercase">
-        {label}
-      </label>
+      <label className="text-label font-semibold text-ink-muted">{label}</label>
       <input type="hidden" name={name} value={value} />
 
       <button
@@ -244,15 +242,17 @@ export function DateField({
         }}
         className={TRIGGER}
       >
-        <span>{READABLE.format(asUtc(value))}</span>
-        <span className="text-meta text-ink-faint">{open ? "Close" : "Change"}</span>
+        <span className="truncate tabular-nums">{READABLE.format(asUtc(value))}</span>
+        <span className="shrink-0 text-micro font-semibold text-terracotta-700">
+          {open ? "Close" : "Change"}
+        </span>
       </button>
 
       {open ? (
         <div
           role="dialog"
           aria-label={`Choose the ${label.toLowerCase()}`}
-          className={`absolute top-full z-30 mt-1 w-[300px] rounded-card border border-rule bg-paper-raised p-3 ${
+          className={`absolute top-full z-30 mt-2 w-[300px] rounded-panel border border-rule bg-paper-raised p-[13px] shadow-md ${
             alignEnd ? "right-0" : "left-0"
           }`}
         >
@@ -266,10 +266,7 @@ export function DateField({
             >
               {MONTH_ONLY.format(asUtc(shiftMonths(month, -1)))}
             </button>
-            <p
-              aria-live="polite"
-              className="font-display text-place font-semibold text-ink"
-            >
+            <p aria-live="polite" className="font-display text-place text-ink">
               {MONTH_AND_YEAR.format(asUtc(month))}
             </p>
             <button
@@ -295,7 +292,7 @@ export function DateField({
                 <span
                   key={index}
                   role="columnheader"
-                  className="py-1 text-center text-label font-semibold tracking-[0.08em] text-ink-faint uppercase"
+                  className="py-1 text-center text-label font-semibold text-ink-muted"
                 >
                   <span aria-hidden="true">{weekday.short}</span>
                   <span className="sr-only">{weekday.full}</span>
@@ -329,12 +326,12 @@ export function DateField({
                             choose(date);
                           }}
                           className={[
-                            "flex h-9 w-full items-center justify-center rounded-card border font-display text-meta tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta",
+                            "flex h-9 w-full items-center justify-center rounded-pill border font-display text-meta tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta",
                             selected
-                              ? "border-terracotta bg-terracotta font-semibold text-paper"
+                              ? "border-terracotta bg-terracotta text-paper"
                               : date === today
                                 ? "border-terracotta bg-transparent text-ink"
-                                : "border-transparent bg-transparent",
+                                : "border-transparent bg-transparent hover:bg-neutral-200",
                             disabled
                               ? "text-ink-faint"
                               : thisMonth || selected

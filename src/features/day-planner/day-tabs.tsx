@@ -12,6 +12,9 @@ interface DayTabsProps {
   readonly onSelect: (index: number) => void;
 }
 
+const TAB =
+  "flex shrink-0 flex-col items-center gap-px rounded-pill border px-[13px] pt-[6px] pb-[7px] whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+
 export function DayTabs({ days, selectedIndex, onSelect }: DayTabsProps) {
   const tabs = useRef<(HTMLButtonElement | null)[]>([]);
 
@@ -41,7 +44,7 @@ export function DayTabs({ days, selectedIndex, onSelect }: DayTabsProps) {
     <div
       role="tablist"
       aria-label="Days of this trip"
-      className="day-tabs flex gap-1 border-b border-rule-strong bg-paper-sunken px-1 pt-1"
+      className="day-tabs flex items-center gap-[6px] border-b border-rule pb-4"
     >
       {days.map((day, index) => {
         const selected = index === selectedIndex;
@@ -63,22 +66,14 @@ export function DayTabs({ days, selectedIndex, onSelect }: DayTabsProps) {
             onKeyDown={(event) => {
               move(event, index);
             }}
-            className={`shrink-0 rounded-t-card border-b-2 px-3 pt-2 pb-2 text-left whitespace-nowrap focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${
+            className={`${TAB} ${
               selected
-                ? "border-terracotta bg-paper-raised"
-                : "border-transparent bg-transparent"
+                ? "border-terracotta-800 bg-terracotta-800 text-paper"
+                : "border-rule bg-transparent text-ink-muted hover:border-rule-strong"
             }`}
           >
-            <span className="block text-label font-semibold tracking-[0.08em] text-ink-faint uppercase">
-              Day {index + 1}
-            </span>
-            <span
-              className={`block font-display text-place ${
-                selected ? "font-semibold text-ink" : "text-ink-muted"
-              }`}
-            >
-              {formatDayDate(day.date)}
-            </span>
+            <span className="text-meta font-semibold">Day {index + 1}</span>
+            <span className="text-tick opacity-70">{formatDayDate(day.date)}</span>
           </button>
         );
       })}
