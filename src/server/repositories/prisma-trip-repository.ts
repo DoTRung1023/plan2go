@@ -253,7 +253,10 @@ export const prismaTripRepository: TripRepository = {
       where: { slug: update.slug },
       select: {
         id: true,
-        days: { orderBy: { position: "asc" }, select: { id: true, position: true } },
+        days: {
+          orderBy: { position: "asc" },
+          select: { id: true, position: true, date: true },
+        },
       },
     });
     if (trip === null) {
@@ -262,6 +265,11 @@ export const prismaTripRepository: TripRepository = {
 
     const kept = trip.days.filter((day) => day.position < update.dayCount);
     const dropped = trip.days.filter((day) => day.position >= update.dayCount);
+    // Only the days whose date actually moves are written. Renaming a trip
+    // moves none of them, and a row per day is a round trip per day.
+    const moved = kept.filter(
+      (day) => day.date !== addDays(update.startDate, day.position),
+    );
     const added = Array.from(
       { length: Math.max(0, update.dayCount - trip.days.length) },
       (_unused, index) => {
@@ -281,7 +289,7 @@ export const prismaTripRepository: TripRepository = {
         where: { id: trip.id },
         data: { title: update.title },
       }),
-      ...kept.map((day) =>
+      ...moved.map((day) =>
         db.day.update({
           where: { id: day.id },
           data: { date: addDays(update.startDate, day.position) },
