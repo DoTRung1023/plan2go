@@ -19,21 +19,21 @@ export default async function TripEditorPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const trip = await prismaTripRepository.findBySlug(slug);
+  const presentedTokens = await readEditTokens();
+
+  // Two reads that do not need each other, so they are one wait rather than two.
+  // The token question only decides whether to offer the controls that change
+  // the trip, so a shared link still renders in full without one.
+  const [trip, access] = await Promise.all([
+    prismaTripRepository.findBySlug(slug),
+    checkEditAccess({ slug, presentedTokens, repository: prismaTripRepository }),
+  ]);
 
   if (trip === null) {
     notFound();
   }
 
   const days = await computeTrip(trip, createHaversineTravelProvider());
-
-  // The read above did not need a token. This only decides whether to offer the
-  // controls that change the trip, so a shared link still renders in full.
-  const access = await checkEditAccess({
-    slug,
-    presentedTokens: await readEditTokens(),
-    repository: prismaTripRepository,
-  });
 
   return (
     <TripEditor

@@ -6,6 +6,8 @@ export interface ClearTripRequest {
   readonly slug: string;
   /** Guessed from the request, exactly as it is when a trip is opened. */
   readonly timeZone: string;
+  /** Every token this browser holds. The write finds nothing without one. */
+  readonly editTokenHashes: readonly string[];
 }
 
 /**
@@ -25,6 +27,7 @@ export function clearTrip(
   return repository.clear({
     slug: request.slug,
     timeZone: request.timeZone,
+    editTokenHashes: request.editTokenHashes,
     ...blankTrip(request.timeZone, now),
     startAtMinutes: DEFAULT_START_AT_MINUTES,
   });

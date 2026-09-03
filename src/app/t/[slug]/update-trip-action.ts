@@ -1,8 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { checkEditAccess } from "@/server/ownership/edit-access";
-import { readEditTokens } from "@/server/ownership/edit-token-cookie";
+import { readEditTokenHashes } from "@/server/ownership/edit-token-cookie";
 import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
 import { tripSettingsSchema } from "@/server/trips/trip-settings-input";
 import { updateTripSettings } from "@/server/trips/update-trip-settings";
@@ -13,9 +12,9 @@ export interface TripSettingsState {
 }
 
 /**
- * A mutation, so it verifies the edit token before it writes anything. Someone
- * reading a shared link is not offered this form at all, and is told the same
- * thing either way if they send it anyway.
+ * The edit token is checked inside the query that finds the trip, so nothing is
+ * written without one. Someone reading a shared link is not offered this form at
+ * all, and is told the same thing either way if they send it anyway.
  */
 export async function updateTripAction(
   _previous: TripSettingsState,
@@ -36,23 +35,18 @@ export async function updateTripAction(
     };
   }
 
-  const access = await checkEditAccess({
-    slug: parsed.data.slug,
-    presentedTokens: await readEditTokens(),
-    repository: prismaTripRepository,
-  });
+  const result = await updateTripSettings(
+    parsed.data,
+    await readEditTokenHashes(),
+    prismaTripRepository,
+  );
 
-  if (access.status !== "granted") {
+  if (result.status === "refused") {
     return {
       saved: false,
       error:
         "This trip is not yours to change. Ask whoever sent you the link to change it, or start your own trip.",
     };
-  }
-
-  const result = await updateTripSettings(parsed.data, prismaTripRepository);
-  if (result.status === "no-such-trip") {
-    return { saved: false, error: "This trip is no longer here. Reload the page." };
   }
 
   revalidatePath(`/t/${parsed.data.slug}`);

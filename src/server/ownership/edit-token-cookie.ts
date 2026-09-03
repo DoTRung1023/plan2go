@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { z } from "zod";
-import { EDIT_TOKEN_COOKIE } from "./edit-token";
+import { EDIT_TOKEN_COOKIE, hashEditToken } from "./edit-token";
 
 /** A year. Losing the cookie means losing the ability to edit those trips. */
 const A_YEAR_IN_SECONDS = 60 * 60 * 24 * 365;
@@ -43,6 +43,15 @@ export async function readEditTokens(): Promise<readonly string[]> {
     .split(SEPARATOR)
     .filter((value) => editTokenSchema.safeParse(value).success)
     .slice(0, MOST_TRIPS);
+}
+
+/**
+ * The stored form of every token the browser holds. A mutation is scoped to
+ * these inside the query that finds what it is about to change, so authorising
+ * costs no trip of its own.
+ */
+export async function readEditTokenHashes(): Promise<readonly string[]> {
+  return (await readEditTokens()).map(hashEditToken);
 }
 
 /** Only ever called from a route handler or a server action. */

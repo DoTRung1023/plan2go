@@ -1,3 +1,14 @@
+-- The schema as it stands. Five migrations were squashed into this one on
+-- 2026-09-03: the tables, the day start and end points, the two provider
+-- caches with the rate limit counter, the edit token index, and moving a
+-- day's date onto the trip it belongs to.
+--
+-- Databases that already had those five were told this one is applied, so it
+-- runs only on a database that has nothing.
+
+-- CreateSchema
+CREATE SCHEMA IF NOT EXISTS "public";
+
 -- CreateEnum
 CREATE TYPE "TravelMode" AS ENUM ('WALK', 'CYCLE', 'DRIVE', 'TRANSIT');
 
@@ -7,6 +18,7 @@ CREATE TABLE "Trip" (
     "slug" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "timeZone" TEXT NOT NULL,
+    "startDate" TEXT NOT NULL,
     "editTokenHash" TEXT NOT NULL,
     "userId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -34,12 +46,14 @@ CREATE TABLE "Place" (
 CREATE TABLE "Day" (
     "id" TEXT NOT NULL,
     "tripId" TEXT NOT NULL,
-    "date" TEXT NOT NULL,
     "label" TEXT,
     "position" INTEGER NOT NULL,
-    "leaveAtMinutes" INTEGER NOT NULL,
-    "homeBasePlaceId" TEXT,
-    "returnTravelMode" "TravelMode" NOT NULL DEFAULT 'WALK',
+    "startAtMinutes" INTEGER NOT NULL,
+    "startPlaceId" TEXT,
+    "startLabel" TEXT,
+    "endPlaceId" TEXT,
+    "endLabel" TEXT,
+    "endTravelMode" "TravelMode" NOT NULL DEFAULT 'WALK',
 
     CONSTRAINT "Day_pkey" PRIMARY KEY ("id")
 );
@@ -73,11 +87,38 @@ CREATE TABLE "LegCache" (
     CONSTRAINT "LegCache_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "PlaceSearchCache" (
+    "id" TEXT NOT NULL,
+    "query" TEXT NOT NULL,
+    "biasKey" TEXT NOT NULL,
+    "size" INTEGER NOT NULL,
+    "suggestions" JSONB NOT NULL,
+    "fetchedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "PlaceSearchCache_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "RateLimit" (
+    "id" TEXT NOT NULL,
+    "clientKey" TEXT NOT NULL,
+    "route" TEXT NOT NULL,
+    "windowStart" TIMESTAMP(3) NOT NULL,
+    "count" INTEGER NOT NULL DEFAULT 1,
+
+    CONSTRAINT "RateLimit_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "Trip_slug_key" ON "Trip"("slug");
 
 -- CreateIndex
 CREATE INDEX "Trip_userId_idx" ON "Trip"("userId");
+
+-- CreateIndex
+CREATE INDEX "Trip_editTokenHash_idx" ON "Trip"("editTokenHash");
 
 -- CreateIndex
 CREATE INDEX "Place_tripId_idx" ON "Place"("tripId");
@@ -103,6 +144,18 @@ CREATE INDEX "LegCache_expiresAt_idx" ON "LegCache"("expiresAt");
 -- CreateIndex
 CREATE UNIQUE INDEX "LegCache_originKey_destinationKey_mode_timeBucket_key" ON "LegCache"("originKey", "destinationKey", "mode", "timeBucket");
 
+-- CreateIndex
+CREATE INDEX "PlaceSearchCache_expiresAt_idx" ON "PlaceSearchCache"("expiresAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "PlaceSearchCache_query_biasKey_size_key" ON "PlaceSearchCache"("query", "biasKey", "size");
+
+-- CreateIndex
+CREATE INDEX "RateLimit_windowStart_idx" ON "RateLimit"("windowStart");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "RateLimit_clientKey_route_windowStart_key" ON "RateLimit"("clientKey", "route", "windowStart");
+
 -- AddForeignKey
 ALTER TABLE "Place" ADD CONSTRAINT "Place_tripId_fkey" FOREIGN KEY ("tripId") REFERENCES "Trip"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -110,10 +163,14 @@ ALTER TABLE "Place" ADD CONSTRAINT "Place_tripId_fkey" FOREIGN KEY ("tripId") RE
 ALTER TABLE "Day" ADD CONSTRAINT "Day_tripId_fkey" FOREIGN KEY ("tripId") REFERENCES "Trip"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Day" ADD CONSTRAINT "Day_homeBasePlaceId_fkey" FOREIGN KEY ("homeBasePlaceId") REFERENCES "Place"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Day" ADD CONSTRAINT "Day_startPlaceId_fkey" FOREIGN KEY ("startPlaceId") REFERENCES "Place"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Day" ADD CONSTRAINT "Day_endPlaceId_fkey" FOREIGN KEY ("endPlaceId") REFERENCES "Place"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Stop" ADD CONSTRAINT "Stop_dayId_fkey" FOREIGN KEY ("dayId") REFERENCES "Day"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Stop" ADD CONSTRAINT "Stop_placeId_fkey" FOREIGN KEY ("placeId") REFERENCES "Place"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+

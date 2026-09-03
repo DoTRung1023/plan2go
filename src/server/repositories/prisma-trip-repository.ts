@@ -92,10 +92,11 @@ function toEndpoint(place: PlaceRow | null, label: string | null): DayEndpoint |
   return { place: toPlace(place), label };
 }
 
-function toDay(row: DayRow, timeZone: string): DayPlan {
+/** The date is the trip's first day plus this day's position, never a column. */
+function toDay(row: DayRow, timeZone: string, startDate: string): DayPlan {
   return {
     id: row.id,
-    date: row.date,
+    date: addDays(startDate, row.position),
     timeZone,
     label: row.label,
     start: toEndpoint(row.startPlace, row.startLabel),
@@ -113,7 +114,7 @@ function toTrip(row: TripRow): Trip {
     title: row.title,
     timeZone: row.timeZone,
     userId: row.userId,
-    days: row.days.map((day) => toDay(day, row.timeZone)),
+    days: row.days.map((day) => toDay(day, row.timeZone, row.startDate)),
   };
 }
 
@@ -130,10 +131,10 @@ async function insert(trip: NewTrip, slug: string): Promise<CreatedTrip> {
       slug,
       title: trip.title,
       timeZone: trip.timeZone,
+      startDate: trip.startDate,
       editTokenHash: trip.editTokenHash,
       days: {
         create: Array.from({ length: trip.dayCount }, (_unused, index) => ({
-          date: addDays(trip.startDate, index),
           position: index,
           startAtMinutes: trip.startAtMinutes,
         })),
@@ -150,7 +151,13 @@ async function insert(trip: NewTrip, slug: string): Promise<CreatedTrip> {
  */
 export const prismaTripRepository: TripRepository = {
   async findBySlug(slug: string): Promise<Trip | null> {
-    const row = await db.trip.findUnique({ where: { slug }, include: tripInclude });
+    // One query with joins rather than one per level of the include. A trip is
+    // four levels deep, and every page load reads it.
+    const row = await db.trip.findUnique({
+      where: { slug },
+      include: tripInclude,
+      relationLoadStrategy: "join",
+    });
     return row === null ? null : toTrip(row);
   },
 
@@ -172,12 +179,17 @@ export const prismaTripRepository: TripRepository = {
   },
 
   async addStop(stop: NewStop): Promise<StopAdded> {
+    // Scoped to the tokens the browser holds, so finding the day is also the
+    // check that this trip may be changed.
     const day = await db.day.findFirst({
-      where: { id: stop.dayId, trip: { slug: stop.slug } },
+      where: {
+        id: stop.dayId,
+        trip: { slug: stop.slug, editTokenHash: { in: [...stop.editTokenHashes] } },
+      },
       select: { id: true, tripId: true, _count: { select: { stops: true } } },
     });
     if (day === null) {
-      return { status: "no-such-day" };
+      return { status: "refused" };
     }
 
     // The place carries the provider's identifier, not one of ours, so it is
@@ -218,12 +230,16 @@ export const prismaTripRepository: TripRepository = {
   },
 
   async clear(reset: TripReset): Promise<TripCleared> {
-    const trip = await db.trip.findUnique({
-      where: { slug: reset.slug },
+    // Scoped to the tokens the browser holds, so the read that finds the trip is
+    // also the check that it may be changed. Nothing comes back for a trip that
+    // is not there and nothing comes back for one that is not theirs, which is
+    // the same answer we would have given anyway.
+    const trip = await db.trip.findFirst({
+      where: { slug: reset.slug, editTokenHash: { in: [...reset.editTokenHashes] } },
       select: { id: true },
     });
     if (trip === null) {
-      return { status: "no-such-trip" };
+      return { status: "refused" };
     }
 
     // One transaction, and in this order. Deleting the days takes the stops
@@ -233,12 +249,15 @@ export const prismaTripRepository: TripRepository = {
       db.place.deleteMany({ where: { tripId: trip.id } }),
       db.trip.update({
         where: { id: trip.id },
-        data: { title: reset.title, timeZone: reset.timeZone },
+        data: {
+          title: reset.title,
+          timeZone: reset.timeZone,
+          startDate: reset.startDate,
+        },
       }),
       db.day.createMany({
         data: Array.from({ length: reset.dayCount }, (_unused, index) => ({
           tripId: trip.id,
-          date: addDays(reset.startDate, index),
           position: index,
           startAtMinutes: reset.startAtMinutes,
         })),
@@ -249,55 +268,37 @@ export const prismaTripRepository: TripRepository = {
   },
 
   async updateSettings(update: TripSettingsUpdate): Promise<SettingsUpdated> {
-    const trip = await db.trip.findUnique({
-      where: { slug: update.slug },
-      select: {
-        id: true,
-        days: {
-          orderBy: { position: "asc" },
-          select: { id: true, position: true, date: true },
-        },
-      },
+    const trip = await db.trip.findFirst({
+      where: { slug: update.slug, editTokenHash: { in: [...update.editTokenHashes] } },
+      select: { id: true, _count: { select: { days: true } } },
     });
     if (trip === null) {
-      return { status: "no-such-trip" };
+      return { status: "refused" };
     }
 
-    const kept = trip.days.filter((day) => day.position < update.dayCount);
-    const dropped = trip.days.filter((day) => day.position >= update.dayCount);
-    // Only the days whose date actually moves are written. Renaming a trip
-    // moves none of them, and a row per day is a round trip per day.
-    const moved = kept.filter(
-      (day) => day.date !== addDays(update.startDate, day.position),
-    );
-    const added = Array.from(
-      { length: Math.max(0, update.dayCount - trip.days.length) },
-      (_unused, index) => {
-        const position = trip.days.length + index;
-        return {
-          tripId: trip.id,
-          date: addDays(update.startDate, position),
-          position,
-          startAtMinutes: update.startAtMinutes,
-        };
-      },
-    );
+    const had = trip._count.days;
+    // Every day's date is the trip's start date plus its position, so moving the
+    // trip moves all of them by writing one column. Only a change of length
+    // touches the days themselves, and then only the ones at the end.
+    const added = Array.from({ length: Math.max(0, update.dayCount - had) }, (_unused, index) => ({
+      tripId: trip.id,
+      position: had + index,
+      startAtMinutes: update.startAtMinutes,
+    }));
 
     // One transaction, because a trip whose days half moved is not a trip.
     await db.$transaction([
       db.trip.update({
         where: { id: trip.id },
-        data: { title: update.title },
+        data: { title: update.title, startDate: update.startDate },
       }),
-      ...moved.map((day) =>
-        db.day.update({
-          where: { id: day.id },
-          data: { date: addDays(update.startDate, day.position) },
-        }),
-      ),
-      ...(dropped.length === 0
+      ...(update.dayCount >= had
         ? []
-        : [db.day.deleteMany({ where: { id: { in: dropped.map((day) => day.id) } } })]),
+        : [
+            db.day.deleteMany({
+              where: { tripId: trip.id, position: { gte: update.dayCount } },
+            }),
+          ]),
       ...(added.length === 0 ? [] : [db.day.createMany({ data: added })]),
     ]);
 

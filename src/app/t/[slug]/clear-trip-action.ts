@@ -3,8 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { z } from "zod";
-import { checkEditAccess } from "@/server/ownership/edit-access";
-import { readEditTokens } from "@/server/ownership/edit-token-cookie";
+import { readEditTokenHashes } from "@/server/ownership/edit-token-cookie";
 import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
 import { clearTrip } from "@/server/trips/clear-trip";
 import { openingTimeZone } from "@/server/trips/time-zones";
@@ -20,8 +19,10 @@ const clearTripSchema = z.object({ slug: z.string().min(1).max(80) });
  * What comes back is what opening a new trip would have given, dates and time
  * zone included, which is why the zone is guessed from this request.
  *
- * A mutation, so it verifies the edit token before it writes anything, and it
- * refuses in the same words whoever is holding the wrong one.
+ * The edit token is checked inside the query that finds the trip, so nothing is
+ * written without one and no separate trip to the database is spent asking. A
+ * trip that is not there and a trip that is not yours get the same sentence,
+ * because telling them apart turns this into a way to test slugs.
  */
 export async function clearTripAction(input: unknown): Promise<ClearTripState> {
   const parsed = clearTripSchema.safeParse(input);
@@ -29,25 +30,20 @@ export async function clearTripAction(input: unknown): Promise<ClearTripState> {
     return { error: "This trip could not be read. Reload the page." };
   }
 
-  const access = await checkEditAccess({
-    slug: parsed.data.slug,
-    presentedTokens: await readEditTokens(),
-    repository: prismaTripRepository,
-  });
+  const result = await clearTrip(
+    {
+      slug: parsed.data.slug,
+      timeZone: openingTimeZone(await headers()),
+      editTokenHashes: await readEditTokenHashes(),
+    },
+    prismaTripRepository,
+  );
 
-  if (access.status !== "granted") {
+  if (result.status === "refused") {
     return {
       error:
         "This trip is not yours to change. Ask whoever sent you the link to change it, or start your own trip.",
     };
-  }
-
-  const result = await clearTrip(
-    { slug: parsed.data.slug, timeZone: openingTimeZone(await headers()) },
-    prismaTripRepository,
-  );
-  if (result.status === "no-such-trip") {
-    return { error: "This trip is no longer here. Reload the page." };
   }
 
   revalidatePath(`/t/${parsed.data.slug}`);

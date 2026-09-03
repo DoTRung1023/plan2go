@@ -7,6 +7,8 @@ const DEFAULT_STAY_MINUTES = 60;
 
 export interface AddStopRequest {
   readonly slug: string;
+  /** Every token this browser holds. The write finds nothing without one. */
+  readonly editTokenHashes: readonly string[];
   readonly dayId: DayId;
   readonly providerPlaceId: string;
   readonly session: string | null;
@@ -14,7 +16,7 @@ export interface AddStopRequest {
 
 export type AddStopResult =
   | { readonly status: "added"; readonly placeName: string }
-  | { readonly status: "no-such-day" }
+  | { readonly status: "refused" }
   | { readonly status: "no-such-place" };
 
 /**
@@ -38,13 +40,14 @@ export async function addStopFromSearch(
 
   const added = await repository.addStop({
     slug: request.slug,
+    editTokenHashes: request.editTokenHashes,
     dayId: request.dayId,
     place,
     stayMinutes: DEFAULT_STAY_MINUTES,
     travelMode: "walk",
   });
 
-  return added.status === "no-such-day"
-    ? { status: "no-such-day" }
+  return added.status === "refused"
+    ? { status: "refused" }
     : { status: "added", placeName: place.name };
 }

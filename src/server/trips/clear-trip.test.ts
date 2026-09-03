@@ -17,6 +17,12 @@ const NOW = new Date("2026-09-02T14:00:00Z");
 
 const SLUG = "amber-quay-4k7n2q9mrv";
 
+const HELD = "b7f1c0d4e5a6";
+
+/**
+ * Storage refuses in one answer, whether the trip is missing or the token is
+ * wrong, because the query that finds it is scoped by the token.
+ */
 function repositoryFor(known: string): {
   readonly repository: TripRepository;
   readonly resets: TripReset[];
@@ -31,8 +37,8 @@ function repositoryFor(known: string): {
       create: () => Promise.reject<CreatedTrip>(new Error(NOT_STUBBED)),
       updateSettings: () => Promise.reject<SettingsUpdated>(new Error(NOT_STUBBED)),
       clear: (reset: TripReset) => {
-        if (reset.slug !== known) {
-          return Promise.resolve<TripCleared>({ status: "no-such-trip" });
+        if (reset.slug !== known || !reset.editTokenHashes.includes(HELD)) {
+          return Promise.resolve<TripCleared>({ status: "refused" });
         }
         resets.push(reset);
         return Promise.resolve<TripCleared>({ status: "cleared" });
@@ -48,7 +54,7 @@ describe("clearTrip", () => {
     const { repository, resets } = repositoryFor(SLUG);
 
     const result = await clearTrip(
-      { slug: SLUG, timeZone: "Australia/Adelaide" },
+      { slug: SLUG, timeZone: "Australia/Adelaide", editTokenHashes: [HELD] },
       repository,
       NOW,
     );
@@ -62,6 +68,7 @@ describe("clearTrip", () => {
         startDate: "2026-09-02",
         dayCount: 6,
         startAtMinutes: 9 * 60,
+        editTokenHashes: [HELD],
       },
     ]);
   });
@@ -69,21 +76,42 @@ describe("clearTrip", () => {
   it("starts the days from today in the zone it was given, not in UTC", async () => {
     const { repository, resets } = repositoryFor(SLUG);
 
-    await clearTrip({ slug: SLUG, timeZone: "Pacific/Auckland" }, repository, NOW);
-
-    expect(resets[0]?.startDate).toBe("2026-09-03");
-  });
-
-  it("says so when the trip is gone", async () => {
-    const { repository, resets } = repositoryFor(SLUG);
-
-    const result = await clearTrip(
-      { slug: "olive-jetty-0000000000", timeZone: "Australia/Adelaide" },
+    await clearTrip(
+      { slug: SLUG, timeZone: "Pacific/Auckland", editTokenHashes: [HELD] },
       repository,
       NOW,
     );
 
-    expect(result.status).toBe("no-such-trip");
+    expect(resets[0]?.startDate).toBe("2026-09-03");
+  });
+
+  it("refuses a browser holding no token for this trip", async () => {
+    const { repository, resets } = repositoryFor(SLUG);
+
+    const result = await clearTrip(
+      { slug: SLUG, timeZone: "Australia/Adelaide", editTokenHashes: [] },
+      repository,
+      NOW,
+    );
+
+    expect(result.status).toBe("refused");
+    expect(resets).toEqual([]);
+  });
+
+  it("says the same thing when the trip is gone", async () => {
+    const { repository, resets } = repositoryFor(SLUG);
+
+    const result = await clearTrip(
+      {
+        slug: "olive-jetty-0000000000",
+        timeZone: "Australia/Adelaide",
+        editTokenHashes: [HELD],
+      },
+      repository,
+      NOW,
+    );
+
+    expect(result.status).toBe("refused");
     expect(resets).toEqual([]);
   });
 });

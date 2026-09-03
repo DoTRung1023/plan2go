@@ -4,6 +4,9 @@
 
 generator client {
   provider = "prisma-client-js"
+  /// A trip is read with its days, its stops and their places in one go. Without
+  /// this Prisma asks for each level separately, which is a round trip per level.
+  previewFeatures = ["relationJoins"]
 }
 
 datasource db {
@@ -26,6 +29,10 @@ model Trip {
   title    String
   /// IANA zone for every day in the trip, for example "Australia/Adelaide".
   timeZone String
+  /// YYYY-MM-DD of the first day, in timeZone. Every other day is this plus its
+  /// position, so moving the trip is one write rather than one per day. Held as
+  /// text so no UTC conversion can move the date by a day.
+  startDate String
 
   /// sha256 of the edit token. The token itself is only ever in the cookie.
   editTokenHash String
@@ -76,11 +83,9 @@ model Day {
   tripId String
   trip   Trip   @relation(fields: [tripId], references: [id], onDelete: Cascade)
 
-  /// YYYY-MM-DD in the trip time zone. Held as text so no UTC conversion can
-  /// move the date by a day.
-  date     String
   label    String?
-  /// Order of this day within the trip, starting at 0.
+  /// Order of this day within the trip, starting at 0. The day's date is the
+  /// trip's startDate plus this, so the two can never disagree.
   position Int
 
   /// Minutes from local midnight on date, when the day begins.

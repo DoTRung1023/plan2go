@@ -19,9 +19,17 @@ export interface CreatedTrip {
   readonly slug: string;
 }
 
+/**
+ * The hashes of every edit token the browser presented. A mutation is scoped to
+ * these in the query that finds what it is about to change, so authorising and
+ * writing are not two trips to the database.
+ */
+export type EditTokenHashes = readonly string[];
+
 /** A place to append to a day, already resolved to everything we store. */
 export interface NewStop {
   readonly slug: string;
+  readonly editTokenHashes: EditTokenHashes;
   readonly dayId: DayId;
   readonly place: Place;
   readonly stayMinutes: number;
@@ -31,6 +39,7 @@ export interface NewStop {
 /** Everything storage needs to change a trip's settings. */
 export interface TripSettingsUpdate {
   readonly slug: string;
+  readonly editTokenHashes: EditTokenHashes;
   readonly title: string;
   /** The date of the first day. Later days follow it in order. */
   readonly startDate: IsoDate;
@@ -45,6 +54,7 @@ export interface TripSettingsUpdate {
  */
 export interface TripReset {
   readonly slug: string;
+  readonly editTokenHashes: EditTokenHashes;
   readonly title: string;
   readonly timeZone: string;
   /** The date of the first day. Later days follow it in order. */
@@ -54,17 +64,21 @@ export interface TripReset {
   readonly startAtMinutes: number;
 }
 
+/**
+ * "refused" is one answer on purpose. A trip that is not there and a trip that
+ * is not yours must not be told apart, or this becomes a way to test slugs.
+ */
 export type TripCleared =
   | { readonly status: "cleared" }
-  | { readonly status: "no-such-trip" };
+  | { readonly status: "refused" };
 
 export type SettingsUpdated =
   | { readonly status: "updated" }
-  | { readonly status: "no-such-trip" };
+  | { readonly status: "refused" };
 
 export type StopAdded =
   | { readonly status: "added" }
-  | { readonly status: "no-such-day" };
+  | { readonly status: "refused" };
 
 /**
  * The contract between the app and storage. Implementations translate Prisma
