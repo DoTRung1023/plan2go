@@ -3,9 +3,7 @@
 import type { ReactNode } from "react";
 import type { PlannedDay } from "./compute-trip";
 import { DayItinerary } from "./day-itinerary";
-import { DaySummary } from "./day-summary";
 import { DayTabs } from "./day-tabs";
-import { DayTimeline } from "./day-timeline";
 import { EmptyDay } from "./empty-day";
 import { formatDayDate } from "./format-day-date";
 
@@ -37,13 +35,13 @@ function dateRange(days: readonly PlannedDay[]): string | null {
 }
 
 /**
- * The right hand panel: what the trip is called, which day is open, what time
- * that day gets back, and the day itself underneath.
+ * The right hand panel: what the trip is called, which day is open, and the day
+ * itself underneath.
  *
- * Everything above the list is fixed on a desktop and only the list scrolls, so
- * the time you get back stays on screen while you read what leads up to it. On
- * a phone the page is the scrolling surface and the day tabs stay stuck under
- * the map strip, because choosing a day is what a reader reaches for most.
+ * The trip name and the day tabs are fixed on a desktop and only the day
+ * scrolls, so what you are reading is always named above it. On a phone the
+ * page is the scrolling surface and the day tabs stay stuck under the map
+ * strip, because choosing a day is what a reader reaches for most.
  */
 export function DayPlanner({
   title,
@@ -78,13 +76,6 @@ export function DayPlanner({
           onSelect={onSelect}
         />
       </div>
-
-      {selected === undefined ? null : (
-        <div className={`shrink-0 ${GUTTER}`}>
-          <DaySummary day={selected.plan} computed={selected.computed} />
-          <DayTimeline day={selected.plan} computed={selected.computed} />
-        </div>
-      )}
 
       {selected === undefined ? null : (
         <section

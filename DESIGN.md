@@ -45,11 +45,6 @@ colors:
     800: "#474238"
     900: "#2E2B25"
 typography:
-  hero:
-    fontFamily: Caprasimo
-    fontSize: 44px
-    lineHeight: 0.95
-    fontVariantNumeric: tabular-nums
   title:
     fontFamily: Caprasimo
     fontSize: 24px
@@ -159,7 +154,7 @@ itself, which in this product means a conflict. Everything else is paper and ink
 
 - **paper:** the page, and the ground the whole product sits on.
 - **paper-raised:** stop cards, floating controls, inputs, the search panel.
-- **paper-sunken:** wells, the map gutter, the timeline track, a hovered control.
+- **paper-sunken:** wells, the map gutter, a hovered control.
 - **rule:** hairlines and card borders, drawn as ink at low opacity so one value works
   over all three surfaces.
 - **rule-strong:** the border of a control under the pointer, and dashed outlines.
@@ -168,7 +163,7 @@ itself, which in this product means a conflict. Everything else is paper and ink
   base is the accent itself, 600 is hover, 700 is pressed and is the step to use for
   accent coloured text, 800 is the active day tab.
 - **sage:** the second accent, with the same ramp. 200 is the conflict block, 600 is
-  the marker for the ends of a day, 400 is the travelling band of the timeline.
+  the marker for the ends of a day, 700 draws the public transport route line.
 - **neutral 100 to 900:** the warm greys behind everything, used for the drive tint,
   the waiting band, and the map's own geometry.
 
@@ -199,7 +194,6 @@ Display carries times, place names, durations and the day heading. Body carries
 everything else. Every element that renders a time or a duration sets
 `font-variant-numeric: tabular-nums` so numbers stack in a column.
 
-- **hero:** the time the day gets back. The largest thing in the product.
 - **title:** the trip name, and the heading of an empty day.
 - **place:** a place name, and the time against an anchor row.
 - **time:** the arrival time on a stop card.
@@ -207,7 +201,7 @@ everything else. Every element that renders a time or a duration sets
 - **meta:** secondary text, addresses, the words in a leg row.
 - **micro:** the second line of a search result, and the sentence in a conflict.
 - **label:** the small heading above a value. Sentence case, 600, never uppercase.
-- **tick:** the hour marks under the timeline.
+- **tick:** the second line inside a day tab, which says the date or the stop count.
 
 Body text is left aligned. Never centred, except a single line inside an empty state.
 
@@ -220,10 +214,8 @@ grid-template-columns: minmax(0, 1fr) clamp(520px, 40%, 660px);
 ```
 
 The map fills its pane edge to edge, with no frame of its own. The list pane is a
-column the height of the viewport: the trip name, the day tabs, the time the day gets
-back and the timeline are fixed at the top, and only the day itself scrolls. The time
-you get back is the answer the page exists for, so it does not scroll away from the
-reasoning underneath it.
+column the height of the viewport: the trip name and the day tabs are fixed at the top,
+and only the day itself scrolls, so what is being read is always named above it.
 
 **Mobile, below 1024px.** One column. The map collapses to a sticky strip 140px tall at
 the top of the viewport, with the day tabs stuck directly beneath it. The page is the
@@ -272,11 +264,6 @@ top of each other.
 
 A conflict is a sage block carrying the sentence that names it, with a clock beside the
 words. The tint alone is never the signal.
-
-The timeline under the day heading is one bar: time at places in terracotta, travelling
-in sage 400, waiting in neutral 300, with the hours marked underneath. A day with a leg
-the provider could not answer draws no bar at all, because a partial bar reads as a
-shorter day rather than an unknown one.
 
 ## The map
 

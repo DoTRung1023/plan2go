@@ -54,8 +54,6 @@
   --font-display: var(--font-caprasimo), Georgia, "Times New Roman", serif;
   --font-body: var(--font-figtree), "Segoe UI", system-ui, sans-serif;
 
-  --text-hero: 44px;
-  --text-hero--line-height: 0.95;
   --text-title: 24px;
   --text-title--line-height: 1.14;
   --text-place: 17.5px;
