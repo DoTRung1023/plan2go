@@ -55,7 +55,7 @@ export function DayPlanner({
 
   return (
     <>
-      <div className={`shrink-0 pb-4 ${GUTTER}`}>
+      <div className={`shrink-0 pb-[10px] ${GUTTER}`}>
         {settings ?? (
           <>
             <h1 className="font-display text-title text-ink">{title}</h1>
@@ -83,7 +83,7 @@ export function DayPlanner({
           role="tabpanel"
           aria-labelledby={`day-tab-${selected.plan.id}`}
           tabIndex={0}
-          className={`scroll-quiet min-h-0 flex-1 overflow-y-auto border-t border-rule pt-1 pb-8 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${GUTTER}`}
+          className={`scroll-quiet min-h-0 flex-1 overflow-y-auto pt-2 pb-8 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${GUTTER}`}
         >
           {selected.plan.stops.length === 0 ? (
             <EmptyDay dayName={formatDayDate(selected.plan.date)} />

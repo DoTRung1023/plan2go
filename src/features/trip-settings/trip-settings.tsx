@@ -15,7 +15,7 @@ const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 /** The name is the heading, so it is set in the heading's own type. */
 const NAME_FIELD =
-  "w-full rounded-pill border border-rule bg-paper-raised px-[18px] py-[9px] font-display text-title text-ink caret-terracotta hover:border-rule-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "w-full rounded-pill border border-rule bg-paper-raised px-[18px] py-[6px] font-display text-title text-ink caret-terracotta hover:border-rule-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 interface TripSettingsProps {
   readonly slug: string;
@@ -158,7 +158,7 @@ export function TripSettings({
         className={NAME_FIELD}
       />
 
-      <div className="mt-3 grid grid-cols-2 gap-3">
+      <div className="mt-[10px] grid grid-cols-2 gap-3">
         <DateField
           id={`${fieldId}-first`}
           name="startDate"

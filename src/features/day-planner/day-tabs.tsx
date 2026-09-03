@@ -25,7 +25,7 @@ function stopLine(day: DayPlan): string {
 }
 
 const TAB =
-  "flex shrink-0 flex-col items-center gap-[2px] rounded-pill border px-[15px] pt-[7px] pb-2 whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "flex shrink-0 flex-col items-center gap-[2px] rounded-pill border px-[15px] pt-[5px] pb-[6px] whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 export function DayTabs({ days, selectedIndex, onSelect }: DayTabsProps) {
   const tabs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -56,7 +56,7 @@ export function DayTabs({ days, selectedIndex, onSelect }: DayTabsProps) {
     <div
       role="tablist"
       aria-label="Days of this trip"
-      className="day-tabs flex items-center gap-[6px] border-b border-rule pb-4"
+      className="day-tabs flex items-center gap-[6px] border-b border-rule pb-[10px]"
     >
       {days.map((day, index) => {
         const selected = index === selectedIndex;

@@ -115,7 +115,7 @@ export function TripEditor({
       </section>
 
       <section className="flex min-h-0 flex-col border-rule lg:h-dvh lg:border-l">
-        <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 px-5 pt-[18px] pb-4 lg:px-[26px]">
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 px-5 pt-4 pb-3 lg:px-[26px]">
           {/* Not prefetched: "/" opens a trip, and prefetching would open it
               for a reader who never clicked. */}
           <Link
@@ -123,7 +123,7 @@ export function TripEditor({
             prefetch={false}
             className="inline-flex items-center gap-2 rounded-chip focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
           >
-            <Image src={lockup} alt="plan2go" width={150} height={55} priority />
+            <Image src={lockup} alt="plan2go" width={112} height={41} priority />
           </Link>
           {canEdit ? (
             <TripActions slug={slug} onClear={clearTripAction} startAnotherPath="/new" />

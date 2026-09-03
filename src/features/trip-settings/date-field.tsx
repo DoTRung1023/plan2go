@@ -102,7 +102,7 @@ interface DateFieldProps {
 }
 
 const TRIGGER =
-  "mt-[6px] flex w-full items-center justify-between gap-2 rounded-pill border border-rule bg-paper-raised px-[14px] py-[7px] text-left text-meta text-ink hover:border-rule-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "mt-1 flex w-full items-center justify-between gap-2 rounded-pill border border-rule bg-paper-raised px-[14px] py-[6px] text-left text-meta text-ink hover:border-rule-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 const MONTH_STEP =
   "rounded-pill px-[10px] py-1 text-meta font-semibold text-terracotta-700 hover:bg-terracotta-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
