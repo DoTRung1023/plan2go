@@ -59,7 +59,8 @@ function Notice({ children }: { children: React.ReactNode }) {
  * false, because the Maps script reaches for the document as it runs.
  *
  * Google's own controls are off and ours are drawn over the map instead, so the
- * one floating control token in DESIGN.md is the only thing on it. Camera moves
+ * one floating control token in DESIGN.md is the only thing on it. The top left
+ * corner is left empty for the place search the editor floats there. Camera moves
  * use fitBounds and setCenter rather than panTo, which keeps them instant: the
  * motion policy allows one animation, reordering a stop, and this is not it.
  */
@@ -202,7 +203,7 @@ export function TripMap({ start, end, stops }: TripMapProps) {
       ) : null}
 
       {state.status === "ready" ? (
-        <div className="absolute top-3 left-3 z-[2] flex flex-col gap-[6px]">
+        <div className="absolute right-3 bottom-3 z-[2] flex flex-col gap-[6px]">
           <button
             type="button"
             onClick={() => {

@@ -49,8 +49,12 @@ interface PlaceSearchProps {
   }) => Promise<AddPlaceOutcome>;
 }
 
+/**
+ * The field floats over the map, so it carries its own surface and the one
+ * shadow token DESIGN.md allows a control on the map.
+ */
 const FIELD =
-  "mt-1 flex items-center gap-2 rounded-card border border-rule bg-paper-raised px-3 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-terracotta";
+  "rounded-card border border-rule bg-paper-raised px-3 py-2 shadow-map-control focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-terracotta";
 
 const PANEL_LINE = "px-4 py-3 text-meta text-ink-muted";
 
@@ -74,10 +78,14 @@ function Magnifier() {
 /**
  * Search for a place and put it on the day that is open.
  *
+ * The field sits in the top left corner of the map, where a map search belongs,
+ * and the day it names is the one chosen in the tabs beside it. That is the
+ * whole of the wiring: the caller passes the chosen day, so a place always
+ * lands on the day being read.
+ *
  * Everything transient lives in the panel under the field: the matches, the
  * line saying a search is running, and the sentence saying nothing matched. It
- * overlays the itinerary rather than pushing it down, because the field is
- * stuck to the top of the list and a list that jumps while you type is unusable.
+ * hangs over the map rather than pushing anything down.
  *
  * Nothing is said when a place lands. The stop appears in the day underneath,
  * which is the confirmation, so the only thing left to announce is for a reader
@@ -257,52 +265,54 @@ export function PlaceSearch({ slug, dayId, dayName, near, onAdd }: PlaceSearchPr
 
   return (
     <div className="relative" ref={container}>
-      <label
-        className="text-label font-semibold tracking-[0.08em] text-ink-faint uppercase"
-        htmlFor={fieldId}
-      >
-        Add a place to {dayName}
-      </label>
-
       <div className={FIELD}>
-        <Magnifier />
-        <input
-          id={fieldId}
-          ref={input}
-          type="text"
-          role="combobox"
-          autoComplete="off"
-          aria-expanded={listed}
-          aria-controls={listId}
-          aria-autocomplete="list"
-          aria-activedescendant={
-            listed ? `${listId}-option-${String(active)}` : undefined
-          }
-          value={query}
-          onChange={(event) => {
-            setQuery(event.target.value);
-            setLanded(null);
-            setOpen(true);
-          }}
-          onFocus={() => {
-            setOpen(true);
-          }}
-          onKeyDown={onKeyDown}
-          className="min-w-0 flex-1 py-2 text-body text-ink outline-none"
-        />
-        {query === "" ? null : (
-          <button
-            type="button"
-            onClick={clear}
-            className="shrink-0 text-meta text-ink-faint hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
-          >
-            Clear
-          </button>
-        )}
+        <label
+          className="text-label font-semibold tracking-[0.08em] text-ink-faint uppercase"
+          htmlFor={fieldId}
+        >
+          Add a place to {dayName}
+        </label>
+
+        <div className="mt-1 flex items-center gap-2">
+          <Magnifier />
+          <input
+            id={fieldId}
+            ref={input}
+            type="text"
+            role="combobox"
+            autoComplete="off"
+            aria-expanded={listed}
+            aria-controls={listId}
+            aria-autocomplete="list"
+            aria-activedescendant={
+              listed ? `${listId}-option-${String(active)}` : undefined
+            }
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setLanded(null);
+              setOpen(true);
+            }}
+            onFocus={() => {
+              setOpen(true);
+            }}
+            onKeyDown={onKeyDown}
+            className="min-w-0 flex-1 py-1 text-body text-ink outline-none"
+          />
+          {query === "" ? null : (
+            <button
+              type="button"
+              onClick={clear}
+              className="shrink-0 text-meta text-ink-faint hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+            >
+              Clear
+            </button>
+          )}
+        </div>
       </div>
 
       {panel ? (
-        <div className="absolute top-full right-0 left-0 z-30 mt-1 overflow-hidden rounded-card border border-rule bg-paper-raised">
+        <div className="absolute top-full right-0 left-0 z-30 mt-1 overflow-hidden rounded-card border border-rule bg-paper-raised shadow-map-control">
           {adding === null ? null : (
             <p className={PANEL_LINE}>{`Adding ${adding} to ${dayName}.`}</p>
           )}
@@ -360,7 +370,7 @@ export function PlaceSearch({ slug, dayId, dayName, near, onAdd }: PlaceSearchPr
       {addError === null ? null : (
         <p
           role="alert"
-          className="mt-2 rounded-card border-l-2 border-terracotta bg-terracotta-wash px-3 py-2 text-body text-ink"
+          className="mt-2 rounded-card border-l-2 border-terracotta bg-terracotta-wash px-3 py-2 text-body text-ink shadow-map-control"
         >
           {addError}
         </p>

@@ -45,7 +45,8 @@ interface TripEditorProps {
  * the reader asks for it.
  *
  * The selected day is held here because both panes show it and neither feature
- * may reach into the other.
+ * may reach into the other. It is also the day the search on the map adds to,
+ * so choosing a tab on the right changes where the next place lands.
  */
 export function TripEditor({
   title,
@@ -81,15 +82,34 @@ export function TripEditor({
               stops={selected.plan.stops}
             />
           )}
-          <button
-            type="button"
-            onClick={() => {
-              setExpanded(!expanded);
-            }}
-            className="absolute top-3 right-3 z-[1100] rounded-pill border border-rule bg-paper-raised px-4 py-2 text-meta text-ink shadow-map-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:hidden"
-          >
-            {expanded ? "Collapse map" : "Expand map"}
-          </button>
+          {/* The corner of the map, where a map search belongs. The row itself
+              takes no clicks, so the map still drags in the gap between the
+              search and the toggle. */}
+          <div className="pointer-events-none absolute inset-x-3 top-3 z-[3] flex items-start gap-2">
+            {canEdit && selected !== undefined ? (
+              <div className="pointer-events-auto w-full max-w-[360px] min-w-0">
+                <PlaceSearch
+                  slug={slug}
+                  dayId={selected.plan.id}
+                  dayName={`Day ${String(selectedIndex + 1)}`}
+                  near={searchBias(
+                    days.map((day) => day.plan),
+                    selectedIndex,
+                  )}
+                  onAdd={addStopAction}
+                />
+              </div>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => {
+                setExpanded(!expanded);
+              }}
+              className="pointer-events-auto ml-auto shrink-0 rounded-pill border border-rule bg-paper-raised px-4 py-2 text-meta text-ink shadow-map-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:hidden"
+            >
+              {expanded ? "Collapse map" : "Expand map"}
+            </button>
+          </div>
         </div>
       </section>
 
@@ -121,20 +141,6 @@ export function TripEditor({
                 startDate={first.plan.date}
                 endDate={last.plan.date}
                 onSave={updateTripAction}
-              />
-            ) : null
-          }
-          search={
-            canEdit && selected !== undefined ? (
-              <PlaceSearch
-                slug={slug}
-                dayId={selected.plan.id}
-                dayName={`Day ${String(selectedIndex + 1)}`}
-                near={searchBias(
-                  days.map((day) => day.plan),
-                  selectedIndex,
-                )}
-                onAdd={addStopAction}
               />
             ) : null
           }
