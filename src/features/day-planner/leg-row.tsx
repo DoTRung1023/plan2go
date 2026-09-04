@@ -58,17 +58,21 @@ function Option({
   readonly onPick: () => void;
 }) {
   const Icon = MODE_ICON[option.mode];
+  /** No route this way, so there is nothing to choose. */
+  const unavailable = option.durationMinutes === null;
 
   return (
     <button
       type="button"
       onClick={onPick}
-      disabled={disabled}
+      disabled={disabled || unavailable}
       aria-pressed={chosen}
       className={`flex min-w-0 flex-col items-start gap-[5px] rounded-chip border px-[10px] pt-[11px] pb-3 text-left disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
         chosen
           ? "border-terracotta bg-paper-raised"
-          : "border-rule bg-transparent hover:border-rule-strong"
+          : unavailable
+            ? "border-rule bg-transparent"
+            : "border-rule bg-transparent hover:border-rule-strong"
       }`}
     >
       <span
@@ -88,9 +92,7 @@ function Option({
         {MODE_WORDS[option.mode]}
       </span>
       <span className="font-display text-place text-ink tabular-nums [overflow-wrap:anywhere]">
-        {option.durationMinutes === null
-          ? "Unavailable"
-          : formatDuration(option.durationMinutes)}
+        {unavailable ? "Unavailable" : formatDuration(option.durationMinutes ?? 0)}
       </span>
       <span className="text-meta text-ink-muted tabular-nums">
         {option.distanceMeters === null ? "" : formatDistance(option.distanceMeters)}
