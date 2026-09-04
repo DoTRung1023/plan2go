@@ -168,7 +168,9 @@ export function LegRow({ leg, planned, conflicts, onChange }: LegRowProps) {
             {summary}
           </div>
         ) : open ? (
-          <div className="rounded-panel border border-rule bg-paper-sunken px-[14px] pt-[13px] pb-[14px]">
+          /* Its own scrollbar on a short window, so a panel too tall to fit
+             scrolls inside itself rather than pushing the day down past it. */
+          <div className="scroll-quiet max-h-[50vh] overflow-y-auto rounded-panel border border-rule bg-paper-sunken px-[14px] pt-[13px] pb-[14px]">
             <div className="flex items-baseline gap-2">
               <p className="text-label font-semibold text-ink-muted">How you get there</p>
               {leg.distanceMeters === null ? null : (

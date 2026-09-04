@@ -90,7 +90,14 @@ export function DayPlanner({
           role="tabpanel"
           aria-labelledby={`day-tab-${selected.plan.id}`}
           tabIndex={0}
-          className={`scroll-quiet min-h-0 flex-1 overflow-y-auto pt-2 pb-8 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${GUTTER}`}
+          /*
+           * Scroll anchoring off. A browser keeps whatever it picked as the
+           * anchor still when something above it grows, so opening the ways of
+           * getting somewhere pushed the panel out of the top of the list to
+           * hold the stop underneath it in place. Off, the list stays exactly
+           * where it was and the panel opens downwards, where it was clicked.
+           */
+          className={`scroll-quiet min-h-0 flex-1 overflow-y-auto pt-2 pb-8 [overflow-anchor:none] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${GUTTER}`}
         >
           {selected.plan.stops.length === 0 ? (
             <EmptyDay dayName={formatDayDate(selected.plan.date)} />
