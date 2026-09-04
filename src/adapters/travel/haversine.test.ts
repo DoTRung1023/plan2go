@@ -141,7 +141,13 @@ describe("createHaversineTravelProvider", () => {
 
     expect(result).toEqual({
       status: "resolved",
-      estimate: { mode: "walk", durationMinutes: 0, distanceMeters: 0, source: "haversine" },
+      estimate: {
+        mode: "walk",
+        durationMinutes: 0,
+        distanceMeters: 0,
+        source: "haversine",
+        path: null,
+      },
     });
   });
 

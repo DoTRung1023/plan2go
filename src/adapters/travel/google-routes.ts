@@ -2,11 +2,16 @@ import { z } from "zod";
 import type { LegResolution, TravelMode, TravelRequest } from "@/core/model/leg";
 import type { TravelProvider } from "@/core/ports/travel-provider";
 import { wholeMinutes } from "@/core/time/minutes";
+import { decodePolyline } from "./polyline";
 
 const COMPUTE_ROUTES_URL = "https://routes.googleapis.com/directions/v2:computeRoutes";
 
-/** The two numbers the engine needs, and nothing we are not going to use. */
-const ROUTE_FIELDS = "routes.duration,routes.distanceMeters";
+/**
+ * The two numbers the engine needs and the shape of the road they describe, so
+ * the line drawn on the map is the route rather than the way the crow went.
+ */
+const ROUTE_FIELDS =
+  "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline";
 
 const SECONDS_PER_MINUTE = 60;
 
@@ -29,6 +34,7 @@ const durationSchema = z.string().regex(/^\d+(\.\d+)?s$/);
 const routeSchema = z.object({
   duration: durationSchema,
   distanceMeters: z.number().int().nonnegative().optional(),
+  polyline: z.object({ encodedPolyline: z.string() }).optional(),
 });
 
 /** No route at all comes back as a 200 with nothing in it. */
@@ -139,6 +145,10 @@ export function createGoogleRoutesProvider(options: GoogleRoutesOptions): Travel
           durationMinutes: minutesFromDuration(route.duration),
           distanceMeters: route.distanceMeters ?? 0,
           source: "google-routes",
+          path:
+            route.polyline === undefined
+              ? null
+              : decodePolyline(route.polyline.encodedPolyline),
         },
       };
     },

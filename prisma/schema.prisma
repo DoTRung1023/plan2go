@@ -151,6 +151,9 @@ model LegCache {
   distanceMeters  Int
   /// Which provider answered, so a cached row can be aged out per provider.
   source          String
+  /// The shape of the route as LatLng[], for drawing it on the map. Null when
+  /// the provider does not know it, which is every straight line answer.
+  path            Json?
 
   fetchedAt DateTime @default(now())
   expiresAt DateTime

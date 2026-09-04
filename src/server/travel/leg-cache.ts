@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { LegResolution, TravelMode, TravelRequest } from "@/core/model/leg";
 import type { LatLng } from "@/core/model/place";
 import type { TravelProvider } from "@/core/ports/travel-provider";
@@ -38,6 +39,27 @@ const KEY_DECIMALS = 4;
  * answers that will want one.
  */
 const TIME_BUCKET = "any";
+
+/** The shape of a route as it is stored. Parsed on the way out, never trusted. */
+const pathSchema = z.array(z.object({ lat: z.number(), lng: z.number() }));
+
+function storedPath(value: unknown): readonly LatLng[] | null {
+  const parsed = pathSchema.safeParse(value);
+  return parsed.success && parsed.data.length > 0 ? parsed.data : null;
+}
+
+/**
+ * The other direction, on the way into the Json column. Copied into plain
+ * objects because Prisma's Json input will not take our readonly domain type.
+ */
+function pathToJson(
+  path: readonly LatLng[] | null,
+): { lat: number; lng: number }[] | undefined {
+  if (path === null) {
+    return undefined;
+  }
+  return path.map((point) => ({ lat: point.lat, lng: point.lng }));
+}
 
 function keyFor(point: LatLng): string {
   return `${point.lat.toFixed(KEY_DECIMALS)},${point.lng.toFixed(KEY_DECIMALS)}`;
@@ -92,6 +114,7 @@ export function withLegCache(inner: TravelProvider): TravelProvider {
             durationMinutes: cached.durationMinutes,
             distanceMeters: cached.distanceMeters,
             source: cached.source === "google-routes" ? "google-routes" : "haversine",
+            path: storedPath(cached.path),
           },
         };
       }
@@ -106,6 +129,7 @@ export function withLegCache(inner: TravelProvider): TravelProvider {
         durationMinutes: answer.estimate.durationMinutes,
         distanceMeters: answer.estimate.distanceMeters,
         source: answer.estimate.source,
+        path: pathToJson(answer.estimate.path),
         expiresAt: new Date(Date.now() + KEEP_FOR[request.mode]),
       };
       await db.legCache.upsert({ where, create: row, update: row });

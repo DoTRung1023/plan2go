@@ -1,6 +1,7 @@
 import type { DayPlan } from "@/core/model/day";
 import type { LegResolution, TravelMode, TravelRequest } from "@/core/model/leg";
 import { TRAVEL_MODES } from "@/core/model/leg";
+import type { LatLng } from "@/core/model/place";
 import type { Trip } from "@/core/model/trip";
 import type { TravelProvider } from "@/core/ports/travel-provider";
 import type { ComputedDay } from "@/core/time/compute-day";
@@ -14,6 +15,8 @@ export interface LegOption {
   readonly mode: TravelMode;
   readonly durationMinutes: number | null;
   readonly distanceMeters: number | null;
+  /** The shape of the route, for the map. Null when the provider has none. */
+  readonly path: readonly LatLng[] | null;
 }
 
 /** A leg with every way of covering it, and the row that decides which is used. */
@@ -36,12 +39,13 @@ const UNRESOLVED: LegResolution = { status: "unresolved", reason: "not-requested
 
 function toOption(mode: TravelMode, resolution: LegResolution): LegOption {
   if (resolution.status === "unresolved") {
-    return { mode, durationMinutes: null, distanceMeters: null };
+    return { mode, durationMinutes: null, distanceMeters: null, path: null };
   }
   return {
     mode,
     durationMinutes: resolution.estimate.durationMinutes,
     distanceMeters: resolution.estimate.distanceMeters,
+    path: resolution.estimate.path,
   };
 }
 

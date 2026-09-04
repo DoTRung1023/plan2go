@@ -101,6 +101,7 @@ export function createHaversineTravelProvider(
           durationMinutes,
           distanceMeters,
           source: "haversine",
+          path: null,
         },
       });
     },

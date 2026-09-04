@@ -5,7 +5,13 @@ import { fastestMode } from "./fastest-mode";
 function resolved(mode: TravelMode, durationMinutes: number): LegResolution {
   return {
     status: "resolved",
-    estimate: { mode, durationMinutes, distanceMeters: 1000, source: "haversine" },
+    estimate: {
+      mode,
+      durationMinutes,
+      distanceMeters: 1000,
+      source: "haversine",
+      path: null,
+    },
   };
 }
 

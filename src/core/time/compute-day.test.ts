@@ -59,7 +59,13 @@ function day(overrides: Partial<DayPlan> = {}): DayPlan {
 function leg(durationMinutes: number, mode: TravelMode = "walk"): LegResolution {
   return {
     status: "resolved",
-    estimate: { mode, durationMinutes, distanceMeters: durationMinutes * 80, source: "haversine" },
+    estimate: {
+      mode,
+      durationMinutes,
+      distanceMeters: durationMinutes * 80,
+      source: "haversine",
+      path: null,
+    },
   };
 }
 

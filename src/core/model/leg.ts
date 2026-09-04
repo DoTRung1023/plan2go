@@ -20,6 +20,13 @@ export interface TravelEstimate {
   /** Whole metres. */
   readonly distanceMeters: number;
   readonly source: TravelSource;
+  /**
+   * The shape of the route, in order, when the provider knows it. Null when it
+   * does not, and whoever draws it falls back to the line between the two ends.
+   * The engine ignores this: a leg takes as long as it takes whichever way it
+   * is drawn on a map.
+   */
+  readonly path: readonly LatLng[] | null;
 }
 
 /** Why a leg could not be estimated, kept for the message shown to the user. */

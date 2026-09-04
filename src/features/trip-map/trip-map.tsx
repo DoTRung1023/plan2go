@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { DayEndpoint } from "@/core/model/day";
 import type { TravelMode } from "@/core/model/leg";
+import type { LatLng } from "@/core/model/place";
 import type { Stop } from "@/core/model/stop";
 import {
   endpointMarkerElement,
@@ -53,6 +54,12 @@ interface TripMapProps {
   readonly stops: readonly Stop[];
   /** The mode used to travel from the last stop out to where the day ends. */
   readonly endTravelMode: TravelMode;
+  /**
+   * The shape of each leg, in travel order, from whoever resolved them. A leg
+   * with none is drawn as the line between its two ends, which is all a
+   * straight line provider knows and all a flight is anyway.
+   */
+  readonly legPaths: readonly (readonly LatLng[] | null)[];
 }
 
 interface RouteLeg {
@@ -148,7 +155,13 @@ function Notice({ children }: { children: React.ReactNode }) {
  * use fitBounds and setCenter rather than panTo, which keeps them instant: the
  * motion policy allows one animation, reordering a stop, and this is not it.
  */
-export function TripMap({ start, end, stops, endTravelMode }: TripMapProps) {
+export function TripMap({
+  start,
+  end,
+  stops,
+  endTravelMode,
+  legPaths,
+}: TripMapProps) {
   const container = useRef<HTMLDivElement | null>(null);
   const overlays = useRef<google.maps.OverlayView[]>([]);
   const lines = useRef<google.maps.Polyline[]>([]);
@@ -210,18 +223,20 @@ export function TripMap({ start, end, stops, endTravelMode }: TripMapProps) {
 
     // Under the markers, so a line never crosses the number it belongs to.
     const palette = getComputedStyle(document.documentElement);
-    for (const leg of routeLegs(start, end, stops, endTravelMode)) {
+    routeLegs(start, end, stops, endTravelMode).forEach((leg, index) => {
       const stroke = routeStroke(leg.mode);
       const color = palette.getPropertyValue(stroke.colorProperty).trim();
+      const drawn = legPaths[index];
       lines.current.push(
         new maps.Polyline({
           map,
-          path: [leg.from, leg.to],
+          // The road, when whoever answered the leg knew it.
+          path: drawn === null || drawn === undefined ? [leg.from, leg.to] : [...drawn],
           clickable: false,
           ...polylineOptions(maps, stroke, color),
         }),
       );
-    }
+    });
 
     const points: google.maps.LatLngLiteral[] = [];
 
@@ -272,7 +287,7 @@ export function TripMap({ start, end, stops, endTravelMode }: TripMapProps) {
       bounds.extend(point);
     }
     map.fitBounds(bounds, FIT_PADDING);
-  }, [state, start, end, stops, endTravelMode]);
+  }, [state, start, end, stops, endTravelMode, legPaths]);
 
   const drawnLegs = routeLegs(start, end, stops, endTravelMode).length;
 

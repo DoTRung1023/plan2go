@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import lockup from "../../../../logo/logo-text.png";
 import type { PlannedDay } from "@/features/day-planner/compute-trip";
 import { DayPlanner } from "@/features/day-planner/day-planner";
@@ -70,6 +70,19 @@ export function TripEditor({
   const first = days[0];
   const last = days[days.length - 1];
 
+  /**
+   * The shape of each leg the day travels, in the same order the map builds
+   * them. Held still between renders, or the map would redraw every marker each
+   * time anything on the page changed.
+   */
+  const legPaths = useMemo(
+    () =>
+      (selected?.legs ?? []).map(
+        (leg) => leg.options.find((option) => option.mode === leg.chosen)?.path ?? null,
+      ),
+    [selected],
+  );
+
   return (
     /*
      * One row, stated. A grid's implicit row is auto sized, so it grows to fit
@@ -95,6 +108,7 @@ export function TripEditor({
               end={selected.plan.end}
               stops={selected.plan.stops}
               endTravelMode={selected.plan.endTravelMode}
+              legPaths={legPaths}
             />
           )}
           {/* The corner of the map, where a map search belongs. The row itself
