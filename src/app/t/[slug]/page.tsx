@@ -1,10 +1,10 @@
 import { notFound } from "next/navigation";
-import { createHaversineTravelProvider } from "@/adapters/travel/haversine";
 import { computeTrip } from "@/features/day-planner/compute-trip";
 import { checkEditAccess } from "@/server/ownership/edit-access";
 import { readEditTokens } from "@/server/ownership/edit-token-cookie";
 import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
 import { TripEditor } from "./trip-editor";
+import { travelProvider } from "./travel";
 
 /**
  * A read, so no edit token is asked for. Anyone with the link sees the trip.
@@ -33,7 +33,7 @@ export default async function TripEditorPage({
     notFound();
   }
 
-  const days = await computeTrip(trip, createHaversineTravelProvider());
+  const days = await computeTrip(trip, travelProvider());
 
   return (
     <TripEditor

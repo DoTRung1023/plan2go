@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { createHaversineTravelProvider } from "@/adapters/travel/haversine";
 import { readEditTokenHashes } from "@/server/ownership/edit-token-cookie";
 import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
 import type { StopChanged } from "@/server/repositories/trip-repository";
@@ -14,6 +13,7 @@ import {
   setStopNote,
   setStopStay,
 } from "@/server/trips/edit-stop";
+import { travelProvider } from "./travel";
 
 export interface StopEditState {
   readonly error: string | null;
@@ -96,7 +96,7 @@ export async function removeStopAction(input: unknown): Promise<StopEditState> {
     removeStop(
       { ...parsed.data, editTokenHashes: await readEditTokenHashes() },
       prismaTripRepository,
-      createHaversineTravelProvider(),
+      travelProvider(),
     ),
   );
 }
@@ -111,7 +111,7 @@ export async function moveStopAction(input: unknown): Promise<StopEditState> {
     moveStop(
       { ...parsed.data, editTokenHashes: await readEditTokenHashes() },
       prismaTripRepository,
-      createHaversineTravelProvider(),
+      travelProvider(),
     ),
   );
 }

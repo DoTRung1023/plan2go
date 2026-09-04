@@ -32,8 +32,15 @@ Two keys, and the rule above holds for everything the server pays for.
 
 **The time engine.** `src/core` is pure TypeScript. No React, no Next, no Prisma, no
 network, no `Date.now()`. Anything external is an interface in `src/core/ports` with an
-implementation in `src/adapters`. The haversine travel provider is the working fake;
-the Google one arrives later and must not change the engine.
+implementation in `src/adapters`. Travel times come from Google Routes, wrapped in the
+leg cache, composed in `src/app/t/[slug]/travel.ts`. The haversine provider is still
+there and still answers everything when there is no key, and it answers flying either
+way, because the Routes API does not cover it. Neither of them changed the engine.
+
+`TravelRequest` carries no departure time, so transit answers are the service running
+when they were asked for and driving is asked for without traffic. Giving the engine a
+departure time is the next real piece of work here: a leg's departure depends on the
+legs before it, so it cannot simply be passed down.
 
 **Dependency direction.** `app` to `features` to `server` and `adapters` to `core`.
 `core` imports nothing internal. This is enforced by lint, not by good intentions.
