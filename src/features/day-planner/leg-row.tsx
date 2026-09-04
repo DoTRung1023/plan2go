@@ -8,6 +8,7 @@ import { formatDuration } from "@/core/time/minutes";
 import { BikeIcon, CarIcon, PlaneIcon, TrainIcon, WalkIcon } from "@/ui/icons";
 import type { LegOption, PlannedLeg } from "./compute-trip";
 import { ConflictNotice } from "./conflict-notice";
+import type { DayActions } from "./day-actions";
 import { formatDistance } from "./format-distance";
 
 /** The mode in words, so the map's stroke pattern is never the only source. */
@@ -36,22 +37,13 @@ const MODE_TINT: Readonly<Record<TravelMode, string>> = {
   flight: "bg-neutral-200 text-neutral-800",
 };
 
-/**
- * Changing how one leg is travelled. Passed in rather than imported, because a
- * feature may not reach into the route that owns the mutation.
- */
-export type ChangeLegMode = (input: {
-  readonly stopId: string | null;
-  readonly mode: TravelMode;
-}) => Promise<{ readonly error: string | null }>;
-
 interface LegRowProps {
   readonly leg: ComputedLeg;
   /** Every way of covering this leg, and which one the day is using. */
   readonly planned: PlannedLeg;
   readonly conflicts: readonly Conflict[];
   /** Null for a reader who holds no edit token, who sees the row and no choice. */
-  readonly onChange: ChangeLegMode | null;
+  readonly onChange: DayActions["changeLegMode"] | null;
 }
 
 function Option({

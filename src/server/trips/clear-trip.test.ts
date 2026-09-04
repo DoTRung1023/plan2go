@@ -5,6 +5,7 @@ import type {
   LegModeSet,
   SettingsUpdated,
   StopAdded,
+  StopChanged,
   TripCleared,
   TripRepository,
   TripReset,
@@ -47,6 +48,9 @@ function repositoryFor(known: string): {
       findPlaceByProviderId: () => Promise.resolve(null),
       addStop: () => Promise.reject<StopAdded>(new Error(NOT_STUBBED)),
       setLegMode: () => Promise.reject<LegModeSet>(new Error(NOT_STUBBED)),
+      updateStop: () => Promise.reject<StopChanged>(new Error(NOT_STUBBED)),
+      removeStop: () => Promise.reject<StopChanged>(new Error(NOT_STUBBED)),
+      moveStop: () => Promise.reject<StopChanged>(new Error(NOT_STUBBED)),
     },
   };
 }

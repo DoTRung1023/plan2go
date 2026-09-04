@@ -265,6 +265,16 @@ top of each other.
 A conflict is a sage block carrying the sentence that names it, with a clock beside the
 words. The tint alone is never the signal.
 
+A stop card carries its own controls and no others. The two that act on the whole
+stop, moving it and taking it off the day, sit under the arrival time at the top right,
+because they are about the row rather than about anything inside it. They are drawn at
+55 percent until the pointer is over the card and never hidden, since half the people
+using this have no pointer to hover with. How long the stop lasts is a stepper in a
+pill, the opening hours sit beside it in words, and the note is either a field or the
+one line offering to start one. Removing is immediate: a stop is a search away from
+coming back, and a dialog asking twice would be a modal over something editable in
+place.
+
 A leg opens. Closed it is one line, the mode and how long it takes, with **Change** at
 the end of it. Open it is a sunken panel of every way of covering the same ground, one
 tile each, carrying the mode, the time and the distance, with the one in use outlined

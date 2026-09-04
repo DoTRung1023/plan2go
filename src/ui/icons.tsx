@@ -40,6 +40,43 @@ function Glyph({
   );
 }
 
+export function PlusIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="M12 5v14M5 12h14" />
+    </Glyph>
+  );
+}
+
+export function MinusIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="M5 12h14" />
+    </Glyph>
+  );
+}
+
+/** Six dots, the shape a thing you can pick up and move has. Filled, not stroked. */
+export function GripIcon({ size, className }: Omit<IconProps, "strokeWidth">) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill="currentColor"
+      className={className}
+    >
+      <circle cx="9" cy="6" r="1.6" />
+      <circle cx="15" cy="6" r="1.6" />
+      <circle cx="9" cy="12" r="1.6" />
+      <circle cx="15" cy="12" r="1.6" />
+      <circle cx="9" cy="18" r="1.6" />
+      <circle cx="15" cy="18" r="1.6" />
+    </svg>
+  );
+}
+
 export function SearchIcon(props: IconProps) {
   return (
     <Glyph {...props}>

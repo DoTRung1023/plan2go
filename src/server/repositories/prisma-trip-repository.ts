@@ -20,6 +20,10 @@ import type {
   LegModeSet,
   LegModeUpdate,
   NewStop,
+  StopChanged,
+  StopMove,
+  StopRemoval,
+  StopUpdate,
   NewTrip,
   SettingsUpdated,
   StopAdded,
@@ -33,6 +37,9 @@ import type {
 const SLUG_ATTEMPTS = 5;
 
 const UNIQUE_CONSTRAINT = "P2002";
+
+/** Higher than any day could hold, so a reorder never collides mid flight. */
+const PARKING_OFFSET = 1000;
 
 const TRAVEL_MODE_FROM_DB: Readonly<Record<DbTravelMode, TravelMode>> = {
   WALK: "walk",
@@ -261,6 +268,101 @@ export const prismaTripRepository: TripRepository = {
       data: { travelMode: mode },
     });
     return changed.count === 0 ? { status: "refused" } : { status: "set" };
+  },
+
+  async updateStop(update: StopUpdate): Promise<StopChanged> {
+    // Scoped to the tokens the browser holds, so finding the stop is also the
+    // check that this trip may be changed.
+    const changed = await db.stop.updateMany({
+      where: {
+        id: update.stopId,
+        day: {
+          trip: { slug: update.slug, editTokenHash: { in: [...update.editTokenHashes] } },
+        },
+      },
+      data: {
+        ...(update.stayMinutes === undefined ? {} : { stayMinutes: update.stayMinutes }),
+        ...(update.note === undefined ? {} : { note: update.note }),
+      },
+    });
+    return changed.count === 0 ? { status: "refused" } : { status: "changed" };
+  },
+
+  async removeStop(removal: StopRemoval): Promise<StopChanged> {
+    const stop = await db.stop.findFirst({
+      where: {
+        id: removal.stopId,
+        day: {
+          trip: { slug: removal.slug, editTokenHash: { in: [...removal.editTokenHashes] } },
+        },
+      },
+      select: { id: true, dayId: true, position: true },
+    });
+    if (stop === null) {
+      return { status: "refused" };
+    }
+
+    // The stops after it close the gap in the same transaction, so a day is
+    // never briefly missing a position and the next stop added lands at the end
+    // rather than on top of an existing one.
+    await db.$transaction([
+      db.stop.delete({ where: { id: stop.id } }),
+      db.stop.updateMany({
+        where: { dayId: stop.dayId, position: { gt: stop.position } },
+        data: { position: { decrement: 1 } },
+      }),
+    ]);
+    return { status: "changed" };
+  },
+
+  async moveStop(move: StopMove): Promise<StopChanged> {
+    const stop = await db.stop.findFirst({
+      where: {
+        id: move.stopId,
+        day: {
+          trip: { slug: move.slug, editTokenHash: { in: [...move.editTokenHashes] } },
+        },
+      },
+      select: { id: true, dayId: true, position: true },
+    });
+    if (stop === null) {
+      return { status: "refused" };
+    }
+
+    const order = await db.stop.findMany({
+      where: { dayId: stop.dayId },
+      orderBy: { position: "asc" },
+      select: { id: true },
+    });
+
+    const from = order.findIndex((row) => row.id === stop.id);
+    const to = Math.max(0, Math.min(move.toPosition, order.length - 1));
+    if (from === -1 || from === to) {
+      return { status: "changed" };
+    }
+
+    const moved = order.slice();
+    const [taken] = moved.splice(from, 1);
+    if (taken === undefined) {
+      return { status: "changed" };
+    }
+    moved.splice(to, 0, taken);
+
+    // Two passes, because a day's positions are unique: everything is parked
+    // out of the way first, so no row on its way to its new place lands on one
+    // that has not moved yet.
+    const parked = moved.map((row, index) =>
+      db.stop.update({
+        where: { id: row.id },
+        data: { position: index + PARKING_OFFSET },
+      }),
+    );
+    const settled = moved.map((row, index) =>
+      db.stop.update({ where: { id: row.id }, data: { position: index } }),
+    );
+    await db.$transaction([...parked, ...settled]);
+
+    return { status: "changed" };
   },
 
   async clear(reset: TripReset): Promise<TripCleared> {

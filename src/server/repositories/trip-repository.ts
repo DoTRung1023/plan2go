@@ -36,6 +36,32 @@ export interface NewStop {
   readonly travelMode: TravelMode;
 }
 
+/** A change to one stop. Only the fields present are written. */
+export interface StopUpdate {
+  readonly slug: string;
+  readonly editTokenHashes: EditTokenHashes;
+  readonly stopId: string;
+  /** Whole minutes at the place. Zero is legal and means a drive past. */
+  readonly stayMinutes?: number;
+  /** Null clears the note. Absent leaves it alone. */
+  readonly note?: string | null;
+}
+
+/** Which stop to take off its day. */
+export interface StopRemoval {
+  readonly slug: string;
+  readonly editTokenHashes: EditTokenHashes;
+  readonly stopId: string;
+}
+
+/** Where a stop is being dragged to, counted from the top of the day. */
+export interface StopMove {
+  readonly slug: string;
+  readonly editTokenHashes: EditTokenHashes;
+  readonly stopId: string;
+  readonly toPosition: number;
+}
+
 /**
  * Everything storage needs to change how one leg is travelled. The mode lives
  * on the stop the leg arrives at, or on the day itself for the leg out to where
@@ -97,6 +123,10 @@ export type LegModeSet =
   | { readonly status: "set" }
   | { readonly status: "refused" };
 
+export type StopChanged =
+  | { readonly status: "changed" }
+  | { readonly status: "refused" };
+
 /**
  * The contract between the app and storage. Implementations translate Prisma
  * rows into the core model, so nothing above this line ever sees a Prisma type.
@@ -144,4 +174,16 @@ export interface TripRepository {
 
   /** Changes how one leg of a day is travelled. */
   setLegMode(update: LegModeUpdate): Promise<LegModeSet>;
+
+  /** Changes how long a stop lasts, or the note on it. */
+  updateStop(update: StopUpdate): Promise<StopChanged>;
+
+  /**
+   * Takes a stop off its day. The stops after it close the gap, so positions
+   * stay contiguous and the next stop added lands at the end.
+   */
+  removeStop(removal: StopRemoval): Promise<StopChanged>;
+
+  /** Moves a stop to another place in the order of its day. */
+  moveStop(move: StopMove): Promise<StopChanged>;
 }

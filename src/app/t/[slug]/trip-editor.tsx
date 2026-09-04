@@ -12,6 +12,12 @@ import { TripActions } from "@/features/trip-settings/trip-actions";
 import { TripSettings } from "@/features/trip-settings/trip-settings";
 import { addStopAction } from "./add-stop-action";
 import { clearTripAction } from "./clear-trip-action";
+import {
+  moveStopAction,
+  removeStopAction,
+  setStopNoteAction,
+  setStopStayAction,
+} from "./edit-stop-actions";
 import { setLegModeAction } from "./set-leg-mode-action";
 import { updateTripAction } from "./update-trip-action";
 
@@ -141,10 +147,18 @@ export function TripEditor({
           days={days}
           selectedIndex={selectedIndex}
           onSelect={setChosenIndex}
-          onChangeMode={
+          actions={
             canEdit && selected !== undefined
-              ? ({ stopId, mode }) =>
-                  setLegModeAction({ slug, dayId: selected.plan.id, stopId, mode })
+              ? {
+                  changeLegMode: ({ stopId, mode }) =>
+                    setLegModeAction({ slug, dayId: selected.plan.id, stopId, mode }),
+                  setStay: ({ stopId, stayMinutes }) =>
+                    setStopStayAction({ slug, stopId, stayMinutes }),
+                  setNote: ({ stopId, note }) => setStopNoteAction({ slug, stopId, note }),
+                  removeStop: ({ stopId }) => removeStopAction({ slug, stopId }),
+                  moveStop: ({ stopId, toPosition }) =>
+                    moveStopAction({ slug, stopId, toPosition }),
+                }
               : null
           }
           settings={

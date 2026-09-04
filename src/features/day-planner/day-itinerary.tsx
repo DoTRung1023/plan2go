@@ -1,13 +1,18 @@
-import { Fragment } from "react";
+"use client";
+
+import { Fragment, useState, useTransition } from "react";
 import type { Conflict } from "@/core/model/conflict";
 import type { DayEndpoint, DayPlan } from "@/core/model/day";
+import type { Place } from "@/core/model/place";
 import type { StopId } from "@/core/model/stop";
 import type { ComputedDay } from "@/core/time/compute-day";
 import { formatClock } from "@/core/time/minutes";
+import { weekdayOf } from "@/core/time/zoned";
 import { HomeIcon } from "@/ui/icons";
 import type { PlannedDay } from "./compute-trip";
 import { ConflictNotice } from "./conflict-notice";
-import type { ChangeLegMode } from "./leg-row";
+import type { DayActions } from "./day-actions";
+import { formatOpeningHours } from "./format-opening-hours";
 import { LegRow } from "./leg-row";
 import { StopCard } from "./stop-card";
 
@@ -17,7 +22,7 @@ interface DayItineraryProps {
   /** Every leg with the ways of covering it. In the computed legs' order. */
   readonly legs: PlannedDay["legs"];
   /** Null for a reader who holds no edit token. */
-  readonly onChangeMode: ChangeLegMode | null;
+  readonly actions: DayActions | null;
 }
 
 function conflictsAtStop(conflicts: readonly Conflict[], stopId: StopId): readonly Conflict[] {
@@ -28,6 +33,14 @@ function conflictsOnLeg(conflicts: readonly Conflict[], legIndex: number): reado
   return conflicts.filter(
     (conflict) => conflict.kind === "unresolved-leg" && conflict.legIndex === legIndex,
   );
+}
+
+/** What the place says about itself on the day being read. */
+function hoursOn(place: Place, day: DayPlan): string | null {
+  if (place.openingHours === null) {
+    return null;
+  }
+  return formatOpeningHours(place.openingHours[weekdayOf(day.date)]);
 }
 
 /** The traveller's own label first, then the place it stands for. */
@@ -77,20 +90,44 @@ function Anchor({
  * The day as a person reads it, top to bottom: where it starts if it starts
  * anywhere, every leg and every stop in order, and where it ends if it ends
  * anywhere. Every conflict sits against the stop or the leg it belongs to.
+ *
+ * The order a stop is dragged into is settled here rather than inside a card,
+ * because a move is about two stops and neither of them owns the other.
  */
-export function DayItinerary({
-  day,
-  computed,
-  legs,
-  onChangeMode,
-}: DayItineraryProps) {
+export function DayItinerary({ day, computed, legs, actions }: DayItineraryProps) {
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [overIndex, setOverIndex] = useState<number | null>(null);
+  const [moveError, setMoveError] = useState<string | null>(null);
+  const [moving, startMoving] = useTransition();
+
   const notes = new Map(day.stops.map((stop) => [stop.id, stop.note]));
-  const addresses = new Map(day.stops.map((stop) => [stop.id, stop.place.address]));
+  const places = new Map(day.stops.map((stop) => [stop.id, stop.place]));
   /** With no start point the first stop has no leg arriving at it. */
   const legOffset = day.start === null ? -1 : 0;
   const legToEnd = day.end === null ? undefined : computed.legs[computed.legs.length - 1];
   const plannedToEnd = legToEnd === undefined ? undefined : legs[legToEnd.index];
   const endConflicts = computed.conflicts.filter((conflict) => conflict.kind === "ends-next-day");
+
+  const clearDrag = (): void => {
+    setDragIndex(null);
+    setOverIndex(null);
+  };
+
+  const drop = (toIndex: number): void => {
+    const from = dragIndex;
+    clearDrag();
+    const dragged = from === null ? undefined : computed.stops[from];
+    if (actions === null || moving || dragged === undefined || from === toIndex) {
+      return;
+    }
+    startMoving(async () => {
+      const outcome = await actions.moveStop({
+        stopId: dragged.stopId,
+        toPosition: toIndex,
+      });
+      setMoveError(outcome.error);
+    });
+  };
 
   return (
     <div>
@@ -105,6 +142,7 @@ export function DayItinerary({
       {computed.stops.map((stop, index) => {
         const leg = computed.legs[index + legOffset];
         const planned = leg === undefined ? undefined : legs[leg.index];
+        const place = places.get(stop.stopId);
         return (
           <Fragment key={stop.stopId}>
             {leg === undefined || planned === undefined ? null : (
@@ -112,15 +150,24 @@ export function DayItinerary({
                 leg={leg}
                 planned={planned}
                 conflicts={conflictsOnLeg(computed.conflicts, leg.index)}
-                onChange={onChangeMode}
+                onChange={actions === null ? null : actions.changeLegMode}
               />
             )}
             <StopCard
               position={index + 1}
+              index={index}
               stop={stop}
-              address={addresses.get(stop.stopId) ?? null}
+              address={place?.address ?? null}
               note={notes.get(stop.stopId) ?? null}
+              openingHours={place === undefined ? null : hoursOn(place, day)}
               conflicts={conflictsAtStop(computed.conflicts, stop.stopId)}
+              actions={actions}
+              dragging={dragIndex === index}
+              dragOver={overIndex === index}
+              onDragStart={setDragIndex}
+              onDragOver={setOverIndex}
+              onDrop={drop}
+              onDragEnd={clearDrag}
             />
           </Fragment>
         );
@@ -131,7 +178,7 @@ export function DayItinerary({
           leg={legToEnd}
           planned={plannedToEnd}
           conflicts={conflictsOnLeg(computed.conflicts, legToEnd.index)}
-          onChange={onChangeMode}
+          onChange={actions === null ? null : actions.changeLegMode}
         />
       )}
 
@@ -150,6 +197,15 @@ export function DayItinerary({
           <ConflictNotice conflict={conflict} />
         </div>
       ))}
+
+      {moveError === null ? null : (
+        <p
+          role="alert"
+          className="mt-3 rounded-chip bg-terracotta-200 px-3 py-2 text-micro text-terracotta-900"
+        >
+          {moveError}
+        </p>
+      )}
     </div>
   );
 }
