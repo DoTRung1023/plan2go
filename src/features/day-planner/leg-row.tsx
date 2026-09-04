@@ -89,7 +89,7 @@ function Option({
       </span>
       <span className="font-display text-place text-ink tabular-nums [overflow-wrap:anywhere]">
         {option.durationMinutes === null
-          ? "Not known"
+          ? "Unavailable"
           : formatDuration(option.durationMinutes)}
       </span>
       <span className="text-meta text-ink-muted tabular-nums">
@@ -140,9 +140,7 @@ export function LegRow({ leg, planned, conflicts, onChange }: LegRowProps) {
         {MODE_WORDS[leg.mode]}
       </span>
       {leg.durationMinutes === null ? (
-        <span className="text-meta whitespace-nowrap text-ink-muted">
-          Travel time not known
-        </span>
+        <span className="text-meta whitespace-nowrap text-ink-muted">Unavailable</span>
       ) : (
         <>
           <span className="font-display text-body whitespace-nowrap text-ink tabular-nums">

@@ -116,7 +116,7 @@ export function createGoogleRoutesProvider(options: GoogleRoutesOptions): Travel
       }
 
       // A 4xx is our bug: a malformed body, or a key that is not allowed to ask.
-      // Those must be seen rather than silently degraded into "not known".
+      // Those must be seen rather than silently degraded into "unavailable".
       if (response.status >= 400 && response.status < 500) {
         throw new Error(
           `Google Routes answered ${String(response.status)} for a ${request.mode} leg.`,
