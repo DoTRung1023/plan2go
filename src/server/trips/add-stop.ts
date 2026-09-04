@@ -1,17 +1,12 @@
 import type { DayId, DayPlan } from "@/core/model/day";
-import { TRAVEL_MODES } from "@/core/model/leg";
-import type { TravelMode } from "@/core/model/leg";
 import type { LatLng, Place } from "@/core/model/place";
 import type { PlacesProvider } from "@/core/ports/places-provider";
 import type { TravelProvider } from "@/core/ports/travel-provider";
-import { fastestMode } from "@/core/time/fastest-mode";
 import type { TripRepository } from "../repositories/trip-repository";
+import { fastestTravelMode } from "./leg-modes";
 
 /** A new stop gets an hour, until the traveller says otherwise. */
 const DEFAULT_STAY_MINUTES = 60;
-
-/** What a leg falls back to when there is nothing to measure. */
-const DEFAULT_TRAVEL_MODE: TravelMode = "walk";
 
 export interface AddStopRequest {
   readonly slug: string;
@@ -41,29 +36,6 @@ function travelsFrom(day: DayPlan | undefined): LatLng | null {
     return last.place.position;
   }
   return day.start === null ? null : day.start.place.position;
-}
-
-/**
- * How to get to a place being added: whichever way is quickest from wherever
- * the day has got to.
- *
- * Every mode is asked and the fastest wins, because a stop on the other side of
- * the world is not a walk and the person adding it should not have to say so.
- * The choice is only a starting point: the leg says which way it picked and
- * offers the others beside it.
- */
-async function modeTo(
-  from: LatLng | null,
-  to: LatLng,
-  travel: TravelProvider,
-): Promise<TravelMode> {
-  if (from === null) {
-    return DEFAULT_TRAVEL_MODE;
-  }
-  const answers = await Promise.all(
-    TRAVEL_MODES.map((mode) => travel.estimate({ from, to, mode })),
-  );
-  return fastestMode(answers) ?? DEFAULT_TRAVEL_MODE;
 }
 
 /**
@@ -99,7 +71,7 @@ export async function addStopFromSearch(
     dayId: request.dayId,
     place,
     stayMinutes: DEFAULT_STAY_MINUTES,
-    travelMode: await modeTo(travelsFrom(day), place.position, travel),
+    travelMode: await fastestTravelMode(travelsFrom(day), place.position, travel),
   });
 
   return added.status === "refused"

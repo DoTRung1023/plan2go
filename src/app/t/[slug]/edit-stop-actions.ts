@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { createHaversineTravelProvider } from "@/adapters/travel/haversine";
 import { readEditTokenHashes } from "@/server/ownership/edit-token-cookie";
 import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
 import type { StopChanged } from "@/server/repositories/trip-repository";
@@ -95,6 +96,7 @@ export async function removeStopAction(input: unknown): Promise<StopEditState> {
     removeStop(
       { ...parsed.data, editTokenHashes: await readEditTokenHashes() },
       prismaTripRepository,
+      createHaversineTravelProvider(),
     ),
   );
 }
@@ -109,6 +111,7 @@ export async function moveStopAction(input: unknown): Promise<StopEditState> {
     moveStop(
       { ...parsed.data, editTokenHashes: await readEditTokenHashes() },
       prismaTripRepository,
+      createHaversineTravelProvider(),
     ),
   );
 }
