@@ -37,6 +37,12 @@ leg cache, composed in `src/app/t/[slug]/travel.ts`. The haversine provider is s
 there and still answers everything when there is no key, and it answers flying either
 way, because the Routes API does not cover it. Neither of them changed the engine.
 
+Flying is the weakest thing in here and is a heuristic, not data. Nobody sells us
+flight availability, so the straight line provider refuses it under 200 km and
+otherwise charges three hours for the airports either end plus the distance at 750
+km/h. Real flights come from Google Flights, which is a separate product with no API of
+this kind.
+
 `TravelRequest` carries no departure time, so transit answers are the service running
 when they were asked for and driving is asked for without traffic. Giving the engine a
 departure time is the next real piece of work here: a leg's departure depends on the

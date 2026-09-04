@@ -15,6 +15,9 @@ const ADELAIDE_GPO: LatLng = { lat: -34.9285, lng: 138.6007 };
 const BOTANIC_GARDEN: LatLng = { lat: -34.9186, lng: 138.6106 };
 const GLENELG: LatLng = { lat: -34.9803, lng: 138.5083 };
 
+/** Far enough away that flying to it is a real answer. */
+const HANOI: LatLng = { lat: 21.0285, lng: 105.8542 };
+
 function place(name: string, position: LatLng): Place {
   return {
     id: `place-${name}`,
@@ -82,18 +85,39 @@ describe("createHaversineTravelProvider", () => {
     );
   });
 
-  it("flies the straight line it measured, with no detour added to it", async () => {
+  it("does not fly across a city, the way the airlines do not", async () => {
     const result = await provider.estimate({
       from: ADELAIDE_GPO,
       to: GLENELG,
       mode: "flight",
     });
 
+    expect(result).toEqual({ status: "unresolved", reason: "no-route" });
+  });
+
+  it("flies the straight line it measured, with no detour added to it", async () => {
+    const result = await provider.estimate({ from: ADELAIDE_GPO, to: HANOI, mode: "flight" });
+
     expect(result.status).toBe("resolved");
     if (result.status !== "resolved") {
       return;
     }
-    expect(result.estimate.distanceMeters).toBe(haversineMeters(ADELAIDE_GPO, GLENELG));
+    expect(result.estimate.distanceMeters).toBe(haversineMeters(ADELAIDE_GPO, HANOI));
+  });
+
+  it("counts the airport either end, not just the time in the air", async () => {
+    const result = await provider.estimate({ from: ADELAIDE_GPO, to: HANOI, mode: "flight" });
+    const inTheAir =
+      (haversineMeters(ADELAIDE_GPO, HANOI) / 1000 / DEFAULT_HAVERSINE_OPTIONS.speedsKmh.flight) *
+      60;
+
+    expect(result.status).toBe("resolved");
+    if (result.status !== "resolved") {
+      return;
+    }
+    expect(result.estimate.durationMinutes).toBe(
+      Math.round(DEFAULT_HAVERSINE_OPTIONS.flightOverheadMinutes + inTheAir),
+    );
   });
 
   it("is slower on foot than behind a wheel over the same ground", async () => {

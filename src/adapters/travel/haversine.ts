@@ -6,21 +6,28 @@ import { wholeMinutes } from "@/core/time/minutes";
 const EARTH_RADIUS_METERS = 6_371_008.8;
 
 export interface HaversineOptions {
-  /** Average door to door speed, including the stopping and the waiting. */
+  /** Average speed while actually moving. For flying, the speed in the air. */
   readonly speedsKmh: Readonly<Record<TravelMode, number>>;
   /** Straight line distance is multiplied by this to approximate real streets. */
   readonly detourFactor: number;
+  /**
+   * Everything a flight costs that is not the flying: getting out to the
+   * airport, being early for it, and getting in from the one at the other end.
+   */
+  readonly flightOverheadMinutes: number;
+  /**
+   * Under this, flying is not a way of getting there. Nobody schedules a flight
+   * across a city, and a straight line does not know that an airport is a place
+   * you have to be at rather than a point you pass over.
+   */
+  readonly shortestFlightMeters: number;
 }
 
-/**
- * Flying is so much slower than an aircraft because this is a door to door
- * speed: getting out to the airport, waiting at it, and getting in from the one
- * at the other end are most of a short flight and all of the reason a short one
- * is rarely worth taking.
- */
 export const DEFAULT_HAVERSINE_OPTIONS: HaversineOptions = {
-  speedsKmh: { walk: 4.8, cycle: 15, drive: 30, transit: 20, flight: 250 },
+  speedsKmh: { walk: 4.8, cycle: 15, drive: 30, transit: 20, flight: 750 },
   detourFactor: 1.3,
+  flightOverheadMinutes: 180,
+  shortestFlightMeters: 200_000,
 };
 
 /** The one mode whose route really is the straight line this provider measures. */
@@ -70,11 +77,20 @@ export function createHaversineTravelProvider(
       }
 
       const straightLine = haversineMeters(request.from, request.to);
+
+      // Google's own directions say flights are not available across a city,
+      // and its Routes API has no flight to ask for, so this is where that
+      // answer has to come from.
+      if (request.mode === "flight" && straightLine < options.shortestFlightMeters) {
+        return Promise.resolve({ status: "unresolved", reason: "no-route" });
+      }
+
       const distanceMeters = Math.round(
         straightLine * detourFor(request.mode, options),
       );
       const speedKmh = options.speedsKmh[request.mode];
-      const rawMinutes = (distanceMeters / 1000 / speedKmh) * 60;
+      const overhead = request.mode === "flight" ? options.flightOverheadMinutes : 0;
+      const rawMinutes = overhead + (distanceMeters / 1000 / speedKmh) * 60;
       const durationMinutes =
         distanceMeters === 0 ? 0 : Math.max(1, wholeMinutes(rawMinutes));
 
