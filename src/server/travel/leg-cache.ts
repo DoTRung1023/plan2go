@@ -61,9 +61,14 @@ const DB_MODE: Readonly<
  * again after every edit without spending anything. The key is exactly the four
  * things that determine the answer: the two ends, the mode, and the time bucket.
  *
- * A leg the provider could not answer is not cached. An unreachable island is
- * cheap to ask about again, and a provider that was merely down for a minute
- * must not be remembered as a permanent no.
+ * Only answers that cost money are kept. Arithmetic is free to redo and keeping
+ * it buys nothing, while a stored guess outlives the day we change how the
+ * guess is made: the model can be corrected and the page goes on showing what
+ * the old one said until the row expires.
+ *
+ * A leg the provider could not answer is not cached either. An unreachable
+ * island is cheap to ask about again, and a provider that was merely down for a
+ * minute must not be remembered as a permanent no.
  */
 export function withLegCache(inner: TravelProvider): TravelProvider {
   return {
@@ -92,7 +97,7 @@ export function withLegCache(inner: TravelProvider): TravelProvider {
       }
 
       const answer = await inner.estimate(request);
-      if (answer.status === "unresolved") {
+      if (answer.status === "unresolved" || answer.estimate.source !== "google-routes") {
         return answer;
       }
 

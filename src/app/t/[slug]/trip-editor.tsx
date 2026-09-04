@@ -71,13 +71,21 @@ export function TripEditor({
   const last = days[days.length - 1];
 
   return (
-    <main className="lg:grid lg:h-dvh lg:grid-cols-[minmax(0,1fr)_clamp(520px,40%,660px)]">
+    /*
+     * One row, stated. A grid's implicit row is auto sized, so it grows to fit
+     * whatever the tallest pane holds and takes the page with it, however tall
+     * the grid itself was told to be. minmax(0,1fr) pins the row to the
+     * viewport and lets both panes shrink inside it, and the hidden overflow is
+     * the guarantee: nothing in either pane can scroll the window instead of
+     * itself.
+     */
+    <main className="lg:grid lg:h-dvh lg:grid-cols-[minmax(0,1fr)_clamp(520px,40%,660px)] lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden">
       <section
         aria-label="Map of this day"
         className={
           expanded
-            ? "fixed inset-0 z-40 bg-paper-sunken lg:static lg:h-dvh"
-            : "sticky top-0 z-20 h-[140px] border-b border-rule bg-paper-sunken lg:static lg:h-dvh lg:border-b-0"
+            ? "fixed inset-0 z-40 bg-paper-sunken lg:static lg:h-full lg:min-h-0"
+            : "sticky top-0 z-20 h-[140px] border-b border-rule bg-paper-sunken lg:static lg:h-full lg:min-h-0 lg:border-b-0"
         }
       >
         <div className="relative h-full w-full">
@@ -120,7 +128,7 @@ export function TripEditor({
         </div>
       </section>
 
-      <section className="flex min-h-0 flex-col border-rule lg:h-dvh lg:border-l">
+      <section className="flex min-h-0 flex-col border-rule lg:h-full lg:min-h-0 lg:border-l">
         <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 px-5 pt-4 pb-3 lg:px-[26px]">
           {/* A plain anchor, not a Link. "/" is a route handler that opens a
               trip and redirects, not a page to render, so the client router
