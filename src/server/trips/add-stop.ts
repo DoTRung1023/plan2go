@@ -1,9 +1,17 @@
-import type { DayId } from "@/core/model/day";
+import type { DayId, DayPlan } from "@/core/model/day";
+import { TRAVEL_MODES } from "@/core/model/leg";
+import type { TravelMode } from "@/core/model/leg";
+import type { LatLng, Place } from "@/core/model/place";
 import type { PlacesProvider } from "@/core/ports/places-provider";
+import type { TravelProvider } from "@/core/ports/travel-provider";
+import { fastestMode } from "@/core/time/fastest-mode";
 import type { TripRepository } from "../repositories/trip-repository";
 
 /** A new stop gets an hour, until the traveller says otherwise. */
 const DEFAULT_STAY_MINUTES = 60;
+
+/** What a leg falls back to when there is nothing to measure. */
+const DEFAULT_TRAVEL_MODE: TravelMode = "walk";
 
 export interface AddStopRequest {
   readonly slug: string;
@@ -20,6 +28,45 @@ export type AddStopResult =
   | { readonly status: "no-such-place" };
 
 /**
+ * Where the leg to a new stop starts: the stop before it, or the point the day
+ * starts at when there is none. Null when the day begins at this stop, which
+ * means nothing travels to it and there is no mode to choose.
+ */
+function travelsFrom(day: DayPlan | undefined): LatLng | null {
+  if (day === undefined) {
+    return null;
+  }
+  const last = day.stops[day.stops.length - 1];
+  if (last !== undefined) {
+    return last.place.position;
+  }
+  return day.start === null ? null : day.start.place.position;
+}
+
+/**
+ * How to get to a place being added: whichever way is quickest from wherever
+ * the day has got to.
+ *
+ * Every mode is asked and the fastest wins, because a stop on the other side of
+ * the world is not a walk and the person adding it should not have to say so.
+ * The choice is only a starting point: the leg says which way it picked and
+ * offers the others beside it.
+ */
+async function modeTo(
+  from: LatLng | null,
+  to: LatLng,
+  travel: TravelProvider,
+): Promise<TravelMode> {
+  if (from === null) {
+    return DEFAULT_TRAVEL_MODE;
+  }
+  const answers = await Promise.all(
+    TRAVEL_MODES.map((mode) => travel.estimate({ from, to, mode })),
+  );
+  return fastestMode(answers) ?? DEFAULT_TRAVEL_MODE;
+}
+
+/**
  * Put a searched place onto a day.
  *
  * The trip's own copy is checked first, so the details call is paid for once
@@ -30,13 +77,21 @@ export async function addStopFromSearch(
   request: AddStopRequest,
   repository: TripRepository,
   provider: PlacesProvider,
+  travel: TravelProvider,
 ): Promise<AddStopResult> {
   const stored = await repository.findPlaceByProviderId(request.slug, request.providerPlaceId);
-  const place = stored ?? (await provider.details(request.providerPlaceId, request.session));
+  const place: Place | null =
+    stored ?? (await provider.details(request.providerPlaceId, request.session));
 
   if (place === null) {
     return { status: "no-such-place" };
   }
+
+  // Read for the point the new leg starts at. The write below is still what
+  // authorises the change, so this tells an outsider nothing they could not
+  // have read from the trip's own page.
+  const trip = await repository.findBySlug(request.slug);
+  const day = trip?.days.find((candidate) => candidate.id === request.dayId);
 
   const added = await repository.addStop({
     slug: request.slug,
@@ -44,7 +99,7 @@ export async function addStopFromSearch(
     dayId: request.dayId,
     place,
     stayMinutes: DEFAULT_STAY_MINUTES,
-    travelMode: "walk",
+    travelMode: await modeTo(travelsFrom(day), place.position, travel),
   });
 
   return added.status === "refused"
