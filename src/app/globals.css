@@ -145,6 +145,24 @@
     color-scheme: light;
   }
 
+  /*
+   * On a desktop the planner is a screen rather than a document: two panes the
+   * height of the window, each scrolling its own contents. The window itself
+   * must not scroll at all, so it is stopped here rather than by hoping every
+   * box inside it stays within its bounds. Anything that does overflow is a
+   * bug to fix in that box, not a reason to move the whole page.
+   *
+   * Below that width the layout is one column under a strip of map, and the
+   * page is the scrolling surface, so the lock is lifted.
+   */
+  @media (min-width: 1024px) {
+    html,
+    body {
+      height: 100%;
+      overflow: hidden;
+    }
+  }
+
   body {
     background-color: var(--color-paper);
     color: var(--color-ink);

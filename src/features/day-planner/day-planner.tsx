@@ -97,7 +97,7 @@ export function DayPlanner({
            * hold the stop underneath it in place. Off, the list stays exactly
            * where it was and the panel opens downwards, where it was clicked.
            */
-          className={`scroll-quiet min-h-0 flex-1 overflow-y-auto pt-2 pb-8 [overflow-anchor:none] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${GUTTER}`}
+          className={`scroll-quiet min-h-0 flex-1 overflow-x-hidden overflow-y-auto pt-2 pb-8 [overflow-anchor:none] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${GUTTER}`}
         >
           {selected.plan.stops.length === 0 ? (
             <EmptyDay dayName={formatDayDate(selected.plan.date)} />
