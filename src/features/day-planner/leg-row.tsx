@@ -137,7 +137,16 @@ export function LegRow({ leg, planned, conflicts, onChange }: LegRowProps) {
     });
   };
 
-  const summary = (
+  /**
+   * A leg nobody can cover this way does not name the way. The mode on it is
+   * whatever the day has stored, from a default or from before a reorder, and
+   * putting "Walk" in front of "Unavailable" reads as a choice that was made
+   * rather than one still to make.
+   */
+  const covered = leg.durationMinutes !== null;
+  const anyWay = planned.options.some((option) => option.durationMinutes !== null);
+
+  const summary = covered ? (
     <>
       <span
         className={`grid h-[26px] w-[26px] shrink-0 place-items-center rounded-pill ${MODE_TINT[leg.mode]}`}
@@ -147,21 +156,19 @@ export function LegRow({ leg, planned, conflicts, onChange }: LegRowProps) {
       <span className="text-meta font-semibold whitespace-nowrap text-ink">
         {MODE_WORDS[leg.mode]}
       </span>
-      {leg.durationMinutes === null ? (
-        <span className="text-meta whitespace-nowrap text-ink-muted">Unavailable</span>
-      ) : (
-        <>
-          <span className="font-display text-body whitespace-nowrap text-ink tabular-nums">
-            {formatDuration(leg.durationMinutes)}
-          </span>
-          {leg.distanceMeters === null ? null : (
-            <span className="text-meta whitespace-nowrap text-ink-muted tabular-nums">
-              {formatDistance(leg.distanceMeters)}
-            </span>
-          )}
-        </>
+      <span className="font-display text-body whitespace-nowrap text-ink tabular-nums">
+        {formatDuration(leg.durationMinutes ?? 0)}
+      </span>
+      {leg.distanceMeters === null ? null : (
+        <span className="text-meta whitespace-nowrap text-ink-muted tabular-nums">
+          {formatDistance(leg.distanceMeters)}
+        </span>
       )}
     </>
+  ) : (
+    <span className="text-meta text-ink-muted">
+      {anyWay ? "No way chosen to get there yet" : "No way to get there"}
+    </span>
   );
 
   return (
