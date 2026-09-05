@@ -8,6 +8,9 @@
  */
 const BROWSER_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY ?? "";
 
+/** Every label on the map, whoever is reading it. */
+const MAP_LANGUAGE = "en";
+
 /** Named on window because the Maps script reports readiness by calling it. */
 const CALLBACK = "plan2goGoogleMapsReady";
 
@@ -33,6 +36,11 @@ export function loadGoogleMaps(key: string): Promise<typeof google.maps> {
       v: "quarterly",
       loading: "async",
       callback: CALLBACK,
+      // Asked for rather than left to the browser. Without it the map is
+      // labelled in whatever language the reader's browser is set to, so the
+      // same trip reads differently depending on who opens the link, and the
+      // names on the map stop matching the names in the list beside it.
+      language: MAP_LANGUAGE,
     });
 
     const script = document.createElement("script");

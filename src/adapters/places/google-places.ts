@@ -8,6 +8,14 @@ import type {
 import { MINUTES_PER_DAY, clockToMinutes } from "@/core/time/minutes";
 
 const AUTOCOMPLETE_URL = "https://places.googleapis.com/v1/places:autocomplete";
+
+/**
+ * The language a place comes back in. Fixed rather than taken from the reader,
+ * because a stop is stored once and then read by everyone the link is shared
+ * with, and it should say the same thing to all of them. It also has to match
+ * the map beside it, which is labelled in the same language.
+ */
+const PLACE_LANGUAGE = "en";
 const DETAILS_URL = "https://places.googleapis.com/v1/places";
 
 /** Everything the engine needs about a place, and nothing we are not going to use. */
@@ -148,7 +156,10 @@ export function createGooglePlacesProvider(options: GooglePlacesOptions): Places
     name: "google-places",
 
     async search(request: PlaceSearchRequest): Promise<readonly PlaceSuggestion[]> {
-      const body: Record<string, unknown> = { input: request.query };
+      const body: Record<string, unknown> = {
+        input: request.query,
+        languageCode: PLACE_LANGUAGE,
+      };
       if (request.citiesOnly) {
         body.includedPrimaryTypes = ["(cities)"];
       }
@@ -196,6 +207,7 @@ export function createGooglePlacesProvider(options: GooglePlacesOptions): Places
 
     async details(providerPlaceId: string, session: string | null): Promise<Place | null> {
       const url = new URL(`${DETAILS_URL}/${encodeURIComponent(providerPlaceId)}`);
+      url.searchParams.set("languageCode", PLACE_LANGUAGE);
       if (session !== null) {
         url.searchParams.set("sessionToken", session);
       }
