@@ -34,14 +34,13 @@ Two keys, and the rule above holds for everything the server pays for.
 network, no `Date.now()`. Anything external is an interface in `src/core/ports` with an
 implementation in `src/adapters`. Travel times come from Google Routes, wrapped in the
 leg cache, composed in `src/app/t/[slug]/travel.ts`. The haversine provider is still
-there and still answers everything when there is no key, and it answers flying either
-way, because the Routes API does not cover it. Neither of them changed the engine.
+there and still answers everything when there is no key. Neither of them changed the
+engine.
 
-Flying is the weakest thing in here and is a heuristic, not data. Nobody sells us
-flight availability, so the straight line provider refuses it under 200 km and
-otherwise charges three hours for the airports either end plus the distance at 750
-km/h. Real flights come from Google Flights, which is a separate product with no API of
-this kind.
+There are four ways to travel and flying is not one of them. Nobody sells us flight
+availability, the Routes API has no such mode, and a straight line at an assumed speed
+offered a flight between any two points on earth. Adding it back means a flight data
+provider, Amadeus or Duffel or similar, behind the same port.
 
 `TravelRequest` carries no departure time, so transit answers are the service running
 when they were asked for and driving is asked for without traffic. Giving the engine a

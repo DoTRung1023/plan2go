@@ -5,8 +5,13 @@ import type { LatLng } from "./place";
  * offered. The type is read off the list rather than written twice, so a mode
  * that is added here is a mode every exhaustive table in the product has to
  * answer for.
+ *
+ * Flying is not one of them. Nobody sells us flight availability, the Routes
+ * API has no such mode, and a straight line at an assumed speed offered a
+ * flight between any two points on earth, which was worse than not offering one
+ * at all.
  */
-export const TRAVEL_MODES = ["drive", "transit", "walk", "cycle", "flight"] as const;
+export const TRAVEL_MODES = ["drive", "transit", "walk", "cycle"] as const;
 
 export type TravelMode = (typeof TRAVEL_MODES)[number];
 

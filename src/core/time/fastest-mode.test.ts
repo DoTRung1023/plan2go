@@ -24,15 +24,8 @@ describe("fastestMode", () => {
         resolved("drive", 12),
         resolved("transit", 17),
         resolved("walk", 40),
-        resolved("flight", 90),
       ]),
     ).toBe("drive");
-  });
-
-  it("crosses the world by air rather than by road", () => {
-    expect(
-      fastestMode([resolved("drive", 18505), resolved("flight", 1708)]),
-    ).toBe("flight");
   });
 
   it("walks when the ways of getting there take the same time", () => {

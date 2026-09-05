@@ -5,13 +5,7 @@ import type { LegResolution, TravelMode } from "../model/leg";
  * the same ground in the same number of whole minutes are not equal, and over a
  * few hundred metres several of them round to the same answer.
  */
-const SIMPLEST_FIRST: readonly TravelMode[] = [
-  "walk",
-  "cycle",
-  "transit",
-  "drive",
-  "flight",
-];
+const SIMPLEST_FIRST: readonly TravelMode[] = ["walk", "cycle", "transit", "drive"];
 
 function simplicityOf(mode: TravelMode): number {
   const rank = SIMPLEST_FIRST.indexOf(mode);

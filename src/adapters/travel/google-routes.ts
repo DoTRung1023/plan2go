@@ -15,17 +15,12 @@ const ROUTE_FIELDS =
 
 const SECONDS_PER_MINUTE = 60;
 
-/**
- * What each of our modes is called over there. Flying is missing on purpose:
- * the Routes API covers ways of getting somewhere on the ground, and Google's
- * flight search is a different product that is not part of it.
- */
-const ROUTES_MODE: Readonly<Record<TravelMode, string | null>> = {
+/** What each of our modes is called over there. */
+const ROUTES_MODE: Readonly<Record<TravelMode, string>> = {
   drive: "DRIVE",
   transit: "TRANSIT",
   walk: "WALK",
   cycle: "BICYCLE",
-  flight: null,
 };
 
 /** Google returns a duration as seconds with an "s" after them. */
@@ -42,12 +37,6 @@ const computeRoutesSchema = z.object({ routes: z.array(routeSchema).optional() }
 
 export interface GoogleRoutesOptions {
   readonly apiKey: string;
-  /**
-   * Answers the modes the Routes API does not cover, which is flying. Its
-   * estimates carry their own source, so an answer that was worked out rather
-   * than looked up can still be told apart downstream.
-   */
-  readonly forModesItCannotAnswer: TravelProvider;
 }
 
 /** "1234s" to whole minutes, which is the only unit the engine has. */
@@ -91,9 +80,6 @@ export function createGoogleRoutesProvider(options: GoogleRoutesOptions): Travel
 
     async estimate(request: TravelRequest): Promise<LegResolution> {
       const travelMode = ROUTES_MODE[request.mode];
-      if (travelMode === null) {
-        return options.forModesItCannotAnswer.estimate(request);
-      }
 
       const body = {
         origin: {

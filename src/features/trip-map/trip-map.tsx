@@ -56,8 +56,8 @@ interface TripMapProps {
   readonly endTravelMode: TravelMode;
   /**
    * The shape of each leg, in travel order, from whoever resolved them. A leg
-   * with none is drawn as the line between its two ends, which is all a
-   * straight line provider knows and all a flight is anyway.
+   * with none is drawn as the line between its two ends, which is all the
+   * straight line provider knows.
    */
   readonly legPaths: readonly (readonly LatLng[] | null)[];
 }

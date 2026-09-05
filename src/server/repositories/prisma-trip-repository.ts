@@ -46,7 +46,6 @@ const TRAVEL_MODE_FROM_DB: Readonly<Record<DbTravelMode, TravelMode>> = {
   CYCLE: "cycle",
   DRIVE: "drive",
   TRANSIT: "transit",
-  FLIGHT: "flight",
 };
 
 const TRAVEL_MODE_TO_DB: Readonly<Record<TravelMode, DbTravelMode>> = {
@@ -54,7 +53,6 @@ const TRAVEL_MODE_TO_DB: Readonly<Record<TravelMode, DbTravelMode>> = {
   cycle: "CYCLE",
   drive: "DRIVE",
   transit: "TRANSIT",
-  flight: "FLIGHT",
 };
 
 const tripInclude = {

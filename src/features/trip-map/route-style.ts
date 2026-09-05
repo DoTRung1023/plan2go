@@ -75,16 +75,6 @@ const STROKES: Readonly<Record<TravelMode, RouteStroke>> = {
     roundCaps: false,
     drawn: { kind: "dashes", scale: 3, repeat: "11px" },
   },
-  flight: {
-    mode: "flight",
-    label: "Flying",
-    colorProperty: "--color-terracotta-800",
-    inkClass: "text-terracotta-800",
-    weight: 3.4,
-    dashArray: "16 10",
-    roundCaps: false,
-    drawn: { kind: "dashes", scale: 8, repeat: "26px" },
-  },
 };
 
 /** In the order Google lists them, which is the order the key is read in. */
@@ -93,7 +83,6 @@ export const ROUTE_STROKES: readonly RouteStroke[] = [
   STROKES.transit,
   STROKES.walk,
   STROKES.cycle,
-  STROKES.flight,
 ];
 
 /** Total by construction: the table has a row for every mode there is. */

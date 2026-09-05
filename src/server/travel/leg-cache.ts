@@ -22,7 +22,6 @@ const KEEP_FOR: Readonly<Record<TravelMode, number>> = {
   drive: 30 * MILLIS_PER_DAY,
   walk: 30 * MILLIS_PER_DAY,
   cycle: 30 * MILLIS_PER_DAY,
-  flight: 30 * MILLIS_PER_DAY,
   transit: MILLIS_PER_HOUR,
 };
 
@@ -65,14 +64,11 @@ function keyFor(point: LatLng): string {
   return `${point.lat.toFixed(KEY_DECIMALS)},${point.lng.toFixed(KEY_DECIMALS)}`;
 }
 
-const DB_MODE: Readonly<
-  Record<TravelMode, "WALK" | "CYCLE" | "DRIVE" | "TRANSIT" | "FLIGHT">
-> = {
+const DB_MODE: Readonly<Record<TravelMode, "WALK" | "CYCLE" | "DRIVE" | "TRANSIT">> = {
   walk: "WALK",
   cycle: "CYCLE",
   drive: "DRIVE",
   transit: "TRANSIT",
-  flight: "FLIGHT",
 };
 
 /**

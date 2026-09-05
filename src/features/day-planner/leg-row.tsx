@@ -5,7 +5,7 @@ import type { Conflict } from "@/core/model/conflict";
 import type { TravelMode } from "@/core/model/leg";
 import type { ComputedLeg } from "@/core/time/compute-day";
 import { formatDuration } from "@/core/time/minutes";
-import { BikeIcon, CarIcon, PlaneIcon, TrainIcon, WalkIcon } from "@/ui/icons";
+import { BikeIcon, CarIcon, TrainIcon, WalkIcon } from "@/ui/icons";
 import type { LegOption, PlannedLeg } from "./compute-trip";
 import { ConflictNotice } from "./conflict-notice";
 import type { DayActions } from "./day-actions";
@@ -17,7 +17,6 @@ const MODE_WORDS: Readonly<Record<TravelMode, string>> = {
   cycle: "Cycle",
   drive: "Drive",
   transit: "Public transport",
-  flight: "Fly",
 };
 
 const MODE_ICON: Readonly<Record<TravelMode, typeof WalkIcon>> = {
@@ -25,7 +24,6 @@ const MODE_ICON: Readonly<Record<TravelMode, typeof WalkIcon>> = {
   cycle: BikeIcon,
   drive: CarIcon,
   transit: TrainIcon,
-  flight: PlaneIcon,
 };
 
 /** The two accents split the modes: what you power yourself, and what you ride. */
@@ -34,7 +32,6 @@ const MODE_TINT: Readonly<Record<TravelMode, string>> = {
   cycle: "bg-terracotta-200 text-terracotta-700",
   drive: "bg-neutral-200 text-neutral-700",
   transit: "bg-sage-200 text-sage-700",
-  flight: "bg-neutral-200 text-neutral-800",
 };
 
 interface LegRowProps {
