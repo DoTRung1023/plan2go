@@ -5,6 +5,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 import lockup from "../../../../logo/logo-text.png";
+import type { LatLng } from "@/core/model/place";
 import type { PlannedDay } from "@/features/day-planner/compute-trip";
 import { DayPlanner } from "@/features/day-planner/day-planner";
 import { PlaceSearch } from "@/features/place-search/place-search";
@@ -42,6 +43,8 @@ interface TripEditorProps {
   readonly title: string;
   readonly slug: string;
   readonly days: readonly PlannedDay[];
+  /** The city the trip is in, where the map opens and a search looks first. */
+  readonly centre: LatLng | null;
   /** Whether this browser holds the edit token for the trip. */
   readonly canEdit: boolean;
 }
@@ -59,6 +62,7 @@ export function TripEditor({
   title,
   slug,
   days,
+  centre,
   canEdit,
 }: TripEditorProps) {
   const [chosenIndex, setChosenIndex] = useState(0);
@@ -110,6 +114,7 @@ export function TripEditor({
               stops={selected.plan.stops}
               endTravelMode={selected.plan.endTravelMode}
               legPaths={legPaths}
+              centre={centre}
             />
           )}
           {/* The corner of the map, where a map search belongs. The row itself
@@ -125,6 +130,7 @@ export function TripEditor({
                   near={searchBias(
                     days.map((day) => day.plan),
                     selectedIndex,
+                    centre,
                   )}
                   onAdd={addStopAction}
                 />

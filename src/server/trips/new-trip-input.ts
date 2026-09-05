@@ -21,6 +21,10 @@ function daysAcross(startDate: string, endDate: string): number {
 /**
  * What a person may send when they open a trip.
  *
+ * The city is the provider's own identifier for it rather than typed text, so
+ * the trip is named after a place that exists and the map has somewhere to
+ * open. The name and the coordinates are looked up from it on the way in.
+ *
  * The two ends are dates rather than a length, the same way they are once the
  * trip is open: a person planning a holiday knows when they land and when they
  * fly home, and counting the nights in between is the thing they came here to
@@ -32,11 +36,11 @@ function daysAcross(startDate: string, endDate: string): number {
  */
 export const newTripInputSchema = z
   .object({
-    title: z
+    cityPlaceId: z
       .string()
       .trim()
-      .min(1, "The city is missing. Enter where you are going.")
-      .max(80, "That city name is too long. Use 80 characters or fewer."),
+      .min(1, "The city is missing. Choose where you are going.")
+      .max(300),
     timeZone: z
       .string()
       .min(1, "The time zone is missing. Choose one from the list.")
@@ -56,7 +60,7 @@ export const newTripInputSchema = z
     path: ["endDate"],
   })
   .transform((value) => ({
-    title: value.title,
+    cityPlaceId: value.cityPlaceId,
     timeZone: value.timeZone,
     startDate: value.startDate,
     dayCount: daysAcross(value.startDate, value.endDate),

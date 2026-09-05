@@ -40,6 +40,7 @@ export default async function TripEditorPage({
       title={trip.title}
       slug={trip.slug}
       days={days}
+      centre={trip.centre}
       canEdit={access.status === "granted"}
     />
   );

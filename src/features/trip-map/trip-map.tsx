@@ -20,12 +20,16 @@ import "./trip-map.css";
 const SINGLE_POINT_ZOOM = 14;
 
 /**
- * A day with nothing on it still needs a view, so an empty day starts on the
- * world and the first stop moves it.
+ * A day with nothing on it still needs a view. It opens on the city the trip is
+ * in, and on the world only for a trip that was opened before anyone was asked
+ * where they were going.
  */
 const WHOLE_WORLD: google.maps.LatLngLiteral = { lat: 20, lng: 0 };
 
 const WHOLE_WORLD_ZOOM = 2;
+
+/** Close enough to read the streets of a city, wide enough to see all of it. */
+const CITY_ZOOM = 12;
 
 /** Room for a marker and its label inside the pane when the day is fitted. */
 const FIT_PADDING = 56;
@@ -54,6 +58,8 @@ interface TripMapProps {
   readonly stops: readonly Stop[];
   /** The mode used to travel from the last stop out to where the day ends. */
   readonly endTravelMode: TravelMode;
+  /** The city the trip is in. Where an empty day opens. */
+  readonly centre: LatLng | null;
   /**
    * The shape of each leg, in travel order, from whoever resolved them. A leg
    * with none is drawn as the line between its two ends, which is all the
@@ -161,10 +167,17 @@ export function TripMap({
   stops,
   endTravelMode,
   legPaths,
+  centre,
 }: TripMapProps) {
   const container = useRef<HTMLDivElement | null>(null);
   const overlays = useRef<google.maps.OverlayView[]>([]);
   const lines = useRef<google.maps.Polyline[]>([]);
+  /**
+   * Read once, when the map is built. A trip does not move, so this never has
+   * to change, and holding it here keeps rebuilding the map out of the list of
+   * things that can happen when the page re-renders.
+   */
+  const openingView = useRef(centre);
   const [state, setState] = useState<MapState>({ status: "loading" });
 
   useEffect(() => {
@@ -183,8 +196,8 @@ export function TripMap({
       setState({
         status: "ready",
         map: new maps.Map(element, {
-          center: WHOLE_WORLD,
-          zoom: WHOLE_WORLD_ZOOM,
+          center: openingView.current ?? WHOLE_WORLD,
+          zoom: openingView.current === null ? WHOLE_WORLD_ZOOM : CITY_ZOOM,
           disableDefaultUI: true,
           // Google's place cards open Google's own interface over ours, and the
           // stops for the day are already listed beside the map.
@@ -274,6 +287,12 @@ export function TripMap({
 
     const only = points[0];
     if (only === undefined) {
+      // Nothing on this day, so it shows the city the trip is in rather than
+      // whatever the day before it happened to leave on screen.
+      if (centre !== null) {
+        map.setCenter(centre);
+        map.setZoom(CITY_ZOOM);
+      }
       return;
     }
     if (points.length === 1) {
@@ -287,7 +306,7 @@ export function TripMap({
       bounds.extend(point);
     }
     map.fitBounds(bounds, FIT_PADDING);
-  }, [state, start, end, stops, endTravelMode, legPaths]);
+  }, [state, start, end, stops, endTravelMode, legPaths, centre]);
 
   const drawnLegs = routeLegs(start, end, stops, endTravelMode).length;
 

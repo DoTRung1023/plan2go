@@ -1,6 +1,6 @@
 import type { DayId, IsoDate } from "@/core/model/day";
 import type { TravelMode } from "@/core/model/leg";
-import type { Place } from "@/core/model/place";
+import type { LatLng, Place } from "@/core/model/place";
 import type { Trip } from "@/core/model/trip";
 
 /** Everything storage needs to open a new trip. The raw token never comes here. */
@@ -12,6 +12,8 @@ export interface NewTrip {
   readonly dayCount: number;
   /** Minutes from local midnight that each new day begins at. */
   readonly startAtMinutes: number;
+  /** The city the trip is in, for the map to open on. */
+  readonly centre: LatLng | null;
   readonly editTokenHash: string;
 }
 

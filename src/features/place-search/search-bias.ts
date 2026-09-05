@@ -18,10 +18,14 @@ function pointsOf(day: DayPlan): readonly LatLng[] {
  * day being planned is the best hint there is, and the rest of the trip is the
  * next best, so a day with nothing on it yet still searches in the right city.
  *
- * Null only when the whole trip is empty, which is the one case where nobody
- * has said where the traveller is going.
+ * With nothing anywhere on the trip it falls back to the city the trip is in,
+ * and is null only for a trip opened before anyone was asked for one.
  */
-export function searchBias(days: readonly DayPlan[], selectedIndex: number): LatLng | null {
+export function searchBias(
+  days: readonly DayPlan[],
+  selectedIndex: number,
+  centre: LatLng | null = null,
+): LatLng | null {
   const chosen = days[selectedIndex];
   const onTheDay = chosen === undefined ? [] : pointsOf(chosen);
   const first = onTheDay[0];
@@ -36,5 +40,5 @@ export function searchBias(days: readonly DayPlan[], selectedIndex: number): Lat
     }
   }
 
-  return null;
+  return centre;
 }

@@ -46,7 +46,8 @@ export async function openTrip(
 
   const timeZone = openingTimeZone(headers);
   const { slug, editToken } = await createTrip(
-    details ?? { ...blankTrip(timeZone), timeZone },
+    // Nobody was asked where they were going, so the map opens on the world.
+    details ?? { ...blankTrip(timeZone), timeZone, centre: null },
     repository,
   );
   await addEditToken(editToken);

@@ -3,9 +3,19 @@ import Image from "next/image";
 import lockup from "../../../logo/logo-text.png";
 import { CreateTripForm } from "./create-trip-form";
 
-/** The zone list is read on the server so the browser is not asked to build it. */
-function timeZones(): readonly string[] {
-  return Intl.supportedValuesOf("timeZone");
+import type { Choice } from "./choice-field";
+import { countries } from "./countries";
+
+/** Both lists are read on the server so the browser is not asked to build them. */
+function timeZones(): readonly Choice[] {
+  return Intl.supportedValuesOf("timeZone").map((zone) => ({
+    value: zone,
+    label: zone.replace(/_/g, " "),
+  }));
+}
+
+function countryChoices(): readonly Choice[] {
+  return countries().map((country) => ({ value: country.code, label: country.name }));
 }
 
 /** Reads a clock, so it is worked out per request rather than at build time. */
@@ -25,7 +35,11 @@ export default function MarketingPage() {
         arrive. If a place is shut when you get there, it says so.
       </p>
 
-      <CreateTripForm timeZones={timeZones()} today={today} />
+      <CreateTripForm
+        countries={countryChoices()}
+        timeZones={timeZones()}
+        today={today}
+      />
     </>
   );
 }

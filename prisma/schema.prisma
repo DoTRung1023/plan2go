@@ -40,6 +40,11 @@ model Trip {
   /// Null until accounts exist. Present now so ownership needs no migration of meaning.
   userId String?
 
+  /// Where the city the trip is in sits, for the map to open on. Null on trips
+  /// opened before anyone was asked.
+  centreLat Float?
+  centreLng Float?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

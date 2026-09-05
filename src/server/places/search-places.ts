@@ -34,8 +34,15 @@ function biasKeyFor(request: PlaceSearchRequest): string {
   return `${lat},${lng}`;
 }
 
+/**
+ * Asking for cities in Spain is a different question from asking for anywhere,
+ * so the narrowing is part of the key rather than something a cached answer to
+ * a wider question could be handed back for.
+ */
 function queryKeyFor(request: PlaceSearchRequest): string {
-  return request.query.trim().toLowerCase();
+  const kind = request.citiesOnly ? "city" : "place";
+  const where = request.countryCode?.toLowerCase() ?? "world";
+  return `${kind}:${where}:${request.query.trim().toLowerCase()}`;
 }
 
 /**

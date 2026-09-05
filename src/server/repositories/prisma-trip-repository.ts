@@ -123,6 +123,10 @@ function toTrip(row: TripRow): Trip {
     title: row.title,
     timeZone: row.timeZone,
     userId: row.userId,
+    centre:
+      row.centreLat === null || row.centreLng === null
+        ? null
+        : { lat: row.centreLat, lng: row.centreLng },
     days: row.days.map((day) => toDay(day, row.timeZone, row.startDate)),
   };
 }
@@ -141,6 +145,8 @@ async function insert(trip: NewTrip, slug: string): Promise<CreatedTrip> {
       title: trip.title,
       timeZone: trip.timeZone,
       startDate: trip.startDate,
+      centreLat: trip.centre?.lat ?? null,
+      centreLng: trip.centre?.lng ?? null,
       editTokenHash: trip.editTokenHash,
       days: {
         create: Array.from({ length: trip.dayCount }, (_unused, index) => ({

@@ -2,6 +2,8 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { createGooglePlacesProvider } from "@/adapters/places/google-places";
+import { googleMapsApiKey } from "@/server/places/google-key";
 import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
 import { newTripInputSchema } from "@/server/trips/new-trip-input";
 import { openTrip } from "@/server/trips/open-trip";
@@ -22,7 +24,7 @@ export async function createTripAction(
   formData: FormData,
 ): Promise<CreateTripFormState> {
   const parsed = newTripInputSchema.safeParse({
-    title: formData.get("title"),
+    cityPlaceId: formData.get("cityPlaceId"),
     timeZone: formData.get("timeZone"),
     startDate: formData.get("startDate"),
     endDate: formData.get("endDate"),
@@ -35,7 +37,24 @@ export async function createTripAction(
     };
   }
 
-  const opened = await openTrip(await headers(), prismaTripRepository, parsed.data);
+  const apiKey = googleMapsApiKey();
+  if (apiKey === null) {
+    return { error: "Place search is not switched on for this server." };
+  }
+
+  // The city is looked up here rather than trusted from the form, so the trip
+  // is named after a place that exists and the map opens where it actually is.
+  const { cityPlaceId, ...rest } = parsed.data;
+  const city = await createGooglePlacesProvider({ apiKey }).details(cityPlaceId, null);
+  if (city === null) {
+    return { error: "That city could not be found. Choose it from the list again." };
+  }
+
+  const opened = await openTrip(await headers(), prismaTripRepository, {
+    ...rest,
+    title: city.name,
+    centre: city.position,
+  });
 
   if (opened.status === "too-many") {
     return {

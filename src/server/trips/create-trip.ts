@@ -1,4 +1,5 @@
 import type { IsoDate } from "@/core/model/day";
+import type { LatLng } from "@/core/model/place";
 import { createEditToken, hashEditToken } from "../ownership/edit-token";
 import type { TripRepository } from "../repositories/trip-repository";
 import { DEFAULT_START_AT_MINUTES } from "./day-start";
@@ -9,6 +10,8 @@ export interface NewTripRequest {
   readonly timeZone: string;
   readonly startDate: IsoDate;
   readonly dayCount: number;
+  /** The city the trip is in, for the map to open on. */
+  readonly centre: LatLng | null;
 }
 
 export interface CreatedTripResult {
@@ -33,6 +36,7 @@ export async function createTrip(
     timeZone: request.timeZone,
     startDate: request.startDate,
     dayCount: request.dayCount,
+    centre: request.centre,
     startAtMinutes: DEFAULT_START_AT_MINUTES,
     editTokenHash: hashEditToken(editToken),
   });
