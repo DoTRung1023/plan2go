@@ -21,17 +21,12 @@ const OPENING_SPAN_DAYS = 2;
 const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 interface CreateTripFormProps {
-  /** Built on the server, so the browser is not asked to make either list. */
+  /** Built on the server, so the browser is not asked to make the list. */
   readonly countries: readonly Choice[];
-  readonly timeZones: readonly Choice[];
   readonly today: string;
 }
 
-export function CreateTripForm({
-  countries,
-  timeZones,
-  today,
-}: CreateTripFormProps) {
+export function CreateTripForm({ countries, today }: CreateTripFormProps) {
   const [state, submit, pending] = useActionState(createTripAction, NO_ERROR);
   /**
    * Held so the last day cannot be offered before the first one. The server
@@ -40,7 +35,6 @@ export function CreateTripForm({
    */
   const [first, setFirst] = useState(today);
   const [last, setLast] = useState(addDays(today, OPENING_SPAN_DAYS));
-  const [zone, setZone] = useState("");
   const [country, setCountry] = useState("");
   const [city, setCity] = useState<City | null>(null);
 
@@ -81,20 +75,6 @@ export function CreateTripForm({
           countryCode={country}
           chosen={city}
           onChange={setCity}
-        />
-      </div>
-
-      <div className="sm:col-span-2">
-        <ChoiceField
-          id="timeZone"
-          name="timeZone"
-          label="Time zone where you are going"
-          placeholder="Choose a time zone"
-          searchLabel="Type a city or a region"
-          choices={timeZones}
-          value={zone}
-          onChange={setZone}
-          noMatch="No zone matches that. Try the name of a city, or of the region it is in."
         />
       </div>
 

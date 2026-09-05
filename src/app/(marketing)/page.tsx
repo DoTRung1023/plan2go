@@ -6,14 +6,7 @@ import { CreateTripForm } from "./create-trip-form";
 import type { Choice } from "./choice-field";
 import { countries } from "./countries";
 
-/** Both lists are read on the server so the browser is not asked to build them. */
-function timeZones(): readonly Choice[] {
-  return Intl.supportedValuesOf("timeZone").map((zone) => ({
-    value: zone,
-    label: zone.replace(/_/g, " "),
-  }));
-}
-
+/** Read on the server so the browser is not asked to build the list. */
 function countryChoices(): readonly Choice[] {
   return countries().map((country) => ({ value: country.code, label: country.name }));
 }
@@ -35,11 +28,7 @@ export default function MarketingPage() {
         arrive. If a place is shut when you get there, it says so.
       </p>
 
-      <CreateTripForm
-        countries={countryChoices()}
-        timeZones={timeZones()}
-        today={today}
-      />
+      <CreateTripForm countries={countryChoices()} today={today} />
     </>
   );
 }

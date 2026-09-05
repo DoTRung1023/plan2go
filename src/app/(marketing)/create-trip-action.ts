@@ -3,10 +3,12 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createGooglePlacesProvider } from "@/adapters/places/google-places";
+import { createGoogleTimeZoneProvider } from "@/adapters/time-zone/google-time-zone";
 import { googleMapsApiKey } from "@/server/places/google-key";
 import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
 import { newTripInputSchema } from "@/server/trips/new-trip-input";
 import { openTrip } from "@/server/trips/open-trip";
+import { openingTimeZone } from "@/server/trips/time-zones";
 
 export interface CreateTripFormState {
   readonly error: string | null;
@@ -50,9 +52,16 @@ export async function createTripAction(
     return { error: "That city could not be found. Choose it from the list again." };
   }
 
-  const opened = await openTrip(await headers(), prismaTripRepository, {
+  // The clock the trip keeps is the city's, not the one the browser is sitting
+  // in. Where that cannot be worked out, the request's own guess is a better
+  // answer than refusing to open the trip.
+  const asked = await headers();
+  const zone = await createGoogleTimeZoneProvider({ apiKey }).lookup(city.position);
+
+  const opened = await openTrip(asked, prismaTripRepository, {
     ...rest,
     title: city.name,
+    timeZone: zone ?? openingTimeZone(asked),
     centre: city.position,
   });
 

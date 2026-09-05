@@ -4,8 +4,6 @@ import { addDays, daysBetween } from "@/core/time/zoned";
 /** Long enough for a real holiday, short enough that nobody scripts it. */
 export const MAX_TRIP_DAYS = 30;
 
-const supportedTimeZones = new Set(Intl.supportedValuesOf("timeZone"));
-
 function calendarDate(missing: string): z.ZodType<string> {
   return z
     .string()
@@ -23,7 +21,9 @@ function daysAcross(startDate: string, endDate: string): number {
  *
  * The city is the provider's own identifier for it rather than typed text, so
  * the trip is named after a place that exists and the map has somewhere to
- * open. The name and the coordinates are looked up from it on the way in.
+ * open. The name, the coordinates and the time zone are all looked up from it
+ * on the way in: someone who has said which city they are going to has already
+ * answered the question about clocks.
  *
  * The two ends are dates rather than a length, the same way they are once the
  * trip is open: a person planning a holiday knows when they land and when they
@@ -41,13 +41,6 @@ export const newTripInputSchema = z
       .trim()
       .min(1, "The city is missing. Choose where you are going.")
       .max(300),
-    timeZone: z
-      .string()
-      .min(1, "The time zone is missing. Choose one from the list.")
-      .refine(
-        (value) => supportedTimeZones.has(value),
-        "That is not a time zone we know. Choose one from the list.",
-      ),
     startDate: calendarDate("The first day is missing. Enter a date."),
     endDate: calendarDate("The last day is missing. Enter a date."),
   })
@@ -61,7 +54,6 @@ export const newTripInputSchema = z
   })
   .transform((value) => ({
     cityPlaceId: value.cityPlaceId,
-    timeZone: value.timeZone,
     startDate: value.startDate,
     dayCount: daysAcross(value.startDate, value.endDate),
   }));
