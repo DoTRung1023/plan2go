@@ -116,9 +116,19 @@ export interface GooglePlacesOptions {
   readonly apiKey: string;
 }
 
+/** Enough of Google's complaint to act on, without pasting a page into a log. */
+const REASON_LENGTH = 200;
+
 async function readJson(response: Response, what: string): Promise<unknown> {
   if (!response.ok) {
-    throw new Error(`Google Places answered ${String(response.status)} for ${what}.`);
+    // Google says why in the body: a key the wrong way round, a referrer
+    // restriction on a call that has no referrer, an API that was never
+    // switched on. Without it the log says only that something went wrong,
+    // which is the one thing the reader already knows.
+    const reason = await response.text().catch(() => "");
+    throw new Error(
+      `Google Places answered ${String(response.status)} for ${what}. ${reason.slice(0, REASON_LENGTH)}`.trim(),
+    );
   }
   return response.json();
 }
