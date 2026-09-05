@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { addDays, daysBetween } from "@/core/time/zoned";
 
-/** Long enough for a real holiday, short enough that nobody scripts it. */
-export const MAX_TRIP_DAYS = 30;
+/** A year. Long enough for anything anyone would plan a day at a time. */
+export const MAX_TRIP_DAYS = 365;
 
 function calendarDate(missing: string): z.ZodType<string> {
   return z
