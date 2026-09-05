@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { addDays } from "@/core/time/zoned";
+import { addDays, daysBetween } from "@/core/time/zoned";
 import { DateField } from "@/features/trip-settings/date-field";
 import { MAX_TRIP_DAYS } from "@/server/trips/new-trip-input";
 import type { Choice } from "./choice-field";
@@ -15,10 +15,8 @@ import type { CreateTripFormState } from "./create-trip-action";
 // functions, so the starting state cannot sit next to it.
 const NO_ERROR: CreateTripFormState = { error: null };
 
-/** What a trip is worth planning: long enough to have a second day on it. */
-const OPENING_SPAN_DAYS = 2;
-
-const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/;
+/** A week away, near enough, and the same length an untitled trip opens at. */
+const OPENING_SPAN_DAYS = 5;
 
 interface CreateTripFormProps {
   /** Built on the server, so the browser is not asked to make the list. */
@@ -29,9 +27,9 @@ interface CreateTripFormProps {
 export function CreateTripForm({ countries, today }: CreateTripFormProps) {
   const [state, submit, pending] = useActionState(createTripAction, NO_ERROR);
   /**
-   * Held so the last day cannot be offered before the first one. The server
-   * checks it again, because a date typed straight into the field never passes
-   * through this.
+   * Both ends are held here so the last day can travel with the first. Only the
+   * calendar writes to them, so they are always real dates, and the server
+   * checks the pair again anyway.
    */
   const [first, setFirst] = useState(today);
   const [last, setLast] = useState(addDays(today, OPENING_SPAN_DAYS));
@@ -43,9 +41,18 @@ export function CreateTripForm({ countries, today }: CreateTripFormProps) {
    * into, and date arithmetic on that throws, so the bounds are simply not
    * offered until there is a date to work from.
    */
-  const latestLast = CALENDAR_DATE.test(first)
-    ? addDays(first, MAX_TRIP_DAYS - 1)
-    : undefined;
+  const latestLast = addDays(first, MAX_TRIP_DAYS - 1);
+
+  /**
+   * Moving the first day carries the last one with it, keeping the trip the
+   * length it already was. Without that, a trip moved to next month has to have
+   * its last day changed before its first will accept a later date, which is
+   * the two fields arguing with each other over an answer nobody disputes.
+   */
+  const moveFirst = (picked: string): void => {
+    setFirst(picked);
+    setLast(addDays(picked, Math.max(0, daysBetween(first, last))));
+  };
 
   return (
     <form action={submit} className="mt-8 grid gap-4 sm:grid-cols-2">
@@ -83,8 +90,7 @@ export function CreateTripForm({ countries, today }: CreateTripFormProps) {
         name="startDate"
         label="First day"
         value={first}
-        max={last}
-        onChange={setFirst}
+        onChange={moveFirst}
       />
 
       <DateField

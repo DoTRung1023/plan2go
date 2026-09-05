@@ -1,9 +1,11 @@
+import { headers } from "next/headers";
 import Image from "next/image";
 // Imported rather than served from public/, so Next sizes and hashes it.
 import lockup from "../../../logo/logo-text.png";
 import { CreateTripForm } from "./create-trip-form";
 
 import type { Choice } from "./choice-field";
+import { openingTimeZone, todayIn } from "@/server/trips/time-zones";
 import { countries } from "./countries";
 
 /** Read on the server so the browser is not asked to build the list. */
@@ -14,8 +16,12 @@ function countryChoices(): readonly Choice[] {
 /** Reads a clock, so it is worked out per request rather than at build time. */
 export const dynamic = "force-dynamic";
 
-export default function MarketingPage() {
-  const today = new Date().toISOString().slice(0, 10);
+export default async function MarketingPage() {
+  /**
+   * Today where the reader is, not today in UTC. Adelaide spends the first nine
+   * and a half hours of every day being offered yesterday otherwise.
+   */
+  const today = todayIn(openingTimeZone(await headers()));
 
   return (
     <>
