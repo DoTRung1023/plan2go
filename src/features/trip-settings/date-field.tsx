@@ -8,7 +8,7 @@ import { addDays, parseIsoDate, weekdayOf } from "@/core/time/zoned";
 const DAYS_IN_WEEK = 7;
 
 /** Matches the calendar's own width class, for the edge test when it opens. */
-const CALENDAR_WIDTH = 300;
+const CALENDAR_WIDTH = 262;
 
 /** Room to keep between the calendar and the edge of the window. */
 const EDGE_GAP = 8;
@@ -105,7 +105,7 @@ const TRIGGER =
   "mt-1 flex w-full items-center justify-between gap-2 rounded-pill border border-rule bg-paper-raised px-[14px] py-[6px] text-left text-meta text-ink hover:border-rule-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 const MONTH_STEP =
-  "rounded-pill px-[10px] py-1 text-meta font-semibold text-terracotta-700 hover:bg-terracotta-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "rounded-pill px-2 py-[3px] text-micro font-semibold text-terracotta-700 hover:bg-terracotta-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 /**
  * A date field with our own calendar behind it.
@@ -252,7 +252,7 @@ export function DateField({
         <div
           role="dialog"
           aria-label={`Choose the ${label.toLowerCase()}`}
-          className={`absolute top-full z-30 mt-2 w-[300px] rounded-panel border border-rule bg-paper-raised p-[13px] shadow-md ${
+          className={`absolute top-full z-30 mt-2 w-[262px] rounded-panel border border-rule bg-paper-raised p-[10px] shadow-md ${
             alignEnd ? "right-0" : "left-0"
           }`}
         >
@@ -266,7 +266,7 @@ export function DateField({
             >
               {MONTH_ONLY.format(asUtc(shiftMonths(month, -1)))}
             </button>
-            <p aria-live="polite" className="font-display text-place text-ink">
+            <p aria-live="polite" className="font-display text-body text-ink">
               {MONTH_AND_YEAR.format(asUtc(month))}
             </p>
             <button
@@ -285,14 +285,14 @@ export function DateField({
             role="grid"
             aria-label={MONTH_AND_YEAR.format(asUtc(month))}
             onKeyDown={onKeyDown}
-            className="mt-3"
+            className="mt-2"
           >
             <div role="row" className="grid grid-cols-7">
               {WEEKDAYS.map((weekday, index) => (
                 <span
                   key={index}
                   role="columnheader"
-                  className="py-1 text-center text-label font-semibold text-ink-muted"
+                  className="pb-[3px] text-center text-tick font-semibold text-ink-muted"
                 >
                   <span aria-hidden="true">{weekday.short}</span>
                   <span className="sr-only">{weekday.full}</span>
@@ -314,7 +314,7 @@ export function DateField({
                         role="gridcell"
                         key={date}
                         aria-selected={selected}
-                        className="p-[2px]"
+                        className="p-px"
                       >
                         <button
                           type="button"
@@ -326,7 +326,7 @@ export function DateField({
                             choose(date);
                           }}
                           className={[
-                            "flex h-9 w-full items-center justify-center rounded-pill border font-display text-meta tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta",
+                            "flex h-[30px] w-full items-center justify-center rounded-pill border font-display text-micro tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta",
                             selected
                               ? "border-terracotta bg-terracotta text-paper"
                               : date === today
@@ -353,7 +353,7 @@ export function DateField({
           </div>
 
           {footer === undefined || footer === null ? null : (
-            <div className="mt-3 border-t border-rule pt-3">{footer}</div>
+            <div className="mt-2 border-t border-rule pt-2">{footer}</div>
           )}
         </div>
       ) : null}
