@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
+import { addDays } from "@/core/time/zoned";
 import { MAX_TRIP_DAYS } from "@/server/trips/new-trip-input";
 import { createTripAction } from "./create-trip-action";
 import type { CreateTripFormState } from "./create-trip-action";
@@ -14,6 +15,11 @@ const FIELD =
 
 const LABEL = "text-label font-semibold text-ink-muted";
 
+/** What a trip is worth planning: long enough to have a second day on it. */
+const OPENING_SPAN_DAYS = 2;
+
+const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
 interface CreateTripFormProps {
   /** Every IANA zone this machine knows, rendered as options on the server. */
   readonly timeZones: readonly string[];
@@ -22,6 +28,21 @@ interface CreateTripFormProps {
 
 export function CreateTripForm({ timeZones, today }: CreateTripFormProps) {
   const [state, submit, pending] = useActionState(createTripAction, NO_ERROR);
+  /**
+   * Held so the last day cannot be offered before the first one. The server
+   * checks it again, because a date typed straight into the field never passes
+   * through this.
+   */
+  const [first, setFirst] = useState(today);
+
+  /**
+   * A date field reads as an empty string while it is being cleared or typed
+   * into, and date arithmetic on that throws, so the bounds are simply not
+   * offered until there is a date to work from.
+   */
+  const readable = CALENDAR_DATE.test(first);
+  const earliestLast = readable ? first : undefined;
+  const latestLast = readable ? addDays(first, MAX_TRIP_DAYS - 1) : undefined;
 
   return (
     <form action={submit} className="mt-8 grid gap-4 sm:grid-cols-2">
@@ -65,23 +86,26 @@ export function CreateTripForm({ timeZones, today }: CreateTripFormProps) {
           name="startDate"
           type="date"
           required
-          defaultValue={today}
+          value={first}
+          onChange={(event) => {
+            setFirst(event.target.value);
+          }}
           className={`${FIELD} tabular-nums`}
         />
       </p>
 
       <p>
-        <label className={LABEL} htmlFor="dayCount">
-          How many days
+        <label className={LABEL} htmlFor="endDate">
+          Last day
         </label>
         <input
-          id="dayCount"
-          name="dayCount"
-          type="number"
+          id="endDate"
+          name="endDate"
+          type="date"
           required
-          min={1}
-          max={MAX_TRIP_DAYS}
-          defaultValue={3}
+          min={earliestLast}
+          max={latestLast}
+          defaultValue={addDays(today, OPENING_SPAN_DAYS)}
           className={`${FIELD} tabular-nums`}
         />
       </p>

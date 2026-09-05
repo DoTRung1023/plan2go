@@ -25,7 +25,7 @@ export async function createTripAction(
     title: formData.get("title"),
     timeZone: formData.get("timeZone"),
     startDate: formData.get("startDate"),
-    dayCount: formData.get("dayCount"),
+    endDate: formData.get("endDate"),
   });
 
   if (!parsed.success) {
