@@ -3,6 +3,7 @@ import { consumeRateLimit } from "../rate-limit/ip-rate-limit";
 import type { RateLimitPolicy } from "../rate-limit/window";
 import type { TripRepository } from "../repositories/trip-repository";
 import { blankTrip } from "./blank-trip";
+import type { NewTripRequest } from "./create-trip";
 import { createTrip } from "./create-trip";
 import { openingTimeZone } from "./time-zones";
 
@@ -31,6 +32,12 @@ export type TripOpened =
 export async function openTrip(
   headers: Headers,
   repository: TripRepository,
+  /**
+   * What the traveller filled in on the way in, or nothing for a trip opened
+   * without asking them anything. Either way it comes through here, so the two
+   * share one budget and one place that hands out the edit token.
+   */
+  details: NewTripRequest | null = null,
 ): Promise<TripOpened> {
   const limit = await consumeRateLimit(ROUTE, headers, POLICY);
   if (!limit.allowed) {
@@ -39,7 +46,7 @@ export async function openTrip(
 
   const timeZone = openingTimeZone(headers);
   const { slug, editToken } = await createTrip(
-    { ...blankTrip(timeZone), timeZone },
+    details ?? { ...blankTrip(timeZone), timeZone },
     repository,
   );
   await addEditToken(editToken);

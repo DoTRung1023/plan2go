@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 import lockup from "../../../../logo/logo-text.png";
@@ -92,7 +93,7 @@ export function TripEditor({
      * the guarantee: nothing in either pane can scroll the window instead of
      * itself.
      */
-    <main className="lg:grid lg:h-dvh lg:grid-cols-[minmax(0,1fr)_clamp(520px,40%,660px)] lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden">
+    <main className="planner-shell lg:grid lg:h-dvh lg:grid-cols-[minmax(0,1fr)_clamp(520px,40%,660px)] lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden">
       <section
         aria-label="Map of this day"
         className={
@@ -144,19 +145,12 @@ export function TripEditor({
 
       <section className="flex min-h-0 flex-col border-rule lg:h-full lg:min-h-0 lg:border-l">
         <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 px-5 pt-4 pb-3 lg:px-[26px]">
-          {/* A plain anchor, not a Link. "/" is a route handler that opens a
-              trip and redirects, not a page to render, so the client router
-              cannot follow it: the fetch creates the trip and the navigation
-              goes nowhere. A full page load also means nothing is prefetched,
-              which would have opened a trip for a reader who never clicked.
-              The Next rule below assumes every path is a page. */}
-          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-          <a
+          <Link
             href="/"
             className="inline-flex items-center gap-2 rounded-chip focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
           >
             <Image src={lockup} alt="plan2go" width={112} height={41} priority />
-          </a>
+          </Link>
           {canEdit ? (
             <TripActions slug={slug} onClear={clearTripAction} startAnotherPath="/new" />
           ) : (

@@ -152,12 +152,13 @@
    * box inside it stays within its bounds. Anything that does overflow is a
    * bug to fix in that box, not a reason to move the whole page.
    *
-   * Below that width the layout is one column under a strip of map, and the
-   * page is the scrolling surface, so the lock is lifted.
+   * Only where the planner is on the page: the front page is an ordinary
+   * document and has to be able to scroll. Below this width the planner is one
+   * column under a strip of map and scrolls as a document too.
    */
   @media (min-width: 1024px) {
-    html,
-    body {
+    html:has(.planner-shell),
+    body:has(.planner-shell) {
       height: 100%;
       overflow: hidden;
     }
