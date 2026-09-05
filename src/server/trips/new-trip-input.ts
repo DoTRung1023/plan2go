@@ -20,10 +20,10 @@ function daysAcross(startDate: string, endDate: string): number {
  * What a person may send when they open a trip.
  *
  * The city is the provider's own identifier for it rather than typed text, so
- * the trip is named after a place that exists and the map has somewhere to
- * open. The name, the coordinates and the time zone are all looked up from it
- * on the way in: someone who has said which city they are going to has already
- * answered the question about clocks.
+ * the map has somewhere to open and the days keep the right clock. Both are
+ * looked up from it on the way in: someone who has said which city they are
+ * going to has already answered the question about time zones. It does not name
+ * the trip, which the traveller does for themselves.
  *
  * The two ends are dates rather than a length, the same way they are once the
  * trip is open: a person planning a holiday knows when they land and when they

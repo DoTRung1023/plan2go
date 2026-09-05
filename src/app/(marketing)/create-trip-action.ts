@@ -6,6 +6,7 @@ import { createGooglePlacesProvider } from "@/adapters/places/google-places";
 import { createGoogleTimeZoneProvider } from "@/adapters/time-zone/google-time-zone";
 import { googleMapsApiKey } from "@/server/places/google-key";
 import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
+import { UNTITLED } from "@/server/trips/blank-trip";
 import { newTripInputSchema } from "@/server/trips/new-trip-input";
 import { openTrip } from "@/server/trips/open-trip";
 import { openingTimeZone } from "@/server/trips/time-zones";
@@ -44,8 +45,10 @@ export async function createTripAction(
     return { error: "Place search is not switched on for this server." };
   }
 
-  // The city is looked up here rather than trusted from the form, so the trip
-  // is named after a place that exists and the map opens where it actually is.
+  // The city is looked up here rather than trusted from the form, so the map
+  // opens where the place actually is and the clock is the one kept there.
+  // It does not name the trip: a trip is not one city, and the traveller names
+  // it themselves in the planner.
   const { cityPlaceId, ...rest } = parsed.data;
   const city = await createGooglePlacesProvider({ apiKey }).details(cityPlaceId, null);
   if (city === null) {
@@ -60,7 +63,7 @@ export async function createTripAction(
 
   const opened = await openTrip(asked, prismaTripRepository, {
     ...rest,
-    title: city.name,
+    title: UNTITLED,
     timeZone: zone ?? openingTimeZone(asked),
     centre: city.position,
   });
