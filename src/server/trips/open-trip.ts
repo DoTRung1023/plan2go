@@ -22,12 +22,12 @@ export type TripOpened =
   | { readonly status: "too-many"; readonly retryAfterSeconds: number };
 
 /**
- * Opens a blank trip and adds its edit token to the ones this browser holds.
+ * Opens a trip and adds its edit token to the ones this browser holds.
  *
- * The front door and the button that starts another trip from inside one both
- * come through here, so the two share a budget and neither is a way around the
- * other. The token is added to the ones the browser already holds rather than
- * replacing them, so a trip left open in another tab stays editable there.
+ * Every trip that has ever been opened comes through here, so there is one
+ * budget and no way around it. The token is added to the ones the browser
+ * already holds rather than replacing them, so a trip left open in another tab
+ * stays editable there.
  */
 export async function openTrip(
   headers: Headers,

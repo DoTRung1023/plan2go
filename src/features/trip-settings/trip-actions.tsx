@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 
 /** Emptying this trip either happened or it did not. */
@@ -15,12 +16,13 @@ interface TripActionsProps {
   readonly slug: string;
   /**
    * Passed in rather than imported, because a feature may not reach into the
-   * route that owns the mutation.
+   * route that owns the mutation. It answers with what went wrong, or with
+   * nothing at all when it navigated away instead of answering.
    */
-  readonly onClear: (input: { slug: string }) => Promise<ClearTripOutcome>;
+  readonly onClear: (input: { slug: string }) => Promise<ClearTripOutcome | undefined>;
   /**
-   * Where the form that starts another trip posts. A path rather than an
-   * import, for the same reason: a feature does not know the app's routes.
+   * Where starting another trip goes. A path rather than an import, for the
+   * same reason: a feature does not know the app's routes.
    */
   readonly startAnotherPath: string;
 }
@@ -28,14 +30,14 @@ interface TripActionsProps {
 /**
  * The two ways to begin again, at the top of the page beside the logo. They are
  * not the same thing and are named apart, because the difference between them
- * is which trip you are left in front of.
+ * is what happens to the trip you are looking at.
  *
- * Resetting empties this trip where it stands. The slug does not change, so a
- * link already sent to the people travelling still opens the planner they were
- * given, and everything on it is gone. Starting another leaves this trip
- * untouched and opens an empty one in its own tab, so both are in front of you
- * and both can still be edited. The two names carry that on their own, so
- * nothing is written under them.
+ * Resetting empties this one and hands you back to the front page to set a trip
+ * up again. The emptied trip keeps its link, so anyone already holding it still
+ * opens the planner they were given, with nothing on it. Starting another
+ * leaves this trip alone and opens the front page in its own tab, so the trip
+ * being read is still there behind it. The two names carry that on their own,
+ * so nothing is written under them.
  */
 export function TripActions({ slug, onClear, startAnotherPath }: TripActionsProps) {
   const [message, setMessage] = useState<string | null>(null);
@@ -44,7 +46,7 @@ export function TripActions({ slug, onClear, startAnotherPath }: TripActionsProp
   const clear = (): void => {
     startClearing(async () => {
       const outcome = await onClear({ slug });
-      setMessage(outcome.error);
+      setMessage(outcome?.error ?? null);
     });
   };
 
@@ -55,11 +57,9 @@ export function TripActions({ slug, onClear, startAnotherPath }: TripActionsProp
           {clearing ? "Resetting" : "Reset this trip"}
         </button>
         {/* Its own tab, so the trip being read is still there behind it. */}
-        <form action={startAnotherPath} method="post" target="_blank">
-          <button type="submit" className={BUTTON}>
-            Start another trip
-          </button>
-        </form>
+        <Link href={startAnotherPath} target="_blank" className={BUTTON}>
+          Start another trip
+        </Link>
       </div>
 
       {message === null ? null : (

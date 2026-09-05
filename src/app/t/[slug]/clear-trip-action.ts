@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import { readEditTokenHashes } from "@/server/ownership/edit-token-cookie";
 import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
@@ -15,9 +16,12 @@ export interface ClearTripState {
 const clearTripSchema = z.object({ slug: z.string().min(1).max(80) });
 
 /**
- * Empties the trip the browser is looking at and leaves it on the same link.
- * What comes back is what opening a new trip would have given, dates and time
- * zone included, which is why the zone is guessed from this request.
+ * Empties the trip the browser is looking at, then sends them to the front page
+ * to set one up again. The emptied trip keeps its own link and its own edit
+ * token, so it is still there for anyone already holding it.
+ *
+ * What is left behind is what opening a new trip would have given, dates and
+ * time zone included, which is why the zone is guessed from this request.
  *
  * The edit token is checked inside the query that finds the trip, so nothing is
  * written without one and no separate trip to the database is spent asking. A
@@ -47,5 +51,6 @@ export async function clearTripAction(input: unknown): Promise<ClearTripState> {
   }
 
   revalidatePath(`/t/${parsed.data.slug}`);
-  return { error: null };
+  // Throws, so nothing after it runs and the caller never sees a result.
+  redirect("/");
 }

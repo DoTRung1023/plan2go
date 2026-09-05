@@ -152,7 +152,7 @@ export function TripEditor({
             <Image src={lockup} alt="plan2go" width={112} height={41} priority />
           </Link>
           {canEdit ? (
-            <TripActions slug={slug} onClear={clearTripAction} startAnotherPath="/new" />
+            <TripActions slug={slug} onClear={clearTripAction} startAnotherPath="/" />
           ) : (
             <p className="text-meta text-ink-muted">Shared with you, read only</p>
           )}
