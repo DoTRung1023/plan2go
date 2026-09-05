@@ -57,15 +57,22 @@ function Option({
   const Icon = MODE_ICON[option.mode];
   /** No route this way, so there is nothing to choose. */
   const unavailable = option.durationMinutes === null;
+  /**
+   * A mode with no route is not how you are getting there, whatever the day has
+   * stored. It can be the one on the stop, from before a reorder or from a
+   * default, and marking it as the choice would say a journey is settled that
+   * cannot be made at all.
+   */
+  const isChosen = chosen && !unavailable;
 
   return (
     <button
       type="button"
       onClick={onPick}
       disabled={disabled || unavailable}
-      aria-pressed={chosen}
+      aria-pressed={isChosen}
       className={`flex min-w-0 flex-col items-start gap-[5px] rounded-chip border px-[10px] pt-[11px] pb-3 text-left disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
-        chosen
+        isChosen
           ? "border-terracotta bg-paper-raised"
           : unavailable
             ? "border-rule bg-transparent"
@@ -74,14 +81,16 @@ function Option({
     >
       <span
         className={`flex w-full items-center justify-between ${
-          chosen ? "text-terracotta-700" : "text-ink-muted"
+          isChosen ? "text-terracotta-700" : "text-ink-muted"
         }`}
       >
         <Icon size={17} strokeWidth={2.4} />
         <span
           aria-hidden="true"
           className={`h-[13px] w-[13px] rounded-pill border ${
-            chosen ? "border-terracotta bg-terracotta" : "border-rule-strong bg-transparent"
+            isChosen
+              ? "border-terracotta bg-terracotta"
+              : "border-rule-strong bg-transparent"
           }`}
         />
       </span>
