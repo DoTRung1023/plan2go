@@ -39,6 +39,7 @@ export const newTripInputSchema = z
       .max(80, "That city name is too long. Use 80 characters or fewer."),
     timeZone: z
       .string()
+      .min(1, "The time zone is missing. Choose one from the list.")
       .refine(
         (value) => supportedTimeZones.has(value),
         "That is not a time zone we know. Choose one from the list.",

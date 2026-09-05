@@ -2,9 +2,11 @@
 
 import { useActionState, useState } from "react";
 import { addDays } from "@/core/time/zoned";
+import { DateField } from "@/features/trip-settings/date-field";
 import { MAX_TRIP_DAYS } from "@/server/trips/new-trip-input";
 import { createTripAction } from "./create-trip-action";
 import type { CreateTripFormState } from "./create-trip-action";
+import { TimeZoneField } from "./time-zone-field";
 
 // Lives here, not beside the action: a "use server" file may export only async
 // functions, so the starting state cannot sit next to it.
@@ -34,15 +36,17 @@ export function CreateTripForm({ timeZones, today }: CreateTripFormProps) {
    * through this.
    */
   const [first, setFirst] = useState(today);
+  const [last, setLast] = useState(addDays(today, OPENING_SPAN_DAYS));
+  const [zone, setZone] = useState("");
 
   /**
    * A date field reads as an empty string while it is being cleared or typed
    * into, and date arithmetic on that throws, so the bounds are simply not
    * offered until there is a date to work from.
    */
-  const readable = CALENDAR_DATE.test(first);
-  const earliestLast = readable ? first : undefined;
-  const latestLast = readable ? addDays(first, MAX_TRIP_DAYS - 1) : undefined;
+  const latestLast = CALENDAR_DATE.test(first)
+    ? addDays(first, MAX_TRIP_DAYS - 1)
+    : undefined;
 
   return (
     <form action={submit} className="mt-8 grid gap-4 sm:grid-cols-2">
@@ -61,54 +65,35 @@ export function CreateTripForm({ timeZones, today }: CreateTripFormProps) {
         />
       </p>
 
-      <p className="sm:col-span-2">
-        <label className={LABEL} htmlFor="timeZone">
-          Time zone where you are going
-        </label>
-        <select id="timeZone" name="timeZone" required defaultValue="" className={FIELD}>
-          <option value="" disabled>
-            Choose a time zone
-          </option>
-          {timeZones.map((zone) => (
-            <option key={zone} value={zone}>
-              {zone.replace(/_/g, " ")}
-            </option>
-          ))}
-        </select>
-      </p>
-
-      <p>
-        <label className={LABEL} htmlFor="startDate">
-          First day
-        </label>
-        <input
-          id="startDate"
-          name="startDate"
-          type="date"
-          required
-          value={first}
-          onChange={(event) => {
-            setFirst(event.target.value);
-          }}
-          className={`${FIELD} tabular-nums`}
+      <div className="sm:col-span-2">
+        <TimeZoneField
+          id="timeZone"
+          name="timeZone"
+          label="Time zone where you are going"
+          zones={timeZones}
+          value={zone}
+          onChange={setZone}
         />
-      </p>
+      </div>
 
-      <p>
-        <label className={LABEL} htmlFor="endDate">
-          Last day
-        </label>
-        <input
-          id="endDate"
-          name="endDate"
-          type="date"
-          required
-          min={earliestLast}
-          max={latestLast}
-          defaultValue={addDays(today, OPENING_SPAN_DAYS)}
-          className={`${FIELD} tabular-nums`}
-        />
-      </p>
+      <DateField
+        id="startDate"
+        name="startDate"
+        label="First day"
+        value={first}
+        max={last}
+        onChange={setFirst}
+      />
+
+      <DateField
+        id="endDate"
+        name="endDate"
+        label="Last day"
+        value={last}
+        min={first}
+        max={latestLast}
+        onChange={setLast}
+      />
 
       {state.error === null ? null : (
         <p
