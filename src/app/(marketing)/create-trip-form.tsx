@@ -15,8 +15,11 @@ import type { CreateTripFormState } from "./create-trip-action";
 // functions, so the starting state cannot sit next to it.
 const NO_ERROR: CreateTripFormState = { error: null };
 
-/** A week away, near enough, and the same length an untitled trip opens at. */
-const OPENING_SPAN_DAYS = 5;
+/**
+ * How far the last day sits from the first when the form opens. Four, not five:
+ * both ends are counted, so this is a trip of five days.
+ */
+const OPENING_SPAN_DAYS = 4;
 
 interface CreateTripFormProps {
   /** Built on the server, so the browser is not asked to make the list. */
