@@ -1,6 +1,6 @@
 "use client";
 
-import type { DragEvent, KeyboardEvent } from "react";
+import type { DragEvent } from "react";
 import { useState, useTransition } from "react";
 import type { Conflict } from "@/core/model/conflict";
 import type { ComputedStop } from "@/core/time/compute-day";
@@ -119,19 +119,6 @@ export function StopCard({
     run(() => actions.setNote({ stopId: stop.stopId, note: tidied }));
   };
 
-  /** The keyboard's way to reorder, since a drag needs a pointer. */
-  const onGripKey = (event: KeyboardEvent<HTMLButtonElement>): void => {
-    if (actions === null) {
-      return;
-    }
-    const step = event.key === "ArrowUp" ? -1 : event.key === "ArrowDown" ? 1 : 0;
-    if (step === 0) {
-      return;
-    }
-    event.preventDefault();
-    run(() => actions.moveStop({ stopId: stop.stopId, toPosition: index + step }));
-  };
-
   const start = (event: DragEvent<HTMLElement>): void => {
     event.dataTransfer.effectAllowed = "move";
     onDragStart(index);
@@ -201,12 +188,13 @@ export function StopCard({
             )}
             {actions === null ? null : (
               <div className="-mr-1 flex items-center opacity-55 group-hover:opacity-100 focus-within:opacity-100">
+                {/* A handle, not a shortcut. The arrow keys are left to the
+                    page, so a card under the pointer still scrolls. */}
                 <button
                   type="button"
-                  onKeyDown={onGripKey}
                   disabled={saving}
-                  title="Drag to reorder, or use the arrow keys"
-                  aria-label={`Move ${stop.placeName}. Drag it, or use the up and down arrow keys.`}
+                  title="Drag to reorder"
+                  aria-label={`Move ${stop.placeName} by dragging it`}
                   className={`${TOOL} cursor-grab active:cursor-grabbing`}
                 >
                   <GripIcon size={13} />
