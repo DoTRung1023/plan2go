@@ -215,26 +215,15 @@ export function computeDay({ day, legs }: ComputeDayInput): ComputedDay {
     }
 
     /**
-     * When the stop begins. A fixed time later than the day gets there is
-     * waited for; one earlier cannot be honoured, so the day goes on from when
-     * it actually arrives and says what is wrong rather than quietly moving it.
+     * When the stop begins. A fixed time is the traveller's answer and it wins
+     * outright: reaching it early is waiting, and reaching it late is theirs to
+     * settle by moving something. The engine does not argue with a day it was
+     * told the shape of, and does not quietly move the time either.
      */
-    let at = cursor;
-    let waitForPin = 0;
-    if (pin !== null) {
-      if (pin.epoch < at) {
-        conflicts.push({
-          kind: "starts-before-arrival",
-          stopId: stop.id,
-          placeName: stop.place.name,
-          startsAt: pin.minutes,
-          arrivalMinutes: clockAt(at).minutesFromMidnight,
-        });
-      } else {
-        waitForPin = pin.epoch - at;
-        at = pin.epoch;
-      }
-    }
+    const at = pin === null ? cursor : pin.epoch;
+    // Only time actually spent standing about counts. A stop the day arrives
+    // at after its time was not waited for.
+    const waitForPin = Math.max(0, at - cursor);
     waitingMinutes += waitForPin;
 
     const arrival = clockAt(at);

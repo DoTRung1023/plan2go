@@ -410,7 +410,7 @@ describe("computeDay, stops fixed to a time", () => {
     expect(result.conflicts).toEqual([]);
   });
 
-  it("still judges a fixed first stop against a day that starts somewhere", () => {
+  it("keeps a fixed time even where the day cannot travel to it", () => {
     const plan = day({
       end: null,
       startAtMinutes: 9 * 60,
@@ -418,8 +418,11 @@ describe("computeDay, stops fixed to a time", () => {
     });
     const result = computeDay({ day: plan, legs: [leg(10)] });
 
+    // The day leaves its start point at nine and the stop is still at eight:
+    // the traveller's answer stands, and rearranging it is theirs to do.
     expect(result.begins.minutesFromMidnight).toBe(9 * 60);
-    expect(result.conflicts[0]?.kind).toBe("starts-before-arrival");
+    expect(result.stops[0]?.arrival?.minutesFromMidnight).toBe(8 * 60);
+    expect(result.conflicts).toEqual([]);
   });
 
   it("waits for a time the day reaches early, and counts the wait", () => {
@@ -452,7 +455,7 @@ describe("computeDay, stops fixed to a time", () => {
     expect(result.stops[2]?.arrival?.minutesFromMidnight).toBe(15 * 60 + 10);
   });
 
-  it("says so when the day cannot reach a fixed time, and does not move it", () => {
+  it("counts no waiting for a fixed time the day passes before reaching", () => {
     const plan = day({
       start: null,
       end: null,
@@ -461,18 +464,12 @@ describe("computeDay, stops fixed to a time", () => {
     });
     const result = computeDay({ day: plan, legs: [leg(30)] });
 
-    expect(result.conflicts).toEqual([
-      {
-        kind: "starts-before-arrival",
-        stopId: "stop-Tour",
-        placeName: "Tour",
-        startsAt: 10 * 60,
-        arrivalMinutes: 12 * 60 + 30,
-      },
-    ]);
-    // The day carries on from when it actually gets there.
-    expect(result.stops[1]?.arrival?.minutesFromMidnight).toBe(12 * 60 + 30);
+    // The market runs to half past twelve and the tour is still at ten. Nobody
+    // stood about waiting for it, so nothing is counted as waiting.
+    expect(result.stops[1]?.arrival?.minutesFromMidnight).toBe(10 * 60);
     expect(result.stops[1]?.waitMinutes).toBe(0);
+    expect(result.totals.waitingMinutes).toBe(0);
+    expect(result.conflicts).toEqual([]);
   });
 
   it("times a stop again after a leg nobody could answer", () => {
