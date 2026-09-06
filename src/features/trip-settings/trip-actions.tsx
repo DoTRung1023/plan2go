@@ -145,8 +145,7 @@ export function TripActions({ slug, onClear, startAnotherPath }: TripActionsProp
         >
           <p className="font-display text-body text-ink">Reset this trip?</p>
           <p className="mt-[5px] text-meta text-ink-muted">
-            Every day, stop and place on it is deleted for good. The link keeps
-            working, and opens an empty planner.
+            Every day, stop and place on it is deleted.
           </p>
           <div className="mt-3 flex gap-2">
             <button type="button" ref={keep} onClick={close} className={KEEP}>
