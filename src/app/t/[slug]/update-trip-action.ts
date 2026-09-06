@@ -12,6 +12,11 @@ const editKeySchema = z.string().regex(EDIT_KEY_PATTERN);
 export interface TripSettingsState {
   readonly saved: boolean;
   readonly error: string | null;
+  /**
+   * The field the message belongs to, when it belongs to one rather than to
+   * the form. It decides where the sentence is shown, not what it says.
+   */
+  readonly field: "title" | null;
 }
 
 /**
@@ -26,7 +31,11 @@ export async function updateTripAction(
 ): Promise<TripSettingsState> {
   const key = editKeySchema.safeParse(formData.get("editKey"));
   if (!key.success) {
-    return { saved: false, error: "This trip could not be read. Reload the page." };
+    return {
+      saved: false,
+      error: "This trip could not be read. Reload the page.",
+      field: null,
+    };
   }
 
   const parsed = tripSettingsSchema.safeParse({
@@ -41,6 +50,7 @@ export async function updateTripAction(
     return {
       saved: false,
       error: first === undefined ? "Check the details and save them again." : first.message,
+      field: first?.path[0] === "title" ? "title" : null,
     };
   }
 
@@ -55,9 +65,10 @@ export async function updateTripAction(
       saved: false,
       error:
         "This trip is not yours to change. Ask whoever sent you the link to change it, or start your own trip.",
+      field: null,
     };
   }
 
   revalidatePath(`/t/${parsed.data.slug}`, "layout");
-  return { saved: true, error: null };
+  return { saved: true, error: null, field: null };
 }

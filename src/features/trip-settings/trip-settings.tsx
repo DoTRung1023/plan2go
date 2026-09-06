@@ -8,9 +8,11 @@ import { DateField } from "./date-field";
 export interface TripSettingsOutcome {
   readonly saved: boolean;
   readonly error: string | null;
+  /** Which field the message is about, or null when it is about the form. */
+  readonly field: "title" | null;
 }
 
-const UNSAVED: TripSettingsOutcome = { saved: false, error: null };
+const UNSAVED: TripSettingsOutcome = { saved: false, error: null, field: null };
 
 const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -24,7 +26,7 @@ const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/;
  * width a trip name still reads at, below which the row wraps instead.
  */
 const NAME_FIELD =
-  "h-[34px] min-w-[200px] flex-1 rounded-pill border border-rule bg-paper-raised px-[14px] py-0 font-display text-place text-ink caret-terracotta hover:border-rule-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "h-[34px] min-w-[200px] flex-1 rounded-pill border border-rule bg-paper-raised px-[14px] py-0 font-display text-place text-ink caret-terracotta hover:border-rule-strong aria-invalid:border-terracotta focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 interface TripSettingsProps {
   readonly slug: string;
@@ -156,12 +158,17 @@ export function TripSettings({
       <label className="sr-only" htmlFor={`${fieldId}-title`}>
         Trip name
       </label>
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="relative flex flex-wrap items-center gap-3">
+        {/* Not `required`. requestSubmit runs the browser's own validation, and
+            a field marked required stops there and puts up a grey system
+            bubble reading "Please fill out this field", in a typeface this
+            product does not use and words it did not write. Empty is refused
+            below instead, in our own sentence and our own panel. */}
         <input
           id={`${fieldId}-title`}
           name="title"
           type="text"
-          required
+          aria-invalid={state.field === "title"}
           maxLength={80}
           value={name}
           onChange={(event) => {
@@ -182,6 +189,19 @@ export function TripSettings({
         {actions === null ? null : (
           <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>
         )}
+
+        {/* Hangs off the field, where the browser would have put its own bubble,
+            and over what is under it rather than in the column with it. In the
+            flow it would push the dates and the whole day down the moment it
+            appeared, so saying what is wrong would rearrange the panel. */}
+        {state.field === "title" && state.error !== null ? (
+          <p
+            role="alert"
+            className="absolute top-full left-0 z-20 mt-[5px] max-w-full rounded-chip bg-terracotta-200 px-[11px] py-[6px] text-micro font-semibold text-terracotta-900 shadow-md"
+          >
+            {state.error}
+          </p>
+        ) : null}
       </div>
 
       <div className="mt-[10px] grid grid-cols-2 gap-3">
@@ -210,7 +230,7 @@ export function TripSettings({
       {/* Only when there is something to say. The days themselves are the count. */}
       {note === null ? null : <p className="mt-2 text-meta text-ink-muted">{note}</p>}
 
-      {state.error === null ? null : (
+      {state.error === null || state.field !== null ? null : (
         <p
           role="alert"
           className="mt-3 rounded-chip bg-terracotta-200 px-3 py-2 text-meta text-terracotta-900"
