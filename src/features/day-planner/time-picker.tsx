@@ -1,57 +1,35 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { MINUTES_PER_DAY, formatClock } from "@/core/time/minutes";
+import { formatClock } from "@/core/time/minutes";
 
 /**
  * Five minutes. Finer than the quarter hour a stay steps by, because a tour
  * booked for twenty past two is booked for twenty past two, and coarse enough
- * that every minute a person needs is one tap rather than a scroll.
+ * that the whole hour is a short list rather than a long one.
  */
 const STEP_MINUTES = 5;
 
-/** Twelve first, the way a clock face reads it. */
-const HOURS = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+const HOURS = Array.from({ length: 24 }, (_unused, hour) => hour);
 
 const MINUTES = Array.from(
   { length: 60 / STEP_MINUTES },
   (_unused, index) => index * STEP_MINUTES,
 );
 
-const HEADING = "text-label font-semibold text-ink-muted";
+const HEADING = "px-[2px] text-label font-semibold text-ink-muted";
 
-const CELL =
-  "grid h-[28px] place-items-center rounded-chip text-meta text-ink tabular-nums hover:bg-terracotta-100 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta";
+const LIST =
+  "scroll-quiet mt-[5px] h-[164px] overflow-y-auto rounded-chip border border-rule bg-paper p-1";
 
-const CELL_CHOSEN = "bg-terracotta-800 text-paper hover:bg-terracotta-800";
+const ROW =
+  "block w-full rounded-chip px-[9px] py-[5px] text-left text-meta text-ink tabular-nums hover:bg-terracotta-100 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta";
 
-const HALF =
-  "grid h-[28px] flex-1 place-items-center rounded-pill border border-rule text-meta font-semibold text-ink hover:border-rule-strong hover:bg-paper-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+const ROW_CHOSEN = "bg-terracotta-800 text-paper hover:bg-terracotta-800";
 
-const HALF_CHOSEN = "border-terracotta-800 bg-terracotta-800 text-paper hover:bg-terracotta-800";
-
-interface Parts {
-  /** One to twelve, as a clock face has it. */
-  readonly hour: number;
-  readonly minute: number;
-  readonly afternoon: boolean;
-}
-
-/** A reading off the day's clock, split the way the panel offers it. */
-function partsOf(minutes: number): Parts {
-  const wrapped = ((minutes % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY;
-  const hours24 = Math.floor(wrapped / 60);
-  return {
-    hour: hours24 % 12 === 0 ? 12 : hours24 % 12,
-    // A time worked out by the engine lands on any minute, so it is taken down
-    // to the step the panel can actually show.
-    minute: Math.floor((wrapped % 60) / STEP_MINUTES) * STEP_MINUTES,
-    afternoon: hours24 >= 12,
-  };
-}
-
-function minutesFrom({ hour, minute, afternoon }: Parts): number {
-  return ((hour % 12) + (afternoon ? 12 : 0)) * 60 + minute;
+/** "12 am", "9 am", "12 pm", "9 pm". The half of the day rides with the hour. */
+function hourLabel(hour: number): string {
+  return `${String(hour % 12 === 0 ? 12 : hour % 12)} ${hour < 12 ? "am" : "pm"}`;
 }
 
 interface TimePickerProps {
@@ -68,17 +46,18 @@ interface TimePickerProps {
 }
 
 /**
- * The time a stop is fixed to, chosen from our own panel.
+ * The time a stop is fixed to: two lists, an hour and a minute.
  *
  * The browser's time control is drawn by the browser and cannot be reached with
  * CSS, which is the same reason the calendar in this product is hand built: on
  * a page meant to read like a printed guide, a system widget arrives as a
  * system widget. This is that control in the palette from DESIGN.md.
  *
- * Nothing is written while you are choosing. An hour, a minute and a half of
- * the day are three taps, and committing each one would be three trips to the
- * server and two times the traveller never meant, so the button underneath says
- * what it is about to set and does it once.
+ * Two lists rather than two grids and a third control: the half of the day
+ * rides along with the hour, so there is nothing to choose that is not either
+ * an hour or a minute. Nothing is written while you are choosing, because two
+ * taps would otherwise be two trips to the server and one time the traveller
+ * never meant, so the button underneath says what it will set and does it once.
  */
 export function TimePicker({
   value,
@@ -90,9 +69,33 @@ export function TimePicker({
   onClear,
 }: TimePickerProps) {
   const [open, setOpen] = useState(false);
-  const [parts, setParts] = useState<Parts>(() => partsOf(value));
+  const [hour, setHour] = useState(() => Math.floor(value / 60) % 24);
+  const [minute, setMinute] = useState(
+    // A time worked out by the engine lands on any minute, so it is taken down
+    // to the step the list can actually show.
+    () => Math.floor((value % 60) / STEP_MINUTES) * STEP_MINUTES,
+  );
   const container = useRef<HTMLDivElement | null>(null);
   const trigger = useRef<HTMLButtonElement | null>(null);
+  const hours = useRef<HTMLDivElement | null>(null);
+  const minutes = useRef<HTMLDivElement | null>(null);
+
+  /** Both lists open on what is chosen, rather than at midnight and on the hour. */
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    for (const list of [hours.current, minutes.current]) {
+      if (list === null) {
+        continue;
+      }
+      const row = list.querySelector<HTMLElement>('[data-chosen="true"]');
+      if (row === null) {
+        continue;
+      }
+      list.scrollTop = row.offsetTop - list.clientHeight / 2 + row.clientHeight / 2;
+    }
+  }, [open]);
 
   useEffect(() => {
     if (!open) {
@@ -119,7 +122,7 @@ export function TimePicker({
     trigger.current?.focus();
   };
 
-  const chosen = minutesFrom(parts);
+  const chosen = hour * 60 + minute;
 
   return (
     <div className="relative" ref={container}>
@@ -135,7 +138,8 @@ export function TimePicker({
             return;
           }
           // Opens on what the card is showing, however it was arrived at.
-          setParts(partsOf(value));
+          setHour(Math.floor(value / 60) % 24);
+          setMinute(Math.floor((value % 60) / STEP_MINUTES) * STEP_MINUTES);
           setOpen(true);
         }}
         aria-label={
@@ -160,53 +164,46 @@ export function TimePicker({
               close();
             }
           }}
-          className="absolute top-full right-0 z-30 mt-2 w-[248px] rounded-panel border border-rule bg-paper-raised p-[10px] text-left shadow-md"
+          className="absolute top-full right-0 z-30 mt-2 w-[206px] rounded-panel border border-rule bg-paper-raised p-[10px] text-left shadow-md"
         >
-          <p className={HEADING}>Hour</p>
-          <div className="mt-[5px] grid grid-cols-4 gap-1">
-            {HOURS.map((hour) => (
-              <button
-                key={hour}
-                type="button"
-                onClick={() => {
-                  setParts({ ...parts, hour });
-                }}
-                className={`${CELL} ${hour === parts.hour ? CELL_CHOSEN : ""}`}
-              >
-                {hour}
-              </button>
-            ))}
-          </div>
+          <div className="flex gap-[7px]">
+            <div className="min-w-0 flex-1">
+              <p className={HEADING}>Hour</p>
+              <div ref={hours} className={LIST}>
+                {HOURS.map((one) => (
+                  <button
+                    key={one}
+                    type="button"
+                    data-chosen={one === hour}
+                    onClick={() => {
+                      setHour(one);
+                    }}
+                    className={`${ROW} ${one === hour ? ROW_CHOSEN : ""}`}
+                  >
+                    {hourLabel(one)}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-          <p className={`mt-[11px] ${HEADING}`}>Minute</p>
-          <div className="mt-[5px] grid grid-cols-6 gap-1">
-            {MINUTES.map((minute) => (
-              <button
-                key={minute}
-                type="button"
-                onClick={() => {
-                  setParts({ ...parts, minute });
-                }}
-                className={`${CELL} ${minute === parts.minute ? CELL_CHOSEN : ""}`}
-              >
-                {String(minute).padStart(2, "0")}
-              </button>
-            ))}
-          </div>
-
-          <div className="mt-[11px] flex gap-1">
-            {[false, true].map((afternoon) => (
-              <button
-                key={afternoon ? "pm" : "am"}
-                type="button"
-                onClick={() => {
-                  setParts({ ...parts, afternoon });
-                }}
-                className={`${HALF} ${afternoon === parts.afternoon ? HALF_CHOSEN : ""}`}
-              >
-                {afternoon ? "pm" : "am"}
-              </button>
-            ))}
+            <div className="min-w-0 flex-1">
+              <p className={HEADING}>Minute</p>
+              <div ref={minutes} className={LIST}>
+                {MINUTES.map((one) => (
+                  <button
+                    key={one}
+                    type="button"
+                    data-chosen={one === minute}
+                    onClick={() => {
+                      setMinute(one);
+                    }}
+                    className={`${ROW} ${one === minute ? ROW_CHOSEN : ""}`}
+                  >
+                    {String(one).padStart(2, "0")}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           <button
@@ -215,7 +212,7 @@ export function TimePicker({
               setOpen(false);
               onChoose(chosen);
             }}
-            className="mt-[11px] w-full rounded-pill bg-terracotta px-4 py-[7px] text-meta font-semibold text-paper tabular-nums hover:bg-terracotta-600 active:bg-terracotta-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+            className="mt-[10px] w-full rounded-pill bg-terracotta px-4 py-[7px] text-meta font-semibold text-paper tabular-nums hover:bg-terracotta-600 active:bg-terracotta-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
           >
             Set {formatClock(chosen)}
           </button>
@@ -227,7 +224,7 @@ export function TimePicker({
                 setOpen(false);
                 onClear();
               }}
-              className="mt-[6px] w-full rounded-pill px-4 py-[6px] text-micro font-semibold text-terracotta-700 hover:bg-terracotta-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+              className="mt-[5px] w-full rounded-pill px-4 py-[5px] text-micro font-semibold text-terracotta-700 hover:bg-terracotta-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
             >
               Let it follow the day
             </button>
