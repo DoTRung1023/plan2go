@@ -55,7 +55,7 @@ interface PlaceSearchProps {
  * step. A pill, like every other small control in this product.
  */
 const FIELD =
-  "flex items-center gap-[9px] rounded-pill border border-rule bg-paper-raised py-0 pr-2 pl-[15px] shadow-sm focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-terracotta";
+  "flex h-[44px] items-center gap-[9px] rounded-pill border border-rule bg-paper-raised py-0 pr-2 pl-[15px] shadow-sm focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-terracotta";
 
 const PANEL_LINE = "px-[11px] py-[10px] text-meta text-ink-muted";
 
@@ -277,7 +277,7 @@ export function PlaceSearch({ slug, dayId, dayName, near, onAdd }: PlaceSearchPr
             setOpen(true);
           }}
           onKeyDown={onKeyDown}
-          className="min-w-0 flex-1 py-[11px] text-body text-ink caret-terracotta outline-none placeholder:text-ink-faint"
+          className="min-w-0 flex-1 py-0 text-body text-ink caret-terracotta outline-none placeholder:text-ink-faint"
         />
         {query === "" ? null : (
           <button
