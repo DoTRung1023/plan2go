@@ -167,6 +167,22 @@ export function computeDay({ day, legs }: ComputeDayInput): ComputedDay {
     const { stop } = point;
     timeAtPlacesMinutes += stop.stayMinutes;
 
+    /** Both readings of a fixed time: the clock it was set to, and the instant. */
+    const pin =
+      stop.startAtMinutes === null
+        ? null
+        : {
+            minutes: stop.startAtMinutes,
+            epoch: wallClockToEpochMinutes(date, stop.startAtMinutes, timeZone),
+          };
+
+    // A fixed time is known whatever came before it, so it starts the day over
+    // after a leg nobody could answer. Everything from here is timed again, and
+    // the totals stay partial, because the gap itself is still unmeasured.
+    if (cursor === null && pin !== null) {
+      cursor = pin.epoch;
+    }
+
     if (cursor === null) {
       computedStops.push({
         stopId: stop.id,
@@ -179,8 +195,31 @@ export function computeDay({ day, legs }: ComputeDayInput): ComputedDay {
       return;
     }
 
-    const arrival = clockAt(cursor);
-    const arrivalWall = epochMinutesToWallClock(cursor, timeZone);
+    /**
+     * When the stop begins. A fixed time later than the day gets there is
+     * waited for; one earlier cannot be honoured, so the day goes on from when
+     * it actually arrives and says what is wrong rather than quietly moving it.
+     */
+    let at = cursor;
+    let waitForPin = 0;
+    if (pin !== null) {
+      if (pin.epoch < at) {
+        conflicts.push({
+          kind: "starts-before-arrival",
+          stopId: stop.id,
+          placeName: stop.place.name,
+          startsAt: pin.minutes,
+          arrivalMinutes: clockAt(at).minutesFromMidnight,
+        });
+      } else {
+        waitForPin = pin.epoch - at;
+        at = pin.epoch;
+      }
+    }
+    waitingMinutes += waitForPin;
+
+    const arrival = clockAt(at);
+    const arrivalWall = epochMinutesToWallClock(at, timeZone);
     const check = checkOpeningWindows({
       stopId: stop.id,
       placeName: stop.place.name,
@@ -192,14 +231,14 @@ export function computeDay({ day, legs }: ComputeDayInput): ComputedDay {
     conflicts.push(...check.conflicts);
     waitingMinutes += check.waitMinutes;
 
-    const departureEpoch = cursor + check.waitMinutes + stop.stayMinutes;
+    const departureEpoch = at + check.waitMinutes + stop.stayMinutes;
     computedStops.push({
       stopId: stop.id,
       placeName: stop.place.name,
       arrival,
       departure: clockAt(departureEpoch),
       stayMinutes: stop.stayMinutes,
-      waitMinutes: check.waitMinutes,
+      waitMinutes: waitForPin + check.waitMinutes,
     });
     cursor = departureEpoch;
   };

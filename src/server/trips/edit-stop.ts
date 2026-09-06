@@ -1,4 +1,5 @@
 import type { DayPlan } from "@/core/model/day";
+import { MINUTES_PER_DAY } from "@/core/time/minutes";
 import type { TravelProvider } from "@/core/ports/travel-provider";
 import type { StopChanged, TripRepository } from "../repositories/trip-repository";
 import { refreshLegModes } from "./leg-modes";
@@ -10,6 +11,13 @@ export const MAX_STAY_MINUTES = 12 * 60;
 
 /** Longer than this is a document, not a note to whoever you are travelling with. */
 export const MAX_NOTE_LENGTH = 500;
+
+/**
+ * A fixed time is a reading off the day's own clock, so it cannot leave the
+ * day. A stop that runs past midnight is said by the times it computes to,
+ * not by pinning it to tomorrow.
+ */
+export const LAST_MINUTE_OF_DAY = MINUTES_PER_DAY - 1;
 
 export interface StopEdit {
   readonly slug: string;
@@ -45,6 +53,28 @@ export function setStopStay(
     editKeyHash: edit.editKeyHash,
     stopId: edit.stopId,
     stayMinutes: clampStay(edit.stayMinutes),
+  });
+}
+
+/**
+ * Pins a stop to a time on the day's clock, or unpins it with null.
+ *
+ * Out of range is clamped rather than refused, on the same grounds as the stay:
+ * the only thing that could send one is a stale page, and the traveller's next
+ * click should work.
+ */
+export function setStopStartAt(
+  edit: StopEdit & { readonly startAtMinutes: number | null },
+  repository: TripRepository,
+): Promise<StopChanged> {
+  return repository.updateStop({
+    slug: edit.slug,
+    editKeyHash: edit.editKeyHash,
+    stopId: edit.stopId,
+    startAtMinutes:
+      edit.startAtMinutes === null
+        ? null
+        : Math.max(0, Math.min(LAST_MINUTE_OF_DAY, Math.round(edit.startAtMinutes))),
   });
 }
 

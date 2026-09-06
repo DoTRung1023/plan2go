@@ -26,6 +26,8 @@ export function conflictSentence(conflict: Conflict): string {
       return `${conflict.placeName} closes at ${formatClock(conflict.closesAt)} and you arrive at ${formatClock(conflict.arrivalMinutes)}.`;
     case "arrives-before-open":
       return `${conflict.placeName} opens at ${formatClock(conflict.opensAt)} and you arrive at ${formatClock(conflict.arrivalMinutes)}, so you wait ${formatDuration(conflict.waitMinutes)}.`;
+    case "starts-before-arrival":
+      return `${conflict.placeName} is set for ${formatClock(conflict.startsAt)}, but the day does not reach it until ${formatClock(conflict.arrivalMinutes)}.`;
     case "closed-all-day":
       return `${conflict.placeName} is closed on ${weekdayName(conflict.weekday)}.`;
     case "stay-overruns-close":

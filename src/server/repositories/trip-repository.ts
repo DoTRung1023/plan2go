@@ -45,6 +45,8 @@ export interface StopUpdate {
   readonly stopId: string;
   /** Whole minutes at the place. Zero is legal and means a drive past. */
   readonly stayMinutes?: number;
+  /** Null unpins the stop and lets it follow the day. Absent leaves it alone. */
+  readonly startAtMinutes?: number | null;
   /** Null clears the note. Absent leaves it alone. */
   readonly note?: string | null;
 }

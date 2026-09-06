@@ -16,6 +16,7 @@ import {
   moveStopAction,
   removeStopAction,
   setStopNoteAction,
+  setStopStartAtAction,
   setStopStayAction,
 } from "./edit-stop-actions";
 import { setLegModeAction } from "./set-leg-mode-action";
@@ -179,6 +180,8 @@ export function TripEditor({
                     }),
                   setStay: ({ stopId, stayMinutes }) =>
                     setStopStayAction({ slug, editKey, stopId, stayMinutes }),
+                  setStartAt: ({ stopId, startAtMinutes }) =>
+                    setStopStartAtAction({ slug, editKey, stopId, startAtMinutes }),
                   setNote: ({ stopId, note }) =>
                     setStopNoteAction({ slug, editKey, stopId, note }),
                   removeStop: ({ stopId }) => removeStopAction({ slug, editKey, stopId }),

@@ -89,6 +89,7 @@ function toStop(row: StopRow & { place: PlaceRow }): Stop {
     id: row.id,
     place: toPlace(row.place),
     stayMinutes: row.stayMinutes,
+    startAtMinutes: row.startAtMinutes,
     travelMode: TRAVEL_MODE_FROM_DB[row.travelMode],
     note: row.note,
   };
@@ -282,6 +283,9 @@ export const prismaTripRepository: TripRepository = {
       },
       data: {
         ...(update.stayMinutes === undefined ? {} : { stayMinutes: update.stayMinutes }),
+        ...(update.startAtMinutes === undefined
+          ? {}
+          : { startAtMinutes: update.startAtMinutes }),
         ...(update.note === undefined ? {} : { note: update.note }),
       },
     });

@@ -125,6 +125,10 @@ model Stop {
 
   /// Order within the day, starting at 0.
   position    Int
+  /// Minutes from local midnight that the traveller has fixed this stop to.
+  /// Null, which is the usual case, means it simply follows whatever came
+  /// before it.
+  startAtMinutes Int?
   /// Whole minutes at the place. Zero is legal.
   stayMinutes Int
   /// Mode used to travel from the previous point to this stop.

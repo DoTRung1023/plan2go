@@ -4,7 +4,7 @@ import type { DragEvent, KeyboardEvent } from "react";
 import { useState, useTransition } from "react";
 import type { Conflict } from "@/core/model/conflict";
 import type { ComputedStop } from "@/core/time/compute-day";
-import { formatDuration } from "@/core/time/minutes";
+import { MINUTES_PER_DAY, formatDuration } from "@/core/time/minutes";
 import { ClockIcon, CloseIcon, GripIcon, MinusIcon, PlusIcon } from "@/ui/icons";
 import type { DayActions } from "./day-actions";
 import { ConflictNotice } from "./conflict-notice";
@@ -14,6 +14,27 @@ import { formatDayTime } from "./format-day-time";
 const STAY_STEP_MINUTES = 15;
 
 const MAX_STAY_MINUTES = 12 * 60;
+
+/** "14:30", which is the only shape a time input reads or writes. */
+function toHhMm(minutes: number): string {
+  const wrapped = ((minutes % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY;
+  const hours = Math.floor(wrapped / 60);
+  return `${String(hours).padStart(2, "0")}:${String(wrapped % 60).padStart(2, "0")}`;
+}
+
+/** Minutes on the day's clock, or null for anything that is not a time. */
+function minutesOf(value: string): number | null {
+  const match = /^(\d{1,2}):(\d{2})$/.exec(value);
+  if (match === null) {
+    return null;
+  }
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours > 23 || minutes > 59) {
+    return null;
+  }
+  return hours * 60 + minutes;
+}
 
 const TOOL =
   "grid h-[22px] w-[22px] place-items-center rounded-pill text-ink-muted hover:bg-neutral-200 hover:text-ink disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
@@ -26,6 +47,12 @@ interface StopCardProps {
   /** Where the stop sits in its day, counted from zero, which is what a move needs. */
   readonly index: number;
   readonly stop: ComputedStop;
+  /**
+   * The time the traveller fixed this stop to, or null when it follows the day.
+   * It is what was asked for rather than what came out, so it is read from the
+   * plan and not from the computed stop beside it.
+   */
+  readonly startAtMinutes: number | null;
   readonly address: string | null;
   readonly note: string | null;
   /** When the place is open on this day, or null when we do not know. */
@@ -55,6 +82,7 @@ export function StopCard({
   position,
   index,
   stop,
+  startAtMinutes,
   address,
   note,
   openingHours,
@@ -68,6 +96,7 @@ export function StopCard({
   onDragEnd,
 }: StopCardProps) {
   const [writingNote, setWritingNote] = useState(false);
+  const [settingTime, setSettingTime] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, startSaving] = useTransition();
 
@@ -85,6 +114,28 @@ export function StopCard({
       return;
     }
     run(() => actions.setStay({ stopId: stop.stopId, stayMinutes: minutes }));
+  };
+
+  /**
+   * A time that is already what it was is not a change. Typing into the field
+   * and leaving it alone must not spend a write, because leaving the field is
+   * what commits.
+   */
+  const commitStartAt = (value: string): void => {
+    setSettingTime(false);
+    const minutes = minutesOf(value);
+    if (actions === null || minutes === null || minutes === startAtMinutes) {
+      return;
+    }
+    run(() => actions.setStartAt({ stopId: stop.stopId, startAtMinutes: minutes }));
+  };
+
+  const clearStartAt = (): void => {
+    setSettingTime(false);
+    if (actions === null || startAtMinutes === null) {
+      return;
+    }
+    run(() => actions.setStartAt({ stopId: stop.stopId, startAtMinutes: null }));
   };
 
   const commitNote = (value: string): void => {
@@ -159,9 +210,67 @@ export function StopCard({
           </div>
 
           <div className="flex flex-none flex-col items-end gap-[3px]">
-            <p className="font-display text-time whitespace-nowrap text-ink tabular-nums">
-              {stop.arrival === null ? "Time not known" : formatDayTime(stop.arrival)}
-            </p>
+            {settingTime && actions !== null ? (
+              <div className="flex items-center gap-[6px]">
+                <input
+                  type="time"
+                  autoFocus
+                  defaultValue={toHhMm(
+                    startAtMinutes ?? stop.arrival?.minutesFromMidnight ?? 0,
+                  )}
+                  aria-label={`The time at ${stop.placeName}`}
+                  onBlur={(event) => {
+                    commitStartAt(event.target.value);
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      commitStartAt(event.currentTarget.value);
+                    } else if (event.key === "Escape") {
+                      event.preventDefault();
+                      setSettingTime(false);
+                    }
+                  }}
+                  className="rounded-chip border border-rule bg-paper px-[9px] py-[3px] font-display text-time text-ink caret-terracotta tabular-nums outline-none focus-visible:border-terracotta"
+                />
+                {startAtMinutes === null ? null : (
+                  <button
+                    type="button"
+                    // Keeps the focus, so leaving the field does not write a
+                    // time on the way to throwing it away.
+                    onMouseDown={(event) => {
+                      event.preventDefault();
+                    }}
+                    onClick={clearStartAt}
+                    className="shrink-0 rounded-pill px-[7px] py-[3px] text-micro font-semibold text-terracotta-700 hover:bg-terracotta-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            ) : actions === null ? (
+              <p className="font-display text-time whitespace-nowrap text-ink tabular-nums">
+                {stop.arrival === null ? "Time not known" : formatDayTime(stop.arrival)}
+              </p>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setSettingTime(true);
+                }}
+                disabled={saving}
+                aria-label={
+                  startAtMinutes === null
+                    ? `The time at ${stop.placeName} follows the day. Set one.`
+                    : `${stop.placeName} is set for this time. Change it.`
+                }
+                className={`-mr-[5px] rounded-chip px-[5px] font-display text-time whitespace-nowrap tabular-nums hover:bg-neutral-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
+                  startAtMinutes === null ? "text-ink" : "text-terracotta-700"
+                }`}
+              >
+                {stop.arrival === null ? "Time not known" : formatDayTime(stop.arrival)}
+              </button>
+            )}
             {actions === null ? null : (
               <div className="-mr-1 flex items-center opacity-55 group-hover:opacity-100 focus-within:opacity-100">
                 <button

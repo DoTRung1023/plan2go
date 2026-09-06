@@ -102,6 +102,8 @@ export function DayItinerary({ day, computed, legs, actions }: DayItineraryProps
 
   const notes = new Map(day.stops.map((stop) => [stop.id, stop.note]));
   const places = new Map(day.stops.map((stop) => [stop.id, stop.place]));
+  /** The times the traveller fixed, which the computed stop does not carry. */
+  const fixed = new Map(day.stops.map((stop) => [stop.id, stop.startAtMinutes]));
   /** With no start point the first stop has no leg arriving at it. */
   const legOffset = day.start === null ? -1 : 0;
   const legToEnd = day.end === null ? undefined : computed.legs[computed.legs.length - 1];
@@ -159,6 +161,7 @@ export function DayItinerary({ day, computed, legs, actions }: DayItineraryProps
               stop={stop}
               address={place?.address ?? null}
               note={notes.get(stop.stopId) ?? null}
+              startAtMinutes={fixed.get(stop.stopId) ?? null}
               openingHours={place === undefined ? null : hoursOn(place, day)}
               conflicts={conflictsAtStop(computed.conflicts, stop.stopId)}
               actions={actions}

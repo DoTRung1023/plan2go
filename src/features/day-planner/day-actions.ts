@@ -24,6 +24,15 @@ export interface DayActions {
     readonly stayMinutes: number;
   }) => Promise<EditOutcome>;
 
+  /**
+   * Fixes the stop to a time on the day's clock. Null lets it follow whatever
+   * comes before it again, which is how a stop starts out.
+   */
+  readonly setStartAt: (input: {
+    readonly stopId: string;
+    readonly startAtMinutes: number | null;
+  }) => Promise<EditOutcome>;
+
   readonly setNote: (input: {
     readonly stopId: string;
     readonly note: string | null;

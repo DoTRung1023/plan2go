@@ -24,6 +24,16 @@ export type Conflict =
       readonly waitMinutes: number;
     }
   | {
+      /** A fixed time that the day cannot reach: you get there after it. */
+      readonly kind: "starts-before-arrival";
+      readonly stopId: StopId;
+      readonly placeName: string;
+      /** Minutes from midnight the traveller fixed the stop to. */
+      readonly startsAt: number;
+      /** When the day actually gets there, which is later. */
+      readonly arrivalMinutes: number;
+    }
+  | {
       readonly kind: "closed-all-day";
       readonly stopId: StopId;
       readonly placeName: string;

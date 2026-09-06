@@ -20,7 +20,7 @@ function endpoint(id: string): DayEndpoint {
 }
 
 function stop(id: string): Stop {
-  return { id, place: place(id), stayMinutes: 30, travelMode: "walk", note: null };
+  return { id, place: place(id), stayMinutes: 30, startAtMinutes: null, travelMode: "walk", note: null };
 }
 
 function day(over: Partial<DayPlan>): DayPlan {

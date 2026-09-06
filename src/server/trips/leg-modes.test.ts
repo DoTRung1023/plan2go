@@ -16,7 +16,7 @@ function place(id: string): Place {
 }
 
 function stop(id: string): Stop {
-  return { id, place: place(id), stayMinutes: 60, travelMode: "walk", note: null };
+  return { id, place: place(id), stayMinutes: 60, startAtMinutes: null, travelMode: "walk", note: null };
 }
 
 const HOTEL: DayEndpoint = { place: place("hotel"), label: "Hotel" };
