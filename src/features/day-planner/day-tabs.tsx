@@ -92,13 +92,14 @@ export function DayTabs({
 
   return (
     <div className="border-b border-rule">
-      <div className="flex items-center gap-[6px]">
-        {/* The button sits outside the strip that scrolls, so it is still there
-            to press on a trip long enough to have scrolled the last day away. */}
+      {/* The strip scrolls, and the button rides at the end of it, after the
+          last day. It is a sibling of the tab list rather than inside it: a
+          tab list holds tabs, and a button among them is announced as one. */}
+      <div className="day-tabs flex items-center gap-[6px] pb-[10px]">
         <div
           role="tablist"
           aria-label="Days of this trip"
-          className="day-tabs flex min-w-0 flex-1 items-center gap-[6px] pb-[10px]"
+          className="flex shrink-0 items-center gap-[6px]"
         >
       {days.map((day, index) => {
         const selected = index === selectedIndex;
@@ -153,7 +154,7 @@ export function DayTabs({
             disabled={adding}
             title="Add a day"
             aria-label="Add a day to the end of this trip"
-            className="mb-[10px] grid h-[40px] w-[40px] shrink-0 place-items-center rounded-pill border border-dashed border-rule-strong text-ink-muted hover:border-terracotta hover:text-terracotta disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+            className="grid h-[40px] w-[40px] shrink-0 place-items-center rounded-pill border border-dashed border-rule-strong text-ink-muted hover:border-terracotta hover:text-terracotta disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
           >
             <PlusIcon size={16} strokeWidth={2.75} />
           </button>
