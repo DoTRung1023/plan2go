@@ -267,14 +267,8 @@ describe("computeDay, opening hours", () => {
     expect(result.stops[0]?.departure?.minutesFromMidnight).toBe(11 * 60);
     expect(result.ends?.minutesFromMidnight).toBe(11 * 60 + 20);
     expect(result.totals.waitingMinutes).toBe(40);
-    expect(result.conflicts).toContainEqual({
-      kind: "arrives-before-open",
-      stopId: "stop-Gallery",
-      placeName: "Gallery",
-      arrivalMinutes: 9 * 60 + 20,
-      opensAt: 10 * 60,
-      waitMinutes: 40,
-    });
+    // Waiting for the doors is a number on the card, not a conflict.
+    expect(result.conflicts).toEqual([]);
   });
 
   it("flags a stay that runs past closing", () => {

@@ -188,6 +188,14 @@ export function StopCard({
                 onClear={index === 0 ? undefined : clearStartAt}
               />
             )}
+            {stop.waitMinutes === 0 ? null : (
+              /* Waiting is a fact about the morning, not a fault in it, so it
+                 is a number in the quiet colour rather than a notice. */
+              <p className="text-micro whitespace-nowrap text-ink-muted tabular-nums">
+                Waits {formatDuration(stop.waitMinutes)}
+              </p>
+            )}
+
             {stop.overlapMinutes === 0 ? null : (
               /* Said where it happens and nowhere else: the day was still
                  somewhere else when this stop was due to start. Not a refusal

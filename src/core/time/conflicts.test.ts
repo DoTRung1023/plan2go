@@ -51,12 +51,12 @@ describe("checkOpeningWindows", () => {
       stayMinutes: 60,
     });
 
+    // The wait is measured and reported as a number, not as a problem.
     expect(result.waitMinutes).toBe(60);
-    expect(result.conflicts).toHaveLength(1);
-    expect(result.conflicts[0]?.kind).toBe("arrives-before-open");
+    expect(result.conflicts).toEqual([]);
   });
 
-  it("counts a wait and an overrun as two separate problems", () => {
+  it("measures the wait and still flags the overrun it leads to", () => {
     const result = checkOpeningWindows({
       ...BASE,
       windows: [{ opensAt: 10 * 60, closesAt: 11 * 60 }],
@@ -65,10 +65,7 @@ describe("checkOpeningWindows", () => {
     });
 
     expect(result.waitMinutes).toBe(60);
-    expect(result.conflicts.map((entry) => entry.kind)).toEqual([
-      "arrives-before-open",
-      "stay-overruns-close",
-    ]);
+    expect(result.conflicts.map((entry) => entry.kind)).toEqual(["stay-overruns-close"]);
   });
 
   it("orders unsorted windows before choosing one", () => {

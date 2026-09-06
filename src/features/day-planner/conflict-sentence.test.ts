@@ -10,15 +10,6 @@ const ARRIVES_AFTER_CLOSE: Conflict = {
   closesAt: 16 * 60,
 };
 
-const ARRIVES_BEFORE_OPEN: Conflict = {
-  kind: "arrives-before-open",
-  stopId: "stop-2",
-  placeName: "Adelaide Zoo",
-  arrivalMinutes: 9 * 60,
-  opensAt: 9 * 60 + 30,
-  waitMinutes: 30,
-};
-
 const CLOSED_ALL_DAY: Conflict = {
   kind: "closed-all-day",
   stopId: "stop-3",
@@ -45,7 +36,6 @@ const ENDS_NEXT_DAY: Conflict = { kind: "ends-next-day", endMinutes: 40, dayOffs
 
 const EVERY_KIND: readonly Conflict[] = [
   ARRIVES_AFTER_CLOSE,
-  ARRIVES_BEFORE_OPEN,
   CLOSED_ALL_DAY,
   STAY_OVERRUNS_CLOSE,
   UNRESOLVED_LEG,
@@ -59,12 +49,6 @@ describe("conflictSentence", () => {
   it("names the place and both times when you arrive after closing", () => {
     expect(conflictSentence(ARRIVES_AFTER_CLOSE)).toBe(
       "Fish Market closes at 4:00 pm and you arrive at 4:30 pm.",
-    );
-  });
-
-  it("says how long the wait is when you arrive before opening", () => {
-    expect(conflictSentence(ARRIVES_BEFORE_OPEN)).toBe(
-      "Adelaide Zoo opens at 9:30 am and you arrive at 9:00 am, so you wait 30 min.",
     );
   });
 

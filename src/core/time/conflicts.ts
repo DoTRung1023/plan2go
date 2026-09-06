@@ -59,18 +59,9 @@ export function checkOpeningWindows(check: OpeningCheck): OpeningCheckResult {
   }
 
   const conflicts: Conflict[] = [];
+  // Arriving before the doors open is not a problem with the day, only a wait
+  // in it, so it is returned as a number and left to the caller to show.
   const waitMinutes = Math.max(0, usable.opensAt - arrivalMinutes);
-
-  if (waitMinutes > 0) {
-    conflicts.push({
-      kind: "arrives-before-open",
-      stopId,
-      placeName,
-      arrivalMinutes,
-      opensAt: usable.opensAt,
-      waitMinutes,
-    });
-  }
 
   const departureMinutes = arrivalMinutes + waitMinutes + stayMinutes;
   if (departureMinutes > usable.closesAt) {

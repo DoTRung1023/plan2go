@@ -1,5 +1,5 @@
 import type { Conflict } from "@/core/model/conflict";
-import { formatClock, formatDuration } from "@/core/time/minutes";
+import { formatClock } from "@/core/time/minutes";
 
 const WEEKDAY_NAMES = [
   "Sunday",
@@ -24,8 +24,6 @@ export function conflictSentence(conflict: Conflict): string {
   switch (conflict.kind) {
     case "arrives-after-close":
       return `${conflict.placeName} closes at ${formatClock(conflict.closesAt)} and you arrive at ${formatClock(conflict.arrivalMinutes)}.`;
-    case "arrives-before-open":
-      return `${conflict.placeName} opens at ${formatClock(conflict.opensAt)} and you arrive at ${formatClock(conflict.arrivalMinutes)}, so you wait ${formatDuration(conflict.waitMinutes)}.`;
     case "closed-all-day":
       return `${conflict.placeName} is closed on ${weekdayName(conflict.weekday)}.`;
     case "stay-overruns-close":
