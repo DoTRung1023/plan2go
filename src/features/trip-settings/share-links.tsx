@@ -164,20 +164,16 @@ export function ShareLinks({ slug, editKey }: ShareLinksProps) {
           className="absolute top-full right-0 z-30 mt-2 w-[300px] rounded-panel border border-rule bg-paper-raised p-[13px] text-left shadow-md"
         >
           <p className={HEADING}>Read only</p>
-          <p className={EXPLAINER}>Anyone with this link can read the trip.</p>
+          <p className={EXPLAINER}>Anyone with it can read the trip.</p>
           {link("view", "Read only link", viewUrl)}
 
           <p className={`mt-[14px] ${HEADING}`}>Editing</p>
-          <p className={EXPLAINER}>
-            Anyone with this link can change the trip, and delete it. Send it only to
-            whoever is planning with you.
-          </p>
+          <p className={EXPLAINER}>Anyone with it can change or delete the trip.</p>
           {link("edit", "Editing link", editUrl)}
 
           {failed ? (
             <p className="mt-[10px] text-micro text-ink-muted">
-              This browser will not let the page copy for you. Select the link and copy
-              it yourself.
+              Copying was blocked. Select the link instead.
             </p>
           ) : null}
         </div>
