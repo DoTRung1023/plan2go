@@ -70,8 +70,24 @@ const OPENING_MAP_TYPE: MapTypeId = "hybrid";
 const TYPE_ROW =
   "block w-full rounded-chip px-[9px] py-[5px] text-left text-micro whitespace-nowrap focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta";
 
+/**
+ * Map chrome is its own scale, one step under the controls in the panel beside
+ * it: it sits over somewhere rather than on the page, and a map covered in
+ * buttons the size of the trip's own is a map you cannot see. Every control
+ * over the map is this height and this type, whether it holds a word or a
+ * glyph, and the rule is on the pill around it rather than inside its width, so
+ * the ones that stack line up.
+ */
+const PILL = "overflow-hidden rounded-pill border border-rule bg-paper-raised shadow-sm";
+
 const CONTROL =
-  "flex h-[30px] w-[30px] items-center justify-center bg-paper-raised text-[17px] text-ink-muted hover:bg-paper-sunken hover:text-ink focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta";
+  "flex h-[30px] items-center justify-center bg-paper-raised text-ink-muted hover:bg-paper-sunken hover:text-ink focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta";
+
+/** A glyph on its own sits in a square, so a column of them has one edge. */
+const ICON_CONTROL = `${CONTROL} w-[30px] text-[17px]`;
+
+/** A word needs room either side of it, set in the map's own size. */
+const WORD_CONTROL = `${CONTROL} px-[11px] text-micro font-semibold`;
 
 interface TripMapProps {
   readonly start: DayEndpoint | null;
@@ -490,7 +506,7 @@ export function TripMap({
           opens the map, which owns that corner until it is let go of. */}
       {state.status === "ready" ? (
         <div
-          className="absolute top-[56px] right-[14px] z-[2] lg:top-[22px] lg:right-[22px]"
+          className="absolute top-[52px] right-[14px] z-[2] lg:top-[22px] lg:right-[22px]"
           ref={types}
         >
           <button
@@ -500,7 +516,7 @@ export function TripMap({
             onClick={() => {
               setChoosingType(!choosingType);
             }}
-            className="flex h-[30px] items-center rounded-pill border border-rule bg-paper-raised px-[11px] text-micro font-semibold text-ink-muted shadow-sm hover:bg-paper-sunken hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+            className={`${WORD_CONTROL} ${PILL}`}
           >
             {MAP_TYPES.find((one) => one.id === mapType)?.label ?? "Map"}
           </button>
@@ -539,25 +555,25 @@ export function TripMap({
       ) : null}
 
       {state.status === "ready" ? (
-        <div className="absolute right-[22px] bottom-[22px] z-[2] flex flex-col items-end gap-2">
-          <button
-            type="button"
-            onClick={toggleFullscreen}
-            className={`${CONTROL} rounded-pill border border-rule shadow-sm`}
-          >
-            {fullscreen ? <ShrinkIcon size={14} /> : <ExpandIcon size={14} />}
-            <span className="trip-map-name">
-              {fullscreen ? "Leave full screen" : "Full screen"}
-            </span>
-          </button>
+        <div className="absolute right-[14px] bottom-[14px] z-[2] flex flex-col items-end gap-2 lg:right-[22px] lg:bottom-[22px]">
+          {/* Wrapped the way the zoom pair is, so the rule sits outside the
+              button rather than inside its width and the two line up. */}
+          <div className={PILL}>
+            <button type="button" onClick={toggleFullscreen} className={ICON_CONTROL}>
+              {fullscreen ? <ShrinkIcon size={15} /> : <ExpandIcon size={15} />}
+              <span className="trip-map-name">
+                {fullscreen ? "Leave full screen" : "Full screen"}
+              </span>
+            </button>
+          </div>
 
-          <div className="flex flex-col overflow-hidden rounded-pill border border-rule shadow-sm">
+          <div className={`${PILL} flex flex-col`}>
             <button
               type="button"
               onClick={() => {
                 zoomBy(1);
               }}
-              className={`${CONTROL} border-b border-rule`}
+              className={`${ICON_CONTROL} border-b border-rule`}
             >
               <span aria-hidden="true">+</span>
               <span className="trip-map-name">Zoom in</span>
@@ -567,7 +583,7 @@ export function TripMap({
               onClick={() => {
                 zoomBy(-1);
               }}
-              className={CONTROL}
+              className={ICON_CONTROL}
             >
               <span aria-hidden="true">&minus;</span>
               <span className="trip-map-name">Zoom out</span>
@@ -577,7 +593,7 @@ export function TripMap({
       ) : null}
 
       {drawnLegs === 0 ? null : (
-        <div className="pointer-events-none absolute bottom-[22px] left-[22px] z-[2] rounded-row border border-rule bg-paper-raised px-[15px] pt-3 pb-[13px]">
+        <div className="pointer-events-none absolute bottom-[14px] left-[14px] z-[2] rounded-row border border-rule bg-paper-raised px-[15px] pt-3 pb-[13px] lg:bottom-[22px] lg:left-[22px]">
           <p className="text-label font-semibold text-ink-muted">Route key</p>
           <ul className="mt-[9px] flex flex-col gap-[6px] text-micro text-ink-muted">
             {ROUTE_STROKES.map((stroke) => (
