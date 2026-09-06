@@ -5,7 +5,7 @@ import type { PlannedDay } from "./compute-trip";
 import { DayItinerary } from "./day-itinerary";
 import { DayTabs } from "./day-tabs";
 import { EmptyDay } from "./empty-day";
-import type { DayActions } from "./day-actions";
+import type { DayActions, EditOutcome } from "./day-actions";
 import { formatDayDate } from "./format-day-date";
 
 interface DayPlannerProps {
@@ -18,6 +18,12 @@ interface DayPlannerProps {
    * holds no edit token, who gets the heading and the range as plain text.
    */
   readonly settings: ReactNode;
+  /**
+   * Puts one more empty day on the end of the trip. Kept apart from the day's
+   * own actions, which are about what is on a day rather than how many there
+   * are. Null for a reader who holds no edit link.
+   */
+  readonly onAddDay: (() => Promise<EditOutcome>) | null;
   /**
    * Everything the day can be changed by. Null for a reader who holds no edit
    * token, whose day is read rather than edited.
@@ -55,6 +61,7 @@ export function DayPlanner({
   selectedIndex,
   onSelect,
   settings,
+  onAddDay,
   actions,
 }: DayPlannerProps) {
   const selected = days[selectedIndex] ?? days[0];
@@ -81,6 +88,7 @@ export function DayPlanner({
           days={days.map((day) => day.plan)}
           selectedIndex={selectedIndex}
           onSelect={onSelect}
+          onAddDay={onAddDay}
         />
       </div>
 

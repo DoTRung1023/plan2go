@@ -10,6 +10,7 @@ import { searchBias } from "@/features/place-search/search-bias";
 import { ShareLinks } from "@/features/trip-settings/share-links";
 import { TripActions } from "@/features/trip-settings/trip-actions";
 import { TripSettings } from "@/features/trip-settings/trip-settings";
+import { addDayAction } from "./add-day-action";
 import { addStopAction } from "./add-stop-action";
 import { deleteTripAction } from "./delete-trip-action";
 import {
@@ -167,6 +168,9 @@ export function TripEditor({
           days={days}
           selectedIndex={selectedIndex}
           onSelect={setChosenIndex}
+          onAddDay={
+            editKey === null ? null : () => addDayAction({ slug, editKey })
+          }
           actions={
             editKey !== null && selected !== undefined
               ? {

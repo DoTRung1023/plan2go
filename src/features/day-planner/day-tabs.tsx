@@ -1,8 +1,10 @@
 "use client";
 
 import type { KeyboardEvent } from "react";
-import { useRef } from "react";
+import { useRef, useState, useTransition } from "react";
 import type { DayPlan } from "@/core/model/day";
+import { PlusIcon } from "@/ui/icons";
+import type { EditOutcome } from "./day-actions";
 import { formatDayDate } from "./format-day-date";
 import "./day-tabs.css";
 
@@ -10,6 +12,11 @@ interface DayTabsProps {
   readonly days: readonly DayPlan[];
   readonly selectedIndex: number;
   readonly onSelect: (index: number) => void;
+  /**
+   * Puts one more empty day on the end. Null for a reader, who gets the strip
+   * and no way to change what is on it.
+   */
+  readonly onAddDay: (() => Promise<EditOutcome>) | null;
 }
 
 /**
@@ -27,8 +34,27 @@ function stopLine(day: DayPlan): string {
 const TAB =
   "flex shrink-0 flex-col items-center gap-[2px] rounded-pill border px-[15px] pt-[5px] pb-[6px] whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
-export function DayTabs({ days, selectedIndex, onSelect }: DayTabsProps) {
+export function DayTabs({ days, selectedIndex, onSelect, onAddDay }: DayTabsProps) {
   const tabs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [adding, startAdding] = useTransition();
+
+  /**
+   * The new day is the last one, and it is opened: adding a day is asking for
+   * somewhere to put something, so landing on it is the next thing wanted.
+   */
+  const add = (): void => {
+    if (onAddDay === null || adding) {
+      return;
+    }
+    startAdding(async () => {
+      const outcome = await onAddDay();
+      setError(outcome.error);
+      if (outcome.error === null) {
+        onSelect(days.length);
+      }
+    });
+  };
 
   const move = (event: KeyboardEvent<HTMLButtonElement>, index: number): void => {
     const last = days.length - 1;
@@ -53,11 +79,15 @@ export function DayTabs({ days, selectedIndex, onSelect }: DayTabsProps) {
   };
 
   return (
-    <div
-      role="tablist"
-      aria-label="Days of this trip"
-      className="day-tabs flex items-center gap-[6px] border-b border-rule pb-[10px]"
-    >
+    <div className="border-b border-rule">
+      <div className="flex items-center gap-[6px]">
+        {/* The button sits outside the strip that scrolls, so it is still there
+            to press on a trip long enough to have scrolled the last day away. */}
+        <div
+          role="tablist"
+          aria-label="Days of this trip"
+          className="day-tabs flex min-w-0 flex-1 items-center gap-[6px] pb-[10px]"
+        >
       {days.map((day, index) => {
         const selected = index === selectedIndex;
         return (
@@ -92,6 +122,30 @@ export function DayTabs({ days, selectedIndex, onSelect }: DayTabsProps) {
           </button>
         );
       })}
+        </div>
+
+        {onAddDay === null ? null : (
+          <button
+            type="button"
+            onClick={add}
+            disabled={adding}
+            title="Add a day"
+            aria-label="Add a day to the end of this trip"
+            className="mb-[10px] grid h-[40px] w-[40px] shrink-0 place-items-center rounded-pill border border-dashed border-rule-strong text-ink-muted hover:border-terracotta hover:text-terracotta disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+          >
+            <PlusIcon size={16} strokeWidth={2.75} />
+          </button>
+        )}
+      </div>
+
+      {error === null ? null : (
+        <p
+          role="alert"
+          className="mb-[10px] rounded-chip bg-terracotta-200 px-3 py-2 text-micro text-terracotta-900"
+        >
+          {error}
+        </p>
+      )}
     </div>
   );
 }
