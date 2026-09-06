@@ -84,13 +84,12 @@ const CONTROL =
   "flex items-center justify-center bg-paper-raised text-ink-muted hover:bg-paper-sunken hover:text-ink focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta";
 
 /**
- * Controls that share a row share a height. The top row is the search and the
- * ground the map is drawn on, read across as one line, and a pill half the
- * height of the field beside it reads as an afterthought rather than as its
- * pair. The bottom corner is its own cluster and stays compact, because it is
- * held down over the map rather than read along it.
+ * A word needs room either side of it, and is set at the size of the list it
+ * opens rather than the size of the field across the map from it. The two are
+ * not a pair: one is where you type and the other is a label on a menu, and
+ * matching them only made the label shout.
  */
-const ROW_CONTROL = `${CONTROL} h-[44px] px-[15px] text-body font-semibold`;
+const WORD_CONTROL = `${CONTROL} h-[30px] px-[11px] text-micro font-semibold`;
 
 /** A glyph on its own sits in a square, so a column of them has one edge. */
 const ICON_CONTROL = `${CONTROL} h-[30px] w-[30px] text-[17px]`;
@@ -499,7 +498,7 @@ export function TripMap({
           opens the map, which owns that corner until it is let go of. */}
       {state.status === "ready" ? (
         <div
-          className="absolute top-[66px] right-[14px] z-[2] lg:top-[22px] lg:right-[22px]"
+          className="absolute top-[52px] right-[14px] z-[2] lg:top-[22px] lg:right-[22px]"
           ref={types}
         >
           <button
@@ -509,7 +508,7 @@ export function TripMap({
             onClick={() => {
               setChoosingType(!choosingType);
             }}
-            className={`${ROW_CONTROL} ${PILL}`}
+            className={`${WORD_CONTROL} ${PILL}`}
           >
             {MAP_TYPES.find((one) => one.id === mapType)?.label ?? "Map"}
           </button>

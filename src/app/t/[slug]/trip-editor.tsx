@@ -156,7 +156,7 @@ export function TripEditor({
               onClick={() => {
                 setExpanded(!expanded);
               }}
-              className="pointer-events-auto ml-auto flex h-[44px] shrink-0 items-center rounded-pill border border-rule bg-paper-raised px-[15px] text-body font-semibold text-ink-muted shadow-sm hover:bg-paper-sunken hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:hidden"
+              className="pointer-events-auto ml-auto flex h-[30px] shrink-0 items-center rounded-pill border border-rule bg-paper-raised px-[11px] text-micro font-semibold text-ink-muted shadow-sm hover:bg-paper-sunken hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:hidden"
             >
               {expanded ? "Collapse map" : "Expand map"}
             </button>
