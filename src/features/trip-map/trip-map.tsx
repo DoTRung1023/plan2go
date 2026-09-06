@@ -90,7 +90,7 @@ const CONTROL =
  * pair. The bottom corner is its own cluster and stays compact, because it is
  * held down over the map rather than read along it.
  */
-const ROW_CONTROL = `${CONTROL} h-[44px] px-[15px] text-meta font-semibold`;
+const ROW_CONTROL = `${CONTROL} h-[44px] px-[15px] text-body font-semibold`;
 
 /** A glyph on its own sits in a square, so a column of them has one edge. */
 const ICON_CONTROL = `${CONTROL} h-[30px] w-[30px] text-[17px]`;
