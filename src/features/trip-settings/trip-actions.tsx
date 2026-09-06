@@ -21,7 +21,7 @@ const ANSWER = "inline-flex h-[30px] flex-1 items-center justify-center rounded-
 /** The answer that destroys something is the one that carries the accent. */
 const RESET = `${ANSWER} bg-terracotta text-paper hover:bg-terracotta-600 active:bg-terracotta-700`;
 
-const KEEP = `${ANSWER} border border-rule bg-paper-raised text-ink hover:border-rule-strong hover:bg-paper-sunken`;
+const CANCEL = `${ANSWER} border border-rule bg-paper-raised text-ink hover:border-rule-strong hover:bg-paper-sunken`;
 
 interface TripActionsProps {
   readonly slug: string;
@@ -62,17 +62,17 @@ export function TripActions({ slug, onClear, startAnotherPath }: TripActionsProp
   const [clearing, startClearing] = useTransition();
   const container = useRef<HTMLDivElement | null>(null);
   const trigger = useRef<HTMLButtonElement | null>(null);
-  const keep = useRef<HTMLButtonElement | null>(null);
+  const cancel = useRef<HTMLButtonElement | null>(null);
 
   /**
-   * Keeping the trip takes the focus, so a keyboard arriving at the question
-   * lands on the answer that changes nothing.
+   * Cancelling takes the focus, so a keyboard arriving at the question lands on
+   * the answer that changes nothing.
    */
   useEffect(() => {
     if (!asking) {
       return;
     }
-    keep.current?.focus();
+    cancel.current?.focus();
   }, [asking]);
 
   useEffect(() => {
@@ -148,11 +148,11 @@ export function TripActions({ slug, onClear, startAnotherPath }: TripActionsProp
             Every day, stop and place on it is deleted.
           </p>
           <div className="mt-3 flex gap-2">
-            <button type="button" ref={keep} onClick={close} className={KEEP}>
-              Keep it
+            <button type="button" ref={cancel} onClick={close} className={CANCEL}>
+              Cancel
             </button>
             <button type="button" onClick={clear} className={RESET}>
-              Reset it
+              Reset
             </button>
           </div>
         </div>
