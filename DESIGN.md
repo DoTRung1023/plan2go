@@ -312,11 +312,15 @@ change with the modes this particular day happens to use. The markers have no ke
 their own, because a numbered disc in the order you visit them and a named marker for
 the ends of the day explain themselves.
 
-The map's own geometry is styled onto the warm ramp: cream ground, raised roads, sunken
-parks, and water in neutral 300 rather than a blue. Google's controls are off and ours
-are drawn over it, so the only things on the map are the day's lines and markers, the
-search in the top left corner, the zoom pair in the bottom right, and the route key in
-the bottom left.
+The map is Google's hybrid, unstyled: satellite imagery with the names over it. A warm
+ramp was tried underneath and abandoned, because a style array does not repaint
+photography, so the cream ground and the neutral water only ever applied to a layer the
+imagery covers. Google's controls are off apart from the button that fills the screen,
+and ours are drawn over it: the search in the top left corner, the route key in the
+bottom left, and in the bottom right the zoom pair with the ground it is drawn on named
+above it. That last one opens on hybrid and offers the map, the imagery on its own and
+the terrain, because imagery is not always the clearest, least of all where the question
+is which road is which.
 
 ## Motion
 

@@ -11,7 +11,6 @@ import {
   stopMarkerElement,
 } from "./dom-marker";
 import { googleMapsBrowserKey, loadGoogleMaps } from "./load-google-maps";
-import { paperMapStyle } from "./map-style";
 import type { RouteStroke } from "./route-style";
 import { ROUTE_STROKES, routeStroke } from "./route-style";
 import "./trip-map.css";
@@ -49,6 +48,27 @@ type MapState =
  * The zoom pair is one pill with a rule between the halves, the way every other
  * grouped control in this product is drawn.
  */
+/**
+ * What Google draws under everything else. Hybrid is where the map opens: a
+ * trip is planned against real ground, and imagery says more about whether a
+ * walk is through a park or along a motorway than a drawn map does. The others
+ * are here because imagery is not always the clearest, least of all where the
+ * point is which road is which.
+ */
+const MAP_TYPES = [
+  { id: "hybrid", label: "Hybrid" },
+  { id: "roadmap", label: "Map" },
+  { id: "satellite", label: "Satellite" },
+  { id: "terrain", label: "Terrain" },
+] as const;
+
+type MapTypeId = (typeof MAP_TYPES)[number]["id"];
+
+const OPENING_MAP_TYPE: MapTypeId = "hybrid";
+
+const TYPE_ROW =
+  "block w-full rounded-chip px-[9px] py-[5px] text-left text-micro whitespace-nowrap focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta";
+
 const CONTROL =
   "flex h-[30px] w-[30px] items-center justify-center bg-paper-raised text-[17px] text-ink-muted hover:bg-paper-sunken hover:text-ink focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta";
 
@@ -197,6 +217,7 @@ export function TripMap({
   centre,
 }: TripMapProps) {
   const container = useRef<HTMLDivElement | null>(null);
+  const types = useRef<HTMLDivElement | null>(null);
   const overlays = useRef<google.maps.OverlayView[]>([]);
   const lines = useRef<google.maps.Polyline[]>([]);
   /**
@@ -225,11 +246,16 @@ export function TripMap({
         map: new maps.Map(element, {
           center: openingView.current ?? WHOLE_WORLD,
           zoom: openingView.current === null ? WHOLE_WORLD_ZOOM : CITY_ZOOM,
+          // Imagery with the names on top of it, until the reader says otherwise.
+          mapTypeId: OPENING_MAP_TYPE,
+          // Everything off, then the one thing back on. Zooming already has a
+          // control of ours in the corner, drawn in this product's own palette,
+          // and two pairs of zoom buttons on one map is one pair too many.
           disableDefaultUI: true,
+          fullscreenControl: true,
           // Google's place cards open Google's own interface over ours, and the
           // stops for the day are already listed beside the map.
           clickableIcons: false,
-          styles: paperMapStyle(),
         }),
       });
     };
@@ -340,6 +366,37 @@ export function TripMap({
 
   const drawnLegs = routeLegs(start, end, stops, endTravelMode).length;
 
+  const [mapType, setMapType] = useState<MapTypeId>(OPENING_MAP_TYPE);
+  const [choosingType, setChoosingType] = useState(false);
+
+  useEffect(() => {
+    if (!choosingType) {
+      return;
+    }
+    const dismiss = (event: MouseEvent): void => {
+      const target = event.target;
+      const inside =
+        target instanceof Node &&
+        types.current !== null &&
+        types.current.contains(target);
+      if (!inside) {
+        setChoosingType(false);
+      }
+    };
+    document.addEventListener("mousedown", dismiss);
+    return () => {
+      document.removeEventListener("mousedown", dismiss);
+    };
+  }, [choosingType]);
+
+  const chooseType = (id: MapTypeId): void => {
+    setChoosingType(false);
+    setMapType(id);
+    if (state.status === "ready") {
+      state.map.setMapTypeId(id);
+    }
+  };
+
   const zoomBy = (step: number): void => {
     if (state.status !== "ready") {
       return;
@@ -373,7 +430,53 @@ export function TripMap({
       ) : null}
 
       {state.status === "ready" ? (
-        <div className="absolute right-[22px] bottom-[22px] z-[2] flex flex-col overflow-hidden rounded-pill border border-rule shadow-sm">
+        <div className="absolute right-[22px] bottom-[22px] z-[2] flex flex-col items-end gap-2">
+          <div className="relative" ref={types}>
+            <button
+              type="button"
+              aria-haspopup="dialog"
+              aria-expanded={choosingType}
+              onClick={() => {
+                setChoosingType(!choosingType);
+              }}
+              className="flex h-[30px] items-center rounded-pill border border-rule bg-paper-raised px-[11px] text-micro font-semibold text-ink-muted shadow-sm hover:bg-paper-sunken hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+            >
+              {MAP_TYPES.find((one) => one.id === mapType)?.label ?? "Map"}
+            </button>
+
+            {choosingType ? (
+              <div
+                role="dialog"
+                aria-label="What the map is drawn on"
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") {
+                    event.preventDefault();
+                    setChoosingType(false);
+                  }
+                }}
+                className="absolute right-0 bottom-full mb-2 rounded-panel border border-rule bg-paper-raised p-[5px] shadow-md"
+              >
+                {MAP_TYPES.map((one) => (
+                  <button
+                    key={one.id}
+                    type="button"
+                    onClick={() => {
+                      chooseType(one.id);
+                    }}
+                    className={`${TYPE_ROW} ${
+                      one.id === mapType
+                        ? "bg-terracotta-800 text-paper"
+                        : "text-ink hover:bg-terracotta-100"
+                    }`}
+                  >
+                    {one.label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="flex flex-col overflow-hidden rounded-pill border border-rule shadow-sm">
           <button
             type="button"
             onClick={() => {
@@ -394,6 +497,7 @@ export function TripMap({
             <span aria-hidden="true">&minus;</span>
             <span className="trip-map-name">Zoom out</span>
           </button>
+          </div>
         </div>
       ) : null}
 
