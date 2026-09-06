@@ -10,6 +10,7 @@ import {
   placeDomMarker,
   stopMarkerElement,
 } from "./dom-marker";
+import { ExpandIcon, ShrinkIcon } from "@/ui/icons";
 import { googleMapsBrowserKey, loadGoogleMaps } from "./load-google-maps";
 import type { RouteStroke } from "./route-style";
 import { ROUTE_STROKES, routeStroke } from "./route-style";
@@ -94,7 +95,9 @@ interface RouteLeg {
   readonly mode: TravelMode;
 }
 
-function pointOf(endpoint: { place: { position: { lat: number; lng: number } } }): google.maps.LatLngLiteral {
+function pointOf(endpoint: {
+  place: { position: { lat: number; lng: number } };
+}): google.maps.LatLngLiteral {
   return { lat: endpoint.place.position.lat, lng: endpoint.place.position.lng };
 }
 
@@ -137,7 +140,11 @@ function polylineOptions(
   color: string,
 ): google.maps.PolylineOptions {
   if (stroke.drawn.kind === "solid") {
-    return { strokeColor: color, strokeOpacity: 1, strokeWeight: stroke.weight };
+    return {
+      strokeColor: color,
+      strokeOpacity: 1,
+      strokeWeight: stroke.weight,
+    };
   }
 
   const icon: google.maps.Symbol =
@@ -193,7 +200,9 @@ function guessedPolylineOptions(color: string): google.maps.PolylineOptions {
 function Notice({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-full w-full items-center justify-center bg-paper-sunken p-6">
-      <p className="max-w-[36ch] text-center text-body text-ink-muted">{children}</p>
+      <p className="max-w-[36ch] text-center text-body text-ink-muted">
+        {children}
+      </p>
     </div>
   );
 }
@@ -218,6 +227,8 @@ export function TripMap({
 }: TripMapProps) {
   const container = useRef<HTMLDivElement | null>(null);
   const types = useRef<HTMLDivElement | null>(null);
+  /** The frame that goes full screen: the map and the controls over it. */
+  const frame = useRef<HTMLDivElement | null>(null);
   const overlays = useRef<google.maps.OverlayView[]>([]);
   const lines = useRef<google.maps.Polyline[]>([]);
   /**
@@ -248,11 +259,10 @@ export function TripMap({
           zoom: openingView.current === null ? WHOLE_WORLD_ZOOM : CITY_ZOOM,
           // Imagery with the names on top of it, until the reader says otherwise.
           mapTypeId: OPENING_MAP_TYPE,
-          // Everything off, then the one thing back on. Zooming already has a
-          // control of ours in the corner, drawn in this product's own palette,
-          // and two pairs of zoom buttons on one map is one pair too many.
+          // Every one of Google's controls off. Ours are drawn over the map in
+          // this product's palette, in one corner rather than scattered around
+          // the frame the way a default map puts them.
           disableDefaultUI: true,
-          fullscreenControl: true,
           // Google's place cards open Google's own interface over ours, and the
           // stops for the day are already listed beside the map.
           clickableIcons: false,
@@ -298,7 +308,10 @@ export function TripMap({
         new maps.Polyline({
           map,
           // The road, when whoever answered the leg knew it.
-          path: drawn === null || drawn === undefined ? [leg.from, leg.to] : [...drawn],
+          path:
+            drawn === null || drawn === undefined
+              ? [leg.from, leg.to]
+              : [...drawn],
           clickable: false,
           ...(guessed
             ? guessedPolylineOptions(color)
@@ -315,7 +328,12 @@ export function TripMap({
         lng: endpoint.place.position.lng,
       };
       overlays.current.push(
-        placeDomMarker(maps, map, point, endpointMarkerElement(word, endpoint.place.name)),
+        placeDomMarker(
+          maps,
+          map,
+          point,
+          endpointMarkerElement(word, endpoint.place.name),
+        ),
       );
       points.push(point);
     };
@@ -334,9 +352,17 @@ export function TripMap({
     }
 
     stops.forEach((stop, index) => {
-      const point = { lat: stop.place.position.lat, lng: stop.place.position.lng };
+      const point = {
+        lat: stop.place.position.lat,
+        lng: stop.place.position.lng,
+      };
       overlays.current.push(
-        placeDomMarker(maps, map, point, stopMarkerElement(index + 1, stop.place.name)),
+        placeDomMarker(
+          maps,
+          map,
+          point,
+          stopMarkerElement(index + 1, stop.place.name),
+        ),
       );
       points.push(point);
     });
@@ -367,6 +393,7 @@ export function TripMap({
   const drawnLegs = routeLegs(start, end, stops, endTravelMode).length;
 
   const [mapType, setMapType] = useState<MapTypeId>(OPENING_MAP_TYPE);
+  const [fullscreen, setFullscreen] = useState(false);
   const [choosingType, setChoosingType] = useState(false);
 
   useEffect(() => {
@@ -389,6 +416,32 @@ export function TripMap({
     };
   }, [choosingType]);
 
+  // The browser owns this state: it is left by pressing escape as well as by
+  // the button, so the button follows the document rather than the other way.
+  useEffect(() => {
+    const sync = (): void => {
+      setFullscreen(document.fullscreenElement !== null);
+    };
+    document.addEventListener("fullscreenchange", sync);
+    return () => {
+      document.removeEventListener("fullscreenchange", sync);
+    };
+  }, []);
+
+  const toggleFullscreen = (): void => {
+    const element = frame.current;
+    if (element === null) {
+      return;
+    }
+    // Refused where the browser does not allow it, which is not worth a word:
+    // the map is still there and still readable at the size it was.
+    if (document.fullscreenElement === null) {
+      void element.requestFullscreen().catch(() => undefined);
+    } else {
+      void document.exitFullscreen().catch(() => undefined);
+    }
+  };
+
   const chooseType = (id: MapTypeId): void => {
     setChoosingType(false);
     setMapType(id);
@@ -408,7 +461,10 @@ export function TripMap({
   };
 
   return (
-    <div className="trip-map relative h-full w-full overflow-hidden">
+    <div
+      ref={frame}
+      className="trip-map relative h-full w-full overflow-hidden"
+    >
       <div
         ref={container}
         className="h-full w-full bg-paper-sunken"
@@ -424,79 +480,98 @@ export function TripMap({
       {state.status === "failed" ? (
         <div className="absolute inset-0">
           <Notice>
-            Could not load the map. Your stops are saved, reload the page to try again.
+            Could not load the map. Your stops are saved, reload the page to try
+            again.
           </Notice>
+        </div>
+      ) : null}
+
+      {/* The corner opposite the search, and on a phone below the button that
+          opens the map, which owns that corner until it is let go of. */}
+      {state.status === "ready" ? (
+        <div
+          className="absolute top-[56px] right-[14px] z-[2] lg:top-[22px] lg:right-[22px]"
+          ref={types}
+        >
+          <button
+            type="button"
+            aria-haspopup="dialog"
+            aria-expanded={choosingType}
+            onClick={() => {
+              setChoosingType(!choosingType);
+            }}
+            className="flex h-[30px] items-center rounded-pill border border-rule bg-paper-raised px-[11px] text-micro font-semibold text-ink-muted shadow-sm hover:bg-paper-sunken hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+          >
+            {MAP_TYPES.find((one) => one.id === mapType)?.label ?? "Map"}
+          </button>
+
+          {choosingType ? (
+            <div
+              role="dialog"
+              aria-label="What the map is drawn on"
+              onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  event.preventDefault();
+                  setChoosingType(false);
+                }
+              }}
+              className="absolute top-full right-0 mt-2 rounded-panel border border-rule bg-paper-raised p-[5px] shadow-md"
+            >
+              {MAP_TYPES.map((one) => (
+                <button
+                  key={one.id}
+                  type="button"
+                  onClick={() => {
+                    chooseType(one.id);
+                  }}
+                  className={`${TYPE_ROW} ${
+                    one.id === mapType
+                      ? "bg-terracotta-800 text-paper"
+                      : "text-ink hover:bg-terracotta-100"
+                  }`}
+                >
+                  {one.label}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
       ) : null}
 
       {state.status === "ready" ? (
         <div className="absolute right-[22px] bottom-[22px] z-[2] flex flex-col items-end gap-2">
-          <div className="relative" ref={types}>
-            <button
-              type="button"
-              aria-haspopup="dialog"
-              aria-expanded={choosingType}
-              onClick={() => {
-                setChoosingType(!choosingType);
-              }}
-              className="flex h-[30px] items-center rounded-pill border border-rule bg-paper-raised px-[11px] text-micro font-semibold text-ink-muted shadow-sm hover:bg-paper-sunken hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
-            >
-              {MAP_TYPES.find((one) => one.id === mapType)?.label ?? "Map"}
-            </button>
-
-            {choosingType ? (
-              <div
-                role="dialog"
-                aria-label="What the map is drawn on"
-                onKeyDown={(event) => {
-                  if (event.key === "Escape") {
-                    event.preventDefault();
-                    setChoosingType(false);
-                  }
-                }}
-                className="absolute right-0 bottom-full mb-2 rounded-panel border border-rule bg-paper-raised p-[5px] shadow-md"
-              >
-                {MAP_TYPES.map((one) => (
-                  <button
-                    key={one.id}
-                    type="button"
-                    onClick={() => {
-                      chooseType(one.id);
-                    }}
-                    className={`${TYPE_ROW} ${
-                      one.id === mapType
-                        ? "bg-terracotta-800 text-paper"
-                        : "text-ink hover:bg-terracotta-100"
-                    }`}
-                  >
-                    {one.label}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-          </div>
+          <button
+            type="button"
+            onClick={toggleFullscreen}
+            className={`${CONTROL} rounded-pill border border-rule shadow-sm`}
+          >
+            {fullscreen ? <ShrinkIcon size={14} /> : <ExpandIcon size={14} />}
+            <span className="trip-map-name">
+              {fullscreen ? "Leave full screen" : "Full screen"}
+            </span>
+          </button>
 
           <div className="flex flex-col overflow-hidden rounded-pill border border-rule shadow-sm">
-          <button
-            type="button"
-            onClick={() => {
-              zoomBy(1);
-            }}
-            className={`${CONTROL} border-b border-rule`}
-          >
-            <span aria-hidden="true">+</span>
-            <span className="trip-map-name">Zoom in</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              zoomBy(-1);
-            }}
-            className={CONTROL}
-          >
-            <span aria-hidden="true">&minus;</span>
-            <span className="trip-map-name">Zoom out</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => {
+                zoomBy(1);
+              }}
+              className={`${CONTROL} border-b border-rule`}
+            >
+              <span aria-hidden="true">+</span>
+              <span className="trip-map-name">Zoom in</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                zoomBy(-1);
+              }}
+              className={CONTROL}
+            >
+              <span aria-hidden="true">&minus;</span>
+              <span className="trip-map-name">Zoom out</span>
+            </button>
           </div>
         </div>
       ) : null}
