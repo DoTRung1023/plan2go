@@ -143,6 +143,33 @@ function polylineOptions(
   };
 }
 
+/**
+ * A leg nobody could give the shape of, drawn as the line between its two ends.
+ *
+ * The mode's own colour, so it is still that mode, but sparser and fainter than
+ * any real route is drawn: it says where you are going rather than how you get
+ * there, and a straight line at full strength would pass for a road that runs
+ * straight. The list beside it calls the same leg a crow flies.
+ */
+function guessedPolylineOptions(color: string): google.maps.PolylineOptions {
+  return {
+    strokeOpacity: 0,
+    icons: [
+      {
+        icon: {
+          path: "M 0,-1 0,1",
+          strokeColor: color,
+          strokeOpacity: 0.5,
+          strokeWeight: 2.6,
+          scale: 4,
+        },
+        offset: "0",
+        repeat: "22px",
+      },
+    ],
+  };
+}
+
 function Notice({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-full w-full items-center justify-center bg-paper-sunken p-6">
@@ -240,13 +267,16 @@ export function TripMap({
       const stroke = routeStroke(leg.mode);
       const color = palette.getPropertyValue(stroke.colorProperty).trim();
       const drawn = legPaths[index];
+      const guessed = drawn === null || drawn === undefined;
       lines.current.push(
         new maps.Polyline({
           map,
           // The road, when whoever answered the leg knew it.
           path: drawn === null || drawn === undefined ? [leg.from, leg.to] : [...drawn],
           clickable: false,
-          ...polylineOptions(maps, stroke, color),
+          ...(guessed
+            ? guessedPolylineOptions(color)
+            : polylineOptions(maps, stroke, color)),
         }),
       );
     });
