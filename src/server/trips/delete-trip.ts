@@ -2,8 +2,8 @@ import type { TripDeleted, TripRepository } from "../repositories/trip-repositor
 
 export interface DeleteTripRequest {
   readonly slug: string;
-  /** Every token this browser holds. The write finds nothing without one. */
-  readonly editTokenHashes: readonly string[];
+  /** The hash of the key out of the edit link. No key, no write. */
+  readonly editKeyHash: string;
 }
 
 /**
@@ -23,6 +23,6 @@ export function deleteTrip(
 ): Promise<TripDeleted> {
   return repository.delete({
     slug: request.slug,
-    editTokenHashes: request.editTokenHashes,
+    editKeyHash: request.editKeyHash,
   });
 }

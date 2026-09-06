@@ -31,12 +31,11 @@ function repositoryFor(known: string): {
     deletions,
     repository: {
       findBySlug: () => Promise.resolve<Trip | null>(null),
-      findEditTokenHash: () => Promise.resolve<string | null>(null),
-      findSlugByEditTokenHash: () => Promise.resolve<string | null>(null),
+      findEditKeyHash: () => Promise.resolve<string | null>(null),
       create: () => Promise.reject<CreatedTrip>(new Error(NOT_STUBBED)),
       updateSettings: () => Promise.reject<SettingsUpdated>(new Error(NOT_STUBBED)),
       delete: (removal: TripDeletion) => {
-        if (removal.slug !== known || !removal.editTokenHashes.includes(HELD)) {
+        if (removal.slug !== known || removal.editKeyHash !== HELD) {
           return Promise.resolve<TripDeleted>({ status: "refused" });
         }
         deletions.push(removal);
@@ -53,22 +52,22 @@ function repositoryFor(known: string): {
 }
 
 describe("deleteTrip", () => {
-  it("removes the trip the browser holds a token for", async () => {
+  it("removes the trip the key belongs to", async () => {
+    const { repository, deletions } = repositoryFor(SLUG);
+
+    const result = await deleteTrip({ slug: SLUG, editKeyHash: HELD }, repository);
+
+    expect(result.status).toBe("deleted");
+    expect(deletions).toEqual([{ slug: SLUG, editKeyHash: HELD }]);
+  });
+
+  it("refuses a key that is not this trip's", async () => {
     const { repository, deletions } = repositoryFor(SLUG);
 
     const result = await deleteTrip(
-      { slug: SLUG, editTokenHashes: [HELD] },
+      { slug: SLUG, editKeyHash: "some-other-trips-key" },
       repository,
     );
-
-    expect(result.status).toBe("deleted");
-    expect(deletions).toEqual([{ slug: SLUG, editTokenHashes: [HELD] }]);
-  });
-
-  it("refuses a browser holding no token for this trip", async () => {
-    const { repository, deletions } = repositoryFor(SLUG);
-
-    const result = await deleteTrip({ slug: SLUG, editTokenHashes: [] }, repository);
 
     expect(result.status).toBe("refused");
     expect(deletions).toEqual([]);
@@ -78,7 +77,7 @@ describe("deleteTrip", () => {
     const { repository, deletions } = repositoryFor(SLUG);
 
     const result = await deleteTrip(
-      { slug: "olive-jetty-0000000000", editTokenHashes: [HELD] },
+      { slug: "olive-jetty-0000000000", editKeyHash: HELD },
       repository,
     );
 

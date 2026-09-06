@@ -1,10 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { readEditTokenHashes } from "@/server/ownership/edit-token-cookie";
+import { z } from "zod";
+import { EDIT_KEY_PATTERN, hashEditKey } from "@/server/ownership/edit-key";
 import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
 import { tripSettingsSchema } from "@/server/trips/trip-settings-input";
 import { updateTripSettings } from "@/server/trips/update-trip-settings";
+
+const editKeySchema = z.string().regex(EDIT_KEY_PATTERN);
 
 export interface TripSettingsState {
   readonly saved: boolean;
@@ -12,14 +15,20 @@ export interface TripSettingsState {
 }
 
 /**
- * The edit token is checked inside the query that finds the trip, so nothing is
- * written without one. Someone reading a shared link is not offered this form at
- * all, and is told the same thing either way if they send it anyway.
+ * The key out of the edit link rides with the form and is checked inside the
+ * query that finds the trip, so nothing is written without one. Someone reading
+ * the plain link is not offered this form at all, and is told the same thing
+ * either way if they send it anyway.
  */
 export async function updateTripAction(
   _previous: TripSettingsState,
   formData: FormData,
 ): Promise<TripSettingsState> {
+  const key = editKeySchema.safeParse(formData.get("editKey"));
+  if (!key.success) {
+    return { saved: false, error: "This trip could not be read. Reload the page." };
+  }
+
   const parsed = tripSettingsSchema.safeParse({
     slug: formData.get("slug"),
     title: formData.get("title"),
@@ -37,7 +46,7 @@ export async function updateTripAction(
 
   const result = await updateTripSettings(
     parsed.data,
-    await readEditTokenHashes(),
+    hashEditKey(key.data),
     prismaTripRepository,
   );
 
@@ -49,6 +58,6 @@ export async function updateTripAction(
     };
   }
 
-  revalidatePath(`/t/${parsed.data.slug}`);
+  revalidatePath(`/t/${parsed.data.slug}`, "layout");
   return { saved: true, error: null };
 }

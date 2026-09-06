@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { readEditTokenHashes } from "@/server/ownership/edit-token-cookie";
+import { EDIT_KEY_PATTERN, hashEditKey } from "@/server/ownership/edit-key";
 import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
 import type { StopChanged } from "@/server/repositories/trip-repository";
 import {
@@ -22,7 +22,19 @@ export interface StopEditState {
 const stop = {
   slug: z.string().min(1).max(80),
   stopId: z.string().min(1).max(40),
+  editKey: z.string().regex(EDIT_KEY_PATTERN),
 };
+
+/**
+ * The key arrives raw in the input and goes no further than this: everything
+ * under it works from the hash, which is what storage holds.
+ */
+function scoped<T extends { readonly editKey: string }>(
+  parsed: T,
+): Omit<T, "editKey"> & { readonly editKeyHash: string } {
+  const { editKey, ...rest } = parsed;
+  return { ...rest, editKeyHash: hashEditKey(editKey) };
+}
 
 const staySchema = z.object({
   ...stop,
@@ -44,7 +56,7 @@ const NOT_YOURS =
   "This trip is not yours to change. Ask whoever sent you the link to change it, or start your own trip.";
 
 /**
- * The edit token is checked inside the query that finds the stop, so nothing is
+ * The key out of the edit link is hashed here and checked inside the query that finds the stop, so nothing is
  * written without one and no separate trip to the database is spent asking. A
  * stop that is not there and a trip that is not yours are deliberately given
  * the same sentence: telling them apart turns this into a way to test slugs.
@@ -54,7 +66,7 @@ async function finish(slug: string, change: Promise<StopChanged>): Promise<StopE
   if (result.status === "refused") {
     return { error: NOT_YOURS };
   }
-  revalidatePath(`/t/${slug}`);
+  revalidatePath(`/t/${slug}`, "layout");
   return { error: null };
 }
 
@@ -66,7 +78,7 @@ export async function setStopStayAction(input: unknown): Promise<StopEditState> 
   return finish(
     parsed.data.slug,
     setStopStay(
-      { ...parsed.data, editTokenHashes: await readEditTokenHashes() },
+      scoped(parsed.data),
       prismaTripRepository,
     ),
   );
@@ -80,7 +92,7 @@ export async function setStopNoteAction(input: unknown): Promise<StopEditState> 
   return finish(
     parsed.data.slug,
     setStopNote(
-      { ...parsed.data, editTokenHashes: await readEditTokenHashes() },
+      scoped(parsed.data),
       prismaTripRepository,
     ),
   );
@@ -94,7 +106,7 @@ export async function removeStopAction(input: unknown): Promise<StopEditState> {
   return finish(
     parsed.data.slug,
     removeStop(
-      { ...parsed.data, editTokenHashes: await readEditTokenHashes() },
+      scoped(parsed.data),
       prismaTripRepository,
       travelProvider(),
     ),
@@ -109,7 +121,7 @@ export async function moveStopAction(input: unknown): Promise<StopEditState> {
   return finish(
     parsed.data.slug,
     moveStop(
-      { ...parsed.data, editTokenHashes: await readEditTokenHashes() },
+      scoped(parsed.data),
       prismaTripRepository,
       travelProvider(),
     ),

@@ -28,6 +28,8 @@ const NAME_FIELD =
 
 interface TripSettingsProps {
   readonly slug: string;
+  /** Travels with the form: the save is a change, and changes need the key. */
+  readonly editKey: string;
   readonly title: string;
   readonly startDate: string;
   readonly endDate: string;
@@ -70,6 +72,7 @@ function spanOf(first: string, last: string): number | null {
  */
 export function TripSettings({
   slug,
+  editKey,
   title,
   startDate,
   endDate,
@@ -148,6 +151,7 @@ export function TripSettings({
   return (
     <form action={submit} ref={form}>
       <input type="hidden" name="slug" value={slug} />
+      <input type="hidden" name="editKey" value={editKey} />
 
       <label className="sr-only" htmlFor={`${fieldId}-title`}>
         Trip name
@@ -175,7 +179,9 @@ export function TripSettings({
           }}
           className={NAME_FIELD}
         />
-        {actions === null ? null : <div className="shrink-0">{actions}</div>}
+        {actions === null ? null : (
+          <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>
+        )}
       </div>
 
       <div className="mt-[10px] grid grid-cols-2 gap-3">

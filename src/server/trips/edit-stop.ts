@@ -13,8 +13,8 @@ export const MAX_NOTE_LENGTH = 500;
 
 export interface StopEdit {
   readonly slug: string;
-  /** Every token this browser holds. The write finds nothing without one. */
-  readonly editTokenHashes: readonly string[];
+  /** The hash of the key out of the edit link. No key, no write. */
+  readonly editKeyHash: string;
   readonly stopId: string;
 }
 
@@ -42,7 +42,7 @@ export function setStopStay(
 ): Promise<StopChanged> {
   return repository.updateStop({
     slug: edit.slug,
-    editTokenHashes: edit.editTokenHashes,
+    editKeyHash: edit.editKeyHash,
     stopId: edit.stopId,
     stayMinutes: clampStay(edit.stayMinutes),
   });
@@ -54,7 +54,7 @@ export function setStopNote(
 ): Promise<StopChanged> {
   return repository.updateStop({
     slug: edit.slug,
-    editTokenHashes: edit.editTokenHashes,
+    editKeyHash: edit.editKeyHash,
     stopId: edit.stopId,
     note: tidyNote(edit.note),
   });
@@ -84,7 +84,7 @@ export async function removeStop(
 
   const removed = await repository.removeStop({
     slug: edit.slug,
-    editTokenHashes: edit.editTokenHashes,
+    editKeyHash: edit.editKeyHash,
     stopId: edit.stopId,
   });
   if (removed.status === "refused" || before === undefined) {
@@ -94,7 +94,7 @@ export async function removeStop(
   await refreshLegModes(
     {
       slug: edit.slug,
-      editTokenHashes: edit.editTokenHashes,
+      editKeyHash: edit.editKeyHash,
       before,
       after: {
         ...before,
@@ -138,7 +138,7 @@ export async function moveStop(
 
   const moved = await repository.moveStop({
     slug: edit.slug,
-    editTokenHashes: edit.editTokenHashes,
+    editKeyHash: edit.editKeyHash,
     stopId: edit.stopId,
     toPosition: edit.toPosition,
   });
@@ -149,7 +149,7 @@ export async function moveStop(
   await refreshLegModes(
     {
       slug: edit.slug,
-      editTokenHashes: edit.editTokenHashes,
+      editKeyHash: edit.editKeyHash,
       before,
       after: reordered(before, edit.stopId, edit.toPosition),
     },

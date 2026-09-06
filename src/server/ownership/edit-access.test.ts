@@ -10,17 +10,16 @@ import type {
   TripRepository,
 } from "../repositories/trip-repository";
 import { checkEditAccess } from "./edit-access";
-import { createEditToken, hashEditToken } from "./edit-token";
+import { createEditKey, hashEditKey } from "./edit-key";
 
-const TOKEN = createEditToken();
+const KEY = createEditKey();
 
-const NOT_STUBBED = "This stub only answers the edit token question.";
+const NOT_STUBBED = "This stub only answers the edit key question.";
 
 function stubRepository(overrides: Partial<TripRepository>): TripRepository {
   return {
     findBySlug: () => Promise.resolve<Trip | null>(null),
-    findEditTokenHash: () => Promise.resolve<string | null>(null),
-    findSlugByEditTokenHash: () => Promise.resolve<string | null>(null),
+    findEditKeyHash: () => Promise.resolve<string | null>(null),
     create: () => Promise.reject<CreatedTrip>(new Error(NOT_STUBBED)),
     updateSettings: () => Promise.reject<SettingsUpdated>(new Error(NOT_STUBBED)),
     delete: () => Promise.reject<TripDeleted>(new Error(NOT_STUBBED)),
@@ -36,71 +35,54 @@ function stubRepository(overrides: Partial<TripRepository>): TripRepository {
 
 function repositoryHolding(hashes: Readonly<Record<string, string>>): TripRepository {
   return stubRepository({
-    findEditTokenHash: (slug: string) => Promise.resolve(hashes[slug] ?? null),
+    findEditKeyHash: (slug: string) => Promise.resolve(hashes[slug] ?? null),
   });
 }
 
-const repository = repositoryHolding({ "amber-quay-4k7n2q9mrv": hashEditToken(TOKEN) });
+const repository = repositoryHolding({ "amber-quay-4k7n2q9mrv": hashEditKey(KEY) });
 
 describe("checkEditAccess", () => {
-  it("allows the browser that created the trip", async () => {
+  it("allows the key out of this trip's edit link", async () => {
     const access = await checkEditAccess({
       slug: "amber-quay-4k7n2q9mrv",
-      presentedTokens: [TOKEN],
+      presentedKey: KEY,
       repository,
     });
     expect(access.status).toBe("granted");
   });
 
-  it("rejects a mutation that arrives without the cookie", async () => {
+  it("rejects the key from some other trip's edit link", async () => {
     const access = await checkEditAccess({
       slug: "amber-quay-4k7n2q9mrv",
-      presentedTokens: [],
+      presentedKey: createEditKey(),
       repository,
     });
-    expect(access.status).toBe("no-token");
+    expect(access.status).toBe("wrong-key");
   });
 
-  it("rejects a token that belongs to some other trip", async () => {
-    const access = await checkEditAccess({
-      slug: "amber-quay-4k7n2q9mrv",
-      presentedTokens: [createEditToken()],
-      repository,
-    });
-    expect(access.status).toBe("wrong-token");
-  });
-
-  it("allows a browser holding several trips to edit any one of them", async () => {
-    const access = await checkEditAccess({
-      slug: "amber-quay-4k7n2q9mrv",
-      presentedTokens: [createEditToken(), TOKEN, createEditToken()],
-      repository,
-    });
-    expect(access.status).toBe("granted");
-  });
-
-  it("rejects a slug that does not exist, even with a real token", async () => {
+  it("rejects a slug that does not exist, even with a real key", async () => {
     const access = await checkEditAccess({
       slug: "olive-jetty-0000000000",
-      presentedTokens: [TOKEN],
+      presentedKey: KEY,
       repository,
     });
     expect(access.status).toBe("unknown-trip");
   });
 
-  it("never asks storage for anything when no token was presented", async () => {
+  it("never asks storage about a key that is not shaped like one", async () => {
     let asked = false;
     const watched = stubRepository({
-      findEditTokenHash: () => {
+      findEditKeyHash: () => {
         asked = true;
         return Promise.resolve(null);
       },
     });
-    await checkEditAccess({
+    const access = await checkEditAccess({
       slug: "amber-quay-4k7n2q9mrv",
-      presentedTokens: [],
+      presentedKey: "../../etc/passwd",
       repository: watched,
     });
+    expect(access.status).toBe("wrong-key");
     expect(asked).toBe(false);
   });
 });

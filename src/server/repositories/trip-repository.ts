@@ -14,7 +14,7 @@ export interface NewTrip {
   readonly startAtMinutes: number;
   /** The city the trip is in, for the map to open on. */
   readonly centre: LatLng | null;
-  readonly editTokenHash: string;
+  readonly editKeyHash: EditKeyHash;
 }
 
 export interface CreatedTrip {
@@ -22,16 +22,16 @@ export interface CreatedTrip {
 }
 
 /**
- * The hashes of every edit token the browser presented. A mutation is scoped to
- * these in the query that finds what it is about to change, so authorising and
- * writing are not two trips to the database.
+ * The hash of the key out of a trip's edit link. A mutation is scoped to it in
+ * the query that finds what it is about to change, so authorising and writing
+ * are not two trips to the database.
  */
-export type EditTokenHashes = readonly string[];
+export type EditKeyHash = string;
 
 /** A place to append to a day, already resolved to everything we store. */
 export interface NewStop {
   readonly slug: string;
-  readonly editTokenHashes: EditTokenHashes;
+  readonly editKeyHash: EditKeyHash;
   readonly dayId: DayId;
   readonly place: Place;
   readonly stayMinutes: number;
@@ -41,7 +41,7 @@ export interface NewStop {
 /** A change to one stop. Only the fields present are written. */
 export interface StopUpdate {
   readonly slug: string;
-  readonly editTokenHashes: EditTokenHashes;
+  readonly editKeyHash: EditKeyHash;
   readonly stopId: string;
   /** Whole minutes at the place. Zero is legal and means a drive past. */
   readonly stayMinutes?: number;
@@ -52,14 +52,14 @@ export interface StopUpdate {
 /** Which stop to take off its day. */
 export interface StopRemoval {
   readonly slug: string;
-  readonly editTokenHashes: EditTokenHashes;
+  readonly editKeyHash: EditKeyHash;
   readonly stopId: string;
 }
 
 /** Where a stop is being dragged to, counted from the top of the day. */
 export interface StopMove {
   readonly slug: string;
-  readonly editTokenHashes: EditTokenHashes;
+  readonly editKeyHash: EditKeyHash;
   readonly stopId: string;
   readonly toPosition: number;
 }
@@ -71,7 +71,7 @@ export interface StopMove {
  */
 export interface LegModeUpdate {
   readonly slug: string;
-  readonly editTokenHashes: EditTokenHashes;
+  readonly editKeyHash: EditKeyHash;
   readonly dayId: DayId;
   readonly stopId: string | null;
   readonly mode: TravelMode;
@@ -80,7 +80,7 @@ export interface LegModeUpdate {
 /** Everything storage needs to change a trip's settings. */
 export interface TripSettingsUpdate {
   readonly slug: string;
-  readonly editTokenHashes: EditTokenHashes;
+  readonly editKeyHash: EditKeyHash;
   readonly title: string;
   /** The date of the first day. Later days follow it in order. */
   readonly startDate: IsoDate;
@@ -92,7 +92,7 @@ export interface TripSettingsUpdate {
 /** Which trip to remove, and the proof that it is the browser's to remove. */
 export interface TripDeletion {
   readonly slug: string;
-  readonly editTokenHashes: EditTokenHashes;
+  readonly editKeyHash: EditKeyHash;
 }
 
 /**
@@ -131,13 +131,7 @@ export interface TripRepository {
    * from findBySlug so the secret never travels inside a core model type, and
    * so a read path has no way to reach it by accident.
    */
-  findEditTokenHash(slug: string): Promise<string | null>;
-
-  /**
-   * The trip a stored token hash belongs to, or null. This is how a browser
-   * holding a token finds its way back to its own trip without the slug.
-   */
-  findSlugByEditTokenHash(editTokenHash: string): Promise<string | null>;
+  findEditKeyHash(slug: string): Promise<string | null>;
 
   /** Allocates the slug, because only storage can see a collision. */
   create(trip: NewTrip): Promise<CreatedTrip>;

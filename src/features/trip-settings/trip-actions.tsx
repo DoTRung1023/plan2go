@@ -25,12 +25,17 @@ const CANCEL = `${ANSWER} border border-rule bg-paper-raised text-ink hover:bord
 
 interface TripActionsProps {
   readonly slug: string;
+  /** Deleting is a change like any other, so it travels with the key too. */
+  readonly editKey: string;
   /**
    * Passed in rather than imported, because a feature may not reach into the
    * route that owns the mutation. It answers with what went wrong, or with
    * nothing at all when it navigated away instead of answering.
    */
-  readonly onDelete: (input: { slug: string }) => Promise<DeleteTripOutcome | undefined>;
+  readonly onDelete: (input: {
+    slug: string;
+    editKey: string;
+  }) => Promise<DeleteTripOutcome | undefined>;
   /**
    * Where starting another trip goes. A path rather than an import, for the
    * same reason: a feature does not know the app's routes.
@@ -56,7 +61,12 @@ interface TripActionsProps {
  * browser dialog drawn in a system's own palette on a page that is meant to
  * read like a printed guide.
  */
-export function TripActions({ slug, onDelete, startAnotherPath }: TripActionsProps) {
+export function TripActions({
+  slug,
+  editKey,
+  onDelete,
+  startAnotherPath,
+}: TripActionsProps) {
   const [message, setMessage] = useState<string | null>(null);
   const [asking, setAsking] = useState(false);
   const [deleting, startDeleting] = useTransition();
@@ -104,7 +114,7 @@ export function TripActions({ slug, onDelete, startAnotherPath }: TripActionsPro
   const remove = (): void => {
     setAsking(false);
     startDeleting(async () => {
-      const outcome = await onDelete({ slug });
+      const outcome = await onDelete({ slug, editKey });
       setMessage(outcome?.error ?? null);
     });
   };

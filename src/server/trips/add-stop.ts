@@ -10,8 +10,8 @@ const DEFAULT_STAY_MINUTES = 60;
 
 export interface AddStopRequest {
   readonly slug: string;
-  /** Every token this browser holds. The write finds nothing without one. */
-  readonly editTokenHashes: readonly string[];
+  /** The hash of the key out of the edit link. No key, no write. */
+  readonly editKeyHash: string;
   readonly dayId: DayId;
   readonly providerPlaceId: string;
   readonly session: string | null;
@@ -67,7 +67,7 @@ export async function addStopFromSearch(
 
   const added = await repository.addStop({
     slug: request.slug,
-    editTokenHashes: request.editTokenHashes,
+    editKeyHash: request.editKeyHash,
     dayId: request.dayId,
     place,
     stayMinutes: DEFAULT_STAY_MINUTES,

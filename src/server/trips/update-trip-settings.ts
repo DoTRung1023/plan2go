@@ -19,12 +19,12 @@ import type { TripSettings } from "./trip-settings-input";
  */
 export function updateTripSettings(
   change: TripSettings,
-  editTokenHashes: readonly string[],
+  editKeyHash: string,
   repository: TripRepository,
 ): Promise<SettingsUpdated> {
   return repository.updateSettings({
     slug: change.slug,
-    editTokenHashes,
+    editKeyHash,
     title: change.title,
     startDate: change.startDate,
     dayCount: daysBetween(change.startDate, change.endDate) + 1,

@@ -34,8 +34,9 @@ model Trip {
   /// text so no UTC conversion can move the date by a day.
   startDate String
 
-  /// sha256 of the edit token. The token itself is only ever in the cookie.
-  editTokenHash String
+  /// sha256 of the key in the trip's edit link. The key itself is only ever
+  /// in that link, never here and never in a cookie.
+  editKeyHash String
 
   /// Null until accounts exist. Present now so ownership needs no migration of meaning.
   userId String?
@@ -52,9 +53,6 @@ model Trip {
   places Place[]
 
   @@index([userId])
-  /// A browser presents a token and nothing else, so this is the lookup that
-  /// gets it back to its own trip.
-  @@index([editTokenHash])
 }
 
 model Place {

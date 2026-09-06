@@ -147,7 +147,7 @@ async function insert(trip: NewTrip, slug: string): Promise<CreatedTrip> {
       startDate: trip.startDate,
       centreLat: trip.centre?.lat ?? null,
       centreLng: trip.centre?.lng ?? null,
-      editTokenHash: trip.editTokenHash,
+      editKeyHash: trip.editKeyHash,
       days: {
         create: Array.from({ length: trip.dayCount }, (_unused, index) => ({
           position: index,
@@ -176,15 +176,11 @@ export const prismaTripRepository: TripRepository = {
     return row === null ? null : toTrip(row);
   },
 
-  async findEditTokenHash(slug: string): Promise<string | null> {
-    const row = await db.trip.findUnique({ where: { slug }, select: { editTokenHash: true } });
-    return row === null ? null : row.editTokenHash;
+  async findEditKeyHash(slug: string): Promise<string | null> {
+    const row = await db.trip.findUnique({ where: { slug }, select: { editKeyHash: true } });
+    return row === null ? null : row.editKeyHash;
   },
 
-  async findSlugByEditTokenHash(editTokenHash: string): Promise<string | null> {
-    const row = await db.trip.findFirst({ where: { editTokenHash }, select: { slug: true } });
-    return row === null ? null : row.slug;
-  },
 
   async findPlaceByProviderId(slug: string, providerPlaceId: string): Promise<Place | null> {
     const row = await db.place.findFirst({
@@ -199,7 +195,7 @@ export const prismaTripRepository: TripRepository = {
     const day = await db.day.findFirst({
       where: {
         id: stop.dayId,
-        trip: { slug: stop.slug, editTokenHash: { in: [...stop.editTokenHashes] } },
+        trip: { slug: stop.slug, editKeyHash: stop.editKeyHash },
       },
       select: { id: true, tripId: true, _count: { select: { stops: true } } },
     });
@@ -250,7 +246,7 @@ export const prismaTripRepository: TripRepository = {
     const day = await db.day.findFirst({
       where: {
         id: update.dayId,
-        trip: { slug: update.slug, editTokenHash: { in: [...update.editTokenHashes] } },
+        trip: { slug: update.slug, editKeyHash: update.editKeyHash },
       },
       select: { id: true },
     });
@@ -281,7 +277,7 @@ export const prismaTripRepository: TripRepository = {
       where: {
         id: update.stopId,
         day: {
-          trip: { slug: update.slug, editTokenHash: { in: [...update.editTokenHashes] } },
+          trip: { slug: update.slug, editKeyHash: update.editKeyHash },
         },
       },
       data: {
@@ -297,7 +293,7 @@ export const prismaTripRepository: TripRepository = {
       where: {
         id: removal.stopId,
         day: {
-          trip: { slug: removal.slug, editTokenHash: { in: [...removal.editTokenHashes] } },
+          trip: { slug: removal.slug, editKeyHash: removal.editKeyHash },
         },
       },
       select: { id: true, dayId: true, position: true },
@@ -324,7 +320,7 @@ export const prismaTripRepository: TripRepository = {
       where: {
         id: move.stopId,
         day: {
-          trip: { slug: move.slug, editTokenHash: { in: [...move.editTokenHashes] } },
+          trip: { slug: move.slug, editKeyHash: move.editKeyHash },
         },
       },
       select: { id: true, dayId: true, position: true },
@@ -377,7 +373,7 @@ export const prismaTripRepository: TripRepository = {
     const trip = await db.trip.findFirst({
       where: {
         slug: removal.slug,
-        editTokenHash: { in: [...removal.editTokenHashes] },
+        editKeyHash: removal.editKeyHash,
       },
       select: { id: true },
     });
@@ -395,7 +391,7 @@ export const prismaTripRepository: TripRepository = {
 
   async updateSettings(update: TripSettingsUpdate): Promise<SettingsUpdated> {
     const trip = await db.trip.findFirst({
-      where: { slug: update.slug, editTokenHash: { in: [...update.editTokenHashes] } },
+      where: { slug: update.slug, editKeyHash: update.editKeyHash },
       select: { id: true, _count: { select: { days: true } } },
     });
     if (trip === null) {
