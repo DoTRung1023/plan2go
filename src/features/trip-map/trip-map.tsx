@@ -1,6 +1,5 @@
 "use client";
 
-import type { RefObject } from "react";
 import { useEffect, useRef, useState } from "react";
 import type { DayEndpoint } from "@/core/model/day";
 import type { TravelMode } from "@/core/model/leg";
@@ -97,14 +96,14 @@ const ROW_CONTROL = `${CONTROL} h-[44px] px-[15px] text-meta font-semibold`;
 const ICON_CONTROL = `${CONTROL} h-[30px] w-[30px] text-[17px]`;
 
 interface TripMapProps {
+  /** Whether the map has been opened over the planner beside it. */
+  readonly expanded: boolean;
   /**
-   * What the full screen button fills the screen with. Passed in rather than
-   * taken from this component's own root, because the search field and the
-   * button that opens the map on a phone are drawn over the map by whoever
-   * placed it, and a full screen map without its search is a map nothing can
-   * be added to.
+   * Asked for rather than done here: what the map grows over belongs to
+   * whoever laid the two panes out, and a map that resized itself would be
+   * deciding on their behalf.
    */
-  readonly frame: RefObject<HTMLDivElement | null>;
+  readonly onToggleExpanded: () => void;
   readonly start: DayEndpoint | null;
   readonly end: DayEndpoint | null;
   readonly stops: readonly Stop[];
@@ -249,7 +248,8 @@ function Notice({ children }: { children: React.ReactNode }) {
  * motion policy allows one animation, reordering a stop, and this is not it.
  */
 export function TripMap({
-  frame,
+  expanded,
+  onToggleExpanded,
   start,
   end,
   stops,
@@ -423,7 +423,6 @@ export function TripMap({
   const drawnLegs = routeLegs(start, end, stops, endTravelMode).length;
 
   const [mapType, setMapType] = useState<MapTypeId>(OPENING_MAP_TYPE);
-  const [fullscreen, setFullscreen] = useState(false);
   const [choosingType, setChoosingType] = useState(false);
 
   useEffect(() => {
@@ -445,32 +444,6 @@ export function TripMap({
       document.removeEventListener("mousedown", dismiss);
     };
   }, [choosingType]);
-
-  // The browser owns this state: it is left by pressing escape as well as by
-  // the button, so the button follows the document rather than the other way.
-  useEffect(() => {
-    const sync = (): void => {
-      setFullscreen(document.fullscreenElement !== null);
-    };
-    document.addEventListener("fullscreenchange", sync);
-    return () => {
-      document.removeEventListener("fullscreenchange", sync);
-    };
-  }, []);
-
-  const toggleFullscreen = (): void => {
-    const element = frame.current;
-    if (element === null) {
-      return;
-    }
-    // Refused where the browser does not allow it, which is not worth a word:
-    // the map is still there and still readable at the size it was.
-    if (document.fullscreenElement === null) {
-      void element.requestFullscreen().catch(() => undefined);
-    } else {
-      void document.exitFullscreen().catch(() => undefined);
-    }
-  };
 
   const chooseType = (id: MapTypeId): void => {
     setChoosingType(false);
@@ -569,11 +542,14 @@ export function TripMap({
         <div className="absolute right-[14px] bottom-[14px] z-[2] flex flex-col items-end gap-2 lg:right-[22px] lg:bottom-[22px]">
           {/* Wrapped the way the zoom pair is, so the rule sits outside the
               button rather than inside its width and the two line up. */}
-          <div className={PILL}>
-            <button type="button" onClick={toggleFullscreen} className={ICON_CONTROL}>
-              {fullscreen ? <ShrinkIcon size={15} /> : <ExpandIcon size={15} />}
+          {/* Only where there is a planner beside the map to grow over. On a
+              phone the map is a strip with its own worded button above, and two
+              controls for one thing is one too many. */}
+          <div className={`${PILL} hidden lg:block`}>
+            <button type="button" onClick={onToggleExpanded} className={ICON_CONTROL}>
+              {expanded ? <ShrinkIcon size={15} /> : <ExpandIcon size={15} />}
               <span className="trip-map-name">
-                {fullscreen ? "Leave full screen" : "Full screen"}
+                {expanded ? "Close the map" : "Open the map over the planner"}
               </span>
             </button>
           </div>
