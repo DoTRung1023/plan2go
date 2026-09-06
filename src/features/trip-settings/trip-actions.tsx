@@ -8,9 +8,13 @@ export interface ClearTripOutcome {
   readonly error: string | null;
 }
 
-/** Neither of these is the primary action on the page, so neither is terracotta. */
+/**
+ * Neither of these is the primary action on the page, so neither is terracotta.
+ * The height is stated because one of the two is a link, which takes no height
+ * of its own until it is told to lay out as a box.
+ */
 const BUTTON =
-  "rounded-pill border border-rule bg-paper-raised px-[13px] py-[7px] text-meta font-semibold text-ink hover:border-rule-strong hover:bg-paper-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta disabled:opacity-45";
+  "inline-flex h-[34px] items-center justify-center rounded-pill border border-rule bg-paper-raised px-[14px] py-0 text-meta font-semibold text-ink hover:border-rule-strong hover:bg-paper-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta disabled:opacity-45";
 
 interface TripActionsProps {
   readonly slug: string;

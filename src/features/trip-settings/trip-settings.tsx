@@ -15,12 +15,16 @@ const UNSAVED: TripSettingsOutcome = { saved: false, error: null };
 const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
- * The name is the heading, so it is set in the heading's own type. It shares
- * its row with the trip's actions and gives way to them, down to the width a
- * trip name still reads at, below which the row wraps instead.
+ * The name is the heading, so it keeps display type, one step under the title
+ * it was: at 24px the field stood a third taller than the dates and the actions
+ * around it, and a row of controls at three heights reads as three sections.
+ * Height is stated rather than padded, so all of them agree exactly.
+ *
+ * It shares its row with the trip's actions and gives way to them, down to the
+ * width a trip name still reads at, below which the row wraps instead.
  */
 const NAME_FIELD =
-  "min-w-[200px] flex-1 rounded-pill border border-rule bg-paper-raised px-[18px] py-[6px] font-display text-title text-ink caret-terracotta hover:border-rule-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "h-[34px] min-w-[200px] flex-1 rounded-pill border border-rule bg-paper-raised px-[14px] py-0 font-display text-place text-ink caret-terracotta hover:border-rule-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 interface TripSettingsProps {
   readonly slug: string;
