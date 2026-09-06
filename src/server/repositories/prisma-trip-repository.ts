@@ -27,9 +27,9 @@ import type {
   NewTrip,
   SettingsUpdated,
   StopAdded,
-  TripCleared,
+  TripDeleted,
   TripRepository,
-  TripReset,
+  TripDeletion,
   TripSettingsUpdate,
 } from "./trip-repository";
 
@@ -369,46 +369,28 @@ export const prismaTripRepository: TripRepository = {
     return { status: "changed" };
   },
 
-  async clear(reset: TripReset): Promise<TripCleared> {
+  async delete(removal: TripDeletion): Promise<TripDeleted> {
     // Scoped to the tokens the browser holds, so the read that finds the trip is
     // also the check that it may be changed. Nothing comes back for a trip that
     // is not there and nothing comes back for one that is not theirs, which is
     // the same answer we would have given anyway.
     const trip = await db.trip.findFirst({
-      where: { slug: reset.slug, editTokenHash: { in: [...reset.editTokenHashes] } },
+      where: {
+        slug: removal.slug,
+        editTokenHash: { in: [...removal.editTokenHashes] },
+      },
       select: { id: true },
     });
     if (trip === null) {
       return { status: "refused" };
     }
 
-    // One transaction, and in this order. Deleting the days takes the stops
-    // with them, which leaves the places unreferenced and safe to delete next.
-    await db.$transaction([
-      db.day.deleteMany({ where: { tripId: trip.id } }),
-      db.place.deleteMany({ where: { tripId: trip.id } }),
-      db.trip.update({
-        where: { id: trip.id },
-        data: {
-          title: reset.title,
-          timeZone: reset.timeZone,
-          startDate: reset.startDate,
-          // The city belonged to the trip being thrown away. Left behind, the
-          // map on an emptied trip still opens on somewhere nobody chose.
-          centreLat: null,
-          centreLng: null,
-        },
-      }),
-      db.day.createMany({
-        data: Array.from({ length: reset.dayCount }, (_unused, index) => ({
-          tripId: trip.id,
-          position: index,
-          startAtMinutes: reset.startAtMinutes,
-        })),
-      }),
-    ]);
+    // One statement, and no transaction to wrap it in. The days and the places
+    // hang off the trip with onDelete: Cascade and the stops hang off both, so
+    // the row going takes every one of them with it.
+    await db.trip.delete({ where: { id: trip.id } });
 
-    return { status: "cleared" };
+    return { status: "deleted" };
   },
 
   async updateSettings(update: TripSettingsUpdate): Promise<SettingsUpdated> {

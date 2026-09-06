@@ -89,28 +89,18 @@ export interface TripSettingsUpdate {
   readonly startAtMinutes: number;
 }
 
-/**
- * Everything storage needs to empty a trip and lay it out again on the slug it
- * already has. No token: the trip keeps the one it was opened with.
- */
-export interface TripReset {
+/** Which trip to remove, and the proof that it is the browser's to remove. */
+export interface TripDeletion {
   readonly slug: string;
   readonly editTokenHashes: EditTokenHashes;
-  readonly title: string;
-  readonly timeZone: string;
-  /** The date of the first day. Later days follow it in order. */
-  readonly startDate: IsoDate;
-  readonly dayCount: number;
-  /** Minutes from local midnight that each new day begins at. */
-  readonly startAtMinutes: number;
 }
 
 /**
  * "refused" is one answer on purpose. A trip that is not there and a trip that
  * is not yours must not be told apart, or this becomes a way to test slugs.
  */
-export type TripCleared =
-  | { readonly status: "cleared" }
+export type TripDeleted =
+  | { readonly status: "deleted" }
   | { readonly status: "refused" };
 
 export type SettingsUpdated =
@@ -159,11 +149,11 @@ export interface TripRepository {
   updateSettings(update: TripSettingsUpdate): Promise<SettingsUpdated>;
 
   /**
-   * Throws away every day, stop, place and the city a trip was centred on, and
-   * lays down empty days again. The slug and the edit token survive, so a link
-   * already shared keeps working and keeps pointing at the same planner.
+   * Removes a trip and everything on it: its days, the stops on them, and the
+   * places they point at. The slug stops resolving with it, so a link already
+   * shared stops working, and there is nothing left to undo it from.
    */
-  clear(reset: TripReset): Promise<TripCleared>;
+  delete(removal: TripDeletion): Promise<TripDeleted>;
 
   /**
    * A place this trip has already stored, or null. Checked before any paid

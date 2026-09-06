@@ -10,7 +10,7 @@ import { searchBias } from "@/features/place-search/search-bias";
 import { TripActions } from "@/features/trip-settings/trip-actions";
 import { TripSettings } from "@/features/trip-settings/trip-settings";
 import { addStopAction } from "./add-stop-action";
-import { clearTripAction } from "./clear-trip-action";
+import { deleteTripAction } from "./delete-trip-action";
 import {
   moveStopAction,
   removeStopAction,
@@ -184,7 +184,7 @@ export function TripEditor({
                 actions={
                   <TripActions
                     slug={slug}
-                    onClear={clearTripAction}
+                    onDelete={deleteTripAction}
                     startAnotherPath="/"
                   />
                 }

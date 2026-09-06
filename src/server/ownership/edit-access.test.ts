@@ -6,7 +6,7 @@ import type {
   SettingsUpdated,
   StopAdded,
   StopChanged,
-  TripCleared,
+  TripDeleted,
   TripRepository,
 } from "../repositories/trip-repository";
 import { checkEditAccess } from "./edit-access";
@@ -23,7 +23,7 @@ function stubRepository(overrides: Partial<TripRepository>): TripRepository {
     findSlugByEditTokenHash: () => Promise.resolve<string | null>(null),
     create: () => Promise.reject<CreatedTrip>(new Error(NOT_STUBBED)),
     updateSettings: () => Promise.reject<SettingsUpdated>(new Error(NOT_STUBBED)),
-    clear: () => Promise.reject<TripCleared>(new Error(NOT_STUBBED)),
+    delete: () => Promise.reject<TripDeleted>(new Error(NOT_STUBBED)),
     findPlaceByProviderId: () => Promise.resolve(null),
     addStop: () => Promise.reject<StopAdded>(new Error(NOT_STUBBED)),
     setLegMode: () => Promise.reject<LegModeSet>(new Error(NOT_STUBBED)),
