@@ -1,5 +1,6 @@
 "use client";
 
+import type { RefObject } from "react";
 import { useEffect, useRef, useState } from "react";
 import type { DayEndpoint } from "@/core/model/day";
 import type { TravelMode } from "@/core/model/leg";
@@ -90,6 +91,14 @@ const ICON_CONTROL = `${CONTROL} w-[30px] text-[17px]`;
 const WORD_CONTROL = `${CONTROL} px-[11px] text-micro font-semibold`;
 
 interface TripMapProps {
+  /**
+   * What the full screen button fills the screen with. Passed in rather than
+   * taken from this component's own root, because the search field and the
+   * button that opens the map on a phone are drawn over the map by whoever
+   * placed it, and a full screen map without its search is a map nothing can
+   * be added to.
+   */
+  readonly frame: RefObject<HTMLDivElement | null>;
   readonly start: DayEndpoint | null;
   readonly end: DayEndpoint | null;
   readonly stops: readonly Stop[];
@@ -234,6 +243,7 @@ function Notice({ children }: { children: React.ReactNode }) {
  * motion policy allows one animation, reordering a stop, and this is not it.
  */
 export function TripMap({
+  frame,
   start,
   end,
   stops,
@@ -243,8 +253,6 @@ export function TripMap({
 }: TripMapProps) {
   const container = useRef<HTMLDivElement | null>(null);
   const types = useRef<HTMLDivElement | null>(null);
-  /** The frame that goes full screen: the map and the controls over it. */
-  const frame = useRef<HTMLDivElement | null>(null);
   const overlays = useRef<google.maps.OverlayView[]>([]);
   const lines = useRef<google.maps.Polyline[]>([]);
   /**
@@ -477,10 +485,7 @@ export function TripMap({
   };
 
   return (
-    <div
-      ref={frame}
-      className="trip-map relative h-full w-full overflow-hidden"
-    >
+    <div className="trip-map relative h-full w-full overflow-hidden">
       <div
         ref={container}
         className="h-full w-full bg-paper-sunken"

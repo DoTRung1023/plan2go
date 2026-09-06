@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { LatLng } from "@/core/model/place";
 import type { PlannedDay } from "@/features/day-planner/compute-trip";
 import { DayPlanner } from "@/features/day-planner/day-planner";
@@ -75,6 +75,8 @@ export function TripEditor({
 }: TripEditorProps) {
   const [chosenIndex, setChosenIndex] = useState(0);
   const [expanded, setExpanded] = useState(false);
+  /** The map and everything drawn over it, which is what fills the screen. */
+  const mapFrame = useRef<HTMLDivElement | null>(null);
   // Clearing the trip, or pulling its last day earlier, can leave fewer days
   // than the one being read. Without this the tab strip shows none of them as
   // chosen and the keyboard cannot reach any of them.
@@ -114,9 +116,10 @@ export function TripEditor({
             : "sticky top-0 z-20 h-[140px] border-b border-rule bg-paper-sunken lg:static lg:h-full lg:min-h-0 lg:border-b-0"
         }
       >
-        <div className="relative h-full w-full">
+        <div ref={mapFrame} className="relative h-full w-full">
           {selected === undefined ? null : (
             <TripMap
+              frame={mapFrame}
               start={selected.plan.start}
               end={selected.plan.end}
               stops={selected.plan.stops}
