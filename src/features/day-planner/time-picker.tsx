@@ -149,8 +149,11 @@ export function TimePicker({
             ? `${placeName} is set for ${label}. Change it.`
             : `${placeName} is at ${label}, worked out from the day. Set a time.`
         }
-        className={`-mr-[5px] rounded-chip px-[5px] font-display text-time whitespace-nowrap tabular-nums hover:bg-neutral-200 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
-          fixed ? "text-terracotta-700" : "text-ink"
+        // The accent says the time is being changed, not that it was fixed:
+        // what a stop is set to is the panel's business, and a colour that
+        // reads as "chosen" on a card nobody is touching says nothing.
+        className={`-mr-[5px] rounded-chip px-[5px] font-display text-time whitespace-nowrap tabular-nums hover:bg-neutral-200 focus-visible:text-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
+          open ? "text-terracotta-700" : "text-ink"
         }`}
       >
         {label}
