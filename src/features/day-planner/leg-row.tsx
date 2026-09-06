@@ -152,6 +152,14 @@ export function LegRow({ leg, planned, conflicts, onChange }: LegRowProps) {
   const covered = leg.durationMinutes !== null;
   const anyWay = planned.options.some((option) => option.durationMinutes !== null);
 
+  /**
+   * The way being used, as it was answered. Numbers but no shape to the route
+   * means nobody could tell us the way, so the row says so where the numbers
+   * are read rather than only inside the panel nobody has opened.
+   */
+  const shown = planned.options.find((option) => option.mode === leg.mode);
+  const crowFlies = covered && shown !== undefined && shown.path === null;
+
   const summary = covered ? (
     <>
       <span
@@ -170,6 +178,9 @@ export function LegRow({ leg, planned, conflicts, onChange }: LegRowProps) {
           {formatDistance(leg.distanceMeters)}
         </span>
       )}
+      {crowFlies ? (
+        <span className="text-micro whitespace-nowrap text-ink-faint">Crow flies</span>
+      ) : null}
     </>
   ) : (
     <span className="text-meta text-ink-muted">
