@@ -159,9 +159,9 @@ export interface TripRepository {
   updateSettings(update: TripSettingsUpdate): Promise<SettingsUpdated>;
 
   /**
-   * Throws away every day, stop and place on a trip and lays down empty days
-   * again. The slug and the edit token survive, so a link already shared keeps
-   * working and keeps pointing at the same planner.
+   * Throws away every day, stop, place and the city a trip was centred on, and
+   * lays down empty days again. The slug and the edit token survive, so a link
+   * already shared keeps working and keeps pointing at the same planner.
    */
   clear(reset: TripReset): Promise<TripCleared>;
 

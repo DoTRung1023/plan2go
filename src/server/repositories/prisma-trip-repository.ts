@@ -393,6 +393,10 @@ export const prismaTripRepository: TripRepository = {
           title: reset.title,
           timeZone: reset.timeZone,
           startDate: reset.startDate,
+          // The city belonged to the trip being thrown away. Left behind, the
+          // map on an emptied trip still opens on somewhere nobody chose.
+          centreLat: null,
+          centreLng: null,
         },
       }),
       db.day.createMany({

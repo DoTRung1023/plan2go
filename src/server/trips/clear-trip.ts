@@ -16,8 +16,9 @@ export interface ClearTripRequest {
  * reason this sits next to the button that starts another trip instead.
  *
  * Nothing survives but the slug and the edit token: the name, the dates, the
- * stops, the places and the time zone all come back as a new trip would have
- * them. A reset that left the old dates behind would be a different button.
+ * stops, the places, the city it was centred on and the time zone all come back
+ * as a new trip would have them. A reset that left the old dates behind would be
+ * a different button.
  */
 export function clearTrip(
   request: ClearTripRequest,
