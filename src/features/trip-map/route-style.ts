@@ -67,10 +67,14 @@ const STROKES: Readonly<Record<TravelMode, RouteStroke>> = {
   },
   cycle: {
     mode: "cycle",
+    // The one mode with no accent left to give it, so it takes the ink itself
+    // rather than a grey out of the middle of the ramp. Against photography a
+    // mid grey is the ground half the time, and the palest step of the palette
+    // around it is what makes the darkest step read.
     label: "Cycling",
-    colorProperty: "--color-neutral-700",
-    inkClass: "text-neutral-700",
-    weight: 4.6,
+    colorProperty: "--color-ink",
+    inkClass: "text-ink",
+    weight: 5,
     dashArray: "6 5",
     roundCaps: false,
     drawn: { kind: "dashes", scale: 3, repeat: "11px" },
