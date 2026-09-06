@@ -20,10 +20,12 @@ const MINUTES = Array.from(
 const HEADING = "px-[2px] text-label font-semibold text-ink-muted";
 
 const LIST =
-  "scroll-quiet mt-[5px] h-[164px] overflow-y-auto rounded-chip border border-rule bg-paper p-1";
+  "scroll-quiet mt-[4px] h-[152px] overflow-y-auto rounded-chip border border-rule bg-paper p-[3px]";
 
+// Two digits every time, so they are centred rather than ranged left against
+// a column no wider than they are.
 const ROW =
-  "block w-full rounded-chip px-[9px] py-[5px] text-left text-meta text-ink tabular-nums hover:bg-terracotta-100 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta";
+  "block w-full rounded-chip px-[6px] py-[4px] text-center text-meta text-ink tabular-nums hover:bg-terracotta-100 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta";
 
 const ROW_CHOSEN = "bg-terracotta-800 text-paper hover:bg-terracotta-800";
 
@@ -160,9 +162,9 @@ export function TimePicker({
               close();
             }
           }}
-          className="absolute top-full right-0 z-30 mt-2 w-[178px] rounded-panel border border-rule bg-paper-raised p-[10px] text-left shadow-md"
+          className="absolute top-full right-0 z-30 mt-2 w-[142px] rounded-panel border border-rule bg-paper-raised p-2 text-left shadow-md"
         >
-          <div className="flex gap-[7px]">
+          <div className="flex gap-[6px]">
             <div className="min-w-0 flex-1">
               <p className={HEADING}>Hour</p>
               <div ref={hours} className={LIST}>
@@ -208,7 +210,7 @@ export function TimePicker({
               setOpen(false);
               onChoose(chosen);
             }}
-            className="mt-[10px] w-full rounded-pill bg-terracotta px-4 py-[7px] text-meta font-semibold text-paper tabular-nums hover:bg-terracotta-600 active:bg-terracotta-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+            className="mt-2 w-full rounded-pill bg-terracotta px-3 py-[6px] text-meta font-semibold text-paper tabular-nums hover:bg-terracotta-600 active:bg-terracotta-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
           >
             Set {formatClock(chosen)}
           </button>
@@ -220,9 +222,9 @@ export function TimePicker({
                 setOpen(false);
                 onClear();
               }}
-              className="mt-[5px] w-full rounded-pill px-4 py-[5px] text-micro font-semibold text-terracotta-700 hover:bg-terracotta-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+              className="mt-[4px] w-full rounded-pill px-2 py-[5px] text-micro font-semibold text-terracotta-700 hover:bg-terracotta-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
             >
-              Let it follow the day
+              Follow the day
             </button>
           ) : null}
         </div>
