@@ -168,8 +168,12 @@ function routeLegs(
  * printed map uses is to give the line an edge of its own, the same shape
  * underneath in the palest thing in the palette, so what the colour is read
  * against is always the same colour.
+ *
+ * An edge, not a line in its own right: this is the width added to the whole
+ * stroke, so half of it shows on each side. Much more and the pale is what the
+ * eye lands on, with the colour a thread down the middle of it.
  */
-const CASING_WEIGHT = 3.4;
+const CASING_WEIGHT = 2.2;
 
 /**
  * Google draws a dash or a dot as a symbol it repeats along an invisible line,
@@ -206,39 +210,16 @@ function polylineOptions(
           strokeColor: color,
           strokeOpacity: 1,
           strokeWeight: weight,
-          scale: stroke.drawn.scale,
+          // A dash is a stroked line, so widening it alone puts the pale edge
+          // down its two long sides and leaves both ends cut flush. Growing it
+          // by half the same width at each end closes the edge all the way
+          // round, which is what the solid line and the dots get for free.
+          scale: stroke.drawn.scale + extraWeight / 2,
         };
 
   return {
     strokeOpacity: 0,
     icons: [{ icon, offset: "0", repeat: stroke.drawn.repeat }],
-  };
-}
-
-/**
- * A leg nobody could give the shape of, drawn as the line between its two ends.
- *
- * The mode's own colour, so it is still that mode, but sparser and fainter than
- * any real route is drawn: it says where you are going rather than how you get
- * there, and a straight line at full strength would pass for a road that runs
- * straight. The list beside it calls the same leg a crow flies.
- */
-function guessedPolylineOptions(color: string): google.maps.PolylineOptions {
-  return {
-    strokeOpacity: 0,
-    icons: [
-      {
-        icon: {
-          path: "M 0,-1 0,1",
-          strokeColor: color,
-          strokeOpacity: 0.5,
-          strokeWeight: 2.6,
-          scale: 4,
-        },
-        offset: "0",
-        repeat: "22px",
-      },
-    ],
   };
 }
 
@@ -348,25 +329,24 @@ export function TripMap({
     routeLegs(start, end, stops, endTravelMode).forEach((leg, index) => {
       const stroke = routeStroke(leg.mode);
       const color = palette.getPropertyValue(stroke.colorProperty).trim();
+      // The road, when whoever answered the leg knew it, and otherwise the line
+      // between its two ends. Both are drawn the same way: a leg nobody could
+      // give the shape of is still the leg you are travelling, and drawing it
+      // faintly only made it hard to find. That it is a straight line is what
+      // says it is a guess, and the list beside the map says so in words.
       const drawn = legPaths[index];
-      const guessed = drawn === null || drawn === undefined;
-      // The road, when whoever answered the leg knew it.
       const path =
         drawn === null || drawn === undefined ? [leg.from, leg.to] : [...drawn];
 
-      // A guess is meant to read faintly, so it is not given an edge that would
-      // make it look as settled as a route somebody actually answered.
-      if (!guessed) {
-        lines.current.push(
-          new maps.Polyline({
-            map,
-            path,
-            clickable: false,
-            zIndex: 1,
-            ...polylineOptions(maps, stroke, casing, CASING_WEIGHT),
-          }),
-        );
-      }
+      lines.current.push(
+        new maps.Polyline({
+          map,
+          path,
+          clickable: false,
+          zIndex: 1,
+          ...polylineOptions(maps, stroke, casing, CASING_WEIGHT),
+        }),
+      );
 
       lines.current.push(
         new maps.Polyline({
@@ -374,9 +354,7 @@ export function TripMap({
           path,
           clickable: false,
           zIndex: 2,
-          ...(guessed
-            ? guessedPolylineOptions(color)
-            : polylineOptions(maps, stroke, color)),
+          ...polylineOptions(maps, stroke, color),
         }),
       );
     });

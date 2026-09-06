@@ -47,9 +47,12 @@ const STROKES: Readonly<Record<TravelMode, RouteStroke>> = {
   },
   transit: {
     mode: "transit",
+    // A step down the ramp from where it started. Sage in the middle of its
+    // range is the colour of the ground it is drawn over, which on imagery of
+    // anywhere green is most of the picture.
     label: "Public transport",
-    colorProperty: "--color-sage-700",
-    inkClass: "text-sage-700",
+    colorProperty: "--color-sage-800",
+    inkClass: "text-sage-800",
     weight: 4.6,
     dashArray: "11 6",
     roundCaps: false,
