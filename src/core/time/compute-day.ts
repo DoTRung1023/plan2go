@@ -107,9 +107,28 @@ export function computeDay({ day, legs }: ComputeDayInput): ComputedDay {
     };
   };
 
-  const beginEpoch = wallClockToEpochMinutes(date, day.startAtMinutes, timeZone);
-  const begins = clockAt(beginEpoch);
   const points = dayPoints(day);
+  const opening = points[0];
+
+  /**
+   * A day that opens on a stop the traveller has fixed begins when that stop
+   * does. There is nothing before it to be late from, so the time they set is
+   * the time the day starts rather than one the day has to reach: it is the
+   * answer to "we are out the door for this", not a booking to be judged
+   * against a morning that has not happened yet.
+   *
+   * Only the opening point counts. A day that starts somewhere of its own, a
+   * hotel say, is already under way by the time it reaches its first stop, and
+   * a time it cannot travel to in time is a real conflict again.
+   */
+  const openingPin =
+    opening?.kind === "stop" && opening.stop.startAtMinutes !== null
+      ? wallClockToEpochMinutes(date, opening.stop.startAtMinutes, timeZone)
+      : null;
+
+  const beginEpoch =
+    openingPin ?? wallClockToEpochMinutes(date, day.startAtMinutes, timeZone);
+  const begins = clockAt(beginEpoch);
 
   const conflicts: Conflict[] = [];
   const computedStops: ComputedStop[] = [];

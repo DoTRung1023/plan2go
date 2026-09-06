@@ -393,19 +393,48 @@ describe("computeDay, stops fixed to a time", () => {
     return { ...stop(name, stayMinutes), startAtMinutes };
   }
 
-  it("waits for a time the day reaches early, and counts the wait", () => {
+  it("begins the day at its first stop when that stop is fixed", () => {
     const plan = day({
       start: null,
       end: null,
       startAtMinutes: 9 * 60,
-      stops: [fixedStop("Tour", 60, 11 * 60)],
+      stops: [fixedStop("Lake", 60, 8 * 60)],
     });
     const result = computeDay({ day: plan, legs: [] });
 
+    // Earlier than the day was set to begin, and not a conflict: there is
+    // nothing before the first stop to have been late from.
+    expect(result.begins.minutesFromMidnight).toBe(8 * 60);
+    expect(result.stops[0]?.arrival?.minutesFromMidnight).toBe(8 * 60);
+    expect(result.stops[0]?.waitMinutes).toBe(0);
+    expect(result.conflicts).toEqual([]);
+  });
+
+  it("still judges a fixed first stop against a day that starts somewhere", () => {
+    const plan = day({
+      end: null,
+      startAtMinutes: 9 * 60,
+      stops: [fixedStop("Lake", 60, 8 * 60)],
+    });
+    const result = computeDay({ day: plan, legs: [leg(10)] });
+
+    expect(result.begins.minutesFromMidnight).toBe(9 * 60);
+    expect(result.conflicts[0]?.kind).toBe("starts-before-arrival");
+  });
+
+  it("waits for a time the day reaches early, and counts the wait", () => {
+    const plan = day({
+      end: null,
+      startAtMinutes: 9 * 60,
+      stops: [fixedStop("Tour", 60, 11 * 60)],
+    });
+    const result = computeDay({ day: plan, legs: [leg(10)] });
+
+    // Out of the hotel at nine, there by ten past, waiting until eleven.
     expect(result.stops[0]?.arrival?.minutesFromMidnight).toBe(11 * 60);
-    expect(result.stops[0]?.waitMinutes).toBe(2 * 60);
+    expect(result.stops[0]?.waitMinutes).toBe(110);
     expect(result.stops[0]?.departure?.minutesFromMidnight).toBe(12 * 60);
-    expect(result.totals.waitingMinutes).toBe(2 * 60);
+    expect(result.totals.waitingMinutes).toBe(110);
     expect(result.conflicts).toEqual([]);
   });
 
