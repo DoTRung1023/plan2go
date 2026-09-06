@@ -103,6 +103,12 @@ function Option({
       <span className="text-meta text-ink-muted tabular-nums">
         {option.distanceMeters === null ? "" : formatDistance(option.distanceMeters)}
       </span>
+      {/* Numbers but no shape to the route: nobody could tell us the way, so
+          this is the line between the two ends at an assumed speed. Said here
+          because the map draws that line the same as any other. */}
+      {unavailable || option.path !== null ? null : (
+        <span className="text-micro text-ink-faint">Crow flies</span>
+      )}
     </button>
   );
 }
