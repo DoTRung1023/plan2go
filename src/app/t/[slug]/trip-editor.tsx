@@ -153,7 +153,7 @@ export function TripEditor({
         </div>
       </section>
 
-      <section className="flex min-h-0 flex-col border-rule lg:h-full lg:min-h-0 lg:border-l">
+      <section className="relative flex min-h-0 flex-col border-rule lg:h-full lg:min-h-0 lg:border-l">
         {/* A reader who cannot edit has no actions to put on the name's row,
             so what they get instead is the reason why. */}
         {editKey === null ? (

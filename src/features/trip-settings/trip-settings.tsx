@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { useActionState, useId, useRef, useState } from "react";
 import { daysBetween } from "@/core/time/zoned";
+import { CheckIcon } from "@/ui/icons";
 import { DateField } from "./date-field";
 
 export interface TripSettingsOutcome {
@@ -114,13 +115,13 @@ export function TripSettings({
   const span = spanOf(first, last);
   const datesChanged = first !== startDate || last !== endDate;
   const changed = name !== title || datesChanged;
-  /** A range that cannot be read comes first, because it is the one to fix. */
-  const note =
-    span === null
-      ? "The last day is before the first day."
-      : state.saved && !pending && !changed
-        ? "Saved."
-        : null;
+  /**
+   * Saying so is the whole of the confirmation, and it is said in the corner:
+   * a line in the column with everything else moved the dates and the day under
+   * them down every time a save landed, which is a panel rearranging itself to
+   * tell you nothing changed.
+   */
+  const saved = state.saved && !pending && !changed && span !== null;
 
   /** The name has no button of its own, so leaving the field is the commit. */
   const commitName = (): void => {
@@ -152,6 +153,19 @@ export function TripSettings({
 
   return (
     <form action={submit} ref={form}>
+      {/* Out of the flow, in the bottom corner of the panel rather than the top
+          of the form: it is the quietest thing said here and it is said last,
+          so it sits where nothing is in the way of it. */}
+      <p
+        aria-live="polite"
+        className={`absolute right-5 bottom-4 z-20 flex items-center gap-[4px] rounded-pill bg-sage-600 px-[10px] py-[4px] text-label font-semibold text-paper shadow-sm transition-opacity lg:right-[26px] ${
+          saved ? "opacity-100" : "opacity-0"
+        }`}
+      >
+        <CheckIcon size={11} strokeWidth={3} />
+        {saved ? "Saved" : ""}
+      </p>
+
       <input type="hidden" name="slug" value={slug} />
       <input type="hidden" name="editKey" value={editKey} />
 
@@ -204,7 +218,7 @@ export function TripSettings({
         ) : null}
       </div>
 
-      <div className="mt-[10px] grid grid-cols-2 gap-3">
+      <div className="relative mt-[10px] grid grid-cols-2 gap-3">
         <DateField
           id={`${fieldId}-first`}
           name="startDate"
@@ -225,10 +239,19 @@ export function TripSettings({
           footer={saveDates}
           onClose={abandonDates}
         />
+
+        {/* Hung off the dates the way the name's message is hung off the name,
+            and over what is under it rather than in the column with it. */}
+        {span === null ? (
+          <p
+            role="alert"
+            className="absolute top-full left-0 z-20 mt-[5px] max-w-full rounded-chip bg-terracotta-200 px-[11px] py-[6px] text-micro font-semibold text-terracotta-900 shadow-md"
+          >
+            The last day is before the first day.
+          </p>
+        ) : null}
       </div>
 
-      {/* Only when there is something to say. The days themselves are the count. */}
-      {note === null ? null : <p className="mt-2 text-meta text-ink-muted">{note}</p>}
 
       {state.error === null || state.field !== null ? null : (
         <p

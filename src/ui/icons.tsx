@@ -48,6 +48,14 @@ export function PlusIcon(props: IconProps) {
   );
 }
 
+export function CheckIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="M20 6 9 17l-5-5" />
+    </Glyph>
+  );
+}
+
 export function MinusIcon(props: IconProps) {
   return (
     <Glyph {...props}>
