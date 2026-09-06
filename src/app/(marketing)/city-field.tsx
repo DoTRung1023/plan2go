@@ -74,7 +74,10 @@ export function CityField({
   const searching = searched && answered !== trimmed;
 
   useEffect(() => {
-    if (!searched || countryCode === "") {
+    // A picked city writes its own name into the field. Searching for that name
+    // would answer with the city already chosen and open the list back over the
+    // answer, so a name that is already the answer is not a question.
+    if (!searched || countryCode === "" || chosen?.name === trimmed) {
       return;
     }
     const timer = setTimeout(() => {
@@ -117,7 +120,7 @@ export function CityField({
     return () => {
       clearTimeout(timer);
     };
-  }, [trimmed, searched, countryCode]);
+  }, [trimmed, searched, countryCode, chosen]);
 
   useEffect(() => {
     if (!open) {
@@ -142,6 +145,9 @@ export function CityField({
   const pick = (city: City): void => {
     onChange(city);
     setQuery(city.name);
+    // The field now holds a city that was picked rather than a question waiting
+    // on an answer, so nothing is left looking.
+    setAnswered(city.name);
     setOpen(false);
   };
 
