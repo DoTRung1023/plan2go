@@ -188,6 +188,15 @@ export function StopCard({
                 onClear={index === 0 ? undefined : clearStartAt}
               />
             )}
+            {stop.overlapMinutes === 0 ? null : (
+              /* Said where it happens and nowhere else: the day was still
+                 somewhere else when this stop was due to start. Not a refusal
+                 and not a correction, only the number. */
+              <p className="text-micro font-semibold whitespace-nowrap text-terracotta-700 tabular-nums">
+                Overlaps by {formatDuration(stop.overlapMinutes)}
+              </p>
+            )}
+
             {actions === null ? null : (
               <div className="-mr-1 flex items-center opacity-55 group-hover:opacity-100 focus-within:opacity-100">
                 {/* A handle, not a shortcut. The arrow keys are left to the

@@ -436,6 +436,7 @@ describe("computeDay, stops fixed to a time", () => {
     // Out of the hotel at nine, there by ten past, waiting until eleven.
     expect(result.stops[0]?.arrival?.minutesFromMidnight).toBe(11 * 60);
     expect(result.stops[0]?.waitMinutes).toBe(110);
+    expect(result.stops[0]?.overlapMinutes).toBe(0);
     expect(result.stops[0]?.departure?.minutesFromMidnight).toBe(12 * 60);
     expect(result.totals.waitingMinutes).toBe(110);
     expect(result.conflicts).toEqual([]);
@@ -470,6 +471,8 @@ describe("computeDay, stops fixed to a time", () => {
     expect(result.stops[1]?.waitMinutes).toBe(0);
     expect(result.totals.waitingMinutes).toBe(0);
     expect(result.conflicts).toEqual([]);
+    // Half past twelve against a stop set for ten.
+    expect(result.stops[1]?.overlapMinutes).toBe(150);
   });
 
   it("times a stop again after a leg nobody could answer", () => {

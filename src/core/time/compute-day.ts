@@ -42,6 +42,13 @@ export interface ComputedStop {
   readonly stayMinutes: number;
   /** Minutes spent waiting for the place to open before the stay begins. */
   readonly waitMinutes: number;
+  /**
+   * Minutes by which the day was still elsewhere when this stop was due to
+   * begin. Zero for every ordinary stop: it can only happen where a time was
+   * fixed to something the day gets to later, which is allowed and is the
+   * traveller's to sort out.
+   */
+  readonly overlapMinutes: number;
 }
 
 export interface DayTotals {
@@ -210,6 +217,7 @@ export function computeDay({ day, legs }: ComputeDayInput): ComputedDay {
         departure: null,
         stayMinutes: stop.stayMinutes,
         waitMinutes: 0,
+        overlapMinutes: 0,
       });
       return;
     }
@@ -222,8 +230,10 @@ export function computeDay({ day, legs }: ComputeDayInput): ComputedDay {
      */
     const at = pin === null ? cursor : pin.epoch;
     // Only time actually spent standing about counts. A stop the day arrives
-    // at after its time was not waited for.
+    // at after its time was not waited for: it was overlapped instead, which is
+    // measured rather than corrected.
     const waitForPin = Math.max(0, at - cursor);
+    const overlapMinutes = Math.max(0, cursor - at);
     waitingMinutes += waitForPin;
 
     const arrival = clockAt(at);
@@ -247,6 +257,7 @@ export function computeDay({ day, legs }: ComputeDayInput): ComputedDay {
       departure: clockAt(departureEpoch),
       stayMinutes: stop.stayMinutes,
       waitMinutes: waitForPin + check.waitMinutes,
+      overlapMinutes,
     });
     cursor = departureEpoch;
   };
