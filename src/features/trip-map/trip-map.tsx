@@ -160,6 +160,18 @@ function routeLegs(
 }
 
 /**
+ * How much wider the pale line under a route is drawn.
+ *
+ * Photography is not a background, it is a picture: a road, a roof and a field
+ * are all in it, at every lightness there is, and a coloured line laid onto
+ * that disappears wherever the ground happens to match it. The answer every
+ * printed map uses is to give the line an edge of its own, the same shape
+ * underneath in the palest thing in the palette, so what the colour is read
+ * against is always the same colour.
+ */
+const CASING_WEIGHT = 3.4;
+
+/**
  * Google draws a dash or a dot as a symbol it repeats along an invisible line,
  * not as a stroke pattern, so a patterned mode hides its own stroke and hands
  * the shape over to the icons.
@@ -168,12 +180,15 @@ function polylineOptions(
   maps: typeof google.maps,
   stroke: RouteStroke,
   color: string,
+  extraWeight = 0,
 ): google.maps.PolylineOptions {
+  const weight = stroke.weight + extraWeight;
+
   if (stroke.drawn.kind === "solid") {
     return {
       strokeColor: color,
       strokeOpacity: 1,
-      strokeWeight: stroke.weight,
+      strokeWeight: weight,
     };
   }
 
@@ -184,13 +199,13 @@ function polylineOptions(
           fillColor: color,
           fillOpacity: 1,
           strokeOpacity: 0,
-          scale: stroke.weight / 2,
+          scale: weight / 2,
         }
       : {
           path: "M 0,-1 0,1",
           strokeColor: color,
           strokeOpacity: 1,
-          strokeWeight: stroke.weight,
+          strokeWeight: weight,
           scale: stroke.drawn.scale,
         };
 
@@ -329,20 +344,36 @@ export function TripMap({
 
     // Under the markers, so a line never crosses the number it belongs to.
     const palette = getComputedStyle(document.documentElement);
+    const casing = palette.getPropertyValue("--color-paper").trim();
     routeLegs(start, end, stops, endTravelMode).forEach((leg, index) => {
       const stroke = routeStroke(leg.mode);
       const color = palette.getPropertyValue(stroke.colorProperty).trim();
       const drawn = legPaths[index];
       const guessed = drawn === null || drawn === undefined;
+      // The road, when whoever answered the leg knew it.
+      const path =
+        drawn === null || drawn === undefined ? [leg.from, leg.to] : [...drawn];
+
+      // A guess is meant to read faintly, so it is not given an edge that would
+      // make it look as settled as a route somebody actually answered.
+      if (!guessed) {
+        lines.current.push(
+          new maps.Polyline({
+            map,
+            path,
+            clickable: false,
+            zIndex: 1,
+            ...polylineOptions(maps, stroke, casing, CASING_WEIGHT),
+          }),
+        );
+      }
+
       lines.current.push(
         new maps.Polyline({
           map,
-          // The road, when whoever answered the leg knew it.
-          path:
-            drawn === null || drawn === undefined
-              ? [leg.from, leg.to]
-              : [...drawn],
+          path,
           clickable: false,
+          zIndex: 2,
           ...(guessed
             ? guessedPolylineOptions(color)
             : polylineOptions(maps, stroke, color)),
