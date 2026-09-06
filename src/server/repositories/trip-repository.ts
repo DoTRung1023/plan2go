@@ -169,9 +169,25 @@ export interface TripRepository {
   /**
    * Takes a stop off its day. The stops after it close the gap, so positions
    * stay contiguous and the next stop added lands at the end.
+   *
+   * Fixed times stay with the positions here too: the stops that move down take
+   * the times above them, and the day loses its last slot rather than the one
+   * the departing stop was in. A day of a nine o'clock, a noon and a three
+   * o'clock stays a day of a nine o'clock and a noon.
    */
   removeStop(removal: StopRemoval): Promise<StopChanged>;
 
-  /** Moves a stop to another place in the order of its day. */
+  /**
+   * Moves a stop to another place in the order of its day.
+   *
+   * Fixed times stay with the positions, not with the places: a stop dragged
+   * into the two o'clock slot happens at two o'clock, and the one it displaced
+   * takes whatever time it was moved into. How long a place is worth staying
+   * for belongs to the place and travels with it; when it happens is a property
+   * of the day's shape.
+   *
+   * A move is never refused for the times it produces. Rearranging a day is
+   * allowed to make it impossible, and the day says so where it is read.
+   */
   moveStop(move: StopMove): Promise<StopChanged>;
 }

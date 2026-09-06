@@ -306,14 +306,30 @@ export const prismaTripRepository: TripRepository = {
       return { status: "refused" };
     }
 
+    const order = await db.stop.findMany({
+      where: { dayId: stop.dayId },
+      orderBy: { position: "asc" },
+      select: { id: true, startAtMinutes: true },
+    });
+
+    // A fixed time is a slot in the day rather than something a place owns, so
+    // the times stay where they are: each stop after the gap moves down into
+    // the time above it, and the last slot leaves with the stop that left.
+    const times = order.map((row) => row.startAtMinutes);
+    const after = order.filter((row) => row.id !== stop.id).slice(stop.position);
+
     // The stops after it close the gap in the same transaction, so a day is
     // never briefly missing a position and the next stop added lands at the end
-    // rather than on top of an existing one.
+    // rather than on top of an existing one. In order, because each one moves
+    // down into the place the one before it has just left.
     await db.$transaction([
       db.stop.delete({ where: { id: stop.id } }),
-      db.stop.updateMany({
-        where: { dayId: stop.dayId, position: { gt: stop.position } },
-        data: { position: { decrement: 1 } },
+      ...after.map((row, offset) => {
+        const position = stop.position + offset;
+        return db.stop.update({
+          where: { id: row.id },
+          data: { position, startAtMinutes: times[position] ?? null },
+        });
       }),
     ]);
     return { status: "changed" };
@@ -336,8 +352,13 @@ export const prismaTripRepository: TripRepository = {
     const order = await db.stop.findMany({
       where: { dayId: stop.dayId },
       orderBy: { position: "asc" },
-      select: { id: true },
+      select: { id: true, startAtMinutes: true },
     });
+
+    // Read off the order as it stands, and written back by position below. A
+    // fixed time is a slot in the day rather than something the place owns, so
+    // it stays where it is and whatever lands on it takes it.
+    const times = order.map((row) => row.startAtMinutes);
 
     const from = order.findIndex((row) => row.id === stop.id);
     const to = Math.max(0, Math.min(move.toPosition, order.length - 1));
@@ -362,7 +383,10 @@ export const prismaTripRepository: TripRepository = {
       }),
     );
     const settled = moved.map((row, index) =>
-      db.stop.update({ where: { id: row.id }, data: { position: index } }),
+      db.stop.update({
+        where: { id: row.id },
+        data: { position: index, startAtMinutes: times[index] ?? null },
+      }),
     );
     await db.$transaction([...parked, ...settled]);
 
