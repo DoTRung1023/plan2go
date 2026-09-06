@@ -501,6 +501,19 @@ export function TripMap({
           className="absolute top-[52px] right-[14px] z-[2] lg:top-[22px] lg:right-[22px]"
           ref={types}
         >
+          {/* Nothing to read: it is the four words themselves, laid out and
+              hidden, so this corner is exactly as wide as the widest thing it
+              can ever say. The button and the list then both take that width
+              and agree without either being told a number, and the button
+              stops changing width as the ground changes under it. */}
+          <div aria-hidden="true" className="invisible h-0 overflow-hidden px-[6px]">
+            {MAP_TYPES.map((one) => (
+              <p key={one.id} className="px-[9px] text-micro font-semibold whitespace-nowrap">
+                {one.label}
+              </p>
+            ))}
+          </div>
+
           <button
             type="button"
             aria-haspopup="dialog"
@@ -508,7 +521,7 @@ export function TripMap({
             onClick={() => {
               setChoosingType(!choosingType);
             }}
-            className={`${WORD_CONTROL} ${PILL}`}
+            className={`${WORD_CONTROL} ${PILL} w-full`}
           >
             {MAP_TYPES.find((one) => one.id === mapType)?.label ?? "Map"}
           </button>
@@ -523,7 +536,7 @@ export function TripMap({
                   setChoosingType(false);
                 }
               }}
-              className="absolute top-full right-0 mt-2 rounded-panel border border-rule bg-paper-raised p-[5px] shadow-md"
+              className="absolute top-full right-0 mt-2 w-full rounded-panel border border-rule bg-paper-raised p-[5px] shadow-md"
             >
               {MAP_TYPES.map((one) => (
                 <button
