@@ -47,8 +47,9 @@ interface TripActionsProps {
  * up again. The emptied trip keeps its link, so anyone already holding it still
  * opens the planner they were given, with nothing on it. Starting another
  * leaves this trip alone and opens the front page in its own tab, so the trip
- * being read is still there behind it. The two names carry that on their own,
- * so nothing is written under them.
+ * being read is still there behind it. Both are named in a word or two, so the
+ * trip's name beside them keeps the width: what resetting costs is spelled out
+ * in the question it asks, which is where it matters.
  *
  * Resetting asks first. Every day, stop and place is deleted for good and there
  * is nothing to undo it with, which is exactly the kind of button that should
@@ -123,11 +124,11 @@ export function TripActions({ slug, onClear, startAnotherPath }: TripActionsProp
           }}
           className={BUTTON}
         >
-          {clearing ? "Resetting" : "Reset this trip"}
+          {clearing ? "Resetting" : "Reset"}
         </button>
         {/* Its own tab, so the trip being read is still there behind it. */}
         <Link href={startAnotherPath} target="_blank" className={BUTTON}>
-          Start another trip
+          New trip
         </Link>
       </div>
 
