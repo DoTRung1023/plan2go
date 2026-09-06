@@ -28,7 +28,8 @@ interface TripActionsProps {
 }
 
 /**
- * The two ways to begin again, at the top of the page beside the logo. They are
+ * The two ways to begin again, on the trip's name row at the top of the panel.
+ * They are
  * not the same thing and are named apart, because the difference between them
  * is what happens to the trip you are looking at.
  *

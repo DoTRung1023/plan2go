@@ -62,7 +62,7 @@ export function DayPlanner({
 
   return (
     <>
-      <div className={`shrink-0 pb-[10px] ${GUTTER}`}>
+      <div className={`shrink-0 pt-4 pb-[10px] ${GUTTER}`}>
         {settings ?? (
           <>
             <h1 className="font-display text-title text-ink">{title}</h1>

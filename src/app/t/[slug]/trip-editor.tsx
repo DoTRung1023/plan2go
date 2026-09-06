@@ -1,10 +1,7 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
-import lockup from "../../../../logo/logo-text.png";
 import type { LatLng } from "@/core/model/place";
 import type { PlannedDay } from "@/features/day-planner/compute-trip";
 import { DayPlanner } from "@/features/day-planner/day-planner";
@@ -150,19 +147,13 @@ export function TripEditor({
       </section>
 
       <section className="flex min-h-0 flex-col border-rule lg:h-full lg:min-h-0 lg:border-l">
-        <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 px-5 pt-4 pb-3 lg:px-[26px]">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 rounded-chip focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
-          >
-            <Image src={lockup} alt="plan2go" width={112} height={41} priority />
-          </Link>
-          {canEdit ? (
-            <TripActions slug={slug} onClear={clearTripAction} startAnotherPath="/" />
-          ) : (
-            <p className="text-meta text-ink-muted">Shared with you, read only</p>
-          )}
-        </div>
+        {/* A reader who cannot edit has no actions to put on the name's row,
+            so what they get instead is the reason why. */}
+        {canEdit ? null : (
+          <p className="shrink-0 px-5 pt-4 text-meta text-ink-muted lg:px-[26px]">
+            Shared with you, read only
+          </p>
+        )}
 
         <DayPlanner
           title={title}
@@ -190,6 +181,13 @@ export function TripEditor({
                 title={title}
                 startDate={first.plan.date}
                 endDate={last.plan.date}
+                actions={
+                  <TripActions
+                    slug={slug}
+                    onClear={clearTripAction}
+                    startAnotherPath="/"
+                  />
+                }
                 onSave={updateTripAction}
               />
             ) : null

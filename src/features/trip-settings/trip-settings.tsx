@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useActionState, useId, useRef, useState } from "react";
 import { daysBetween } from "@/core/time/zoned";
 import { DateField } from "./date-field";
@@ -13,15 +14,26 @@ const UNSAVED: TripSettingsOutcome = { saved: false, error: null };
 
 const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
-/** The name is the heading, so it is set in the heading's own type. */
+/**
+ * The name is the heading, so it is set in the heading's own type. It shares
+ * its row with the trip's actions and gives way to them, down to the width a
+ * trip name still reads at, below which the row wraps instead.
+ */
 const NAME_FIELD =
-  "w-full rounded-pill border border-rule bg-paper-raised px-[18px] py-[6px] font-display text-title text-ink caret-terracotta hover:border-rule-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "min-w-[200px] flex-1 rounded-pill border border-rule bg-paper-raised px-[18px] py-[6px] font-display text-title text-ink caret-terracotta hover:border-rule-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 interface TripSettingsProps {
   readonly slug: string;
   readonly title: string;
   readonly startDate: string;
   readonly endDate: string;
+  /**
+   * What can be done to the trip as a whole. It sits on the name's row, at the
+   * top of the panel, because that row is the trip itself rather than a day in
+   * it. Passed in for the same reason the save is: a feature does not know the
+   * app's routes or its mutations.
+   */
+  readonly actions: ReactNode;
   /**
    * Passed in rather than imported, because a feature may not reach into the
    * route that owns the mutation.
@@ -57,6 +69,7 @@ export function TripSettings({
   title,
   startDate,
   endDate,
+  actions,
   onSave,
 }: TripSettingsProps) {
   const [state, submit, pending] = useActionState(onSave, UNSAVED);
@@ -135,28 +148,31 @@ export function TripSettings({
       <label className="sr-only" htmlFor={`${fieldId}-title`}>
         Trip name
       </label>
-      <input
-        id={`${fieldId}-title`}
-        name="title"
-        type="text"
-        required
-        maxLength={80}
-        value={name}
-        onChange={(event) => {
-          setName(event.target.value);
-        }}
-        onBlur={commitName}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") {
-            // The browser would submit anyway, but only sometimes: implicit
-            // submission depends on the form having a submit button, and this
-            // one only has one while a calendar is open.
-            event.preventDefault();
-            commitName();
-          }
-        }}
-        className={NAME_FIELD}
-      />
+      <div className="flex flex-wrap items-center gap-3">
+        <input
+          id={`${fieldId}-title`}
+          name="title"
+          type="text"
+          required
+          maxLength={80}
+          value={name}
+          onChange={(event) => {
+            setName(event.target.value);
+          }}
+          onBlur={commitName}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              // The browser would submit anyway, but only sometimes: implicit
+              // submission depends on the form having a submit button, and this
+              // one only has one while a calendar is open.
+              event.preventDefault();
+              commitName();
+            }
+          }}
+          className={NAME_FIELD}
+        />
+        {actions === null ? null : <div className="shrink-0">{actions}</div>}
+      </div>
 
       <div className="mt-[10px] grid grid-cols-2 gap-3">
         <DateField
