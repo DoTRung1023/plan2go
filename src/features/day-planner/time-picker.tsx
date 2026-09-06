@@ -39,7 +39,11 @@ interface TimePickerProps {
   readonly label: string;
   readonly placeName: string;
   readonly onChoose: (minutes: number) => void;
-  readonly onClear: () => void;
+  /**
+   * Absent where following makes no sense, and the panel then offers no way to
+   * stop fixing the time.
+   */
+  readonly onClear?: () => void;
 }
 
 /**
@@ -215,7 +219,7 @@ export function TimePicker({
             Set {formatClock(chosen)}
           </button>
 
-          {fixed ? (
+          {fixed && onClear !== undefined ? (
             <button
               type="button"
               onClick={() => {

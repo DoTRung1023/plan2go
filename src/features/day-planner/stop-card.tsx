@@ -183,7 +183,9 @@ export function StopCard({
                 }
                 placeName={stop.placeName}
                 onChoose={setStartAt}
-                onClear={clearStartAt}
+                // The first stop is what the day opens on, so following what
+                // came before it is not offered there.
+                onClear={index === 0 ? undefined : clearStartAt}
               />
             )}
             {actions === null ? null : (
