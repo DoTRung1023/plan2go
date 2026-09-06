@@ -45,6 +45,8 @@ interface TripEditorProps {
   readonly days: readonly PlannedDay[];
   /** The city the trip is in, where the map opens and a search looks first. */
   readonly centre: LatLng | null;
+  /** Today's date in the trip's own zone, so the day strip can mark it. */
+  readonly today: string;
   /**
    * The key out of the edit link, or null for the plain one. It decides both
    * what is offered and what the actions are allowed to do, because it is the
@@ -68,6 +70,7 @@ export function TripEditor({
   slug,
   days,
   centre,
+  today,
   editKey,
 }: TripEditorProps) {
   const [chosenIndex, setChosenIndex] = useState(0);
@@ -166,6 +169,7 @@ export function TripEditor({
         <DayPlanner
           title={title}
           days={days}
+          today={today}
           selectedIndex={selectedIndex}
           onSelect={setChosenIndex}
           onAddDay={

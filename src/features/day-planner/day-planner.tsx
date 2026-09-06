@@ -11,6 +11,8 @@ import { formatDayDate } from "./format-day-date";
 interface DayPlannerProps {
   readonly title: string;
   readonly days: readonly PlannedDay[];
+  /** Today in the trip's zone, or a date no day matches when it is not on. */
+  readonly today: string;
   readonly selectedIndex: number;
   readonly onSelect: (index: number) => void;
   /**
@@ -58,6 +60,7 @@ function dateRange(days: readonly PlannedDay[]): string | null {
 export function DayPlanner({
   title,
   days,
+  today,
   selectedIndex,
   onSelect,
   settings,
@@ -86,6 +89,7 @@ export function DayPlanner({
       >
         <DayTabs
           days={days.map((day) => day.plan)}
+          today={today}
           selectedIndex={selectedIndex}
           onSelect={onSelect}
           onAddDay={onAddDay}

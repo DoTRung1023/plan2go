@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { computeTrip } from "@/features/day-planner/compute-trip";
 import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
+import { todayIn } from "@/server/trips/time-zones";
 import { TripEditor } from "./trip-editor";
 import { travelProvider } from "./travel";
 
@@ -35,6 +36,9 @@ export async function TripPage({ slug, editKey }: TripPageProps) {
       slug={trip.slug}
       days={days}
       centre={trip.centre}
+      /* Today where the trip is, not where the reader is: a trip in Hanoi read
+         from Adelaide is on its Tuesday, whatever the reader's clock says. */
+      today={todayIn(trip.timeZone)}
       editKey={editKey}
     />
   );

@@ -10,6 +10,12 @@ import "./day-tabs.css";
 
 interface DayTabsProps {
   readonly days: readonly DayPlan[];
+  /**
+   * Today in the trip's own zone. It matches no day at all on a trip that has
+   * not started or is over, which is the ordinary case for a trip being
+   * planned, so nothing is marked then.
+   */
+  readonly today: string;
   readonly selectedIndex: number;
   readonly onSelect: (index: number) => void;
   /**
@@ -34,7 +40,13 @@ function stopLine(day: DayPlan): string {
 const TAB =
   "flex shrink-0 flex-col items-center gap-[2px] rounded-pill border px-[15px] pt-[5px] pb-[6px] whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
-export function DayTabs({ days, selectedIndex, onSelect, onAddDay }: DayTabsProps) {
+export function DayTabs({
+  days,
+  today,
+  selectedIndex,
+  onSelect,
+  onAddDay,
+}: DayTabsProps) {
   const tabs = useRef<(HTMLButtonElement | null)[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [adding, startAdding] = useTransition();
@@ -90,6 +102,13 @@ export function DayTabs({ days, selectedIndex, onSelect, onAddDay }: DayTabsProp
         >
       {days.map((day, index) => {
         const selected = index === selectedIndex;
+        /**
+         * Sage, the second voice, so it never argues with the terracotta that
+         * means "the day you are reading". Being chosen is the louder fact of
+         * the two, so a day that is both is drawn as chosen and says the rest
+         * in words a screen reader reads out.
+         */
+        const isToday = day.date === today;
         return (
           <button
             key={day.id}
@@ -111,9 +130,12 @@ export function DayTabs({ days, selectedIndex, onSelect, onAddDay }: DayTabsProp
             className={`${TAB} ${
               selected
                 ? "border-terracotta-800 bg-terracotta-800 text-paper"
-                : "border-rule bg-transparent text-ink-muted hover:border-rule-strong"
+                : isToday
+                  ? "border-sage-600 bg-sage-100 text-sage-800 hover:border-sage-700"
+                  : "border-rule bg-transparent text-ink-muted hover:border-rule-strong"
             }`}
           >
+            {isToday ? <span className="sr-only">Today. </span> : null}
             <span className="text-meta font-semibold">Day {index + 1}</span>
             <span className="text-tick tabular-nums opacity-80">
               {formatDayDate(day.date)}
