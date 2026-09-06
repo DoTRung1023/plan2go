@@ -27,11 +27,6 @@ const ROW =
 
 const ROW_CHOSEN = "bg-terracotta-800 text-paper hover:bg-terracotta-800";
 
-/** "12 am", "9 am", "12 pm", "9 pm". The half of the day rides with the hour. */
-function hourLabel(hour: number): string {
-  return `${String(hour % 12 === 0 ? 12 : hour % 12)} ${hour < 12 ? "am" : "pm"}`;
-}
-
 interface TimePickerProps {
   /** The time on the card: the one that is fixed, or the one worked out. */
   readonly value: number;
@@ -53,11 +48,12 @@ interface TimePickerProps {
  * a page meant to read like a printed guide, a system widget arrives as a
  * system widget. This is that control in the palette from DESIGN.md.
  *
- * Two lists rather than two grids and a third control: the half of the day
- * rides along with the hour, so there is nothing to choose that is not either
- * an hour or a minute. Nothing is written while you are choosing, because two
- * taps would otherwise be two trips to the server and one time the traveller
- * never meant, so the button underneath says what it will set and does it once.
+ * Two lists rather than two grids and a third control. The hour runs 00 to 23,
+ * which is what removes the third: there is nothing to choose that is not
+ * either an hour or a minute. Nothing is written while you are choosing,
+ * because two taps would otherwise be two trips to the server and one time the
+ * traveller never meant, so the button underneath says what it will set and
+ * does it once.
  */
 export function TimePicker({
   value,
@@ -164,7 +160,7 @@ export function TimePicker({
               close();
             }
           }}
-          className="absolute top-full right-0 z-30 mt-2 w-[206px] rounded-panel border border-rule bg-paper-raised p-[10px] text-left shadow-md"
+          className="absolute top-full right-0 z-30 mt-2 w-[178px] rounded-panel border border-rule bg-paper-raised p-[10px] text-left shadow-md"
         >
           <div className="flex gap-[7px]">
             <div className="min-w-0 flex-1">
@@ -180,7 +176,7 @@ export function TimePicker({
                     }}
                     className={`${ROW} ${one === hour ? ROW_CHOSEN : ""}`}
                   >
-                    {hourLabel(one)}
+                    {String(one).padStart(2, "0")}
                   </button>
                 ))}
               </div>
