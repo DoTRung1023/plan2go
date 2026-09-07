@@ -3,7 +3,6 @@
 import type { ReactNode } from "react";
 import { useActionState, useId, useRef, useState } from "react";
 import { daysBetween } from "@/core/time/zoned";
-import { CheckIcon } from "@/ui/icons";
 import { DateField } from "./date-field";
 
 export interface TripSettingsOutcome {
@@ -114,15 +113,6 @@ export function TripSettings({
 
   const span = spanOf(first, last);
   const datesChanged = first !== startDate || last !== endDate;
-  const changed = name !== title || datesChanged;
-  /**
-   * Saying so is the whole of the confirmation, and it is said in the corner:
-   * a line in the column with everything else moved the dates and the day under
-   * them down every time a save landed, which is a panel rearranging itself to
-   * tell you nothing changed.
-   */
-  const saved = state.saved && !pending && !changed && span !== null;
-
   /** The name has no button of its own, so leaving the field is the commit. */
   const commitName = (): void => {
     if (!pending && name !== title) {
@@ -153,19 +143,6 @@ export function TripSettings({
 
   return (
     <form action={submit} ref={form}>
-      {/* Out of the flow, in the bottom corner of the panel rather than the top
-          of the form: it is the quietest thing said here and it is said last,
-          so it sits where nothing is in the way of it. */}
-      <p
-        aria-live="polite"
-        className={`absolute right-5 bottom-4 z-20 flex items-center gap-[4px] rounded-pill bg-sage-600 px-[10px] py-[4px] text-label font-semibold text-paper shadow-sm transition-opacity lg:right-[26px] ${
-          saved ? "opacity-100" : "opacity-0"
-        }`}
-      >
-        <CheckIcon size={11} strokeWidth={3} />
-        {saved ? "Saved" : ""}
-      </p>
-
       <input type="hidden" name="slug" value={slug} />
       <input type="hidden" name="editKey" value={editKey} />
 

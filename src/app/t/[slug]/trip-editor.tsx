@@ -8,6 +8,7 @@ import { DayPlanner } from "@/features/day-planner/day-planner";
 import { PlaceSearch } from "@/features/place-search/place-search";
 import { searchBias } from "@/features/place-search/search-bias";
 import { ShareLinks } from "@/features/trip-settings/share-links";
+import { SavedNote } from "@/features/trip-settings/saved-note";
 import { TripActions } from "@/features/trip-settings/trip-actions";
 import { TripSettings } from "@/features/trip-settings/trip-settings";
 import { addDayAction } from "./add-day-action";
@@ -75,6 +76,23 @@ export function TripEditor({
 }: TripEditorProps) {
   const [chosenIndex, setChosenIndex] = useState(0);
   const [expanded, setExpanded] = useState(false);
+  /**
+   * When the last change landed. Every way of changing this trip reports here,
+   * so the one notice in the corner speaks for all of them: a note written, a
+   * stop dragged, a day added and the name itself are all the same fact to
+   * whoever is watching for it, which is that it is written down.
+   */
+  const [savedAt, setSavedAt] = useState(0);
+
+  const recording = <T extends { readonly error: string | null }>(
+    change: Promise<T>,
+  ): Promise<T> =>
+    change.then((outcome) => {
+      if (outcome.error === null) {
+        setSavedAt(Date.now());
+      }
+      return outcome;
+    });
   // Clearing the trip, or pulling its last day earlier, can leave fewer days
   // than the one being read. Without this the tab strip shows none of them as
   // chosen and the keyboard cannot reach any of them.
@@ -147,7 +165,7 @@ export function TripEditor({
                     selectedIndex,
                     centre,
                   )}
-                  onAdd={(input) => addStopAction({ ...input, editKey })}
+                  onAdd={(input) => recording(addStopAction({ ...input, editKey }))}
                 />
               </div>
             ) : null}
@@ -173,6 +191,8 @@ export function TripEditor({
           </p>
         ) : null}
 
+        <SavedNote at={savedAt} />
+
         <DayPlanner
           title={title}
           days={days}
@@ -180,28 +200,39 @@ export function TripEditor({
           selectedIndex={selectedIndex}
           onSelect={setChosenIndex}
           onAddDay={
-            editKey === null ? null : () => addDayAction({ slug, editKey })
+            editKey === null
+              ? null
+              : () => recording(addDayAction({ slug, editKey }))
           }
           actions={
             editKey !== null && selected !== undefined
               ? {
                   changeLegMode: ({ stopId, mode }) =>
-                    setLegModeAction({
-                      slug,
-                      editKey,
-                      dayId: selected.plan.id,
-                      stopId,
-                      mode,
-                    }),
+                    recording(
+                      setLegModeAction({
+                        slug,
+                        editKey,
+                        dayId: selected.plan.id,
+                        stopId,
+                        mode,
+                      }),
+                    ),
                   setStay: ({ stopId, stayMinutes }) =>
-                    setStopStayAction({ slug, editKey, stopId, stayMinutes }),
+                    recording(
+                      setStopStayAction({ slug, editKey, stopId, stayMinutes }),
+                    ),
                   setStartAt: ({ stopId, startAtMinutes }) =>
-                    setStopStartAtAction({ slug, editKey, stopId, startAtMinutes }),
+                    recording(
+                      setStopStartAtAction({ slug, editKey, stopId, startAtMinutes }),
+                    ),
                   setNote: ({ stopId, note }) =>
-                    setStopNoteAction({ slug, editKey, stopId, note }),
-                  removeStop: ({ stopId }) => removeStopAction({ slug, editKey, stopId }),
+                    recording(setStopNoteAction({ slug, editKey, stopId, note })),
+                  removeStop: ({ stopId }) =>
+                    recording(removeStopAction({ slug, editKey, stopId })),
                   moveStop: ({ stopId, toPosition }) =>
-                    moveStopAction({ slug, editKey, stopId, toPosition }),
+                    recording(
+                      moveStopAction({ slug, editKey, stopId, toPosition }),
+                    ),
                 }
               : null
           }
@@ -224,7 +255,9 @@ export function TripEditor({
                     />
                   </>
                 }
-                onSave={updateTripAction}
+                onSave={(previous, formData) =>
+                  recording(updateTripAction(previous, formData))
+                }
               />
             ) : null
           }
