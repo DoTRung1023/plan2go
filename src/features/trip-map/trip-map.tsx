@@ -58,7 +58,10 @@ type MapState =
  */
 const MAP_TYPES = [
   { id: "hybrid", label: "Hybrid" },
-  { id: "roadmap", label: "Map" },
+  // Not "Map", which on a map says nothing, and not Google's own "Default",
+  // which would be a lie here: the default is the imagery above it. What it
+  // draws is streets, so that is what it is called.
+  { id: "roadmap", label: "Streets" },
   { id: "satellite", label: "Satellite" },
   { id: "terrain", label: "Terrain" },
 ] as const;
