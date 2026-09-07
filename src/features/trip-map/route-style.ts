@@ -44,9 +44,14 @@ const STROKES: Readonly<Record<TravelMode, RouteStroke>> = {
     // Not terracotta. The busiest line on most days was wearing the colour the
     // product itself is drawn in, so a route read as something the product was
     // recommending rather than as the way this traveller happens to be going.
+    //
+    // Orchid rather than the plum it was: same quarter of the wheel, far more
+    // of it. Plum was the darkest of the four and sat exactly where a city's
+    // roofs sit on the hybrid ground, so the busiest line was the one hardest
+    // to follow over the places most trips are actually planned in.
     label: "Driving",
-    colorProperty: "--color-plum-700",
-    inkClass: "text-plum-700",
+    colorProperty: "--color-orchid-700",
+    inkClass: "text-orchid-700",
     weight: 4.6,
     dashArray: null,
     roundCaps: false,

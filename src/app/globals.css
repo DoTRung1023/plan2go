@@ -66,8 +66,15 @@
    * quarter of it spoken for. Crowded into one quarter, as an olive, a teal and
    * a blue once were, three of the four routes read as one dark colour drawn
    * three times.
+   *
+   * Driving carries the most chroma of the four, and is the one that breaks the
+   * matched weight on purpose. It is the line drawn most often, and on the
+   * hybrid ground a dense city's roofs are themselves a grey-purple: the darker
+   * plum this replaces held the right hue and none of the presence, and it sank
+   * into the rooftops of anywhere built up. What separates a route from imagery
+   * is chroma rather than lightness, because roofs have almost none.
    */
-  --color-plum-700: #6a4076;
+  --color-orchid-700: #b4418c;
   --color-forest-700: #2f7a52;
   --color-gold-700: #8a6a1f;
   --color-cobalt-700: #35607d;
