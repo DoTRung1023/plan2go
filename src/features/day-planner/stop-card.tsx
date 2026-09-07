@@ -16,6 +16,9 @@ const STAY_STEP_MINUTES = 15;
 
 const MAX_STAY_MINUTES = 12 * 60;
 
+/** The one thing about this stop that is currently being written down. */
+type Busy = "stay" | "time" | "note" | "remove" | null;
+
 const TOOL =
   "grid h-[22px] w-[22px] place-items-center rounded-pill text-ink-muted hover:bg-neutral-200 hover:text-ink disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
@@ -89,6 +92,7 @@ export function StopCard({
   const noteField = useRef<HTMLTextAreaElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, startSaving] = useTransition();
+  const [busy, setBusy] = useState<Busy>(null);
 
   // Adjusted during the render that carries the new value rather than in an
   // effect, because an effect would paint the stale one first.
@@ -97,12 +101,26 @@ export function StopCard({
   }
   const shownNote = sent === undefined ? note : sent;
 
-  const run = (change: () => Promise<{ readonly error: string | null }>): void => {
+  /**
+   * Which of the card's own controls is waiting on the server, so only that
+   * one goes quiet.
+   *
+   * One flag for the whole card dimmed the time and the stay while a note was
+   * being written down, which reads as the card loading rather than as one
+   * thing in it being saved, and nothing about the note has any bearing on
+   * either of them.
+   */
+  const run = (
+    what: Busy,
+    change: () => Promise<{ readonly error: string | null }>,
+  ): void => {
     if (saving) {
       return;
     }
+    setBusy(what);
     startSaving(async () => {
       setError((await change()).error);
+      setBusy(null);
     });
   };
 
@@ -110,7 +128,7 @@ export function StopCard({
     if (actions === null) {
       return;
     }
-    run(() => actions.setStay({ stopId: stop.stopId, stayMinutes: minutes }));
+    run("stay", () => actions.setStay({ stopId: stop.stopId, stayMinutes: minutes }));
   };
 
   /** Setting a time to the one it already had is not a change worth a write. */
@@ -118,14 +136,16 @@ export function StopCard({
     if (actions === null || minutes === startAtMinutes) {
       return;
     }
-    run(() => actions.setStartAt({ stopId: stop.stopId, startAtMinutes: minutes }));
+    run("time", () =>
+      actions.setStartAt({ stopId: stop.stopId, startAtMinutes: minutes }),
+    );
   };
 
   const clearStartAt = (): void => {
     if (actions === null || startAtMinutes === null) {
       return;
     }
-    run(() => actions.setStartAt({ stopId: stop.stopId, startAtMinutes: null }));
+    run("time", () => actions.setStartAt({ stopId: stop.stopId, startAtMinutes: null }));
   };
 
   const commitNote = (value: string): void => {
@@ -135,7 +155,7 @@ export function StopCard({
       return;
     }
     setSent(tidied);
-    run(() => actions.setNote({ stopId: stop.stopId, note: tidied }));
+    run("note", () => actions.setNote({ stopId: stop.stopId, note: tidied }));
   };
 
   /**
@@ -221,7 +241,7 @@ export function StopCard({
               <TimePicker
                 value={startAtMinutes ?? stop.arrival?.minutesFromMidnight ?? 0}
                 fixed={startAtMinutes !== null}
-                disabled={saving}
+                disabled={busy === "time"}
                 label={
                   stop.arrival === null ? "Time not known" : formatDayTime(stop.arrival)
                 }
@@ -255,7 +275,6 @@ export function StopCard({
                     page, so a card under the pointer still scrolls. */}
                 <button
                   type="button"
-                  disabled={saving}
                   title="Drag to reorder"
                   aria-label={`Move ${stop.placeName} by dragging it`}
                   className={`${TOOL} cursor-grab active:cursor-grabbing`}
@@ -265,9 +284,9 @@ export function StopCard({
                 <button
                   type="button"
                   onClick={() => {
-                    run(() => actions.removeStop({ stopId: stop.stopId }));
+                    run("remove", () => actions.removeStop({ stopId: stop.stopId }));
                   }}
-                  disabled={saving}
+                  disabled={busy === "remove"}
                   aria-label={`Remove ${stop.placeName} from this day`}
                   className={TOOL}
                 >
@@ -293,7 +312,7 @@ export function StopCard({
                 onClick={() => {
                   setStay(stop.stayMinutes - STAY_STEP_MINUTES);
                 }}
-                disabled={saving || stop.stayMinutes === 0}
+                disabled={busy === "stay" || stop.stayMinutes === 0}
                 aria-label={`Less time at ${stop.placeName}`}
                 className={STEP}
               >
@@ -307,7 +326,7 @@ export function StopCard({
                 onClick={() => {
                   setStay(stop.stayMinutes + STAY_STEP_MINUTES);
                 }}
-                disabled={saving || stop.stayMinutes >= MAX_STAY_MINUTES}
+                disabled={busy === "stay" || stop.stayMinutes >= MAX_STAY_MINUTES}
                 aria-label={`More time at ${stop.placeName}`}
                 className={STEP}
               >
