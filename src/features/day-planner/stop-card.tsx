@@ -11,7 +11,8 @@ import { ConflictNotice } from "./conflict-notice";
 import { formatDayTime } from "./format-day-time";
 import { TimePicker } from "./time-picker";
 
-const MAX_STAY_MINUTES = 12 * 60;
+/** The server's own limit, repeated because that module may not reach the browser. */
+const MAX_STAY_MINUTES = 99 * 60 + 99;
 
 /** The one thing about this stop that is currently being written down. */
 type Busy = "stay" | "time" | "note" | "remove" | null;

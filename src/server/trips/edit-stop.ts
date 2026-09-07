@@ -4,8 +4,20 @@ import type { TravelProvider } from "@/core/ports/travel-provider";
 import type { StopChanged, TripRepository } from "../repositories/trip-repository";
 import { refreshLegModes } from "./leg-modes";
 
-/** The longest a stop may last. Written in full rather than stepped to. */
-export const MAX_STAY_MINUTES = 12 * 60;
+/**
+ * The longest a stop may last: as long as the two fields that write it can
+ * say, which is ninety nine hours and ninety nine minutes.
+ *
+ * There is no shorter limit worth defending. Half a day was the old one and it
+ * was chosen when the stay was stepped a quarter hour at a time, where the top
+ * was forty eight clicks away and nobody was going to ask for more. Typed, an
+ * overnight stop is an ordinary thing to want, and a day that runs past
+ * midnight already says so where it is read.
+ *
+ * A bound is still needed: this is what a crafted request is held to, and it
+ * is the same number the fields are held to, so the two never disagree.
+ */
+export const MAX_STAY_MINUTES = 99 * 60 + 99;
 
 /** Longer than this is a document, not a note to whoever you are travelling with. */
 export const MAX_NOTE_LENGTH = 500;
