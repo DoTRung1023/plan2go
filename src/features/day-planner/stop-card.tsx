@@ -129,6 +129,7 @@ export function StopCard({
    * again when the server answers. Undefined means nothing is in flight.
    */
   const [sent, setSent] = useState<string | null | undefined>(undefined);
+  const card = useRef<HTMLElement | null>(null);
   const noteField = useRef<HTMLTextAreaElement | null>(null);
   const hourField = useRef<HTMLInputElement | null>(null);
   const minuteField = useRef<HTMLInputElement | null>(null);
@@ -269,6 +270,21 @@ export function StopCard({
     }
   }, [shownNote, writingNote]);
 
+  /**
+   * Brought into the panel when the pointer finds it on the map, because a
+   * card lit up below the fold is a card nobody sees light up.
+   *
+   * "nearest" is doing the work: a card already on screen is left exactly
+   * where it is, so hovering one here does not scroll the list out from under
+   * the pointer, and only a card the map is pointing at off the fold moves,
+   * by the least it can.
+   */
+  useEffect(() => {
+    if (hovered) {
+      card.current?.scrollIntoView({ block: "nearest" });
+    }
+  }, [hovered]);
+
   const start = (event: DragEvent<HTMLElement>): void => {
     event.dataTransfer.effectAllowed = "move";
     onDragStart(index);
@@ -285,6 +301,7 @@ export function StopCard({
 
   return (
     <article
+      ref={card}
       draggable={actions !== null}
       onDragStart={start}
       onDragOver={over}
