@@ -76,8 +76,25 @@ export function StopCard({
   onDragEnd,
 }: StopCardProps) {
   const [writingNote, setWritingNote] = useState(false);
+  /**
+   * The note as it was last sent, held until the trip comes back carrying it.
+   *
+   * Leaving the field is what commits, so without this the card falls back to
+   * the trip's copy the instant the field is left, and the trip's copy is
+   * still the empty one it had a moment ago: a note just written blinks out,
+   * the button that offers to write one takes its place, and both are replaced
+   * again when the server answers. Undefined means nothing is in flight.
+   */
+  const [sent, setSent] = useState<string | null | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
   const [saving, startSaving] = useTransition();
+
+  // Adjusted during the render that carries the new value rather than in an
+  // effect, because an effect would paint the stale one first.
+  if (sent !== undefined && sent === note) {
+    setSent(undefined);
+  }
+  const shownNote = sent === undefined ? note : sent;
 
   const run = (change: () => Promise<{ readonly error: string | null }>): void => {
     if (saving) {
@@ -113,9 +130,10 @@ export function StopCard({
   const commitNote = (value: string): void => {
     const tidied = value.trim() === "" ? null : value.trim();
     setWritingNote(false);
-    if (actions === null || tidied === note) {
+    if (actions === null || tidied === shownNote) {
       return;
     }
+    setSent(tidied);
     run(() => actions.setNote({ stopId: stop.stopId, note: tidied }));
   };
 
@@ -284,7 +302,7 @@ export function StopCard({
           <ConflictNotice key={`${conflict.kind}-${String(at)}`} conflict={conflict} />
         ))}
 
-        {note === null && !writingNote ? (
+        {shownNote === null && !writingNote ? (
           actions === null ? null : (
             <button
               type="button"
@@ -300,7 +318,7 @@ export function StopCard({
         ) : (
           <textarea
             rows={2}
-            defaultValue={note ?? ""}
+            defaultValue={shownNote ?? ""}
             autoFocus={writingNote}
             readOnly={actions === null}
             onBlur={(event) => {
