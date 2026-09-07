@@ -226,12 +226,9 @@ export function LegRow({
              scrolls inside itself rather than pushing the day down past it. */
           <div className="scroll-quiet max-h-[50vh] overflow-y-auto rounded-panel border border-rule bg-paper-sunken px-[14px] pt-[13px] pb-[14px]">
             <div className="flex items-baseline gap-2">
+              {/* No distance beside the heading: every way of covering the leg
+                  is about to say its own, and they are not all the same. */}
               <p className="text-label font-semibold text-ink-muted">How you get there</p>
-              {leg.distanceMeters === null ? null : (
-                <p className="text-micro text-ink-muted tabular-nums">
-                  {formatDistance(leg.distanceMeters)}
-                </p>
-              )}
               <button
                 type="button"
                 onClick={() => {
