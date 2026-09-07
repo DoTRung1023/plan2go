@@ -65,8 +65,7 @@
   height: 30px;
   border-radius: 12px 12px 12px 4px;
   background-color: var(--color-terracotta-200);
-  color: var(--color-terracotta-800);
-  color: var(--color-paper);
+  color: var(--color-terracotta-900);
 }
 
 /*
