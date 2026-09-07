@@ -295,15 +295,14 @@ export function StopCard({
         onHover(null);
       }}
       /*
-       * A checkpoint is a line on the day rather than a card in it: no paper
-       * under it and no rule around it, because there is nothing on it to keep
-       * apart from what is next to it. It is where the day goes through, and it
-       * should read at a glance as less than the places it is going to.
+       * A checkpoint is a quieter card, not a different thing: the same rule
+       * around it and a paler paper under it, sitting between the page and the
+       * places the day is actually for. Shorter, too, because there is less on
+       * it. Drawn with nothing at all it read as a gap in the list rather than
+       * as somewhere the day goes through.
        */
-      className={`group ml-[2px] grid grid-cols-[30px_minmax(0,1fr)] gap-x-[14px] rounded-card ${
-        checkpoint
-          ? "border border-transparent py-[9px] pr-[15px] pl-3"
-          : "border bg-paper-raised py-[14px] pr-[15px] pl-3"
+      className={`group ml-[2px] grid grid-cols-[30px_minmax(0,1fr)] gap-x-[14px] rounded-card border ${
+        checkpoint ? "py-[9px] pr-[15px] pl-3" : "bg-paper-raised py-[14px] pr-[15px] pl-3"
       } ${dragging ? "opacity-35" : ""} ${
         dragOver && !dragging
           ? "border-terracotta outline-2 outline-offset-[3px] outline-dashed outline-terracotta"
@@ -316,7 +315,7 @@ export function StopCard({
             hovered
             ? "border-terracotta/55 bg-paper-sunken"
             : checkpoint
-              ? ""
+              ? "border-rule/70 bg-paper-raised/55"
               : "border-rule"
       }`}
     >
