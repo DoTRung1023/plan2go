@@ -36,9 +36,20 @@ const KIND =
 const TOOL =
   "grid h-[22px] w-[22px] place-items-center rounded-pill text-ink-muted hover:bg-neutral-200 hover:text-ink disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
-/** Two digits and no more, so the pair reads as one number written in parts. */
+/**
+ * Two digits and no more, so the pair reads as one number written in parts.
+ *
+ * Set a step under what it was. At the body size the numbers stood taller than
+ * anything else on their row, so the pill they sit in towered over the opening
+ * hours beside it and the two read as different kinds of thing rather than as
+ * two facts about the same place.
+ */
 const STAY_FIELD =
-  "w-[26px] rounded-chip bg-transparent py-[2px] text-center font-display text-body text-ink caret-terracotta tabular-nums outline-none focus-visible:bg-terracotta-100";
+  "w-[24px] rounded-chip bg-transparent py-0 text-center font-display text-meta text-ink caret-terracotta tabular-nums outline-none focus-visible:bg-terracotta-100";
+
+/** Stated, and the same whether the stay is being read or written. */
+const STAY_PILL =
+  "inline-flex h-[26px] items-center rounded-pill border border-rule bg-paper";
 
 interface StopCardProps {
   /** Its number in the day, or null for a checkpoint, which is not counted. */
@@ -442,7 +453,7 @@ export function StopCard({
         {checkpoint ? null : (
           <div className="flex flex-wrap items-center gap-[11px]">
             {actions === null ? (
-              <span className="rounded-pill border border-rule bg-paper px-[11px] py-[3px] font-display text-meta text-ink tabular-nums">
+              <span className={`${STAY_PILL} px-[11px] font-display text-meta text-ink tabular-nums`}>
                 Stay for {formatDuration(stop.stayMinutes)}
               </span>
             ) : (
@@ -451,7 +462,7 @@ export function StopCard({
                 // what was actually kept: type ninety minutes and they come back
                 // as an hour and a half.
                 key={stop.stayMinutes}
-                className="flex items-center gap-[2px] rounded-pill border border-rule bg-paper py-[2px] pr-[11px] pl-[9px]"
+                className={`${STAY_PILL} gap-[2px] pr-[11px] pl-[9px]`}
                 onBlur={(event) => {
                   // Moving between the two fields is still one edit, so nothing
                   // is written until the pair as a whole is left.
