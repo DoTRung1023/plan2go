@@ -191,7 +191,11 @@ export function computeDay({ day, legs }: ComputeDayInput): ComputedDay {
 
   const stayAt = (point: Extract<DayPoint, { kind: "stop" }>): void => {
     const { stop } = point;
-    timeAtPlacesMinutes += stop.stayMinutes;
+    // A checkpoint is somewhere the day goes through. It is timed like anywhere
+    // else, so the traveller knows when they are there, and it keeps whatever
+    // stay it was given, so making it an ordinary stop again gives that back.
+    const staying = stop.checkpoint ? 0 : stop.stayMinutes;
+    timeAtPlacesMinutes += staying;
 
     /** Both readings of a fixed time: the clock it was set to, and the instant. */
     const pin =
@@ -215,7 +219,7 @@ export function computeDay({ day, legs }: ComputeDayInput): ComputedDay {
         placeName: stop.place.name,
         arrival: null,
         departure: null,
-        stayMinutes: stop.stayMinutes,
+        stayMinutes: staying,
         waitMinutes: 0,
         overlapMinutes: 0,
       });
@@ -244,18 +248,18 @@ export function computeDay({ day, legs }: ComputeDayInput): ComputedDay {
       windows: windowsFor(stop.place, arrivalWall.date),
       weekday: weekdayOf(arrivalWall.date),
       arrivalMinutes: arrival.minutesFromMidnight,
-      stayMinutes: stop.stayMinutes,
+      stayMinutes: staying,
     });
     conflicts.push(...check.conflicts);
     waitingMinutes += check.waitMinutes;
 
-    const departureEpoch = at + check.waitMinutes + stop.stayMinutes;
+    const departureEpoch = at + check.waitMinutes + staying;
     computedStops.push({
       stopId: stop.id,
       placeName: stop.place.name,
       arrival,
       departure: clockAt(departureEpoch),
-      stayMinutes: stop.stayMinutes,
+      stayMinutes: staying,
       waitMinutes: waitForPin + check.waitMinutes,
       overlapMinutes,
     });

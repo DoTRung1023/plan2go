@@ -131,6 +131,10 @@ model Stop {
   startAtMinutes Int?
   /// Whole minutes at the place. Zero is legal.
   stayMinutes Int
+  /// A place the day passes through rather than spends time at: where it
+  /// starts, where it ends, a station changed at. It takes no time of its own
+  /// and is not counted among the stops.
+  checkpoint  Boolean @default(false)
   /// Mode used to travel from the previous point to this stop.
   travelMode  TravelMode
   note        String?

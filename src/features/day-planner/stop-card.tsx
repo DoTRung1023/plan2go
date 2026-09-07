@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import type { Conflict } from "@/core/model/conflict";
 import type { ComputedStop } from "@/core/time/compute-day";
 import { formatDuration } from "@/core/time/minutes";
-import { ClockIcon, CloseIcon, GripIcon, PlusIcon } from "@/ui/icons";
+import { ClockIcon, CloseIcon, GripIcon, PinIcon, PlusIcon } from "@/ui/icons";
 import type { DayActions } from "./day-actions";
 import { ConflictNotice } from "./conflict-notice";
 import { formatDayTime } from "./format-day-time";
@@ -15,7 +15,7 @@ import { TimePicker } from "./time-picker";
 const MAX_STAY_MINUTES = 99 * 60 + 59;
 
 /** The one thing about this stop that is currently being written down. */
-type Busy = "stay" | "time" | "note" | "remove" | null;
+type Busy = "stay" | "time" | "note" | "checkpoint" | "remove" | null;
 
 const TOOL =
   "grid h-[22px] w-[22px] place-items-center rounded-pill text-ink-muted hover:bg-neutral-200 hover:text-ink disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
@@ -25,7 +25,10 @@ const STAY_FIELD =
   "w-[26px] rounded-chip bg-transparent py-[2px] text-center font-display text-body text-ink caret-terracotta tabular-nums outline-none focus-visible:bg-terracotta-100";
 
 interface StopCardProps {
-  readonly position: number;
+  /** Its number in the day, or null for a checkpoint, which is not counted. */
+  readonly position: number | null;
+  /** Somewhere the day passes through: no stay, no number, no time of its own. */
+  readonly checkpoint: boolean;
   /** Where the stop sits in its day, counted from zero, which is what a move needs. */
   readonly index: number;
   readonly stop: ComputedStop;
@@ -62,6 +65,7 @@ interface StopCardProps {
  */
 export function StopCard({
   position,
+  checkpoint,
   index,
   stop,
   startAtMinutes,
@@ -261,10 +265,20 @@ export function StopCard({
       }`}
     >
       <div className="flex flex-col items-center gap-[7px]">
-        <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-pill bg-terracotta font-display text-[14px] text-paper tabular-nums">
-          <span aria-hidden="true">{position}</span>
-          <span className="sr-only">Stop {position}</span>
-        </span>
+        {/* A checkpoint is passed through, so it is not one of the numbers
+            the day counts off. A quiet ring says it is on the route without
+            claiming a place in the order. */}
+        {position === null ? (
+          <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-pill border border-rule-strong bg-paper text-ink-muted">
+            <PinIcon size={14} strokeWidth={2.4} />
+            <span className="sr-only">Checkpoint</span>
+          </span>
+        ) : (
+          <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-pill bg-terracotta font-display text-[14px] text-paper tabular-nums">
+            <span aria-hidden="true">{position}</span>
+            <span className="sr-only">Stop {position}</span>
+          </span>
+        )}
         <span aria-hidden="true" className="thread flex-1" />
       </div>
 
@@ -343,7 +357,11 @@ export function StopCard({
         </div>
 
         <div className="flex flex-wrap items-center gap-[11px]">
-          {actions === null ? (
+          {checkpoint ? (
+            <span className="rounded-pill border border-rule bg-paper px-[11px] py-[3px] text-meta text-ink-muted">
+              Passing through
+            </span>
+          ) : actions === null ? (
             <span className="rounded-pill border border-rule bg-paper px-[11px] py-[3px] font-display text-meta text-ink tabular-nums">
               Stay for {formatDuration(stop.stayMinutes)}
             </span>
@@ -391,6 +409,21 @@ export function StopCard({
               />
               <span className="text-micro text-ink-muted">min</span>
             </div>
+          )}
+
+          {actions === null ? null : (
+            <button
+              type="button"
+              onClick={() => {
+                run("checkpoint", () =>
+                  actions.setCheckpoint({ stopId: stop.stopId, checkpoint: !checkpoint }),
+                );
+              }}
+              disabled={busy === "checkpoint"}
+              className="rounded-pill px-1 text-micro font-semibold text-ink-muted hover:text-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+            >
+              {checkpoint ? "Stay here" : "Passing through"}
+            </button>
           )}
 
           {openingHours === null ? null : (

@@ -47,6 +47,8 @@ export interface StopUpdate {
   readonly stayMinutes?: number;
   /** Null unpins the stop and lets it follow the day. Absent leaves it alone. */
   readonly startAtMinutes?: number | null;
+  /** Whether the day passes through rather than stops. Absent leaves it alone. */
+  readonly checkpoint?: boolean;
   /** Null clears the note. Absent leaves it alone. */
   readonly note?: string | null;
 }

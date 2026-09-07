@@ -9,6 +9,13 @@ export interface Stop {
   /** Whole minutes spent at the place. Zero is legal and means a drive past. */
   readonly stayMinutes: number;
   /**
+   * A place the day passes through rather than spends time at: where it
+   * begins, where it ends, a station changed at on the way. It takes none of
+   * the day's time whatever its stay says, so the stay it had is still there
+   * if it is made an ordinary stop again.
+   */
+  readonly checkpoint: boolean;
+  /**
    * Minutes from local midnight the traveller has fixed this stop to: a tour
    * booked for two o'clock is at two o'clock whatever the morning does. Null,
    * which is the usual case, means the stop simply follows what came before it.

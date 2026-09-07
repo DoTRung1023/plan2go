@@ -17,6 +17,7 @@ import { deleteTripAction } from "./delete-trip-action";
 import {
   moveStopAction,
   removeStopAction,
+  setStopCheckpointAction,
   setStopNoteAction,
   setStopStartAtAction,
   setStopStayAction,
@@ -224,6 +225,10 @@ export function TripEditor({
                   setStartAt: ({ stopId, startAtMinutes }) =>
                     recording(
                       setStopStartAtAction({ slug, editKey, stopId, startAtMinutes }),
+                    ),
+                  setCheckpoint: ({ stopId, checkpoint }) =>
+                    recording(
+                      setStopCheckpointAction({ slug, editKey, stopId, checkpoint }),
                     ),
                   setNote: ({ stopId, note }) =>
                     recording(setStopNoteAction({ slug, editKey, stopId, note })),

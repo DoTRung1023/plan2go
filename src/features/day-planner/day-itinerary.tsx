@@ -104,6 +104,22 @@ export function DayItinerary({ day, computed, legs, actions }: DayItineraryProps
   const places = new Map(day.stops.map((stop) => [stop.id, stop.place]));
   /** The times the traveller fixed, which the computed stop does not carry. */
   const fixed = new Map(day.stops.map((stop) => [stop.id, stop.startAtMinutes]));
+  const checkpoints = new Map(day.stops.map((stop) => [stop.id, stop.checkpoint]));
+
+  /**
+   * The numbers count the stops and skip the checkpoints, so a day of three
+   * places and a station changed at reads one, two, three rather than one,
+   * two, four. A checkpoint is on the route without being one of the things
+   * the day is for.
+   */
+  const numbers = new Map<StopId, number>();
+  let counted = 0;
+  for (const stop of day.stops) {
+    if (!stop.checkpoint) {
+      counted += 1;
+      numbers.set(stop.id, counted);
+    }
+  }
   /** With no start point the first stop has no leg arriving at it. */
   const legOffset = day.start === null ? -1 : 0;
   const legToEnd = day.end === null ? undefined : computed.legs[computed.legs.length - 1];
@@ -156,7 +172,8 @@ export function DayItinerary({ day, computed, legs, actions }: DayItineraryProps
               />
             )}
             <StopCard
-              position={index + 1}
+              position={numbers.get(stop.stopId) ?? null}
+              checkpoint={checkpoints.get(stop.stopId) ?? false}
               index={index}
               stop={stop}
               address={place?.address ?? null}

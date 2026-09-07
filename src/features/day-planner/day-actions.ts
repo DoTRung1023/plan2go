@@ -33,6 +33,15 @@ export interface DayActions {
     readonly startAtMinutes: number | null;
   }) => Promise<EditOutcome>;
 
+  /**
+   * Whether the day passes through this place or spends time at it. A
+   * checkpoint keeps the stay it had, so this can be turned back.
+   */
+  readonly setCheckpoint: (input: {
+    readonly stopId: string;
+    readonly checkpoint: boolean;
+  }) => Promise<EditOutcome>;
+
   readonly setNote: (input: {
     readonly stopId: string;
     readonly note: string | null;

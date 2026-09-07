@@ -25,6 +25,7 @@ function stop(name: string, position: LatLng): Stop {
     place: place(name, position),
     stayMinutes: 60,
     startAtMinutes: null,
+    checkpoint: false,
     travelMode: "walk",
     note: null,
   };
