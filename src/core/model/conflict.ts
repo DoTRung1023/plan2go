@@ -1,7 +1,12 @@
 import type { StopId } from "./stop";
 
 /**
- * Everything the engine found wrong with a day. Conflicts are returned as data
+ * Everything the engine found wrong with a day.
+ *
+ * Wrong, not merely worth knowing. Waiting for a place to open is a fact about
+ * the morning rather than a fault in it, and a day that reported it beside the
+ * ones that say a visit cannot happen taught its reader to skim all of them.
+ * The wait is on the card as a number instead. Conflicts are returned as data
  * and carry the numbers needed to name the problem, so the UI can write
  * "Fish Market closes at 4:00 pm and you arrive at 4:30 pm" rather than
  * "Timing issue detected".
@@ -14,14 +19,6 @@ export type Conflict =
       /** Minutes from midnight on the day the stop starts. */
       readonly arrivalMinutes: number;
       readonly closesAt: number;
-    }
-  | {
-      readonly kind: "arrives-before-open";
-      readonly stopId: StopId;
-      readonly placeName: string;
-      readonly arrivalMinutes: number;
-      readonly opensAt: number;
-      readonly waitMinutes: number;
     }
   | {
       readonly kind: "closed-all-day";
@@ -43,9 +40,4 @@ export type Conflict =
       readonly toName: string;
       /** Index into the day's legs, in travel order. */
       readonly legIndex: number;
-    }
-  | {
-      readonly kind: "ends-next-day";
-      readonly endMinutes: number;
-      readonly dayOffset: number;
     };

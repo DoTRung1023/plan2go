@@ -20,7 +20,8 @@ function calendarDate(missing: string): z.ZodType<string> {
  * between is the thing they came here to stop doing.
  *
  * Messages say what happened and then what to do, because they are read by
- * someone who has just been stopped.
+ * someone who has just been stopped. The name's are shorter than that: they
+ * are shown hanging off the field itself, which has already said which one.
  */
 export const tripSettingsSchema = z
   .object({
@@ -28,8 +29,8 @@ export const tripSettingsSchema = z
     title: z
       .string()
       .trim()
-      .min(1, "The trip has no name. Enter what you want to call it.")
-      .max(80, "That name is too long. Use 80 characters or fewer."),
+      .min(1, "Give the trip a name.")
+      .max(80, "Use 80 characters or fewer."),
     startDate: calendarDate("The first day is missing. Enter a date."),
     endDate: calendarDate("The last day is missing. Enter a date."),
   })

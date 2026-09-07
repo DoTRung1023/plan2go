@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import type { Conflict } from "@/core/model/conflict";
 import type { TravelMode } from "@/core/model/leg";
 import type { ComputedLeg } from "@/core/time/compute-day";
@@ -39,6 +39,9 @@ interface LegRowProps {
   /** Every way of covering this leg, and which one the day is using. */
   readonly planned: PlannedLeg;
   readonly conflicts: readonly Conflict[];
+  /** Whether the pointer is on this leg, here or on the route on the map. */
+  readonly hovered: boolean;
+  readonly onHover: (legIndex: number | null) => void;
   /** Null for a reader who holds no edit token, who sees the row and no choice. */
   readonly onChange: DayActions["changeLegMode"] | null;
 }
@@ -103,6 +106,12 @@ function Option({
       <span className="text-meta text-ink-muted tabular-nums">
         {option.distanceMeters === null ? "" : formatDistance(option.distanceMeters)}
       </span>
+      {/* Numbers but no shape to the route: nobody could tell us the way, so
+          this is the line between the two ends at an assumed speed. Said here
+          because the map draws that line the same as any other. */}
+      {unavailable || option.path !== null ? null : (
+        <span className="text-micro text-ink-faint">Crow flies</span>
+      )}
     </button>
   );
 }
@@ -121,10 +130,30 @@ function Option({
  * before deciding whether that is the mode you wanted, and trying a second one
  * should not mean opening the panel again. Collapse is what closes it.
  */
-export function LegRow({ leg, planned, conflicts, onChange }: LegRowProps) {
+export function LegRow({
+  leg,
+  planned,
+  conflicts,
+  hovered,
+  onHover,
+  onChange,
+}: LegRowProps) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, startSaving] = useTransition();
+  const row = useRef<HTMLDivElement | null>(null);
+
+  /**
+   * Brought into the panel when the pointer finds this leg on the map, the
+   * same way a card is. "nearest" leaves a row already on screen exactly where
+   * it is, so hovering one here never scrolls the list out from under the
+   * pointer.
+   */
+  useEffect(() => {
+    if (hovered) {
+      row.current?.scrollIntoView({ block: "nearest" });
+    }
+  }, [hovered]);
   const Icon = MODE_ICON[leg.mode];
 
   const choose = (mode: TravelMode): void => {
@@ -146,6 +175,14 @@ export function LegRow({ leg, planned, conflicts, onChange }: LegRowProps) {
   const covered = leg.durationMinutes !== null;
   const anyWay = planned.options.some((option) => option.durationMinutes !== null);
 
+  /**
+   * The way being used, as it was answered. Numbers but no shape to the route
+   * means nobody could tell us the way, so the row says so where the numbers
+   * are read rather than only inside the panel nobody has opened.
+   */
+  const shown = planned.options.find((option) => option.mode === leg.mode);
+  const crowFlies = covered && shown !== undefined && shown.path === null;
+
   const summary = covered ? (
     <>
       <span
@@ -164,6 +201,9 @@ export function LegRow({ leg, planned, conflicts, onChange }: LegRowProps) {
           {formatDistance(leg.distanceMeters)}
         </span>
       )}
+      {crowFlies ? (
+        <span className="text-micro whitespace-nowrap text-ink-faint">Crow flies</span>
+      ) : null}
     </>
   ) : (
     <span className="text-meta text-ink-muted">
@@ -177,9 +217,22 @@ export function LegRow({ leg, planned, conflicts, onChange }: LegRowProps) {
         <span aria-hidden="true" className="thread" />
       </div>
 
-      <div className="py-[9px]">
+      <div
+        ref={row}
+        className="py-[9px]"
+        onMouseEnter={() => {
+          onHover(leg.index);
+        }}
+        onMouseLeave={() => {
+          onHover(null);
+        }}
+      >
         {onChange === null ? (
-          <div className="flex flex-wrap items-center gap-x-[10px] gap-y-[6px] rounded-row border border-rule py-2 pr-[14px] pl-3">
+          <div
+            className={`flex flex-wrap items-center gap-x-[10px] gap-y-[6px] rounded-row border py-2 pr-[14px] pl-3 ${
+              hovered ? "border-terracotta/55 bg-paper-sunken" : "border-rule"
+            }`}
+          >
             {summary}
           </div>
         ) : open ? (
@@ -187,12 +240,9 @@ export function LegRow({ leg, planned, conflicts, onChange }: LegRowProps) {
              scrolls inside itself rather than pushing the day down past it. */
           <div className="scroll-quiet max-h-[50vh] overflow-y-auto rounded-panel border border-rule bg-paper-sunken px-[14px] pt-[13px] pb-[14px]">
             <div className="flex items-baseline gap-2">
+              {/* No distance beside the heading: every way of covering the leg
+                  is about to say its own, and they are not all the same. */}
               <p className="text-label font-semibold text-ink-muted">How you get there</p>
-              {leg.distanceMeters === null ? null : (
-                <p className="text-micro text-ink-muted tabular-nums">
-                  {formatDistance(leg.distanceMeters)}
-                </p>
-              )}
               <button
                 type="button"
                 onClick={() => {
@@ -237,7 +287,11 @@ export function LegRow({ leg, planned, conflicts, onChange }: LegRowProps) {
               setOpen(true);
               setError(null);
             }}
-            className="flex w-full flex-wrap items-center gap-x-[10px] gap-y-[6px] rounded-row border border-rule py-2 pr-[14px] pl-3 text-left hover:border-rule-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+            className={`flex w-full flex-wrap items-center gap-x-[10px] gap-y-[6px] rounded-row border py-2 pr-[14px] pl-3 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
+              hovered
+                ? "border-terracotta/55 bg-paper-sunken"
+                : "border-rule hover:border-rule-strong"
+            }`}
           >
             {summary}
             <span className="ml-auto text-micro font-semibold whitespace-nowrap text-terracotta-700">

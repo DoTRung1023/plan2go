@@ -32,6 +32,8 @@ function stop(
     id: `stop-${name}`,
     place: place(name, openingHours),
     stayMinutes,
+    startAtMinutes: null,
+    checkpoint: false,
     travelMode: "walk",
     note: null,
   };
@@ -133,11 +135,8 @@ describe("computeDay, midnight rollover", () => {
     expect(result.ends?.minutesFromMidnight).toBe(90);
     expect(result.ends?.dayOffset).toBe(1);
     expect(result.totals.timeOutMinutes).toBe(150);
-    expect(result.conflicts).toContainEqual({
-      kind: "ends-next-day",
-      endMinutes: 90,
-      dayOffset: 1,
-    });
+    // Running past midnight is said by the times themselves, not remarked on.
+    expect(result.conflicts).toEqual([]);
   });
 });
 
@@ -266,14 +265,8 @@ describe("computeDay, opening hours", () => {
     expect(result.stops[0]?.departure?.minutesFromMidnight).toBe(11 * 60);
     expect(result.ends?.minutesFromMidnight).toBe(11 * 60 + 20);
     expect(result.totals.waitingMinutes).toBe(40);
-    expect(result.conflicts).toContainEqual({
-      kind: "arrives-before-open",
-      stopId: "stop-Gallery",
-      placeName: "Gallery",
-      arrivalMinutes: 9 * 60 + 20,
-      opensAt: 10 * 60,
-      waitMinutes: 40,
-    });
+    // Waiting for the doors is a number on the card, not a conflict.
+    expect(result.conflicts).toEqual([]);
   });
 
   it("flags a stay that runs past closing", () => {
@@ -383,5 +376,154 @@ describe("computeDay, days that do not start or end anywhere in particular", () 
 
     expect(result.legs[0]?.fromName).toBe("Hotel");
     expect(result.legs[1]?.toName).toBe("Ibis Adelaide");
+  });
+});
+
+describe("computeDay, stops fixed to a time", () => {
+  /** Same helper as above, with the stop pinned to a reading off the clock. */
+  function fixedStop(name: string, stayMinutes: number, startAtMinutes: number): Stop {
+    return { ...stop(name, stayMinutes), startAtMinutes };
+  }
+
+  it("begins the day at its first stop when that stop is fixed", () => {
+    const plan = day({
+      start: null,
+      end: null,
+      startAtMinutes: 9 * 60,
+      stops: [fixedStop("Lake", 60, 8 * 60)],
+    });
+    const result = computeDay({ day: plan, legs: [] });
+
+    // Earlier than the day was set to begin, and not a conflict: there is
+    // nothing before the first stop to have been late from.
+    expect(result.begins.minutesFromMidnight).toBe(8 * 60);
+    expect(result.stops[0]?.arrival?.minutesFromMidnight).toBe(8 * 60);
+    expect(result.stops[0]?.waitMinutes).toBe(0);
+    expect(result.conflicts).toEqual([]);
+  });
+
+  it("keeps a fixed time even where the day cannot travel to it", () => {
+    const plan = day({
+      end: null,
+      startAtMinutes: 9 * 60,
+      stops: [fixedStop("Lake", 60, 8 * 60)],
+    });
+    const result = computeDay({ day: plan, legs: [leg(10)] });
+
+    // The day leaves its start point at nine and the stop is still at eight:
+    // the traveller's answer stands, and rearranging it is theirs to do.
+    expect(result.begins.minutesFromMidnight).toBe(9 * 60);
+    expect(result.stops[0]?.arrival?.minutesFromMidnight).toBe(8 * 60);
+    expect(result.conflicts).toEqual([]);
+  });
+
+  it("waits for a time the day reaches early, and counts the wait", () => {
+    const plan = day({
+      end: null,
+      startAtMinutes: 9 * 60,
+      stops: [fixedStop("Tour", 60, 11 * 60)],
+    });
+    const result = computeDay({ day: plan, legs: [leg(10)] });
+
+    // Out of the hotel at nine, there by ten past, waiting until eleven.
+    expect(result.stops[0]?.arrival?.minutesFromMidnight).toBe(11 * 60);
+    expect(result.stops[0]?.waitMinutes).toBe(110);
+    expect(result.stops[0]?.overlapMinutes).toBe(0);
+    expect(result.stops[0]?.departure?.minutesFromMidnight).toBe(12 * 60);
+    expect(result.totals.waitingMinutes).toBe(110);
+    expect(result.conflicts).toEqual([]);
+  });
+
+  it("holds everything after a fixed time to it, not to what came before", () => {
+    const plan = day({
+      start: null,
+      end: null,
+      startAtMinutes: 9 * 60,
+      stops: [stop("Market", 30), fixedStop("Tour", 60, 14 * 60), stop("Park", 30)],
+    });
+    const result = computeDay({ day: plan, legs: [leg(10), leg(10)] });
+
+    expect(result.stops[1]?.arrival?.minutesFromMidnight).toBe(14 * 60);
+    // 2pm, an hour there, ten minutes on.
+    expect(result.stops[2]?.arrival?.minutesFromMidnight).toBe(15 * 60 + 10);
+  });
+
+  it("counts no waiting for a fixed time the day passes before reaching", () => {
+    const plan = day({
+      start: null,
+      end: null,
+      startAtMinutes: 9 * 60,
+      stops: [stop("Market", 180), fixedStop("Tour", 60, 10 * 60)],
+    });
+    const result = computeDay({ day: plan, legs: [leg(30)] });
+
+    // The market runs to half past twelve and the tour is still at ten. Nobody
+    // stood about waiting for it, so nothing is counted as waiting.
+    expect(result.stops[1]?.arrival?.minutesFromMidnight).toBe(10 * 60);
+    expect(result.stops[1]?.waitMinutes).toBe(0);
+    expect(result.totals.waitingMinutes).toBe(0);
+    expect(result.conflicts).toEqual([]);
+    // Half past twelve against a stop set for ten.
+    expect(result.stops[1]?.overlapMinutes).toBe(150);
+  });
+
+  it("times a stop again after a leg nobody could answer", () => {
+    const plan = day({
+      start: null,
+      end: null,
+      startAtMinutes: 9 * 60,
+      stops: [stop("Market", 30), fixedStop("Tour", 60, 14 * 60)],
+    });
+    const result = computeDay({ day: plan, legs: [unresolved] });
+
+    expect(result.stops[0]?.arrival?.minutesFromMidnight).toBe(9 * 60);
+    expect(result.stops[1]?.arrival?.minutesFromMidnight).toBe(14 * 60);
+    // The gap itself is still unmeasured, so the totals stay partial.
+    expect(result.totals.complete).toBe(false);
+    expect(result.totals.travelMinutes).toBeNull();
+  });
+});
+
+describe("computeDay, checkpoints", () => {
+  function checkpoint(name: string, stayMinutes: number): Stop {
+    return { ...stop(name, stayMinutes), checkpoint: true };
+  }
+
+  it("spends none of the day at a checkpoint, whatever stay it carries", () => {
+    const plan = day({
+      start: null,
+      end: null,
+      startAtMinutes: 9 * 60,
+      stops: [checkpoint("Station", 60), stop("Market", 30)],
+    });
+    const result = computeDay({ day: plan, legs: [leg(10)] });
+
+    expect(result.stops[0]?.stayMinutes).toBe(0);
+    // Nine, straight on to the market at ten past, half an hour there.
+    expect(result.stops[1]?.arrival?.minutesFromMidnight).toBe(9 * 60 + 10);
+    expect(result.ends?.minutesFromMidnight).toBe(9 * 60 + 40);
+    expect(result.totals.timeAtPlacesMinutes).toBe(30);
+  });
+
+  it("gives the stay back when it is made an ordinary stop again", () => {
+    const stops = [stop("Station", 60), stop("Market", 30)];
+    const result = computeDay({ day: day({ start: null, end: null, stops }), legs: [leg(10)] });
+
+    expect(result.stops[0]?.stayMinutes).toBe(60);
+    expect(result.totals.timeAtPlacesMinutes).toBe(90);
+  });
+
+  it("still times a checkpoint, and still checks it against opening hours", () => {
+    const hours = openEveryDay([{ opensAt: 10 * 60, closesAt: 17 * 60 }]);
+    const plan = day({
+      start: null,
+      end: null,
+      startAtMinutes: 9 * 60,
+      stops: [{ ...stop("Gate", 0, hours), checkpoint: true }],
+    });
+    const result = computeDay({ day: plan, legs: [] });
+
+    expect(result.stops[0]?.arrival?.minutesFromMidnight).toBe(9 * 60);
+    expect(result.stops[0]?.waitMinutes).toBe(60);
   });
 });

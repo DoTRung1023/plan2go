@@ -27,9 +27,9 @@ import type {
   NewTrip,
   SettingsUpdated,
   StopAdded,
-  TripCleared,
+  TripDeleted,
   TripRepository,
-  TripReset,
+  TripDeletion,
   TripSettingsUpdate,
 } from "./trip-repository";
 
@@ -89,6 +89,8 @@ function toStop(row: StopRow & { place: PlaceRow }): Stop {
     id: row.id,
     place: toPlace(row.place),
     stayMinutes: row.stayMinutes,
+    startAtMinutes: row.startAtMinutes,
+    checkpoint: row.checkpoint,
     travelMode: TRAVEL_MODE_FROM_DB[row.travelMode],
     note: row.note,
   };
@@ -147,7 +149,7 @@ async function insert(trip: NewTrip, slug: string): Promise<CreatedTrip> {
       startDate: trip.startDate,
       centreLat: trip.centre?.lat ?? null,
       centreLng: trip.centre?.lng ?? null,
-      editTokenHash: trip.editTokenHash,
+      editKeyHash: trip.editKeyHash,
       days: {
         create: Array.from({ length: trip.dayCount }, (_unused, index) => ({
           position: index,
@@ -176,15 +178,11 @@ export const prismaTripRepository: TripRepository = {
     return row === null ? null : toTrip(row);
   },
 
-  async findEditTokenHash(slug: string): Promise<string | null> {
-    const row = await db.trip.findUnique({ where: { slug }, select: { editTokenHash: true } });
-    return row === null ? null : row.editTokenHash;
+  async findEditKeyHash(slug: string): Promise<string | null> {
+    const row = await db.trip.findUnique({ where: { slug }, select: { editKeyHash: true } });
+    return row === null ? null : row.editKeyHash;
   },
 
-  async findSlugByEditTokenHash(editTokenHash: string): Promise<string | null> {
-    const row = await db.trip.findFirst({ where: { editTokenHash }, select: { slug: true } });
-    return row === null ? null : row.slug;
-  },
 
   async findPlaceByProviderId(slug: string, providerPlaceId: string): Promise<Place | null> {
     const row = await db.place.findFirst({
@@ -199,7 +197,7 @@ export const prismaTripRepository: TripRepository = {
     const day = await db.day.findFirst({
       where: {
         id: stop.dayId,
-        trip: { slug: stop.slug, editTokenHash: { in: [...stop.editTokenHashes] } },
+        trip: { slug: stop.slug, editKeyHash: stop.editKeyHash },
       },
       select: { id: true, tripId: true, _count: { select: { stops: true } } },
     });
@@ -250,7 +248,7 @@ export const prismaTripRepository: TripRepository = {
     const day = await db.day.findFirst({
       where: {
         id: update.dayId,
-        trip: { slug: update.slug, editTokenHash: { in: [...update.editTokenHashes] } },
+        trip: { slug: update.slug, editKeyHash: update.editKeyHash },
       },
       select: { id: true },
     });
@@ -281,11 +279,15 @@ export const prismaTripRepository: TripRepository = {
       where: {
         id: update.stopId,
         day: {
-          trip: { slug: update.slug, editTokenHash: { in: [...update.editTokenHashes] } },
+          trip: { slug: update.slug, editKeyHash: update.editKeyHash },
         },
       },
       data: {
         ...(update.stayMinutes === undefined ? {} : { stayMinutes: update.stayMinutes }),
+        ...(update.startAtMinutes === undefined
+          ? {}
+          : { startAtMinutes: update.startAtMinutes }),
+        ...(update.checkpoint === undefined ? {} : { checkpoint: update.checkpoint }),
         ...(update.note === undefined ? {} : { note: update.note }),
       },
     });
@@ -297,34 +299,7 @@ export const prismaTripRepository: TripRepository = {
       where: {
         id: removal.stopId,
         day: {
-          trip: { slug: removal.slug, editTokenHash: { in: [...removal.editTokenHashes] } },
-        },
-      },
-      select: { id: true, dayId: true, position: true },
-    });
-    if (stop === null) {
-      return { status: "refused" };
-    }
-
-    // The stops after it close the gap in the same transaction, so a day is
-    // never briefly missing a position and the next stop added lands at the end
-    // rather than on top of an existing one.
-    await db.$transaction([
-      db.stop.delete({ where: { id: stop.id } }),
-      db.stop.updateMany({
-        where: { dayId: stop.dayId, position: { gt: stop.position } },
-        data: { position: { decrement: 1 } },
-      }),
-    ]);
-    return { status: "changed" };
-  },
-
-  async moveStop(move: StopMove): Promise<StopChanged> {
-    const stop = await db.stop.findFirst({
-      where: {
-        id: move.stopId,
-        day: {
-          trip: { slug: move.slug, editTokenHash: { in: [...move.editTokenHashes] } },
+          trip: { slug: removal.slug, editKeyHash: removal.editKeyHash },
         },
       },
       select: { id: true, dayId: true, position: true },
@@ -336,8 +311,56 @@ export const prismaTripRepository: TripRepository = {
     const order = await db.stop.findMany({
       where: { dayId: stop.dayId },
       orderBy: { position: "asc" },
-      select: { id: true },
+      select: { id: true, startAtMinutes: true },
     });
+
+    // A fixed time is a slot in the day rather than something a place owns, so
+    // the times stay where they are: each stop after the gap moves down into
+    // the time above it, and the last slot leaves with the stop that left.
+    const times = order.map((row) => row.startAtMinutes);
+    const after = order.filter((row) => row.id !== stop.id).slice(stop.position);
+
+    // The stops after it close the gap in the same transaction, so a day is
+    // never briefly missing a position and the next stop added lands at the end
+    // rather than on top of an existing one. In order, because each one moves
+    // down into the place the one before it has just left.
+    await db.$transaction([
+      db.stop.delete({ where: { id: stop.id } }),
+      ...after.map((row, offset) => {
+        const position = stop.position + offset;
+        return db.stop.update({
+          where: { id: row.id },
+          data: { position, startAtMinutes: times[position] ?? null },
+        });
+      }),
+    ]);
+    return { status: "changed" };
+  },
+
+  async moveStop(move: StopMove): Promise<StopChanged> {
+    const stop = await db.stop.findFirst({
+      where: {
+        id: move.stopId,
+        day: {
+          trip: { slug: move.slug, editKeyHash: move.editKeyHash },
+        },
+      },
+      select: { id: true, dayId: true, position: true },
+    });
+    if (stop === null) {
+      return { status: "refused" };
+    }
+
+    const order = await db.stop.findMany({
+      where: { dayId: stop.dayId },
+      orderBy: { position: "asc" },
+      select: { id: true, startAtMinutes: true },
+    });
+
+    // Read off the order as it stands, and written back by position below. A
+    // fixed time is a slot in the day rather than something the place owns, so
+    // it stays where it is and whatever lands on it takes it.
+    const times = order.map((row) => row.startAtMinutes);
 
     const from = order.findIndex((row) => row.id === stop.id);
     const to = Math.max(0, Math.min(move.toPosition, order.length - 1));
@@ -362,54 +385,43 @@ export const prismaTripRepository: TripRepository = {
       }),
     );
     const settled = moved.map((row, index) =>
-      db.stop.update({ where: { id: row.id }, data: { position: index } }),
+      db.stop.update({
+        where: { id: row.id },
+        data: { position: index, startAtMinutes: times[index] ?? null },
+      }),
     );
     await db.$transaction([...parked, ...settled]);
 
     return { status: "changed" };
   },
 
-  async clear(reset: TripReset): Promise<TripCleared> {
+  async delete(removal: TripDeletion): Promise<TripDeleted> {
     // Scoped to the tokens the browser holds, so the read that finds the trip is
     // also the check that it may be changed. Nothing comes back for a trip that
     // is not there and nothing comes back for one that is not theirs, which is
     // the same answer we would have given anyway.
     const trip = await db.trip.findFirst({
-      where: { slug: reset.slug, editTokenHash: { in: [...reset.editTokenHashes] } },
+      where: {
+        slug: removal.slug,
+        editKeyHash: removal.editKeyHash,
+      },
       select: { id: true },
     });
     if (trip === null) {
       return { status: "refused" };
     }
 
-    // One transaction, and in this order. Deleting the days takes the stops
-    // with them, which leaves the places unreferenced and safe to delete next.
-    await db.$transaction([
-      db.day.deleteMany({ where: { tripId: trip.id } }),
-      db.place.deleteMany({ where: { tripId: trip.id } }),
-      db.trip.update({
-        where: { id: trip.id },
-        data: {
-          title: reset.title,
-          timeZone: reset.timeZone,
-          startDate: reset.startDate,
-        },
-      }),
-      db.day.createMany({
-        data: Array.from({ length: reset.dayCount }, (_unused, index) => ({
-          tripId: trip.id,
-          position: index,
-          startAtMinutes: reset.startAtMinutes,
-        })),
-      }),
-    ]);
+    // One statement, and no transaction to wrap it in. The days and the places
+    // hang off the trip with onDelete: Cascade and the stops hang off both, so
+    // the row going takes every one of them with it.
+    await db.trip.delete({ where: { id: trip.id } });
 
-    return { status: "cleared" };
+    return { status: "deleted" };
   },
 
   async updateSettings(update: TripSettingsUpdate): Promise<SettingsUpdated> {
     const trip = await db.trip.findFirst({
-      where: { slug: update.slug, editTokenHash: { in: [...update.editTokenHashes] } },
+      where: { slug: update.slug, editKeyHash: update.editKeyHash },
       select: { id: true, _count: { select: { days: true } } },
     });
     if (trip === null) {

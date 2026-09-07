@@ -51,6 +51,27 @@
   --color-sage-800: #3d472b;
   --color-sage-900: #272e1b;
 
+  /*
+   * The map's own hues, and nothing outside the map may spend them.
+   *
+   * Four ways of getting somewhere need four lines that can be told apart at a
+   * glance. Only walking is patterned, so colour does nearly all of that work,
+   * and it has to do it without terracotta: terracotta is what the product
+   * itself is drawn in, and a route wearing it reads as the route the product
+   * is recommending rather than as the one you happen to be driving.
+   *
+   * All four are mixed to the warmth and the weight of the ramps above, so they
+   * sit in this palette rather than arriving from somewhere else, and they are
+   * spread as far apart on the wheel as four colours can be with the orange
+   * quarter of it spoken for. Crowded into one quarter, as an olive, a teal and
+   * a blue once were, three of the four routes read as one dark colour drawn
+   * three times.
+   */
+  --color-plum-700: #6a4076;
+  --color-forest-700: #2f7a52;
+  --color-gold-700: #8a6a1f;
+  --color-cobalt-700: #35607d;
+
   --font-display: var(--font-caprasimo), Georgia, "Times New Roman", serif;
   --font-body: var(--font-figtree), "Segoe UI", system-ui, sans-serif;
 

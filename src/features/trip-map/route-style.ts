@@ -4,9 +4,13 @@ import type { TravelMode } from "@/core/model/leg";
  * How each way of getting somewhere is drawn, in one table.
  *
  * The map and the key beside it read from the same row, so a line on the map
- * and the sample in the key can never drift apart. The mode is carried by the
- * stroke pattern as well as by the colour, and every leg says its mode in words
- * in the list, so the pattern is a reminder rather than the only source.
+ * and the sample in the key can never drift apart.
+ *
+ * Only walking is patterned. Three broken lines crossing one another read as
+ * texture rather than as three routes, so the rest are drawn continuous and
+ * the colour is what tells them apart. Walking keeps its dots because a route
+ * made of separated marks is the one that says "on foot" without being told,
+ * and every leg says its mode in words in the list besides.
  *
  * A dash in the sample is the length the map actually draws, because the two
  * are read one after the other and a sample that only resembled the line would
@@ -37,43 +41,55 @@ export interface RouteStroke {
 const STROKES: Readonly<Record<TravelMode, RouteStroke>> = {
   drive: {
     mode: "drive",
+    // Not terracotta. The busiest line on most days was wearing the colour the
+    // product itself is drawn in, so a route read as something the product was
+    // recommending rather than as the way this traveller happens to be going.
     label: "Driving",
-    colorProperty: "--color-terracotta-700",
-    inkClass: "text-terracotta-700",
-    weight: 3.4,
+    colorProperty: "--color-plum-700",
+    inkClass: "text-plum-700",
+    weight: 4.6,
     dashArray: null,
     roundCaps: false,
     drawn: { kind: "solid" },
   },
   transit: {
     mode: "transit",
+    // Off the sage and onto a truer green. Sage is an olive, which sat between
+    // the blue of the cycling line and the yellow of the walking one instead of
+    // apart from either.
     label: "Public transport",
-    colorProperty: "--color-sage-700",
-    inkClass: "text-sage-700",
-    weight: 3.4,
-    dashArray: "11 6",
+    colorProperty: "--color-forest-700",
+    inkClass: "text-forest-700",
+    weight: 4.6,
+    dashArray: null,
     roundCaps: false,
-    drawn: { kind: "dashes", scale: 5.5, repeat: "17px" },
+    drawn: { kind: "solid" },
   },
   walk: {
     mode: "walk",
     label: "Walking",
-    colorProperty: "--color-terracotta-600",
-    inkClass: "text-terracotta-600",
-    weight: 4,
+    // The warm quarter of the wheel, without being the terracotta the product
+    // is drawn in: a gold rather than a rust. It is also the one line still
+    // drawn as separated marks, so it has the pattern to lean on as well.
+    colorProperty: "--color-gold-700",
+    inkClass: "text-gold-700",
+    weight: 5,
     dashArray: "0.5 8",
     roundCaps: true,
     drawn: { kind: "dots", repeat: "9px" },
   },
   cycle: {
     mode: "cycle",
+    // The one mode with no accent to give it. It had the ink, which was legible
+    // but said nothing: black is what everything else on a map is already drawn
+    // in. The palette's one blue is here for this line and nothing else.
     label: "Cycling",
-    colorProperty: "--color-neutral-700",
-    inkClass: "text-neutral-700",
-    weight: 3.4,
-    dashArray: "6 5",
+    colorProperty: "--color-cobalt-700",
+    inkClass: "text-cobalt-700",
+    weight: 5,
+    dashArray: null,
     roundCaps: false,
-    drawn: { kind: "dashes", scale: 3, repeat: "11px" },
+    drawn: { kind: "solid" },
   },
 };
 

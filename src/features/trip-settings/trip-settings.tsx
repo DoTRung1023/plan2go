@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useActionState, useId, useRef, useState } from "react";
 import { daysBetween } from "@/core/time/zoned";
 import { DateField } from "./date-field";
@@ -7,21 +8,40 @@ import { DateField } from "./date-field";
 export interface TripSettingsOutcome {
   readonly saved: boolean;
   readonly error: string | null;
+  /** Which field the message is about, or null when it is about the form. */
+  readonly field: "title" | null;
 }
 
-const UNSAVED: TripSettingsOutcome = { saved: false, error: null };
+const UNSAVED: TripSettingsOutcome = { saved: false, error: null, field: null };
 
 const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
-/** The name is the heading, so it is set in the heading's own type. */
+/**
+ * The name is the heading, so it keeps display type, one step under the title
+ * it was: at 24px the field stood a third taller than the dates and the actions
+ * around it, and a row of controls at three heights reads as three sections.
+ * Height is stated rather than padded, so all of them agree exactly.
+ *
+ * It shares its row with the trip's actions and gives way to them, down to the
+ * width a trip name still reads at, below which the row wraps instead.
+ */
 const NAME_FIELD =
-  "w-full rounded-pill border border-rule bg-paper-raised px-[18px] py-[6px] font-display text-title text-ink caret-terracotta hover:border-rule-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "h-[34px] min-w-[200px] flex-1 rounded-pill border border-rule bg-paper-raised px-[14px] py-0 font-display text-place text-ink caret-terracotta hover:border-rule-strong aria-invalid:border-terracotta focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 interface TripSettingsProps {
   readonly slug: string;
+  /** Travels with the form: the save is a change, and changes need the key. */
+  readonly editKey: string;
   readonly title: string;
   readonly startDate: string;
   readonly endDate: string;
+  /**
+   * What can be done to the trip as a whole. It sits on the name's row, at the
+   * top of the panel, because that row is the trip itself rather than a day in
+   * it. Passed in for the same reason the save is: a feature does not know the
+   * app's routes or its mutations.
+   */
+  readonly actions: ReactNode;
   /**
    * Passed in rather than imported, because a feature may not reach into the
    * route that owns the mutation.
@@ -54,9 +74,11 @@ function spanOf(first: string, last: string): number | null {
  */
 export function TripSettings({
   slug,
+  editKey,
   title,
   startDate,
   endDate,
+  actions,
   onSave,
 }: TripSettingsProps) {
   const [state, submit, pending] = useActionState(onSave, UNSAVED);
@@ -91,15 +113,6 @@ export function TripSettings({
 
   const span = spanOf(first, last);
   const datesChanged = first !== startDate || last !== endDate;
-  const changed = name !== title || datesChanged;
-  /** A range that cannot be read comes first, because it is the one to fix. */
-  const note =
-    span === null
-      ? "The last day is before the first day."
-      : state.saved && !pending && !changed
-        ? "Saved."
-        : null;
-
   /** The name has no button of its own, so leaving the field is the commit. */
   const commitName = (): void => {
     if (!pending && name !== title) {
@@ -131,34 +144,58 @@ export function TripSettings({
   return (
     <form action={submit} ref={form}>
       <input type="hidden" name="slug" value={slug} />
+      <input type="hidden" name="editKey" value={editKey} />
 
       <label className="sr-only" htmlFor={`${fieldId}-title`}>
         Trip name
       </label>
-      <input
-        id={`${fieldId}-title`}
-        name="title"
-        type="text"
-        required
-        maxLength={80}
-        value={name}
-        onChange={(event) => {
-          setName(event.target.value);
-        }}
-        onBlur={commitName}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") {
-            // The browser would submit anyway, but only sometimes: implicit
-            // submission depends on the form having a submit button, and this
-            // one only has one while a calendar is open.
-            event.preventDefault();
-            commitName();
-          }
-        }}
-        className={NAME_FIELD}
-      />
+      <div className="relative flex flex-wrap items-center gap-3">
+        {/* Not `required`. requestSubmit runs the browser's own validation, and
+            a field marked required stops there and puts up a grey system
+            bubble reading "Please fill out this field", in a typeface this
+            product does not use and words it did not write. Empty is refused
+            below instead, in our own sentence and our own panel. */}
+        <input
+          id={`${fieldId}-title`}
+          name="title"
+          type="text"
+          aria-invalid={state.field === "title"}
+          maxLength={80}
+          value={name}
+          onChange={(event) => {
+            setName(event.target.value);
+          }}
+          onBlur={commitName}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              // The browser would submit anyway, but only sometimes: implicit
+              // submission depends on the form having a submit button, and this
+              // one only has one while a calendar is open.
+              event.preventDefault();
+              commitName();
+            }
+          }}
+          className={NAME_FIELD}
+        />
+        {actions === null ? null : (
+          <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>
+        )}
 
-      <div className="mt-[10px] grid grid-cols-2 gap-3">
+        {/* Hangs off the field, where the browser would have put its own bubble,
+            and over what is under it rather than in the column with it. In the
+            flow it would push the dates and the whole day down the moment it
+            appeared, so saying what is wrong would rearrange the panel. */}
+        {state.field === "title" && state.error !== null ? (
+          <p
+            role="alert"
+            className="absolute top-full left-0 z-20 mt-[5px] max-w-full rounded-chip bg-terracotta-200 px-[11px] py-[6px] text-micro font-semibold text-terracotta-900 shadow-md"
+          >
+            {state.error}
+          </p>
+        ) : null}
+      </div>
+
+      <div className="relative mt-[10px] grid grid-cols-2 gap-3">
         <DateField
           id={`${fieldId}-first`}
           name="startDate"
@@ -179,12 +216,21 @@ export function TripSettings({
           footer={saveDates}
           onClose={abandonDates}
         />
+
+        {/* Hung off the dates the way the name's message is hung off the name,
+            and over what is under it rather than in the column with it. */}
+        {span === null ? (
+          <p
+            role="alert"
+            className="absolute top-full left-0 z-20 mt-[5px] max-w-full rounded-chip bg-terracotta-200 px-[11px] py-[6px] text-micro font-semibold text-terracotta-900 shadow-md"
+          >
+            The last day is before the first day.
+          </p>
+        ) : null}
       </div>
 
-      {/* Only when there is something to say. The days themselves are the count. */}
-      {note === null ? null : <p className="mt-2 text-meta text-ink-muted">{note}</p>}
 
-      {state.error === null ? null : (
+      {state.error === null || state.field !== null ? null : (
         <p
           role="alert"
           className="mt-3 rounded-chip bg-terracotta-200 px-3 py-2 text-meta text-terracotta-900"

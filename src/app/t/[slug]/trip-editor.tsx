@@ -1,23 +1,25 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
-import lockup from "../../../../logo/logo-text.png";
 import type { LatLng } from "@/core/model/place";
 import type { PlannedDay } from "@/features/day-planner/compute-trip";
 import { DayPlanner } from "@/features/day-planner/day-planner";
 import { PlaceSearch } from "@/features/place-search/place-search";
 import { searchBias } from "@/features/place-search/search-bias";
+import { ShareLinks } from "@/features/trip-settings/share-links";
+import { SavedNote } from "@/features/trip-settings/saved-note";
 import { TripActions } from "@/features/trip-settings/trip-actions";
 import { TripSettings } from "@/features/trip-settings/trip-settings";
+import { addDayAction } from "./add-day-action";
 import { addStopAction } from "./add-stop-action";
-import { clearTripAction } from "./clear-trip-action";
+import { deleteTripAction } from "./delete-trip-action";
 import {
   moveStopAction,
   removeStopAction,
+  setStopCheckpointAction,
   setStopNoteAction,
+  setStopStartAtAction,
   setStopStayAction,
 } from "./edit-stop-actions";
 import { setLegModeAction } from "./set-leg-mode-action";
@@ -45,8 +47,15 @@ interface TripEditorProps {
   readonly days: readonly PlannedDay[];
   /** The city the trip is in, where the map opens and a search looks first. */
   readonly centre: LatLng | null;
-  /** Whether this browser holds the edit token for the trip. */
-  readonly canEdit: boolean;
+  /** Today's date in the trip's own zone, so the day strip can mark it. */
+  readonly today: string;
+  /**
+   * The key out of the edit link, or null for the plain one. It decides both
+   * what is offered and what the actions are allowed to do, because it is the
+   * same key storage checks. Nothing is remembered between visits: the link is
+   * the authority, so the same one works on any device.
+   */
+  readonly editKey: string | null;
 }
 
 /**
@@ -63,10 +72,36 @@ export function TripEditor({
   slug,
   days,
   centre,
-  canEdit,
+  today,
+  editKey,
 }: TripEditorProps) {
   const [chosenIndex, setChosenIndex] = useState(0);
   const [expanded, setExpanded] = useState(false);
+  /**
+   * When the last change landed. Every way of changing this trip reports here,
+   * so the one notice in the corner speaks for all of them: a note written, a
+   * stop dragged, a day added and the name itself are all the same fact to
+   * whoever is watching for it, which is that it is written down.
+   */
+  const [savedAt, setSavedAt] = useState(0);
+  /**
+   * The stop under the pointer, wherever the pointer is. Held here because
+   * both panes answer to it and neither may reach into the other: a card and
+   * a marker are the same place said twice, and pointing at either should say
+   * so in both.
+   */
+  const [hoveredStopId, setHoveredStopId] = useState<string | null>(null);
+  const [hoveredLegIndex, setHoveredLegIndex] = useState<number | null>(null);
+
+  const recording = <T extends { readonly error: string | null }>(
+    change: Promise<T>,
+  ): Promise<T> =>
+    change.then((outcome) => {
+      if (outcome.error === null) {
+        setSavedAt(Date.now());
+      }
+      return outcome;
+    });
   // Clearing the trip, or pulling its last day earlier, can leave fewer days
   // than the one being read. Without this the tab strip shows none of them as
   // chosen and the keyboard cannot reach any of them.
@@ -101,14 +136,25 @@ export function TripEditor({
       <section
         aria-label="Map of this day"
         className={
+          // Opened, the map covers the planner beside it rather than the
+          // window: the browser keeps its own chrome, and getting back is the
+          // same button rather than a key nobody was told about.
           expanded
-            ? "fixed inset-0 z-40 bg-paper-sunken lg:static lg:h-full lg:min-h-0"
+            ? "fixed inset-0 z-40 bg-paper-sunken"
             : "sticky top-0 z-20 h-[140px] border-b border-rule bg-paper-sunken lg:static lg:h-full lg:min-h-0 lg:border-b-0"
         }
       >
         <div className="relative h-full w-full">
           {selected === undefined ? null : (
             <TripMap
+              hoveredStopId={hoveredStopId}
+              onHoverStop={setHoveredStopId}
+              hoveredLegIndex={hoveredLegIndex}
+              onHoverLeg={setHoveredLegIndex}
+              expanded={expanded}
+              onToggleExpanded={() => {
+                setExpanded(!expanded);
+              }}
               start={selected.plan.start}
               end={selected.plan.end}
               stops={selected.plan.stops}
@@ -121,7 +167,7 @@ export function TripEditor({
               takes no clicks, so the map still drags in the gap between the
               search and the toggle. */}
           <div className="pointer-events-none absolute inset-x-[14px] top-[14px] z-[3] flex items-start gap-2 lg:inset-x-[22px] lg:top-[22px]">
-            {canEdit && selected !== undefined ? (
+            {editKey !== null && selected !== undefined ? (
               <div className="pointer-events-auto w-full max-w-[346px] min-w-0">
                 <PlaceSearch
                   slug={slug}
@@ -132,7 +178,7 @@ export function TripEditor({
                     selectedIndex,
                     centre,
                   )}
-                  onAdd={addStopAction}
+                  onAdd={(input) => recording(addStopAction({ ...input, editKey }))}
                 />
               </div>
             ) : null}
@@ -141,7 +187,7 @@ export function TripEditor({
               onClick={() => {
                 setExpanded(!expanded);
               }}
-              className="pointer-events-auto ml-auto shrink-0 rounded-pill border border-rule bg-paper-raised px-4 py-2 text-meta font-semibold text-ink shadow-sm hover:bg-paper-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:hidden"
+              className="pointer-events-auto ml-auto flex h-[30px] shrink-0 items-center rounded-pill border border-rule bg-paper-raised px-[11px] text-micro font-semibold text-ink-muted shadow-sm hover:bg-paper-sunken hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:hidden"
             >
               {expanded ? "Collapse map" : "Expand map"}
             </button>
@@ -149,48 +195,90 @@ export function TripEditor({
         </div>
       </section>
 
-      <section className="flex min-h-0 flex-col border-rule lg:h-full lg:min-h-0 lg:border-l">
-        <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 px-5 pt-4 pb-3 lg:px-[26px]">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 rounded-chip focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
-          >
-            <Image src={lockup} alt="plan2go" width={112} height={41} priority />
-          </Link>
-          {canEdit ? (
-            <TripActions slug={slug} onClear={clearTripAction} startAnotherPath="/" />
-          ) : (
-            <p className="text-meta text-ink-muted">Shared with you, read only</p>
-          )}
-        </div>
+      <section className="relative flex min-h-0 flex-col border-rule lg:h-full lg:min-h-0 lg:border-l">
+        {/* A reader who cannot edit has no actions to put on the name's row,
+            so what they get instead is the reason why. */}
+        {editKey === null ? (
+          <p className="shrink-0 px-5 pt-4 text-meta text-ink-muted lg:px-[26px]">
+            Shared with you, read only
+          </p>
+        ) : null}
+
+        <SavedNote at={savedAt} />
 
         <DayPlanner
           title={title}
           days={days}
+          today={today}
+          hoveredStopId={hoveredStopId}
+          onHoverStop={setHoveredStopId}
+          hoveredLegIndex={hoveredLegIndex}
+          onHoverLeg={setHoveredLegIndex}
           selectedIndex={selectedIndex}
           onSelect={setChosenIndex}
+          onAddDay={
+            editKey === null
+              ? null
+              : () => recording(addDayAction({ slug, editKey }))
+          }
           actions={
-            canEdit && selected !== undefined
+            editKey !== null && selected !== undefined
               ? {
                   changeLegMode: ({ stopId, mode }) =>
-                    setLegModeAction({ slug, dayId: selected.plan.id, stopId, mode }),
+                    recording(
+                      setLegModeAction({
+                        slug,
+                        editKey,
+                        dayId: selected.plan.id,
+                        stopId,
+                        mode,
+                      }),
+                    ),
                   setStay: ({ stopId, stayMinutes }) =>
-                    setStopStayAction({ slug, stopId, stayMinutes }),
-                  setNote: ({ stopId, note }) => setStopNoteAction({ slug, stopId, note }),
-                  removeStop: ({ stopId }) => removeStopAction({ slug, stopId }),
+                    recording(
+                      setStopStayAction({ slug, editKey, stopId, stayMinutes }),
+                    ),
+                  setStartAt: ({ stopId, startAtMinutes }) =>
+                    recording(
+                      setStopStartAtAction({ slug, editKey, stopId, startAtMinutes }),
+                    ),
+                  setCheckpoint: ({ stopId, checkpoint }) =>
+                    recording(
+                      setStopCheckpointAction({ slug, editKey, stopId, checkpoint }),
+                    ),
+                  setNote: ({ stopId, note }) =>
+                    recording(setStopNoteAction({ slug, editKey, stopId, note })),
+                  removeStop: ({ stopId }) =>
+                    recording(removeStopAction({ slug, editKey, stopId })),
                   moveStop: ({ stopId, toPosition }) =>
-                    moveStopAction({ slug, stopId, toPosition }),
+                    recording(
+                      moveStopAction({ slug, editKey, stopId, toPosition }),
+                    ),
                 }
               : null
           }
           settings={
-            canEdit && first !== undefined && last !== undefined ? (
+            editKey !== null && first !== undefined && last !== undefined ? (
               <TripSettings
                 slug={slug}
+                editKey={editKey}
                 title={title}
                 startDate={first.plan.date}
                 endDate={last.plan.date}
-                onSave={updateTripAction}
+                actions={
+                  <>
+                    <ShareLinks slug={slug} editKey={editKey} />
+                    <TripActions
+                      slug={slug}
+                      editKey={editKey}
+                      onDelete={deleteTripAction}
+                      startAnotherPath="/"
+                    />
+                  </>
+                }
+                onSave={(previous, formData) =>
+                  recording(updateTripAction(previous, formData))
+                }
               />
             ) : null
           }

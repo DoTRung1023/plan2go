@@ -147,6 +147,14 @@ When one changes the other changes in the same commit.
 
 ## Colors
 
+The map keeps four hues of its own, at `plum-700`, `forest-700`, `gold-700` and
+`cobalt-700`, drawn by the driving, public transport, walking and cycling routes and by
+nothing else. Four ways of getting
+somewhere need four lines that can be told apart, only walking is patterned, and none of
+them may be terracotta: a route in the product's own colour reads as the route the
+product is recommending. They are not accents and nothing outside the map may reach for
+them.
+
 There are two accents and they are not interchangeable. Terracotta is the product: the
 stop numbers, the active day, the primary action, the route lines. Sage is the second
 voice and it carries the ends of a day and anything the plan wants to tell you about
@@ -312,11 +320,15 @@ change with the modes this particular day happens to use. The markers have no ke
 their own, because a numbered disc in the order you visit them and a named marker for
 the ends of the day explain themselves.
 
-The map's own geometry is styled onto the warm ramp: cream ground, raised roads, sunken
-parks, and water in neutral 300 rather than a blue. Google's controls are off and ours
-are drawn over it, so the only things on the map are the day's lines and markers, the
-search in the top left corner, the zoom pair in the bottom right, and the route key in
-the bottom left.
+The map is Google's hybrid, unstyled: satellite imagery with the names over it. A warm
+ramp was tried underneath and abandoned, because a style array does not repaint
+photography, so the cream ground and the neutral water only ever applied to a layer the
+imagery covers. Every one of Google's controls is off and ours are drawn over the map
+instead: the search in the top left, the ground the map is drawn on in the top right,
+the route key in the bottom left, and in the bottom right the button that fills the
+screen with the zoom pair under it, where a thumb reaches first. The ground opens on
+hybrid and offers the map, the imagery on its own and the terrain, because imagery is
+not always the clearest, least of all where the question is which road is which.
 
 ## Motion
 

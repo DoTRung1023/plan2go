@@ -74,5 +74,7 @@ export async function createTripAction(
     };
   }
 
-  redirect(`/t/${opened.slug}`);
+  // Straight to the edit link: this is the one moment the key exists in the
+  // clear, and the trip is unreachable for editing without it.
+  redirect(`/t/${opened.slug}/edit/${opened.editKey}`);
 }

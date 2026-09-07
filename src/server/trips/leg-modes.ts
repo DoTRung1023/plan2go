@@ -89,7 +89,7 @@ export function legsWithNewEnds(before: DayPlan, after: DayPlan): readonly Relai
 
 interface RefreshRequest {
   readonly slug: string;
-  readonly editTokenHashes: readonly string[];
+  readonly editKeyHash: string;
   /** The day as it was before the change. */
   readonly before: DayPlan;
   /** The same day as the change leaves it. */
@@ -115,7 +115,7 @@ export async function refreshLegModes(
   for (const leg of legsWithNewEnds(request.before, request.after)) {
     await repository.setLegMode({
       slug: request.slug,
-      editTokenHashes: request.editTokenHashes,
+      editKeyHash: request.editKeyHash,
       dayId: request.after.id,
       stopId: leg.target,
       mode: await fastestTravelMode(leg.from.position, leg.to.position, travel),

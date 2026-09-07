@@ -14,7 +14,7 @@ export interface NewTrip {
   readonly startAtMinutes: number;
   /** The city the trip is in, for the map to open on. */
   readonly centre: LatLng | null;
-  readonly editTokenHash: string;
+  readonly editKeyHash: EditKeyHash;
 }
 
 export interface CreatedTrip {
@@ -22,16 +22,16 @@ export interface CreatedTrip {
 }
 
 /**
- * The hashes of every edit token the browser presented. A mutation is scoped to
- * these in the query that finds what it is about to change, so authorising and
- * writing are not two trips to the database.
+ * The hash of the key out of a trip's edit link. A mutation is scoped to it in
+ * the query that finds what it is about to change, so authorising and writing
+ * are not two trips to the database.
  */
-export type EditTokenHashes = readonly string[];
+export type EditKeyHash = string;
 
 /** A place to append to a day, already resolved to everything we store. */
 export interface NewStop {
   readonly slug: string;
-  readonly editTokenHashes: EditTokenHashes;
+  readonly editKeyHash: EditKeyHash;
   readonly dayId: DayId;
   readonly place: Place;
   readonly stayMinutes: number;
@@ -41,10 +41,14 @@ export interface NewStop {
 /** A change to one stop. Only the fields present are written. */
 export interface StopUpdate {
   readonly slug: string;
-  readonly editTokenHashes: EditTokenHashes;
+  readonly editKeyHash: EditKeyHash;
   readonly stopId: string;
   /** Whole minutes at the place. Zero is legal and means a drive past. */
   readonly stayMinutes?: number;
+  /** Null unpins the stop and lets it follow the day. Absent leaves it alone. */
+  readonly startAtMinutes?: number | null;
+  /** Whether the day passes through rather than stops. Absent leaves it alone. */
+  readonly checkpoint?: boolean;
   /** Null clears the note. Absent leaves it alone. */
   readonly note?: string | null;
 }
@@ -52,14 +56,14 @@ export interface StopUpdate {
 /** Which stop to take off its day. */
 export interface StopRemoval {
   readonly slug: string;
-  readonly editTokenHashes: EditTokenHashes;
+  readonly editKeyHash: EditKeyHash;
   readonly stopId: string;
 }
 
 /** Where a stop is being dragged to, counted from the top of the day. */
 export interface StopMove {
   readonly slug: string;
-  readonly editTokenHashes: EditTokenHashes;
+  readonly editKeyHash: EditKeyHash;
   readonly stopId: string;
   readonly toPosition: number;
 }
@@ -71,7 +75,7 @@ export interface StopMove {
  */
 export interface LegModeUpdate {
   readonly slug: string;
-  readonly editTokenHashes: EditTokenHashes;
+  readonly editKeyHash: EditKeyHash;
   readonly dayId: DayId;
   readonly stopId: string | null;
   readonly mode: TravelMode;
@@ -80,7 +84,7 @@ export interface LegModeUpdate {
 /** Everything storage needs to change a trip's settings. */
 export interface TripSettingsUpdate {
   readonly slug: string;
-  readonly editTokenHashes: EditTokenHashes;
+  readonly editKeyHash: EditKeyHash;
   readonly title: string;
   /** The date of the first day. Later days follow it in order. */
   readonly startDate: IsoDate;
@@ -89,28 +93,18 @@ export interface TripSettingsUpdate {
   readonly startAtMinutes: number;
 }
 
-/**
- * Everything storage needs to empty a trip and lay it out again on the slug it
- * already has. No token: the trip keeps the one it was opened with.
- */
-export interface TripReset {
+/** Which trip to remove, and the proof that it is the browser's to remove. */
+export interface TripDeletion {
   readonly slug: string;
-  readonly editTokenHashes: EditTokenHashes;
-  readonly title: string;
-  readonly timeZone: string;
-  /** The date of the first day. Later days follow it in order. */
-  readonly startDate: IsoDate;
-  readonly dayCount: number;
-  /** Minutes from local midnight that each new day begins at. */
-  readonly startAtMinutes: number;
+  readonly editKeyHash: EditKeyHash;
 }
 
 /**
  * "refused" is one answer on purpose. A trip that is not there and a trip that
  * is not yours must not be told apart, or this becomes a way to test slugs.
  */
-export type TripCleared =
-  | { readonly status: "cleared" }
+export type TripDeleted =
+  | { readonly status: "deleted" }
   | { readonly status: "refused" };
 
 export type SettingsUpdated =
@@ -141,13 +135,7 @@ export interface TripRepository {
    * from findBySlug so the secret never travels inside a core model type, and
    * so a read path has no way to reach it by accident.
    */
-  findEditTokenHash(slug: string): Promise<string | null>;
-
-  /**
-   * The trip a stored token hash belongs to, or null. This is how a browser
-   * holding a token finds its way back to its own trip without the slug.
-   */
-  findSlugByEditTokenHash(editTokenHash: string): Promise<string | null>;
+  findEditKeyHash(slug: string): Promise<string | null>;
 
   /** Allocates the slug, because only storage can see a collision. */
   create(trip: NewTrip): Promise<CreatedTrip>;
@@ -159,11 +147,11 @@ export interface TripRepository {
   updateSettings(update: TripSettingsUpdate): Promise<SettingsUpdated>;
 
   /**
-   * Throws away every day, stop and place on a trip and lays down empty days
-   * again. The slug and the edit token survive, so a link already shared keeps
-   * working and keeps pointing at the same planner.
+   * Removes a trip and everything on it: its days, the stops on them, and the
+   * places they point at. The slug stops resolving with it, so a link already
+   * shared stops working, and there is nothing left to undo it from.
    */
-  clear(reset: TripReset): Promise<TripCleared>;
+  delete(removal: TripDeletion): Promise<TripDeleted>;
 
   /**
    * A place this trip has already stored, or null. Checked before any paid
@@ -183,9 +171,25 @@ export interface TripRepository {
   /**
    * Takes a stop off its day. The stops after it close the gap, so positions
    * stay contiguous and the next stop added lands at the end.
+   *
+   * Fixed times stay with the positions here too: the stops that move down take
+   * the times above them, and the day loses its last slot rather than the one
+   * the departing stop was in. A day of a nine o'clock, a noon and a three
+   * o'clock stays a day of a nine o'clock and a noon.
    */
   removeStop(removal: StopRemoval): Promise<StopChanged>;
 
-  /** Moves a stop to another place in the order of its day. */
+  /**
+   * Moves a stop to another place in the order of its day.
+   *
+   * Fixed times stay with the positions, not with the places: a stop dragged
+   * into the two o'clock slot happens at two o'clock, and the one it displaced
+   * takes whatever time it was moved into. How long a place is worth staying
+   * for belongs to the place and travels with it; when it happens is a property
+   * of the day's shape.
+   *
+   * A move is never refused for the times it produces. Rearranging a day is
+   * allowed to make it impossible, and the day says so where it is read.
+   */
   moveStop(move: StopMove): Promise<StopChanged>;
 }

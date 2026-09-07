@@ -4,8 +4,8 @@ import type { LegModeSet, TripRepository } from "../repositories/trip-repository
 
 export interface SetLegModeRequest {
   readonly slug: string;
-  /** Every token this browser holds. The write finds nothing without one. */
-  readonly editTokenHashes: readonly string[];
+  /** The hash of the key out of the edit link. No key, no write. */
+  readonly editKeyHash: string;
   readonly dayId: DayId;
   /** The stop the leg arrives at, or null for the leg out to where the day ends. */
   readonly stopId: string | null;
@@ -25,7 +25,7 @@ export function setLegMode(
 ): Promise<LegModeSet> {
   return repository.setLegMode({
     slug: request.slug,
-    editTokenHashes: request.editTokenHashes,
+    editKeyHash: request.editKeyHash,
     dayId: request.dayId,
     stopId: request.stopId,
     mode: request.mode,

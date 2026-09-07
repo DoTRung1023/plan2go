@@ -116,9 +116,13 @@ export function withLegCache(inner: TravelProvider): TravelProvider {
       }
 
       const answer = await inner.estimate(request);
-      if (answer.status === "unresolved" || answer.estimate.source !== "google-routes") {
+      if (answer.status === "unresolved") {
         return answer;
       }
+
+      // A straight line costs nothing to work out, but reaching one means Google
+      // was asked and had no route, and that ask is billed. So the answer is
+      // kept whatever its source, and the same empty question is asked once.
 
       const row = {
         ...key,

@@ -42,6 +42,13 @@ export interface ComputedStop {
   readonly stayMinutes: number;
   /** Minutes spent waiting for the place to open before the stay begins. */
   readonly waitMinutes: number;
+  /**
+   * Minutes by which the day was still elsewhere when this stop was due to
+   * begin. Zero for every ordinary stop: it can only happen where a time was
+   * fixed to something the day gets to later, which is allowed and is the
+   * traveller's to sort out.
+   */
+  readonly overlapMinutes: number;
 }
 
 export interface DayTotals {
@@ -107,9 +114,28 @@ export function computeDay({ day, legs }: ComputeDayInput): ComputedDay {
     };
   };
 
-  const beginEpoch = wallClockToEpochMinutes(date, day.startAtMinutes, timeZone);
-  const begins = clockAt(beginEpoch);
   const points = dayPoints(day);
+  const opening = points[0];
+
+  /**
+   * A day that opens on a stop the traveller has fixed begins when that stop
+   * does. There is nothing before it to be late from, so the time they set is
+   * the time the day starts rather than one the day has to reach: it is the
+   * answer to "we are out the door for this", not a booking to be judged
+   * against a morning that has not happened yet.
+   *
+   * Only the opening point counts. A day that starts somewhere of its own, a
+   * hotel say, is already under way by the time it reaches its first stop, and
+   * a time it cannot travel to in time is a real conflict again.
+   */
+  const openingPin =
+    opening?.kind === "stop" && opening.stop.startAtMinutes !== null
+      ? wallClockToEpochMinutes(date, opening.stop.startAtMinutes, timeZone)
+      : null;
+
+  const beginEpoch =
+    openingPin ?? wallClockToEpochMinutes(date, day.startAtMinutes, timeZone);
+  const begins = clockAt(beginEpoch);
 
   const conflicts: Conflict[] = [];
   const computedStops: ComputedStop[] = [];
@@ -165,7 +191,27 @@ export function computeDay({ day, legs }: ComputeDayInput): ComputedDay {
 
   const stayAt = (point: Extract<DayPoint, { kind: "stop" }>): void => {
     const { stop } = point;
-    timeAtPlacesMinutes += stop.stayMinutes;
+    // A checkpoint is somewhere the day goes through. It is timed like anywhere
+    // else, so the traveller knows when they are there, and it keeps whatever
+    // stay it was given, so making it an ordinary stop again gives that back.
+    const staying = stop.checkpoint ? 0 : stop.stayMinutes;
+    timeAtPlacesMinutes += staying;
+
+    /** Both readings of a fixed time: the clock it was set to, and the instant. */
+    const pin =
+      stop.startAtMinutes === null
+        ? null
+        : {
+            minutes: stop.startAtMinutes,
+            epoch: wallClockToEpochMinutes(date, stop.startAtMinutes, timeZone),
+          };
+
+    // A fixed time is known whatever came before it, so it starts the day over
+    // after a leg nobody could answer. Everything from here is timed again, and
+    // the totals stay partial, because the gap itself is still unmeasured.
+    if (cursor === null && pin !== null) {
+      cursor = pin.epoch;
+    }
 
     if (cursor === null) {
       computedStops.push({
@@ -173,33 +219,49 @@ export function computeDay({ day, legs }: ComputeDayInput): ComputedDay {
         placeName: stop.place.name,
         arrival: null,
         departure: null,
-        stayMinutes: stop.stayMinutes,
+        stayMinutes: staying,
         waitMinutes: 0,
+        overlapMinutes: 0,
       });
       return;
     }
 
-    const arrival = clockAt(cursor);
-    const arrivalWall = epochMinutesToWallClock(cursor, timeZone);
+    /**
+     * When the stop begins. A fixed time is the traveller's answer and it wins
+     * outright: reaching it early is waiting, and reaching it late is theirs to
+     * settle by moving something. The engine does not argue with a day it was
+     * told the shape of, and does not quietly move the time either.
+     */
+    const at = pin === null ? cursor : pin.epoch;
+    // Only time actually spent standing about counts. A stop the day arrives
+    // at after its time was not waited for: it was overlapped instead, which is
+    // measured rather than corrected.
+    const waitForPin = Math.max(0, at - cursor);
+    const overlapMinutes = Math.max(0, cursor - at);
+    waitingMinutes += waitForPin;
+
+    const arrival = clockAt(at);
+    const arrivalWall = epochMinutesToWallClock(at, timeZone);
     const check = checkOpeningWindows({
       stopId: stop.id,
       placeName: stop.place.name,
       windows: windowsFor(stop.place, arrivalWall.date),
       weekday: weekdayOf(arrivalWall.date),
       arrivalMinutes: arrival.minutesFromMidnight,
-      stayMinutes: stop.stayMinutes,
+      stayMinutes: staying,
     });
     conflicts.push(...check.conflicts);
     waitingMinutes += check.waitMinutes;
 
-    const departureEpoch = cursor + check.waitMinutes + stop.stayMinutes;
+    const departureEpoch = at + check.waitMinutes + staying;
     computedStops.push({
       stopId: stop.id,
       placeName: stop.place.name,
       arrival,
       departure: clockAt(departureEpoch),
-      stayMinutes: stop.stayMinutes,
-      waitMinutes: check.waitMinutes,
+      stayMinutes: staying,
+      waitMinutes: waitForPin + check.waitMinutes,
+      overlapMinutes,
     });
     cursor = departureEpoch;
   };
@@ -216,13 +278,9 @@ export function computeDay({ day, legs }: ComputeDayInput): ComputedDay {
 
   const ends = cursor === null ? null : clockAt(cursor);
 
-  if (ends !== null && ends.dayOffset > 0) {
-    conflicts.push({
-      kind: "ends-next-day",
-      endMinutes: ends.minutesFromMidnight,
-      dayOffset: ends.dayOffset,
-    });
-  }
+  // A day running past midnight is not remarked on. Every time it produces
+  // already says which day it is on, so a line at the bottom repeating that was
+  // the day saying once more what it had just finished saying.
 
   return {
     dayId: day.id,

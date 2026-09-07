@@ -10,7 +10,6 @@ import { formatClock } from "@/core/time/minutes";
 import { weekdayOf } from "@/core/time/zoned";
 import { HomeIcon } from "@/ui/icons";
 import type { PlannedDay } from "./compute-trip";
-import { ConflictNotice } from "./conflict-notice";
 import type { DayActions } from "./day-actions";
 import { formatOpeningHours } from "./format-opening-hours";
 import { LegRow } from "./leg-row";
@@ -21,6 +20,12 @@ interface DayItineraryProps {
   readonly computed: ComputedDay;
   /** Every leg with the ways of covering it. In the computed legs' order. */
   readonly legs: PlannedDay["legs"];
+  /** The stop under the pointer, here or on the map beside it. */
+  readonly hoveredStopId: string | null;
+  readonly onHoverStop: (stopId: string | null) => void;
+  /** The leg under the pointer, here or on the map beside it. */
+  readonly hoveredLegIndex: number | null;
+  readonly onHoverLeg: (legIndex: number | null) => void;
   /** Null for a reader who holds no edit token. */
   readonly actions: DayActions | null;
 }
@@ -94,7 +99,16 @@ function Anchor({
  * The order a stop is dragged into is settled here rather than inside a card,
  * because a move is about two stops and neither of them owns the other.
  */
-export function DayItinerary({ day, computed, legs, actions }: DayItineraryProps) {
+export function DayItinerary({
+  day,
+  computed,
+  legs,
+  hoveredStopId,
+  onHoverStop,
+  hoveredLegIndex,
+  onHoverLeg,
+  actions,
+}: DayItineraryProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
   const [moveError, setMoveError] = useState<string | null>(null);
@@ -102,11 +116,28 @@ export function DayItinerary({ day, computed, legs, actions }: DayItineraryProps
 
   const notes = new Map(day.stops.map((stop) => [stop.id, stop.note]));
   const places = new Map(day.stops.map((stop) => [stop.id, stop.place]));
+  /** The times the traveller fixed, which the computed stop does not carry. */
+  const fixed = new Map(day.stops.map((stop) => [stop.id, stop.startAtMinutes]));
+  const checkpoints = new Map(day.stops.map((stop) => [stop.id, stop.checkpoint]));
+
+  /**
+   * The numbers count the stops and skip the checkpoints, so a day of three
+   * places and a station changed at reads one, two, three rather than one,
+   * two, four. A checkpoint is on the route without being one of the things
+   * the day is for.
+   */
+  const numbers = new Map<StopId, number>();
+  let counted = 0;
+  for (const stop of day.stops) {
+    if (!stop.checkpoint) {
+      counted += 1;
+      numbers.set(stop.id, counted);
+    }
+  }
   /** With no start point the first stop has no leg arriving at it. */
   const legOffset = day.start === null ? -1 : 0;
   const legToEnd = day.end === null ? undefined : computed.legs[computed.legs.length - 1];
   const plannedToEnd = legToEnd === undefined ? undefined : legs[legToEnd.index];
-  const endConflicts = computed.conflicts.filter((conflict) => conflict.kind === "ends-next-day");
 
   const clearDrag = (): void => {
     setDragIndex(null);
@@ -150,15 +181,21 @@ export function DayItinerary({ day, computed, legs, actions }: DayItineraryProps
                 leg={leg}
                 planned={planned}
                 conflicts={conflictsOnLeg(computed.conflicts, leg.index)}
+                hovered={hoveredLegIndex === leg.index}
+                onHover={onHoverLeg}
                 onChange={actions === null ? null : actions.changeLegMode}
               />
             )}
             <StopCard
-              position={index + 1}
+              position={numbers.get(stop.stopId) ?? null}
+              checkpoint={checkpoints.get(stop.stopId) ?? false}
+              hovered={hoveredStopId === stop.stopId}
+              onHover={onHoverStop}
               index={index}
               stop={stop}
               address={place?.address ?? null}
               note={notes.get(stop.stopId) ?? null}
+              startAtMinutes={fixed.get(stop.stopId) ?? null}
               openingHours={place === undefined ? null : hoursOn(place, day)}
               conflicts={conflictsAtStop(computed.conflicts, stop.stopId)}
               actions={actions}
@@ -178,6 +215,8 @@ export function DayItinerary({ day, computed, legs, actions }: DayItineraryProps
           leg={legToEnd}
           planned={plannedToEnd}
           conflicts={conflictsOnLeg(computed.conflicts, legToEnd.index)}
+          hovered={hoveredLegIndex === legToEnd.index}
+          onHover={onHoverLeg}
           onChange={actions === null ? null : actions.changeLegMode}
         />
       )}
@@ -191,12 +230,6 @@ export function DayItinerary({ day, computed, legs, actions }: DayItineraryProps
           }
         />
       )}
-
-      {endConflicts.map((conflict) => (
-        <div key={conflict.kind} className="mt-2">
-          <ConflictNotice conflict={conflict} />
-        </div>
-      ))}
 
       {moveError === null ? null : (
         <p

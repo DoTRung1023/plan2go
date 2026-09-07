@@ -22,9 +22,13 @@
 .trip-map-marker {
   position: absolute;
   transform: translate(-50%, -50%);
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease;
 }
 
 .trip-map-stop,
+.trip-map-checkpoint,
 .trip-map-endpoint {
   display: flex;
   align-items: center;
@@ -33,6 +37,14 @@
   box-shadow: var(--shadow-sm);
 }
 
+/*
+ * Terracotta, and the routes leave it alone.
+ *
+ * Drawn in ink these were legible and grim: a day of black discs on grey
+ * photography is a map of somewhere nobody wants to go. The product's own
+ * colour is free here now that no route wears it, so the places a day is for
+ * are the warm thing on the map and the lines between them are the cool ones.
+ */
 .trip-map-stop {
   width: 30px;
   height: 30px;
@@ -42,6 +54,36 @@
   font-family: var(--font-display);
   font-size: 14px;
   font-variant-numeric: tabular-nums;
+}
+
+/* The same square cornered shape the panel gives a checkpoint, and far enough
+   up the same ramp to be told from a stop at a glance: pale with a dark mark on
+   it, against a stop that is the other way round. One hue, two weights, and no
+   need to read either of them to know which is which. */
+.trip-map-checkpoint {
+  width: 30px;
+  height: 30px;
+  border-radius: 12px 12px 12px 4px;
+  background-color: var(--color-terracotta-300);
+  color: var(--color-terracotta-900);
+}
+
+/*
+ * The marker under the pointer, or under the pointer in the panel beside the
+ * map. It grows and takes a soft ring the colour of whatever it is, which is
+ * the treatment the design file settles on.
+ *
+ * The scale is written after the translate, not instead of it: this element is
+ * put on its point by shifting it half its own size, and a transform that
+ * dropped that would send every hovered marker down and to the right of the
+ * place it is marking.
+ */
+.trip-map-marker.is-hovered {
+  z-index: 1;
+  transform: translate(-50%, -50%) scale(1.3);
+  box-shadow:
+    0 0 0 7px color-mix(in srgb, var(--color-terracotta) 20%, transparent),
+    0 2px 6px color-mix(in srgb, var(--color-neutral-900) 36%, transparent);
 }
 
 /* Not merely a different colour from a stop marker. A different shape. */

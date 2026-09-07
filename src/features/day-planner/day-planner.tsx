@@ -5,12 +5,20 @@ import type { PlannedDay } from "./compute-trip";
 import { DayItinerary } from "./day-itinerary";
 import { DayTabs } from "./day-tabs";
 import { EmptyDay } from "./empty-day";
-import type { DayActions } from "./day-actions";
+import type { DayActions, EditOutcome } from "./day-actions";
 import { formatDayDate } from "./format-day-date";
 
 interface DayPlannerProps {
   readonly title: string;
   readonly days: readonly PlannedDay[];
+  /** Today in the trip's zone, or a date no day matches when it is not on. */
+  readonly today: string;
+  /** The stop under the pointer, here or on the map beside it. */
+  readonly hoveredStopId: string | null;
+  readonly onHoverStop: (stopId: string | null) => void;
+  /** The leg under the pointer, here or on the map beside it. */
+  readonly hoveredLegIndex: number | null;
+  readonly onHoverLeg: (legIndex: number | null) => void;
   readonly selectedIndex: number;
   readonly onSelect: (index: number) => void;
   /**
@@ -18,6 +26,12 @@ interface DayPlannerProps {
    * holds no edit token, who gets the heading and the range as plain text.
    */
   readonly settings: ReactNode;
+  /**
+   * Puts one more empty day on the end of the trip. Kept apart from the day's
+   * own actions, which are about what is on a day rather than how many there
+   * are. Null for a reader who holds no edit link.
+   */
+  readonly onAddDay: (() => Promise<EditOutcome>) | null;
   /**
    * Everything the day can be changed by. Null for a reader who holds no edit
    * token, whose day is read rather than edited.
@@ -52,9 +66,15 @@ function dateRange(days: readonly PlannedDay[]): string | null {
 export function DayPlanner({
   title,
   days,
+  today,
+  hoveredStopId,
+  onHoverStop,
+  hoveredLegIndex,
+  onHoverLeg,
   selectedIndex,
   onSelect,
   settings,
+  onAddDay,
   actions,
 }: DayPlannerProps) {
   const selected = days[selectedIndex] ?? days[0];
@@ -62,7 +82,7 @@ export function DayPlanner({
 
   return (
     <>
-      <div className={`shrink-0 pb-[10px] ${GUTTER}`}>
+      <div className={`shrink-0 pt-4 pb-[10px] ${GUTTER}`}>
         {settings ?? (
           <>
             <h1 className="font-display text-title text-ink">{title}</h1>
@@ -79,8 +99,10 @@ export function DayPlanner({
       >
         <DayTabs
           days={days.map((day) => day.plan)}
+          today={today}
           selectedIndex={selectedIndex}
           onSelect={onSelect}
+          onAddDay={onAddDay}
         />
       </div>
 
@@ -106,6 +128,10 @@ export function DayPlanner({
               day={selected.plan}
               computed={selected.computed}
               legs={selected.legs}
+              hoveredStopId={hoveredStopId}
+              onHoverStop={onHoverStop}
+              hoveredLegIndex={hoveredLegIndex}
+              onHoverLeg={onHoverLeg}
               actions={actions}
             />
           )}

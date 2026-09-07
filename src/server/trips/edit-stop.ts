@@ -1,20 +1,43 @@
 import type { DayPlan } from "@/core/model/day";
+import { MINUTES_PER_DAY } from "@/core/time/minutes";
 import type { TravelProvider } from "@/core/ports/travel-provider";
 import type { StopChanged, TripRepository } from "../repositories/trip-repository";
 import { refreshLegModes } from "./leg-modes";
 
-/** The step the stay buttons move by, and the longest a stop may last. */
-export const STAY_STEP_MINUTES = 15;
-
-export const MAX_STAY_MINUTES = 12 * 60;
+/**
+ * The longest a stop may last: as long as the two fields that write it can
+ * show, which is ninety nine hours and fifty nine minutes.
+ *
+ * Show, not type. Ninety nine of each can be typed and is more than this, but
+ * it is a hundred hours and thirty nine minutes once it is added up, and a
+ * hundred does not fit in a field two digits wide. A limit that cannot be
+ * displayed is a limit that appears to have been ignored.
+ *
+ * There is no shorter limit worth defending. Half a day was the old one and it
+ * was chosen when the stay was stepped a quarter hour at a time, where the top
+ * was forty eight clicks away and nobody was going to ask for more. Typed, an
+ * overnight stop is an ordinary thing to want, and a day that runs past
+ * midnight already says so where it is read.
+ *
+ * A bound is still needed: this is what a crafted request is held to, and it
+ * is the same number the fields are held to, so the two never disagree.
+ */
+export const MAX_STAY_MINUTES = 99 * 60 + 59;
 
 /** Longer than this is a document, not a note to whoever you are travelling with. */
 export const MAX_NOTE_LENGTH = 500;
 
+/**
+ * A fixed time is a reading off the day's own clock, so it cannot leave the
+ * day. A stop that runs past midnight is said by the times it computes to,
+ * not by pinning it to tomorrow.
+ */
+export const LAST_MINUTE_OF_DAY = MINUTES_PER_DAY - 1;
+
 export interface StopEdit {
   readonly slug: string;
-  /** Every token this browser holds. The write finds nothing without one. */
-  readonly editTokenHashes: readonly string[];
+  /** The hash of the key out of the edit link. No key, no write. */
+  readonly editKeyHash: string;
   readonly stopId: string;
 }
 
@@ -42,9 +65,50 @@ export function setStopStay(
 ): Promise<StopChanged> {
   return repository.updateStop({
     slug: edit.slug,
-    editTokenHashes: edit.editTokenHashes,
+    editKeyHash: edit.editKeyHash,
     stopId: edit.stopId,
     stayMinutes: clampStay(edit.stayMinutes),
+  });
+}
+
+/**
+ * Pins a stop to a time on the day's clock, or unpins it with null.
+ *
+ * Out of range is clamped rather than refused, on the same grounds as the stay:
+ * the only thing that could send one is a stale page, and the traveller's next
+ * click should work.
+ */
+export function setStopStartAt(
+  edit: StopEdit & { readonly startAtMinutes: number | null },
+  repository: TripRepository,
+): Promise<StopChanged> {
+  return repository.updateStop({
+    slug: edit.slug,
+    editKeyHash: edit.editKeyHash,
+    stopId: edit.stopId,
+    startAtMinutes:
+      edit.startAtMinutes === null
+        ? null
+        : Math.max(0, Math.min(LAST_MINUTE_OF_DAY, Math.round(edit.startAtMinutes))),
+  });
+}
+
+/**
+ * Whether the day passes through this place or spends time at it.
+ *
+ * The stay is left exactly as it was. A checkpoint takes none of the day's
+ * time whatever its stay says, so keeping it costs nothing and means turning
+ * one back into a stop gives back the hour it used to have.
+ */
+export function setStopCheckpoint(
+  edit: StopEdit & { readonly checkpoint: boolean },
+  repository: TripRepository,
+): Promise<StopChanged> {
+  return repository.updateStop({
+    slug: edit.slug,
+    editKeyHash: edit.editKeyHash,
+    stopId: edit.stopId,
+    checkpoint: edit.checkpoint,
   });
 }
 
@@ -54,7 +118,7 @@ export function setStopNote(
 ): Promise<StopChanged> {
   return repository.updateStop({
     slug: edit.slug,
-    editTokenHashes: edit.editTokenHashes,
+    editKeyHash: edit.editKeyHash,
     stopId: edit.stopId,
     note: tidyNote(edit.note),
   });
@@ -84,7 +148,7 @@ export async function removeStop(
 
   const removed = await repository.removeStop({
     slug: edit.slug,
-    editTokenHashes: edit.editTokenHashes,
+    editKeyHash: edit.editKeyHash,
     stopId: edit.stopId,
   });
   if (removed.status === "refused" || before === undefined) {
@@ -94,7 +158,7 @@ export async function removeStop(
   await refreshLegModes(
     {
       slug: edit.slug,
-      editTokenHashes: edit.editTokenHashes,
+      editKeyHash: edit.editKeyHash,
       before,
       after: {
         ...before,
@@ -138,7 +202,7 @@ export async function moveStop(
 
   const moved = await repository.moveStop({
     slug: edit.slug,
-    editTokenHashes: edit.editTokenHashes,
+    editKeyHash: edit.editKeyHash,
     stopId: edit.stopId,
     toPosition: edit.toPosition,
   });
@@ -149,7 +213,7 @@ export async function moveStop(
   await refreshLegModes(
     {
       slug: edit.slug,
-      editTokenHashes: edit.editTokenHashes,
+      editKeyHash: edit.editKeyHash,
       before,
       after: reordered(before, edit.stopId, edit.toPosition),
     },
