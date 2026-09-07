@@ -139,12 +139,9 @@ interface TripMapProps {
   /** The stop under the pointer, here or in the panel beside the map. */
   readonly hoveredStopId: string | null;
   readonly onHoverStop: (stopId: string | null) => void;
-  /**
-   * The leg under the pointer in the panel. Answered here but not raised here:
-   * a route is a line a few pixels wide and pointing at one is not something
-   * anybody does on purpose.
-   */
+  /** The leg under the pointer, here or in the panel beside the map. */
   readonly hoveredLegIndex: number | null;
+  readonly onHoverLeg: (legIndex: number | null) => void;
   /**
    * Asked for rather than done here: what the map grows over belongs to
    * whoever laid the two panes out, and a map that resized itself would be
@@ -314,6 +311,7 @@ export function TripMap({
   hoveredStopId,
   onHoverStop,
   hoveredLegIndex,
+  onHoverLeg,
   start,
   end,
   stops,
@@ -343,8 +341,10 @@ export function TripMap({
    * a new function.
    */
   const hovering = useRef(onHoverStop);
+  const hoveringLeg = useRef(onHoverLeg);
   useEffect(() => {
     hovering.current = onHoverStop;
+    hoveringLeg.current = onHoverLeg;
   });
   const overlays = useRef<google.maps.OverlayView[]>([]);
   const lines = useRef<google.maps.Polyline[]>([]);
@@ -460,6 +460,29 @@ export function TripMap({
         ...polylineOptions(maps, stroke, color),
       });
       lines.current.push(drawnLine);
+
+      /*
+       * An invisible line over the drawn one, wide enough to be pointed at on
+       * purpose. A route is a few pixels of ink and the pointer is not that
+       * accurate, so what answers the pointer is a band either side of it that
+       * is never seen. Above the drawn line so it catches first, and under the
+       * markers, which are their own layer entirely.
+       */
+      const target = new maps.Polyline({
+        map,
+        path,
+        clickable: true,
+        zIndex: 3,
+        strokeOpacity: 0,
+        strokeWeight: stroke.weight + HALO_RING * 2,
+      });
+      target.addListener("mouseover", () => {
+        hoveringLeg.current(index);
+      });
+      target.addListener("mouseout", () => {
+        hoveringLeg.current(null);
+      });
+      lines.current.push(target);
 
       emphasis.current.set(index, (on) => {
         const extra = on ? stroke.weight * (HOVER_SCALE - 1) : 0;

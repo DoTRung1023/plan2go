@@ -150,6 +150,7 @@ export function TripEditor({
               hoveredStopId={hoveredStopId}
               onHoverStop={setHoveredStopId}
               hoveredLegIndex={hoveredLegIndex}
+              onHoverLeg={setHoveredLegIndex}
               expanded={expanded}
               onToggleExpanded={() => {
                 setExpanded(!expanded);

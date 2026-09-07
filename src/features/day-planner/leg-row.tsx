@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import type { Conflict } from "@/core/model/conflict";
 import type { TravelMode } from "@/core/model/leg";
 import type { ComputedLeg } from "@/core/time/compute-day";
@@ -141,6 +141,19 @@ export function LegRow({
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, startSaving] = useTransition();
+  const row = useRef<HTMLDivElement | null>(null);
+
+  /**
+   * Brought into the panel when the pointer finds this leg on the map, the
+   * same way a card is. "nearest" leaves a row already on screen exactly where
+   * it is, so hovering one here never scrolls the list out from under the
+   * pointer.
+   */
+  useEffect(() => {
+    if (hovered) {
+      row.current?.scrollIntoView({ block: "nearest" });
+    }
+  }, [hovered]);
   const Icon = MODE_ICON[leg.mode];
 
   const choose = (mode: TravelMode): void => {
@@ -205,6 +218,7 @@ export function LegRow({
       </div>
 
       <div
+        ref={row}
         className="py-[9px]"
         onMouseEnter={() => {
           onHover(leg.index);
