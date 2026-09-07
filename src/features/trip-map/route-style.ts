@@ -4,9 +4,13 @@ import type { TravelMode } from "@/core/model/leg";
  * How each way of getting somewhere is drawn, in one table.
  *
  * The map and the key beside it read from the same row, so a line on the map
- * and the sample in the key can never drift apart. The mode is carried by the
- * stroke pattern as well as by the colour, and every leg says its mode in words
- * in the list, so the pattern is a reminder rather than the only source.
+ * and the sample in the key can never drift apart.
+ *
+ * Only walking is patterned. Three broken lines crossing one another read as
+ * texture rather than as three routes, so the rest are drawn continuous and
+ * the colour is what tells them apart. Walking keeps its dots because a route
+ * made of separated marks is the one that says "on foot" without being told,
+ * and every leg says its mode in words in the list besides.
  *
  * A dash in the sample is the length the map actually draws, because the two
  * are read one after the other and a sample that only resembled the line would
@@ -47,16 +51,16 @@ const STROKES: Readonly<Record<TravelMode, RouteStroke>> = {
   },
   transit: {
     mode: "transit",
-    // A step down the ramp from where it started. Sage in the middle of its
-    // range is the colour of the ground it is drawn over, which on imagery of
-    // anywhere green is most of the picture.
+    // Back up the ramp, now that colour is the only thing telling this from
+    // the cycling line: at the darkest step it was a green so near black that
+    // two solid lines beside each other were one line drawn twice.
     label: "Public transport",
-    colorProperty: "--color-sage-800",
-    inkClass: "text-sage-800",
+    colorProperty: "--color-sage-700",
+    inkClass: "text-sage-700",
     weight: 4.6,
-    dashArray: "11 6",
+    dashArray: null,
     roundCaps: false,
-    drawn: { kind: "dashes", scale: 5.5, repeat: "17px" },
+    drawn: { kind: "solid" },
   },
   walk: {
     mode: "walk",
@@ -78,9 +82,9 @@ const STROKES: Readonly<Record<TravelMode, RouteStroke>> = {
     colorProperty: "--color-ink",
     inkClass: "text-ink",
     weight: 5,
-    dashArray: "6 5",
+    dashArray: null,
     roundCaps: false,
-    drawn: { kind: "dashes", scale: 3, repeat: "11px" },
+    drawn: { kind: "solid" },
   },
 };
 
