@@ -12,7 +12,11 @@ import {
   stopMarkerElement,
 } from "./dom-marker";
 import { ExpandIcon, ShrinkIcon } from "@/ui/icons";
-import { googleMapsBrowserKey, loadGoogleMaps } from "./load-google-maps";
+import {
+  googleMapsBrowserKey,
+  loadGoogleMaps,
+  onGoogleMapsRefused,
+} from "./load-google-maps";
 import type { RouteStroke } from "./route-style";
 import { ROUTE_STROKES, routeStroke } from "./route-style";
 import "./trip-map.css";
@@ -44,7 +48,14 @@ const BROWSER_KEY = googleMapsBrowserKey();
 type MapState =
   | { readonly status: "loading" }
   | { readonly status: "ready"; readonly map: google.maps.Map }
-  | { readonly status: "failed" };
+  | { readonly status: "failed" }
+  /**
+   * The script arrived and Google then refused the key: a different failure
+   * from the script not arriving at all, and one that can land after the map
+   * has already been drawn. Kept apart from "failed" because reloading will
+   * not fix it, so the reader should not be told to try that.
+   */
+  | { readonly status: "refused" };
 
 /**
  * The zoom pair is one pill with a rule between the halves, the way every other
@@ -364,6 +375,14 @@ export function TripMap({
 
     let cancelled = false;
 
+    // Armed before the script is asked for, because a refusal can arrive on
+    // the very first frame Google draws.
+    const stopWatching = onGoogleMapsRefused(() => {
+      if (!cancelled) {
+        setState({ status: "refused" });
+      }
+    });
+
     const open = async (): Promise<void> => {
       const maps = await loadGoogleMaps(BROWSER_KEY);
       if (cancelled) {
@@ -397,6 +416,7 @@ export function TripMap({
 
     return () => {
       cancelled = true;
+      stopWatching();
     };
   }, []);
 
@@ -651,6 +671,17 @@ export function TripMap({
           <Notice>
             Could not load the map. Your stops are saved, reload the page to try
             again.
+          </Notice>
+        </div>
+      ) : null}
+
+      {/* Over the top of the map rather than instead of it: by the time Google
+          refuses the key it has already drawn its own grey panel in the frame,
+          and this covers it so the reader gets one message and not two. */}
+      {state.status === "refused" ? (
+        <div className="absolute inset-0">
+          <Notice>
+            The map is not switched on for this address. Your stops are saved.
           </Notice>
         </div>
       ) : null}
