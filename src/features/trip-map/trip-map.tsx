@@ -198,6 +198,14 @@ const HALO_RING = 7;
 const HALO_OPACITY = 0.2;
 
 /**
+ * How much heavier a pointed at route is drawn. The same 1.3 the markers grow
+ * by in trip-map.css: a line cannot be scaled the way a marker can, so it is
+ * given the width that scaling it would have produced, and the two answer the
+ * pointer by the same amount.
+ */
+const HOVER_SCALE = 1.3;
+
+/**
  * Google draws a dash or a dot as a symbol it repeats along an invisible line,
  * not as a stroke pattern, so a patterned mode hides its own stroke and hands
  * the shape over to the icons.
@@ -287,12 +295,12 @@ export function TripMap({
    */
   const markers = useRef(new Map<string, HTMLElement>());
   /**
-   * A wide, pale terracotta line under each route, off the map until the leg
-   * it belongs to is pointed at. Kept rather than drawn on demand, because the
-   * shape is already known and building it again would be the whole day
-   * redrawn to light up one line of it.
+   * How each leg answers the pointer: its ring on or off, and its own line at
+   * the weight that goes with it. Kept as the work to do rather than as the
+   * lines to do it to, because what a leg is drawn with is settled where it is
+   * drawn and nothing else has to know the mode it travels.
    */
-  const halos = useRef(new Map<number, google.maps.Polyline>());
+  const emphasis = useRef(new Map<number, (on: boolean) => void>());
   /**
    * Read by the marker listeners, which outlive the render that set them up.
    * Naming the callback in the drawing effect's dependencies instead would
@@ -370,7 +378,7 @@ export function TripMap({
       line.setMap(null);
     }
     lines.current = [];
-    halos.current.clear();
+    emphasis.current.clear();
 
     // Under the markers, so a line never crosses the number it belongs to.
     const palette = getComputedStyle(document.documentElement);
@@ -395,7 +403,6 @@ export function TripMap({
         strokeOpacity: HALO_OPACITY,
         strokeWeight: stroke.weight + HALO_RING * 2,
       });
-      halos.current.set(index, halo);
       lines.current.push(halo);
 
       lines.current.push(
@@ -408,15 +415,21 @@ export function TripMap({
         }),
       );
 
-      lines.current.push(
-        new maps.Polyline({
-          map,
-          path,
-          clickable: false,
-          zIndex: 2,
-          ...polylineOptions(maps, stroke, color),
-        }),
-      );
+      const drawnLine = new maps.Polyline({
+        map,
+        path,
+        clickable: false,
+        zIndex: 2,
+        ...polylineOptions(maps, stroke, color),
+      });
+      lines.current.push(drawnLine);
+
+      emphasis.current.set(index, (on) => {
+        const extra = on ? stroke.weight * (HOVER_SCALE - 1) : 0;
+        drawnLine.setOptions(polylineOptions(maps, stroke, color, extra));
+        halo.setOptions({ strokeWeight: stroke.weight + extra + HALO_RING * 2 });
+        halo.setMap(on ? map : null);
+      });
     });
 
     const points: google.maps.LatLngLiteral[] = [];
@@ -535,8 +548,8 @@ export function TripMap({
     if (state.status !== "ready") {
       return;
     }
-    for (const [index, halo] of halos.current) {
-      halo.setMap(index === hoveredLegIndex ? state.map : null);
+    for (const [index, answer] of emphasis.current) {
+      answer(index === hoveredLegIndex);
     }
   }, [hoveredLegIndex, state]);
 
