@@ -29,9 +29,14 @@ type Busy = "stay" | "time" | "note" | "checkpoint" | "remove" | null;
  * pill that arrived at its own size from padding and a line height sat a pixel
  * or two off the row it is in, which is the sort of thing that is only ever
  * noticed once and then cannot be unseen.
+ *
+ * It lifts on hover rather than sinking. Sinking took it to the very colour
+ * the card behind it goes to at the same moment, since reaching for this
+ * button means the card is under the pointer too, and the two met in the
+ * middle and the button vanished into its own row.
  */
 const KIND =
-  "inline-flex h-[22px] shrink-0 items-center rounded-pill border border-rule bg-paper px-[9px] py-0 text-micro font-semibold whitespace-nowrap text-ink-muted hover:border-rule-strong hover:bg-paper-sunken hover:text-ink disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "inline-flex h-[22px] shrink-0 items-center rounded-pill border border-rule bg-paper px-[9px] py-0 text-micro font-semibold whitespace-nowrap text-ink-muted hover:border-rule-strong hover:bg-paper-raised hover:text-ink disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 const TOOL =
   "grid h-[22px] w-[22px] place-items-center rounded-pill text-ink-muted hover:bg-neutral-200 hover:text-ink disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
