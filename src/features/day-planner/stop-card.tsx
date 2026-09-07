@@ -348,7 +348,7 @@ export function StopCard({
             the day counts off. A quiet ring says it is on the route without
             claiming a place in the order. */}
         {position === null ? (
-          <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-[12px_12px_12px_4px] bg-sage-600 text-paper">
+          <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-[12px_12px_12px_4px] bg-terracotta-400 text-terracotta-900">
             <PinIcon size={15} strokeWidth={2.75} />
             <span className="sr-only">Checkpoint</span>
           </span>
