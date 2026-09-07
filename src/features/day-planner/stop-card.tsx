@@ -1,7 +1,7 @@
 "use client";
 
 import type { DragEvent } from "react";
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import type { Conflict } from "@/core/model/conflict";
 import type { ComputedStop } from "@/core/time/compute-day";
 import { formatDuration } from "@/core/time/minutes";
@@ -86,6 +86,7 @@ export function StopCard({
    * again when the server answers. Undefined means nothing is in flight.
    */
   const [sent, setSent] = useState<string | null | undefined>(undefined);
+  const noteField = useRef<HTMLTextAreaElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, startSaving] = useTransition();
 
@@ -136,6 +137,31 @@ export function StopCard({
     setSent(tidied);
     run(() => actions.setNote({ stopId: stop.stopId, note: tidied }));
   };
+
+  /**
+   * The field is exactly as tall as what is in it.
+   *
+   * A note is a line or a paragraph and there is no telling which, so a fixed
+   * two rows is either empty space under one line or a scrollbar hiding the
+   * end of five. Sized to its content there is neither, and the padding above
+   * and below is equal, which is what puts a short note in the middle of its
+   * own box rather than at the top of a box meant for a longer one.
+   *
+   * Height is cleared before it is read, because scrollHeight of an element
+   * already tall enough is its current height, and a field that had grown
+   * would never shrink again.
+   */
+  const fitNote = (element: HTMLTextAreaElement): void => {
+    element.style.height = "auto";
+    element.style.height = `${String(element.scrollHeight)}px`;
+  };
+
+  useEffect(() => {
+    const element = noteField.current;
+    if (element !== null) {
+      fitNote(element);
+    }
+  }, [shownNote, writingNote]);
 
   const start = (event: DragEvent<HTMLElement>): void => {
     event.dataTransfer.effectAllowed = "move";
@@ -317,16 +343,20 @@ export function StopCard({
           )
         ) : (
           <textarea
-            rows={2}
+            ref={noteField}
+            rows={1}
             defaultValue={shownNote ?? ""}
             autoFocus={writingNote}
             readOnly={actions === null}
+            onInput={(event) => {
+              fitNote(event.currentTarget);
+            }}
             onBlur={(event) => {
               commitNote(event.target.value);
             }}
             placeholder="A note for whoever you are travelling with."
             aria-label={`Note about ${stop.placeName}`}
-            className="w-full resize-none rounded-chip border border-rule bg-paper px-[11px] py-2 text-meta text-ink caret-terracotta outline-none placeholder:text-ink-faint focus-visible:border-terracotta"
+            className="w-full resize-none overflow-hidden rounded-chip border border-rule bg-paper px-[11px] py-2 text-meta text-ink caret-terracotta outline-none placeholder:text-ink-faint focus-visible:border-terracotta"
           />
         )}
 
