@@ -71,6 +71,41 @@ type MapTypeId = (typeof MAP_TYPES)[number]["id"];
 
 const OPENING_MAP_TYPE: MapTypeId = "hybrid";
 
+/**
+ * Where the reader's last choice of ground is kept.
+ *
+ * In the browser rather than on the trip: which ground a map is drawn on is a
+ * preference of whoever is reading it, not a fact about the trip, and a trip
+ * shared with somebody should not arrive insisting on the imagery because the
+ * person who planned it liked imagery.
+ */
+const REMEMBERED = "plan2go.map-type";
+
+/** The ground last chosen here, or the one a map opens on. */
+function rememberedMapType(): MapTypeId {
+  try {
+    const saved = window.localStorage.getItem(REMEMBERED);
+    const known = MAP_TYPES.find((one) => one.id === saved);
+    return known?.id ?? OPENING_MAP_TYPE;
+  } catch {
+    // Storage can be switched off entirely, and reaching for it then throws
+    // rather than answering with nothing.
+    return OPENING_MAP_TYPE;
+  }
+}
+
+/** True when the choice will still be here next time, which it may not be. */
+function rememberMapType(id: MapTypeId): boolean {
+  try {
+    window.localStorage.setItem(REMEMBERED, id);
+    return true;
+  } catch {
+    // A browser told to keep nothing keeps nothing. The map still changes; it
+    // simply opens on the usual ground next time.
+    return false;
+  }
+}
+
 const TYPE_ROW =
   "block w-full rounded-chip px-[9px] py-[5px] text-left text-micro whitespace-nowrap focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta";
 
@@ -339,8 +374,10 @@ export function TripMap({
         map: new maps.Map(element, {
           center: openingView.current ?? WHOLE_WORLD,
           zoom: openingView.current === null ? WHOLE_WORLD_ZOOM : CITY_ZOOM,
-          // Imagery with the names on top of it, until the reader says otherwise.
-          mapTypeId: OPENING_MAP_TYPE,
+          // Imagery with the names on top of it, unless this reader has said
+          // otherwise before. Read here rather than taken from the state above
+          // so that changing the ground never rebuilds the map under it.
+          mapTypeId: rememberedMapType(),
           // Every one of Google's controls off. Ours are drawn over the map in
           // this product's palette, in one corner rather than scattered around
           // the frame the way a default map puts them.
@@ -515,7 +552,7 @@ export function TripMap({
 
   const drawnLegs = routeLegs(start, end, stops, endTravelMode).length;
 
-  const [mapType, setMapType] = useState<MapTypeId>(OPENING_MAP_TYPE);
+  const [mapType, setMapType] = useState<MapTypeId>(rememberedMapType);
   const [choosingType, setChoosingType] = useState(false);
 
   useEffect(() => {
@@ -556,6 +593,7 @@ export function TripMap({
   const chooseType = (id: MapTypeId): void => {
     setChoosingType(false);
     setMapType(id);
+    rememberMapType(id);
     if (state.status === "ready") {
       state.map.setMapTypeId(id);
     }
