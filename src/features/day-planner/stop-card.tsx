@@ -256,12 +256,22 @@ export function StopCard({
         onDrop(index);
       }}
       onDragEnd={onDragEnd}
-      className={`group ml-[2px] grid grid-cols-[30px_minmax(0,1fr)] gap-x-[14px] rounded-card border bg-paper-raised py-[14px] pr-[15px] pl-3 ${
-        dragging ? "opacity-35" : ""
-      } ${
+      /*
+       * A checkpoint is a line on the day rather than a card in it: no paper
+       * under it and no rule around it, because there is nothing on it to keep
+       * apart from what is next to it. It is where the day goes through, and it
+       * should read at a glance as less than the places it is going to.
+       */
+      className={`group ml-[2px] grid grid-cols-[30px_minmax(0,1fr)] gap-x-[14px] rounded-card ${
+        checkpoint
+          ? "border border-transparent py-[9px] pr-[15px] pl-3"
+          : "border bg-paper-raised py-[14px] pr-[15px] pl-3"
+      } ${dragging ? "opacity-35" : ""} ${
         dragOver && !dragging
           ? "border-terracotta outline-2 outline-offset-[3px] outline-dashed outline-terracotta"
-          : "border-rule"
+          : checkpoint
+            ? ""
+            : "border-rule"
       }`}
     >
       <div className="flex flex-col items-center gap-[7px]">
@@ -269,8 +279,8 @@ export function StopCard({
             the day counts off. A quiet ring says it is on the route without
             claiming a place in the order. */}
         {position === null ? (
-          <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-pill border border-rule-strong bg-paper text-ink-muted">
-            <PinIcon size={14} strokeWidth={2.4} />
+          <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-[12px_12px_12px_4px] bg-sage-600 text-paper">
+            <PinIcon size={15} strokeWidth={2.75} />
             <span className="sr-only">Checkpoint</span>
           </span>
         ) : (
@@ -285,9 +295,23 @@ export function StopCard({
       <div className="flex min-w-0 flex-col gap-[9px]">
         <div className="flex items-start gap-[10px]">
           <div className="min-w-0 flex-1">
-            <h3 className="font-display text-place text-ink">{stop.placeName}</h3>
+            <h3
+              className={
+                checkpoint
+                  ? "text-meta font-semibold text-ink"
+                  : "font-display text-place text-ink"
+              }
+            >
+              {stop.placeName}
+            </h3>
             {address === null ? null : (
-              <p className="mt-[3px] text-meta text-ink-muted">{address}</p>
+              <p
+                className={
+                  checkpoint ? "text-micro text-ink-muted" : "mt-[3px] text-meta text-ink-muted"
+                }
+              >
+                {address}
+              </p>
             )}
           </div>
 
@@ -330,6 +354,24 @@ export function StopCard({
 
             {actions === null ? null : (
               <div className="-mr-1 flex items-center opacity-55 group-hover:opacity-100 focus-within:opacity-100">
+                {/* What this place is to the day, beside the two that act on
+                    the whole of it. A word rather than a glyph: there is no
+                    drawing of "the day only goes through here". */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    run("checkpoint", () =>
+                      actions.setCheckpoint({
+                        stopId: stop.stopId,
+                        checkpoint: !checkpoint,
+                      }),
+                    );
+                  }}
+                  disabled={busy === "checkpoint"}
+                  className="rounded-pill px-1 text-micro font-semibold text-ink-muted hover:text-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+                >
+                  {checkpoint ? "Stay here" : "Passing through"}
+                </button>
                 {/* A handle, not a shortcut. The arrow keys are left to the
                     page, so a card under the pointer still scrolls. */}
                 <button
@@ -356,89 +398,72 @@ export function StopCard({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-[11px]">
-          {checkpoint ? (
-            <span className="rounded-pill border border-rule bg-paper px-[11px] py-[3px] text-meta text-ink-muted">
-              Passing through
-            </span>
-          ) : actions === null ? (
-            <span className="rounded-pill border border-rule bg-paper px-[11px] py-[3px] font-display text-meta text-ink tabular-nums">
-              Stay for {formatDuration(stop.stayMinutes)}
-            </span>
-          ) : (
-            <div
-              // Remounted when the stored stay changes, so the two fields show
-              // what was actually kept: type ninety minutes and they come back
-              // as an hour and a half.
-              key={stop.stayMinutes}
-              className="flex items-center gap-[2px] rounded-pill border border-rule bg-paper py-[2px] pr-[11px] pl-[9px]"
-              onBlur={(event) => {
-                // Moving between the two fields is still one edit, so nothing
-                // is written until the pair as a whole is left.
-                const next = event.relatedTarget;
-                if (next !== hourField.current && next !== minuteField.current) {
-                  commitStay();
-                }
-              }}
-            >
-              <span className="pr-[5px] text-micro whitespace-nowrap text-ink-muted">
-                Stay for
+        {checkpoint ? null : (
+          <div className="flex flex-wrap items-center gap-[11px]">
+            {actions === null ? (
+              <span className="rounded-pill border border-rule bg-paper px-[11px] py-[3px] font-display text-meta text-ink tabular-nums">
+                Stay for {formatDuration(stop.stayMinutes)}
               </span>
-              <input
-                ref={hourField}
-                type="text"
-                inputMode="numeric"
-                maxLength={2}
-                disabled={busy === "stay"}
-                defaultValue={String(Math.floor(stop.stayMinutes / 60))}
-                onKeyDown={onStayKey}
-                aria-label={`Hours at ${stop.placeName}`}
-                className={STAY_FIELD}
-              />
-              <span className="pr-[3px] text-micro text-ink-muted">hr</span>
-              <input
-                ref={minuteField}
-                type="text"
-                inputMode="numeric"
-                maxLength={2}
-                disabled={busy === "stay"}
-                defaultValue={String(stop.stayMinutes % 60)}
-                onKeyDown={onStayKey}
-                aria-label={`Minutes at ${stop.placeName}`}
-                className={STAY_FIELD}
-              />
-              <span className="text-micro text-ink-muted">min</span>
-            </div>
-          )}
+            ) : (
+              <div
+                // Remounted when the stored stay changes, so the two fields show
+                // what was actually kept: type ninety minutes and they come back
+                // as an hour and a half.
+                key={stop.stayMinutes}
+                className="flex items-center gap-[2px] rounded-pill border border-rule bg-paper py-[2px] pr-[11px] pl-[9px]"
+                onBlur={(event) => {
+                  // Moving between the two fields is still one edit, so nothing
+                  // is written until the pair as a whole is left.
+                  const next = event.relatedTarget;
+                  if (next !== hourField.current && next !== minuteField.current) {
+                    commitStay();
+                  }
+                }}
+              >
+                <span className="pr-[5px] text-micro whitespace-nowrap text-ink-muted">
+                  Stay for
+                </span>
+                <input
+                  ref={hourField}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={2}
+                  disabled={busy === "stay"}
+                  defaultValue={String(Math.floor(stop.stayMinutes / 60))}
+                  onKeyDown={onStayKey}
+                  aria-label={`Hours at ${stop.placeName}`}
+                  className={STAY_FIELD}
+                />
+                <span className="pr-[3px] text-micro text-ink-muted">hr</span>
+                <input
+                  ref={minuteField}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={2}
+                  disabled={busy === "stay"}
+                  defaultValue={String(stop.stayMinutes % 60)}
+                  onKeyDown={onStayKey}
+                  aria-label={`Minutes at ${stop.placeName}`}
+                  className={STAY_FIELD}
+                />
+                <span className="text-micro text-ink-muted">min</span>
+              </div>
+            )}
 
-          {actions === null ? null : (
-            <button
-              type="button"
-              onClick={() => {
-                run("checkpoint", () =>
-                  actions.setCheckpoint({ stopId: stop.stopId, checkpoint: !checkpoint }),
-                );
-              }}
-              disabled={busy === "checkpoint"}
-              className="rounded-pill px-1 text-micro font-semibold text-ink-muted hover:text-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
-            >
-              {checkpoint ? "Stay here" : "Passing through"}
-            </button>
-          )}
 
-          {openingHours === null ? null : (
-            <span className="flex items-center gap-[5px] text-micro text-ink-muted tabular-nums">
-              <ClockIcon size={12} className="shrink-0" />
-              {openingHours}
-            </span>
-          )}
-        </div>
-
+            {openingHours === null ? null : (
+              <span className="flex items-center gap-[5px] text-micro text-ink-muted tabular-nums">
+                <ClockIcon size={12} className="shrink-0" />
+                {openingHours}
+              </span>
+            )}
+          </div>
+        )}
         {conflicts.map((conflict, at) => (
           <ConflictNotice key={`${conflict.kind}-${String(at)}`} conflict={conflict} />
         ))}
 
-        {shownNote === null && !writingNote ? (
+        {checkpoint ? null : shownNote === null && !writingNote ? (
           actions === null ? null : (
             <button
               type="button"
