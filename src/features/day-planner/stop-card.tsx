@@ -1,18 +1,15 @@
 "use client";
 
-import type { DragEvent } from "react";
+import type { DragEvent, KeyboardEvent } from "react";
 import { useEffect, useRef, useState, useTransition } from "react";
 import type { Conflict } from "@/core/model/conflict";
 import type { ComputedStop } from "@/core/time/compute-day";
 import { formatDuration } from "@/core/time/minutes";
-import { ClockIcon, CloseIcon, GripIcon, MinusIcon, PlusIcon } from "@/ui/icons";
+import { ClockIcon, CloseIcon, GripIcon, PlusIcon } from "@/ui/icons";
 import type { DayActions } from "./day-actions";
 import { ConflictNotice } from "./conflict-notice";
 import { formatDayTime } from "./format-day-time";
 import { TimePicker } from "./time-picker";
-
-/** Matches the step the server clamps to. */
-const STAY_STEP_MINUTES = 15;
 
 const MAX_STAY_MINUTES = 12 * 60;
 
@@ -22,8 +19,9 @@ type Busy = "stay" | "time" | "note" | "remove" | null;
 const TOOL =
   "grid h-[22px] w-[22px] place-items-center rounded-pill text-ink-muted hover:bg-neutral-200 hover:text-ink disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
-const STEP =
-  "grid h-[22px] w-[22px] place-items-center rounded-pill text-ink-muted hover:bg-neutral-200 hover:text-ink disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+/** Two digits and no more, so the pair reads as one number written in parts. */
+const STAY_FIELD =
+  "w-[26px] rounded-chip bg-transparent py-[2px] text-center font-display text-body text-ink caret-terracotta tabular-nums outline-none focus-visible:bg-terracotta-100";
 
 interface StopCardProps {
   readonly position: number;
@@ -90,6 +88,8 @@ export function StopCard({
    */
   const [sent, setSent] = useState<string | null | undefined>(undefined);
   const noteField = useRef<HTMLTextAreaElement | null>(null);
+  const hourField = useRef<HTMLInputElement | null>(null);
+  const minuteField = useRef<HTMLInputElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, startSaving] = useTransition();
   const [busy, setBusy] = useState<Busy>(null);
@@ -124,11 +124,44 @@ export function StopCard({
     });
   };
 
-  const setStay = (minutes: number): void => {
-    if (actions === null) {
+  /**
+   * How long the stop lasts, written rather than stepped.
+   *
+   * Two fields and not one, because an hour and ten minutes is how a person
+   * says it and "70" is not. Anything unreadable counts as nothing, and the
+   * server clamps the total to the range it allows, so ninety minutes typed
+   * into the minutes field is simply an hour and a half.
+   */
+  const commitStay = (): void => {
+    const partOf = (field: HTMLInputElement | null): number => {
+      const read = Number(field?.value.trim() ?? "");
+      return Number.isFinite(read) && read > 0 ? Math.floor(read) : 0;
+    };
+    const minutes = Math.min(
+      MAX_STAY_MINUTES,
+      partOf(hourField.current) * 60 + partOf(minuteField.current),
+    );
+    if (actions === null || minutes === stop.stayMinutes) {
       return;
     }
     run("stay", () => actions.setStay({ stopId: stop.stopId, stayMinutes: minutes }));
+  };
+
+  /** Enter is done, and escape puts back what the stop already said. */
+  const onStayKey = (event: KeyboardEvent<HTMLInputElement>): void => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      event.currentTarget.blur();
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      if (hourField.current !== null) {
+        hourField.current.value = String(Math.floor(stop.stayMinutes / 60));
+      }
+      if (minuteField.current !== null) {
+        minuteField.current.value = String(stop.stayMinutes % 60);
+      }
+      event.currentTarget.blur();
+    }
   };
 
   /** Setting a time to the one it already had is not a change worth a write. */
@@ -303,35 +336,48 @@ export function StopCard({
               Stay for {formatDuration(stop.stayMinutes)}
             </span>
           ) : (
-            <div className="flex items-center gap-[2px] rounded-pill border border-rule bg-paper px-[3px] py-[2px]">
-              <span className="pr-[5px] pl-[9px] text-micro whitespace-nowrap text-ink-muted">
+            <div
+              // Remounted when the stored stay changes, so the two fields show
+              // what was actually kept: type ninety minutes and they come back
+              // as an hour and a half.
+              key={stop.stayMinutes}
+              className="flex items-center gap-[2px] rounded-pill border border-rule bg-paper py-[2px] pr-[11px] pl-[9px]"
+              onBlur={(event) => {
+                // Moving between the two fields is still one edit, so nothing
+                // is written until the pair as a whole is left.
+                const next = event.relatedTarget;
+                if (next !== hourField.current && next !== minuteField.current) {
+                  commitStay();
+                }
+              }}
+            >
+              <span className="pr-[5px] text-micro whitespace-nowrap text-ink-muted">
                 Stay for
               </span>
-              <button
-                type="button"
-                onClick={() => {
-                  setStay(stop.stayMinutes - STAY_STEP_MINUTES);
-                }}
-                disabled={busy === "stay" || stop.stayMinutes === 0}
-                aria-label={`Less time at ${stop.placeName}`}
-                className={STEP}
-              >
-                <MinusIcon size={12} strokeWidth={3} />
-              </button>
-              <span className="min-w-[74px] text-center font-display text-body whitespace-nowrap text-ink tabular-nums">
-                {formatDuration(stop.stayMinutes)}
-              </span>
-              <button
-                type="button"
-                onClick={() => {
-                  setStay(stop.stayMinutes + STAY_STEP_MINUTES);
-                }}
-                disabled={busy === "stay" || stop.stayMinutes >= MAX_STAY_MINUTES}
-                aria-label={`More time at ${stop.placeName}`}
-                className={STEP}
-              >
-                <PlusIcon size={12} strokeWidth={3} />
-              </button>
+              <input
+                ref={hourField}
+                type="text"
+                inputMode="numeric"
+                maxLength={2}
+                disabled={busy === "stay"}
+                defaultValue={String(Math.floor(stop.stayMinutes / 60))}
+                onKeyDown={onStayKey}
+                aria-label={`Hours at ${stop.placeName}`}
+                className={STAY_FIELD}
+              />
+              <span className="pr-[3px] text-micro text-ink-muted">hr</span>
+              <input
+                ref={minuteField}
+                type="text"
+                inputMode="numeric"
+                maxLength={2}
+                disabled={busy === "stay"}
+                defaultValue={String(stop.stayMinutes % 60)}
+                onKeyDown={onStayKey}
+                aria-label={`Minutes at ${stop.placeName}`}
+                className={STAY_FIELD}
+              />
+              <span className="text-micro text-ink-muted">min</span>
             </div>
           )}
 

@@ -4,9 +4,7 @@ import type { TravelProvider } from "@/core/ports/travel-provider";
 import type { StopChanged, TripRepository } from "../repositories/trip-repository";
 import { refreshLegModes } from "./leg-modes";
 
-/** The step the stay buttons move by, and the longest a stop may last. */
-export const STAY_STEP_MINUTES = 15;
-
+/** The longest a stop may last. Written in full rather than stepped to. */
 export const MAX_STAY_MINUTES = 12 * 60;
 
 /** Longer than this is a document, not a note to whoever you are travelling with. */
