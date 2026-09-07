@@ -41,9 +41,12 @@ export interface RouteStroke {
 const STROKES: Readonly<Record<TravelMode, RouteStroke>> = {
   drive: {
     mode: "drive",
+    // Not terracotta. The busiest line on most days was wearing the colour the
+    // product itself is drawn in, so a route read as something the product was
+    // recommending rather than as the way this traveller happens to be going.
     label: "Driving",
-    colorProperty: "--color-terracotta-700",
-    inkClass: "text-terracotta-700",
+    colorProperty: "--color-plum-700",
+    inkClass: "text-plum-700",
     weight: 4.6,
     dashArray: null,
     roundCaps: false,
@@ -65,8 +68,11 @@ const STROKES: Readonly<Record<TravelMode, RouteStroke>> = {
   walk: {
     mode: "walk",
     label: "Walking",
-    colorProperty: "--color-terracotta-600",
-    inkClass: "text-terracotta-600",
+    // Off the terracotta for the same reason, and far enough from the blue
+    // that the two nearest colours on the map are also the two that are not
+    // drawn alike: this one is dotted and that one is solid.
+    colorProperty: "--color-teal-700",
+    inkClass: "text-teal-700",
     weight: 5,
     dashArray: "0.5 8",
     roundCaps: true,

@@ -321,7 +321,9 @@ export function StopCard({
        * around it and a paler paper under it, sitting between the page and the
        * places the day is actually for. Shorter, too, because there is less on
        * it. Drawn with nothing at all it read as a gap in the list rather than
-       * as somewhere the day goes through.
+       * as somewhere the day goes through, and drawn at full strength it read
+       * as another stop: both are barely there, and being barely there is the
+       * whole of what they have to say.
        */
       className={`group ml-[2px] grid grid-cols-[30px_minmax(0,1fr)] gap-x-[14px] rounded-card border ${
         checkpoint ? "py-[9px] pr-[15px] pl-3" : "bg-paper-raised py-[14px] pr-[15px] pl-3"
@@ -337,7 +339,7 @@ export function StopCard({
             hovered
             ? "border-terracotta/55 bg-paper-sunken"
             : checkpoint
-              ? "border-rule/70 bg-paper-raised/55"
+              ? "border-rule/45 bg-paper-raised/30"
               : "border-rule"
       }`}
     >

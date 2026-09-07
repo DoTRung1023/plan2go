@@ -52,15 +52,21 @@
   --color-sage-900: #272e1b;
 
   /*
-   * The one colour in this product that is neither of its accents, and the map
-   * is the only thing allowed to spend it.
+   * The map's own hues, and nothing outside the map may spend them.
    *
    * Four ways of getting somewhere need four lines that can be told apart at a
-   * glance, and only walking is patterned, so the other three are told apart by
-   * colour alone. Terracotta and sage and the ink itself are three. This is the
-   * fourth, mixed to the same muted warmth and set at the weight the other
-   * routes are drawn at.
+   * glance. Only walking is patterned, so colour does nearly all of that work,
+   * and it has to do it without terracotta: terracotta is what the product
+   * itself is drawn in, and a route wearing it reads as the route the product
+   * is recommending rather than as the one you happen to be driving.
+   *
+   * All three are mixed to the warmth and the weight of the ramps above, so
+   * they sit in this palette rather than arriving from somewhere else, and
+   * they are spread far enough apart on the wheel to survive being small, dark
+   * and drawn over photography.
    */
+  --color-plum-700: #6a4076;
+  --color-teal-700: #2c6b64;
   --color-cobalt-700: #35607d;
 
   --font-display: var(--font-caprasimo), Georgia, "Times New Roman", serif;

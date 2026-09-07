@@ -147,10 +147,12 @@ When one changes the other changes in the same commit.
 
 ## Colors
 
-There is one colour outside all of this: a single blue, at `cobalt-700`, drawn by the
-cycling route on the map and by nothing else. Four ways of getting somewhere need four
-lines that can be told apart, only walking is patterned, and terracotta, sage and ink are
-three. It is not an accent and nothing else may reach for it.
+The map keeps three hues of its own, at `plum-700`, `teal-700` and `cobalt-700`, drawn by
+the driving, walking and cycling routes and by nothing else. Four ways of getting
+somewhere need four lines that can be told apart, only walking is patterned, and none of
+them may be terracotta: a route in the product's own colour reads as the route the
+product is recommending. They are not accents and nothing outside the map may reach for
+them.
 
 There are two accents and they are not interchangeable. Terracotta is the product: the
 stop numbers, the active day, the primary action, the route lines. Sage is the second
