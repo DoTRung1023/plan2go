@@ -287,7 +287,7 @@ export function StopCard({
              * happen to be side by side.
              */
             hovered
-            ? "border-terracotta bg-terracotta-100"
+            ? "border-terracotta/55 bg-paper-sunken"
             : checkpoint
               ? ""
               : "border-rule"
@@ -372,7 +372,11 @@ export function StopCard({
             )}
 
             {actions === null ? null : (
-              <div className="-mr-1 flex items-center opacity-55 group-hover:opacity-100 focus-within:opacity-100">
+              <div
+                className={`-mr-1 flex items-center group-hover:opacity-100 focus-within:opacity-100 ${
+                  hovered ? "opacity-100" : "opacity-55"
+                }`}
+              >
                 {/* What this place is to the day, beside the two that act on
                     the whole of it. A word rather than a glyph: there is no
                     drawing of "the day only goes through here". */}

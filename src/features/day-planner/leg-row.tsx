@@ -216,7 +216,7 @@ export function LegRow({
         {onChange === null ? (
           <div
             className={`flex flex-wrap items-center gap-x-[10px] gap-y-[6px] rounded-row border py-2 pr-[14px] pl-3 ${
-              hovered ? "border-terracotta bg-terracotta-100" : "border-rule"
+              hovered ? "border-terracotta/55 bg-paper-sunken" : "border-rule"
             }`}
           >
             {summary}
@@ -278,7 +278,7 @@ export function LegRow({
             }}
             className={`flex w-full flex-wrap items-center gap-x-[10px] gap-y-[6px] rounded-row border py-2 pr-[14px] pl-3 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
               hovered
-                ? "border-terracotta bg-terracotta-100"
+                ? "border-terracotta/55 bg-paper-sunken"
                 : "border-rule hover:border-rule-strong"
             }`}
           >

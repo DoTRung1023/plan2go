@@ -187,8 +187,15 @@ function routeLegs(
  */
 const CASING_WEIGHT = 2.2;
 
-/** How far the pointed at route shows either side of itself. */
-const HALO_WEIGHT = 11;
+/**
+ * The ring a pointed at route wears, as wide either side of itself as the ring
+ * a pointed at marker wears: the two are the same answer to the same question,
+ * and a route that lit up differently from the place it runs to would read as
+ * a different kind of thing being said.
+ */
+const HALO_RING = 7;
+
+const HALO_OPACITY = 0.2;
 
 /**
  * Google draws a dash or a dot as a symbol it repeats along an invisible line,
@@ -385,8 +392,8 @@ export function TripMap({
         clickable: false,
         zIndex: 0,
         strokeColor: palette.getPropertyValue("--color-terracotta").trim(),
-        strokeOpacity: 0.4,
-        strokeWeight: stroke.weight + HALO_WEIGHT,
+        strokeOpacity: HALO_OPACITY,
+        strokeWeight: stroke.weight + HALO_RING * 2,
       });
       halos.current.set(index, halo);
       lines.current.push(halo);
