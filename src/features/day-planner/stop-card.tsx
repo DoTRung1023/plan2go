@@ -29,6 +29,9 @@ interface StopCardProps {
   readonly position: number | null;
   /** Somewhere the day passes through: no stay, no number, no time of its own. */
   readonly checkpoint: boolean;
+  /** Whether the pointer is on this place, here or on the map beside it. */
+  readonly hovered: boolean;
+  readonly onHover: (stopId: string | null) => void;
   /** Where the stop sits in its day, counted from zero, which is what a move needs. */
   readonly index: number;
   readonly stop: ComputedStop;
@@ -66,6 +69,8 @@ interface StopCardProps {
 export function StopCard({
   position,
   checkpoint,
+  hovered,
+  onHover,
   index,
   stop,
   startAtMinutes,
@@ -256,6 +261,12 @@ export function StopCard({
         onDrop(index);
       }}
       onDragEnd={onDragEnd}
+      onMouseEnter={() => {
+        onHover(stop.stopId);
+      }}
+      onMouseLeave={() => {
+        onHover(null);
+      }}
       /*
        * A checkpoint is a line on the day rather than a card in it: no paper
        * under it and no rule around it, because there is nothing on it to keep
@@ -269,9 +280,17 @@ export function StopCard({
       } ${dragging ? "opacity-35" : ""} ${
         dragOver && !dragging
           ? "border-terracotta outline-2 outline-offset-[3px] outline-dashed outline-terracotta"
-          : checkpoint
-            ? ""
-            : "border-rule"
+          : /*
+             * Under the pointer here, or under the pointer on the map. A place
+             * is a card and a marker at once, and pointing at either has to
+             * say which one the other is, or the two panes are two lists that
+             * happen to be side by side.
+             */
+            hovered
+            ? "border-terracotta bg-terracotta-100"
+            : checkpoint
+              ? ""
+              : "border-rule"
       }`}
     >
       <div className="flex flex-col items-center gap-[7px]">

@@ -13,6 +13,9 @@ interface DayPlannerProps {
   readonly days: readonly PlannedDay[];
   /** Today in the trip's zone, or a date no day matches when it is not on. */
   readonly today: string;
+  /** The stop under the pointer, here or on the map beside it. */
+  readonly hoveredStopId: string | null;
+  readonly onHoverStop: (stopId: string | null) => void;
   readonly selectedIndex: number;
   readonly onSelect: (index: number) => void;
   /**
@@ -61,6 +64,8 @@ export function DayPlanner({
   title,
   days,
   today,
+  hoveredStopId,
+  onHoverStop,
   selectedIndex,
   onSelect,
   settings,
@@ -118,6 +123,8 @@ export function DayPlanner({
               day={selected.plan}
               computed={selected.computed}
               legs={selected.legs}
+              hoveredStopId={hoveredStopId}
+              onHoverStop={onHoverStop}
               actions={actions}
             />
           )}

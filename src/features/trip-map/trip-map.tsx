@@ -6,6 +6,7 @@ import type { TravelMode } from "@/core/model/leg";
 import type { LatLng } from "@/core/model/place";
 import type { Stop } from "@/core/model/stop";
 import {
+  checkpointMarkerElement,
   endpointMarkerElement,
   placeDomMarker,
   stopMarkerElement,
@@ -100,6 +101,9 @@ const ICON_CONTROL = `${CONTROL} h-[30px] w-[30px] text-[17px]`;
 interface TripMapProps {
   /** Whether the map has been opened over the planner beside it. */
   readonly expanded: boolean;
+  /** The stop under the pointer, here or in the panel beside the map. */
+  readonly hoveredStopId: string | null;
+  readonly onHoverStop: (stopId: string | null) => void;
   /**
    * Asked for rather than done here: what the map grows over belongs to
    * whoever laid the two panes out, and a map that resized itself would be
@@ -248,6 +252,8 @@ function Notice({ children }: { children: React.ReactNode }) {
 export function TripMap({
   expanded,
   onToggleExpanded,
+  hoveredStopId,
+  onHoverStop,
   start,
   end,
   stops,
@@ -257,6 +263,22 @@ export function TripMap({
 }: TripMapProps) {
   const container = useRef<HTMLDivElement | null>(null);
   const types = useRef<HTMLDivElement | null>(null);
+  /**
+   * Each stop's marker, kept so the pointer can be answered without drawing
+   * the day again: rebuilding every marker to shade one of them would blink
+   * the whole map each time the pointer crossed a card.
+   */
+  const markers = useRef(new Map<string, HTMLElement>());
+  /**
+   * Read by the marker listeners, which outlive the render that set them up.
+   * Naming the callback in the drawing effect's dependencies instead would
+   * redraw every marker on the day whenever the caller happened to hand over
+   * a new function.
+   */
+  const hovering = useRef(onHoverStop);
+  useEffect(() => {
+    hovering.current = onHoverStop;
+  });
   const overlays = useRef<google.maps.OverlayView[]>([]);
   const lines = useRef<google.maps.Polyline[]>([]);
   /**
@@ -392,19 +414,30 @@ export function TripMap({
       }
     }
 
-    stops.forEach((stop, index) => {
+    markers.current.clear();
+    // The numbers count the stops and skip the checkpoints, the same way the
+    // panel does, so a place is called the same thing in both.
+    let counted = 0;
+    stops.forEach((stop) => {
       const point = {
         lat: stop.place.position.lat,
         lng: stop.place.position.lng,
       };
-      overlays.current.push(
-        placeDomMarker(
-          maps,
-          map,
-          point,
-          stopMarkerElement(index + 1, stop.place.name),
-        ),
-      );
+      let element: HTMLElement;
+      if (stop.checkpoint) {
+        element = checkpointMarkerElement(stop.place.name);
+      } else {
+        counted += 1;
+        element = stopMarkerElement(counted, stop.place.name);
+      }
+      element.addEventListener("mouseenter", () => {
+        hovering.current(stop.id);
+      });
+      element.addEventListener("mouseleave", () => {
+        hovering.current(null);
+      });
+      markers.current.set(stop.id, element);
+      overlays.current.push(placeDomMarker(maps, map, point, element));
       points.push(point);
     });
 
@@ -455,6 +488,12 @@ export function TripMap({
       document.removeEventListener("mousedown", dismiss);
     };
   }, [choosingType]);
+
+  useEffect(() => {
+    for (const [stopId, element] of markers.current) {
+      element.classList.toggle("is-hovered", stopId === hoveredStopId);
+    }
+  }, [hoveredStopId]);
 
   const chooseType = (id: MapTypeId): void => {
     setChoosingType(false);

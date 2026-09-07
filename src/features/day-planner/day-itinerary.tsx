@@ -21,6 +21,9 @@ interface DayItineraryProps {
   readonly computed: ComputedDay;
   /** Every leg with the ways of covering it. In the computed legs' order. */
   readonly legs: PlannedDay["legs"];
+  /** The stop under the pointer, here or on the map beside it. */
+  readonly hoveredStopId: string | null;
+  readonly onHoverStop: (stopId: string | null) => void;
   /** Null for a reader who holds no edit token. */
   readonly actions: DayActions | null;
 }
@@ -94,7 +97,14 @@ function Anchor({
  * The order a stop is dragged into is settled here rather than inside a card,
  * because a move is about two stops and neither of them owns the other.
  */
-export function DayItinerary({ day, computed, legs, actions }: DayItineraryProps) {
+export function DayItinerary({
+  day,
+  computed,
+  legs,
+  hoveredStopId,
+  onHoverStop,
+  actions,
+}: DayItineraryProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
   const [moveError, setMoveError] = useState<string | null>(null);
@@ -174,6 +184,8 @@ export function DayItinerary({ day, computed, legs, actions }: DayItineraryProps
             <StopCard
               position={numbers.get(stop.stopId) ?? null}
               checkpoint={checkpoints.get(stop.stopId) ?? false}
+              hovered={hoveredStopId === stop.stopId}
+              onHover={onHoverStop}
               index={index}
               stop={stop}
               address={place?.address ?? null}

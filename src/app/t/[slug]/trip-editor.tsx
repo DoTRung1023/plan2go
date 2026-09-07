@@ -84,6 +84,13 @@ export function TripEditor({
    * whoever is watching for it, which is that it is written down.
    */
   const [savedAt, setSavedAt] = useState(0);
+  /**
+   * The stop under the pointer, wherever the pointer is. Held here because
+   * both panes answer to it and neither may reach into the other: a card and
+   * a marker are the same place said twice, and pointing at either should say
+   * so in both.
+   */
+  const [hoveredStopId, setHoveredStopId] = useState<string | null>(null);
 
   const recording = <T extends { readonly error: string | null }>(
     change: Promise<T>,
@@ -139,6 +146,8 @@ export function TripEditor({
         <div className="relative h-full w-full">
           {selected === undefined ? null : (
             <TripMap
+              hoveredStopId={hoveredStopId}
+              onHoverStop={setHoveredStopId}
               expanded={expanded}
               onToggleExpanded={() => {
                 setExpanded(!expanded);
@@ -198,6 +207,8 @@ export function TripEditor({
           title={title}
           days={days}
           today={today}
+          hoveredStopId={hoveredStopId}
+          onHoverStop={setHoveredStopId}
           selectedIndex={selectedIndex}
           onSelect={setChosenIndex}
           onAddDay={

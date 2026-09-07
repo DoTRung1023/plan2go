@@ -25,6 +25,7 @@
 }
 
 .trip-map-stop,
+.trip-map-checkpoint,
 .trip-map-endpoint {
   display: flex;
   align-items: center;
@@ -42,6 +43,28 @@
   font-family: var(--font-display);
   font-size: 14px;
   font-variant-numeric: tabular-nums;
+}
+
+/* The same square cornered shape the panel gives a checkpoint, in the same
+   olive as the day's own ends: on the route, but not one of its numbers. */
+.trip-map-checkpoint {
+  width: 30px;
+  height: 30px;
+  border-radius: 12px 12px 12px 4px;
+  background-color: var(--color-sage-600);
+  color: var(--color-paper);
+}
+
+/*
+ * The marker under the pointer, or under the pointer in the panel beside the
+ * map. A ring rather than a size: growing a marker moves it off the place it
+ * is marking, which is the one thing it is for.
+ */
+.trip-map-marker.is-hovered {
+  z-index: 1;
+  box-shadow:
+    var(--shadow-sm),
+    0 0 0 6px color-mix(in srgb, var(--color-terracotta) 35%, transparent);
 }
 
 /* Not merely a different colour from a stop marker. A different shape. */
