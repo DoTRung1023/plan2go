@@ -74,13 +74,12 @@ const STROKES: Readonly<Record<TravelMode, RouteStroke>> = {
   },
   cycle: {
     mode: "cycle",
-    // The one mode with no accent left to give it, so it takes the ink itself
-    // rather than a grey out of the middle of the ramp. Against photography a
-    // mid grey is the ground half the time, and the palest step of the palette
-    // around it is what makes the darkest step read.
+    // The one mode with no accent to give it. It had the ink, which was legible
+    // but said nothing: black is what everything else on a map is already drawn
+    // in. The palette's one blue is here for this line and nothing else.
     label: "Cycling",
-    colorProperty: "--color-ink",
-    inkClass: "text-ink",
+    colorProperty: "--color-cobalt-700",
+    inkClass: "text-cobalt-700",
     weight: 5,
     dashArray: null,
     roundCaps: false,

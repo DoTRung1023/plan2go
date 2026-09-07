@@ -51,6 +51,18 @@
   --color-sage-800: #3d472b;
   --color-sage-900: #272e1b;
 
+  /*
+   * The one colour in this product that is neither of its accents, and the map
+   * is the only thing allowed to spend it.
+   *
+   * Four ways of getting somewhere need four lines that can be told apart at a
+   * glance, and only walking is patterned, so the other three are told apart by
+   * colour alone. Terracotta and sage and the ink itself are three. This is the
+   * fourth, mixed to the same muted warmth and set at the weight the other
+   * routes are drawn at.
+   */
+  --color-cobalt-700: #35607d;
+
   --font-display: var(--font-caprasimo), Georgia, "Times New Roman", serif;
   --font-body: var(--font-figtree), "Segoe UI", system-ui, sans-serif;
 
