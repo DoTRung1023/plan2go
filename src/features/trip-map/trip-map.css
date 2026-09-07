@@ -56,15 +56,16 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* The same square cornered shape the panel gives a checkpoint, and a step
-   lighter up the same ramp: one of the day's places, but not one of its
-   numbers, so it is the same colour said more quietly. */
+/* The same square cornered shape the panel gives a checkpoint, and far enough
+   up the same ramp to be told from a stop at a glance: pale with a dark mark on
+   it, against a stop that is the other way round. One hue, two weights, and no
+   need to read either of them to know which is which. */
 .trip-map-checkpoint {
   width: 30px;
   height: 30px;
   border-radius: 12px 12px 12px 4px;
-  background-color: var(--color-terracotta-400);
-  color: var(--color-terracotta-900);
+  background-color: var(--color-terracotta-200);
+  color: var(--color-terracotta-800);
   color: var(--color-paper);
 }
 
