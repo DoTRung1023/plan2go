@@ -24,6 +24,9 @@ interface DayItineraryProps {
   /** The stop under the pointer, here or on the map beside it. */
   readonly hoveredStopId: string | null;
   readonly onHoverStop: (stopId: string | null) => void;
+  /** The leg under the pointer, here or on the map beside it. */
+  readonly hoveredLegIndex: number | null;
+  readonly onHoverLeg: (legIndex: number | null) => void;
   /** Null for a reader who holds no edit token. */
   readonly actions: DayActions | null;
 }
@@ -103,6 +106,8 @@ export function DayItinerary({
   legs,
   hoveredStopId,
   onHoverStop,
+  hoveredLegIndex,
+  onHoverLeg,
   actions,
 }: DayItineraryProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -178,6 +183,8 @@ export function DayItinerary({
                 leg={leg}
                 planned={planned}
                 conflicts={conflictsOnLeg(computed.conflicts, leg.index)}
+                hovered={hoveredLegIndex === leg.index}
+                onHover={onHoverLeg}
                 onChange={actions === null ? null : actions.changeLegMode}
               />
             )}
@@ -210,6 +217,8 @@ export function DayItinerary({
           leg={legToEnd}
           planned={plannedToEnd}
           conflicts={conflictsOnLeg(computed.conflicts, legToEnd.index)}
+          hovered={hoveredLegIndex === legToEnd.index}
+          onHover={onHoverLeg}
           onChange={actions === null ? null : actions.changeLegMode}
         />
       )}

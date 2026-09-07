@@ -16,6 +16,9 @@ interface DayPlannerProps {
   /** The stop under the pointer, here or on the map beside it. */
   readonly hoveredStopId: string | null;
   readonly onHoverStop: (stopId: string | null) => void;
+  /** The leg under the pointer, here or on the map beside it. */
+  readonly hoveredLegIndex: number | null;
+  readonly onHoverLeg: (legIndex: number | null) => void;
   readonly selectedIndex: number;
   readonly onSelect: (index: number) => void;
   /**
@@ -66,6 +69,8 @@ export function DayPlanner({
   today,
   hoveredStopId,
   onHoverStop,
+  hoveredLegIndex,
+  onHoverLeg,
   selectedIndex,
   onSelect,
   settings,
@@ -125,6 +130,8 @@ export function DayPlanner({
               legs={selected.legs}
               hoveredStopId={hoveredStopId}
               onHoverStop={onHoverStop}
+              hoveredLegIndex={hoveredLegIndex}
+              onHoverLeg={onHoverLeg}
               actions={actions}
             />
           )}

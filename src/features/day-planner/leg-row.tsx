@@ -39,6 +39,9 @@ interface LegRowProps {
   /** Every way of covering this leg, and which one the day is using. */
   readonly planned: PlannedLeg;
   readonly conflicts: readonly Conflict[];
+  /** Whether the pointer is on this leg, here or on the route on the map. */
+  readonly hovered: boolean;
+  readonly onHover: (legIndex: number | null) => void;
   /** Null for a reader who holds no edit token, who sees the row and no choice. */
   readonly onChange: DayActions["changeLegMode"] | null;
 }
@@ -127,7 +130,14 @@ function Option({
  * before deciding whether that is the mode you wanted, and trying a second one
  * should not mean opening the panel again. Collapse is what closes it.
  */
-export function LegRow({ leg, planned, conflicts, onChange }: LegRowProps) {
+export function LegRow({
+  leg,
+  planned,
+  conflicts,
+  hovered,
+  onHover,
+  onChange,
+}: LegRowProps) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, startSaving] = useTransition();
@@ -194,9 +204,21 @@ export function LegRow({ leg, planned, conflicts, onChange }: LegRowProps) {
         <span aria-hidden="true" className="thread" />
       </div>
 
-      <div className="py-[9px]">
+      <div
+        className="py-[9px]"
+        onMouseEnter={() => {
+          onHover(leg.index);
+        }}
+        onMouseLeave={() => {
+          onHover(null);
+        }}
+      >
         {onChange === null ? (
-          <div className="flex flex-wrap items-center gap-x-[10px] gap-y-[6px] rounded-row border border-rule py-2 pr-[14px] pl-3">
+          <div
+            className={`flex flex-wrap items-center gap-x-[10px] gap-y-[6px] rounded-row border py-2 pr-[14px] pl-3 ${
+              hovered ? "border-terracotta bg-terracotta-100" : "border-rule"
+            }`}
+          >
             {summary}
           </div>
         ) : open ? (
@@ -254,7 +276,11 @@ export function LegRow({ leg, planned, conflicts, onChange }: LegRowProps) {
               setOpen(true);
               setError(null);
             }}
-            className="flex w-full flex-wrap items-center gap-x-[10px] gap-y-[6px] rounded-row border border-rule py-2 pr-[14px] pl-3 text-left hover:border-rule-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+            className={`flex w-full flex-wrap items-center gap-x-[10px] gap-y-[6px] rounded-row border py-2 pr-[14px] pl-3 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
+              hovered
+                ? "border-terracotta bg-terracotta-100"
+                : "border-rule hover:border-rule-strong"
+            }`}
           >
             {summary}
             <span className="ml-auto text-micro font-semibold whitespace-nowrap text-terracotta-700">

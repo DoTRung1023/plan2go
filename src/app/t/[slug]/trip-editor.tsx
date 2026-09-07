@@ -91,6 +91,7 @@ export function TripEditor({
    * so in both.
    */
   const [hoveredStopId, setHoveredStopId] = useState<string | null>(null);
+  const [hoveredLegIndex, setHoveredLegIndex] = useState<number | null>(null);
 
   const recording = <T extends { readonly error: string | null }>(
     change: Promise<T>,
@@ -148,6 +149,7 @@ export function TripEditor({
             <TripMap
               hoveredStopId={hoveredStopId}
               onHoverStop={setHoveredStopId}
+              hoveredLegIndex={hoveredLegIndex}
               expanded={expanded}
               onToggleExpanded={() => {
                 setExpanded(!expanded);
@@ -209,6 +211,8 @@ export function TripEditor({
           today={today}
           hoveredStopId={hoveredStopId}
           onHoverStop={setHoveredStopId}
+          hoveredLegIndex={hoveredLegIndex}
+          onHoverLeg={setHoveredLegIndex}
           selectedIndex={selectedIndex}
           onSelect={setChosenIndex}
           onAddDay={

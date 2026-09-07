@@ -105,6 +105,12 @@ interface TripMapProps {
   readonly hoveredStopId: string | null;
   readonly onHoverStop: (stopId: string | null) => void;
   /**
+   * The leg under the pointer in the panel. Answered here but not raised here:
+   * a route is a line a few pixels wide and pointing at one is not something
+   * anybody does on purpose.
+   */
+  readonly hoveredLegIndex: number | null;
+  /**
    * Asked for rather than done here: what the map grows over belongs to
    * whoever laid the two panes out, and a map that resized itself would be
    * deciding on their behalf.
@@ -181,6 +187,9 @@ function routeLegs(
  */
 const CASING_WEIGHT = 2.2;
 
+/** How far the pointed at route shows either side of itself. */
+const HALO_WEIGHT = 11;
+
 /**
  * Google draws a dash or a dot as a symbol it repeats along an invisible line,
  * not as a stroke pattern, so a patterned mode hides its own stroke and hands
@@ -254,6 +263,7 @@ export function TripMap({
   onToggleExpanded,
   hoveredStopId,
   onHoverStop,
+  hoveredLegIndex,
   start,
   end,
   stops,
@@ -269,6 +279,13 @@ export function TripMap({
    * the whole map each time the pointer crossed a card.
    */
   const markers = useRef(new Map<string, HTMLElement>());
+  /**
+   * A wide, pale terracotta line under each route, off the map until the leg
+   * it belongs to is pointed at. Kept rather than drawn on demand, because the
+   * shape is already known and building it again would be the whole day
+   * redrawn to light up one line of it.
+   */
+  const halos = useRef(new Map<number, google.maps.Polyline>());
   /**
    * Read by the marker listeners, which outlive the render that set them up.
    * Naming the callback in the drawing effect's dependencies instead would
@@ -346,6 +363,7 @@ export function TripMap({
       line.setMap(null);
     }
     lines.current = [];
+    halos.current.clear();
 
     // Under the markers, so a line never crosses the number it belongs to.
     const palette = getComputedStyle(document.documentElement);
@@ -361,6 +379,17 @@ export function TripMap({
       const drawn = legPaths[index];
       const path =
         drawn === null || drawn === undefined ? [leg.from, leg.to] : [...drawn];
+
+      const halo = new maps.Polyline({
+        path,
+        clickable: false,
+        zIndex: 0,
+        strokeColor: palette.getPropertyValue("--color-terracotta").trim(),
+        strokeOpacity: 0.4,
+        strokeWeight: stroke.weight + HALO_WEIGHT,
+      });
+      halos.current.set(index, halo);
+      lines.current.push(halo);
 
       lines.current.push(
         new maps.Polyline({
@@ -494,6 +523,15 @@ export function TripMap({
       element.classList.toggle("is-hovered", stopId === hoveredStopId);
     }
   }, [hoveredStopId]);
+
+  useEffect(() => {
+    if (state.status !== "ready") {
+      return;
+    }
+    for (const [index, halo] of halos.current) {
+      halo.setMap(index === hoveredLegIndex ? state.map : null);
+    }
+  }, [hoveredLegIndex, state]);
 
   const chooseType = (id: MapTypeId): void => {
     setChoosingType(false);
