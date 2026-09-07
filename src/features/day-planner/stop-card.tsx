@@ -24,9 +24,14 @@ type Busy = "stay" | "time" | "note" | "checkpoint" | "remove" | null;
  * switched off. It wears the same small pill the stay does, and it changes on
  * the neutral ramp rather than going terracotta, because terracotta on this
  * card already means something is wrong.
+ *
+ * The height is stated, and it is the height of the two glyphs beside it: a
+ * pill that arrived at its own size from padding and a line height sat a pixel
+ * or two off the row it is in, which is the sort of thing that is only ever
+ * noticed once and then cannot be unseen.
  */
 const KIND =
-  "shrink-0 rounded-pill border border-rule bg-paper px-[9px] py-[2px] text-micro font-semibold whitespace-nowrap text-ink-muted hover:border-rule-strong hover:bg-paper-sunken hover:text-ink disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "inline-flex h-[22px] shrink-0 items-center rounded-pill border border-rule bg-paper px-[9px] py-0 text-micro font-semibold whitespace-nowrap text-ink-muted hover:border-rule-strong hover:bg-paper-sunken hover:text-ink disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 const TOOL =
   "grid h-[22px] w-[22px] place-items-center rounded-pill text-ink-muted hover:bg-neutral-200 hover:text-ink disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
