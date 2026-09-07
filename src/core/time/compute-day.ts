@@ -278,13 +278,9 @@ export function computeDay({ day, legs }: ComputeDayInput): ComputedDay {
 
   const ends = cursor === null ? null : clockAt(cursor);
 
-  if (ends !== null && ends.dayOffset > 0) {
-    conflicts.push({
-      kind: "ends-next-day",
-      endMinutes: ends.minutesFromMidnight,
-      dayOffset: ends.dayOffset,
-    });
-  }
+  // A day running past midnight is not remarked on. Every time it produces
+  // already says which day it is on, so a line at the bottom repeating that was
+  // the day saying once more what it had just finished saying.
 
   return {
     dayId: day.id,

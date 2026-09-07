@@ -135,11 +135,8 @@ describe("computeDay, midnight rollover", () => {
     expect(result.ends?.minutesFromMidnight).toBe(90);
     expect(result.ends?.dayOffset).toBe(1);
     expect(result.totals.timeOutMinutes).toBe(150);
-    expect(result.conflicts).toContainEqual({
-      kind: "ends-next-day",
-      endMinutes: 90,
-      dayOffset: 1,
-    });
+    // Running past midnight is said by the times themselves, not remarked on.
+    expect(result.conflicts).toEqual([]);
   });
 });
 

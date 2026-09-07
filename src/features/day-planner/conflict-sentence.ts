@@ -30,7 +30,5 @@ export function conflictSentence(conflict: Conflict): string {
       return `${conflict.placeName} closes at ${formatClock(conflict.closesAt)} and you are still there at ${formatClock(conflict.departureMinutes)}.`;
     case "unresolved-leg":
       return `Could not work out the travel time from ${conflict.fromName} to ${conflict.toName}. Nothing after it is timed.`;
-    case "ends-next-day":
-      return `The day ends at ${formatClock(conflict.endMinutes)}, ${conflict.dayOffset === 1 ? "the next day" : `${String(conflict.dayOffset)} days later`}.`;
   }
 }

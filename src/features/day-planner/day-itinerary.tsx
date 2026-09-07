@@ -10,7 +10,6 @@ import { formatClock } from "@/core/time/minutes";
 import { weekdayOf } from "@/core/time/zoned";
 import { HomeIcon } from "@/ui/icons";
 import type { PlannedDay } from "./compute-trip";
-import { ConflictNotice } from "./conflict-notice";
 import type { DayActions } from "./day-actions";
 import { formatOpeningHours } from "./format-opening-hours";
 import { LegRow } from "./leg-row";
@@ -139,7 +138,6 @@ export function DayItinerary({
   const legOffset = day.start === null ? -1 : 0;
   const legToEnd = day.end === null ? undefined : computed.legs[computed.legs.length - 1];
   const plannedToEnd = legToEnd === undefined ? undefined : legs[legToEnd.index];
-  const endConflicts = computed.conflicts.filter((conflict) => conflict.kind === "ends-next-day");
 
   const clearDrag = (): void => {
     setDragIndex(null);
@@ -232,12 +230,6 @@ export function DayItinerary({
           }
         />
       )}
-
-      {endConflicts.map((conflict) => (
-        <div key={conflict.kind} className="mt-2">
-          <ConflictNotice conflict={conflict} />
-        </div>
-      ))}
 
       {moveError === null ? null : (
         <p

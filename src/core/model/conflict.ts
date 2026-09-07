@@ -40,9 +40,4 @@ export type Conflict =
       readonly toName: string;
       /** Index into the day's legs, in travel order. */
       readonly legIndex: number;
-    }
-  | {
-      readonly kind: "ends-next-day";
-      readonly endMinutes: number;
-      readonly dayOffset: number;
     };
