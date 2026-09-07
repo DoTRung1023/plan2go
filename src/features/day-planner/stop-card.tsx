@@ -12,7 +12,7 @@ import { formatDayTime } from "./format-day-time";
 import { TimePicker } from "./time-picker";
 
 /** The server's own limit, repeated because that module may not reach the browser. */
-const MAX_STAY_MINUTES = 99 * 60 + 99;
+const MAX_STAY_MINUTES = 99 * 60 + 59;
 
 /** The one thing about this stop that is currently being written down. */
 type Busy = "stay" | "time" | "note" | "remove" | null;
@@ -142,6 +142,17 @@ export function StopCard({
       MAX_STAY_MINUTES,
       partOf(hourField.current) * 60 + partOf(minuteField.current),
     );
+    // Written back whether or not anything is being sent. The fields are only
+    // remounted when the stored stay changes, so leaving them to that showed
+    // ninety of anything tidied up the first time and left standing the
+    // second, when the total happened to come out the same.
+    if (hourField.current !== null) {
+      hourField.current.value = String(Math.floor(minutes / 60));
+    }
+    if (minuteField.current !== null) {
+      minuteField.current.value = String(minutes % 60);
+    }
+
     if (actions === null || minutes === stop.stayMinutes) {
       return;
     }

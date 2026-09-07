@@ -6,7 +6,12 @@ import { refreshLegModes } from "./leg-modes";
 
 /**
  * The longest a stop may last: as long as the two fields that write it can
- * say, which is ninety nine hours and ninety nine minutes.
+ * show, which is ninety nine hours and fifty nine minutes.
+ *
+ * Show, not type. Ninety nine of each can be typed and is more than this, but
+ * it is a hundred hours and thirty nine minutes once it is added up, and a
+ * hundred does not fit in a field two digits wide. A limit that cannot be
+ * displayed is a limit that appears to have been ignored.
  *
  * There is no shorter limit worth defending. Half a day was the old one and it
  * was chosen when the stay was stepped a quarter hour at a time, where the top
@@ -17,7 +22,7 @@ import { refreshLegModes } from "./leg-modes";
  * A bound is still needed: this is what a crafted request is held to, and it
  * is the same number the fields are held to, so the two never disagree.
  */
-export const MAX_STAY_MINUTES = 99 * 60 + 99;
+export const MAX_STAY_MINUTES = 99 * 60 + 59;
 
 /** Longer than this is a document, not a note to whoever you are travelling with. */
 export const MAX_NOTE_LENGTH = 500;
