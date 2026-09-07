@@ -54,12 +54,12 @@ const STROKES: Readonly<Record<TravelMode, RouteStroke>> = {
   },
   transit: {
     mode: "transit",
-    // Back up the ramp, now that colour is the only thing telling this from
-    // the cycling line: at the darkest step it was a green so near black that
-    // two solid lines beside each other were one line drawn twice.
+    // Off the sage and onto a truer green. Sage is an olive, which sat between
+    // the blue of the cycling line and the yellow of the walking one instead of
+    // apart from either.
     label: "Public transport",
-    colorProperty: "--color-sage-700",
-    inkClass: "text-sage-700",
+    colorProperty: "--color-forest-700",
+    inkClass: "text-forest-700",
     weight: 4.6,
     dashArray: null,
     roundCaps: false,
@@ -68,11 +68,11 @@ const STROKES: Readonly<Record<TravelMode, RouteStroke>> = {
   walk: {
     mode: "walk",
     label: "Walking",
-    // Off the terracotta for the same reason, and far enough from the blue
-    // that the two nearest colours on the map are also the two that are not
-    // drawn alike: this one is dotted and that one is solid.
-    colorProperty: "--color-teal-700",
-    inkClass: "text-teal-700",
+    // The warm quarter of the wheel, without being the terracotta the product
+    // is drawn in: a gold rather than a rust. It is also the one line still
+    // drawn as separated marks, so it has the pattern to lean on as well.
+    colorProperty: "--color-gold-700",
+    inkClass: "text-gold-700",
     weight: 5,
     dashArray: "0.5 8",
     roundCaps: true,

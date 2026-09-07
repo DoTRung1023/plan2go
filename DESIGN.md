@@ -147,8 +147,9 @@ When one changes the other changes in the same commit.
 
 ## Colors
 
-The map keeps three hues of its own, at `plum-700`, `teal-700` and `cobalt-700`, drawn by
-the driving, walking and cycling routes and by nothing else. Four ways of getting
+The map keeps four hues of its own, at `plum-700`, `forest-700`, `gold-700` and
+`cobalt-700`, drawn by the driving, public transport, walking and cycling routes and by
+nothing else. Four ways of getting
 somewhere need four lines that can be told apart, only walking is patterned, and none of
 them may be terracotta: a route in the product's own colour reads as the route the
 product is recommending. They are not accents and nothing outside the map may reach for

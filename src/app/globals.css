@@ -60,13 +60,16 @@
    * itself is drawn in, and a route wearing it reads as the route the product
    * is recommending rather than as the one you happen to be driving.
    *
-   * All three are mixed to the warmth and the weight of the ramps above, so
-   * they sit in this palette rather than arriving from somewhere else, and
-   * they are spread far enough apart on the wheel to survive being small, dark
-   * and drawn over photography.
+   * All four are mixed to the warmth and the weight of the ramps above, so they
+   * sit in this palette rather than arriving from somewhere else, and they are
+   * spread as far apart on the wheel as four colours can be with the orange
+   * quarter of it spoken for. Crowded into one quarter, as an olive, a teal and
+   * a blue once were, three of the four routes read as one dark colour drawn
+   * three times.
    */
   --color-plum-700: #6a4076;
-  --color-teal-700: #2c6b64;
+  --color-forest-700: #2f7a52;
+  --color-gold-700: #8a6a1f;
   --color-cobalt-700: #35607d;
 
   --font-display: var(--font-caprasimo), Georgia, "Times New Roman", serif;
