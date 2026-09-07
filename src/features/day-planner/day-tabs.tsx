@@ -29,12 +29,18 @@ interface DayTabsProps {
  * What is on the day, under the date. Every tab says both, because which day it
  * is and how full it is are two different questions and a reader choosing a tab
  * is usually asking them together.
+ *
+ * Checkpoints are not counted, the same way they are not numbered: a day of
+ * three places and a station changed at is a day of three stops, and the tab
+ * has to agree with the numbers down the day it opens. A day that is only
+ * places passed through is not empty, so it says what it is instead.
  */
 function stopLine(day: DayPlan): string {
-  if (day.stops.length === 0) {
-    return "empty";
+  const stops = day.stops.filter((stop) => !stop.checkpoint).length;
+  if (stops > 0) {
+    return `${String(stops)} ${stops === 1 ? "stop" : "stops"}`;
   }
-  return `${String(day.stops.length)} ${day.stops.length === 1 ? "stop" : "stops"}`;
+  return day.stops.length === 0 ? "empty" : "passing through";
 }
 
 const TAB =
