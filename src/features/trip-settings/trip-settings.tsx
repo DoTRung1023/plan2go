@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { useActionState, useId, useRef, useState } from "react";
 import { daysBetween } from "@/core/time/zoned";
-import { DateField } from "./date-field";
+import { DateRangeField } from "./date-field";
 
 export interface TripSettingsOutcome {
   readonly saved: boolean;
@@ -195,24 +195,18 @@ export function TripSettings({
         ) : null}
       </div>
 
-      <div className="relative mt-[10px] grid grid-cols-2 gap-3">
-        <DateField
-          id={`${fieldId}-first`}
-          name="startDate"
-          label="First day"
-          value={first}
-          max={last}
-          onChange={setFirst}
-          footer={saveDates}
-          onClose={abandonDates}
-        />
-        <DateField
-          id={`${fieldId}-last`}
-          name="endDate"
-          label="Last day"
-          value={last}
-          min={first}
-          onChange={setLast}
+      <div className="relative mt-[10px]">
+        <DateRangeField
+          id={`${fieldId}-dates`}
+          startName="startDate"
+          endName="endDate"
+          label="Trip dates"
+          start={first}
+          end={last}
+          onChange={(range) => {
+            setFirst(range.start);
+            setLast(range.end);
+          }}
           footer={saveDates}
           onClose={abandonDates}
         />

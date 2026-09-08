@@ -7,8 +7,8 @@ import { addDays, parseIsoDate, weekdayOf } from "@/core/time/zoned";
 
 const DAYS_IN_WEEK = 7;
 
-/** Matches the calendar's own width class, for the edge test when it opens. */
-const CALENDAR_WIDTH = 262;
+/** The full two-month panel, including its border. */
+const CALENDAR_WIDTH = 542;
 
 /** Room to keep between the calendar and the edge of the window. */
 const EDGE_GAP = 8;
@@ -32,8 +32,6 @@ const MONTH_AND_YEAR = new Intl.DateTimeFormat("en-AU", {
   year: "numeric",
   timeZone: "UTC",
 });
-
-const MONTH_ONLY = new Intl.DateTimeFormat("en-AU", { month: "short", timeZone: "UTC" });
 
 const READABLE = new Intl.DateTimeFormat("en-AU", {
   weekday: "short",
@@ -72,7 +70,7 @@ function gridStart(first: IsoDate): IsoDate {
   return addDays(first, -((weekdayOf(first) + 6) % DAYS_IN_WEEK));
 }
 
-/** ISO dates sort chronologically as text, so a range test needs no parsing. */
+/** ISO dates sort chronologically as text, so these tests need no parsing. */
 function outsideRange(
   date: IsoDate,
   min: string | undefined,
@@ -81,79 +79,199 @@ function outsideRange(
   return (min !== undefined && date < min) || (max !== undefined && date > max);
 }
 
-interface DateFieldProps {
+interface DateRangeFieldProps {
   readonly id: string;
-  /** Submitted with the form. The visible control is a button, not this. */
-  readonly name: string;
+  readonly startName: string;
+  readonly endName: string;
   readonly label: string;
-  readonly value: IsoDate;
-  /** Earliest day that may be chosen. Days before it are shown but not offered. */
+  readonly start: IsoDate;
+  readonly end: IsoDate;
+  /** Earliest and latest days that may appear at either end of the range. */
   readonly min?: string;
-  /** Latest day that may be chosen, on the same terms. */
   readonly max?: string;
-  readonly onChange: (value: IsoDate) => void;
-  /** Sits under the grid, inside the panel. Where the save button lives. */
+  /** Both ends counted. Applied once a first day has been picked. */
+  readonly maxDays?: number;
+  readonly onChange: (range: { readonly start: IsoDate; readonly end: IsoDate }) => void;
+  /** Sits under the calendars, inside the panel. Where the save button lives. */
   readonly footer?: ReactNode;
-  /**
-   * Called whenever the panel closes. Choosing a day does not commit anything,
-   * so this is the caller's chance to put back what was there.
-   */
+  /** Closing without saving lets an editing form restore its stored dates. */
   readonly onClose?: () => void;
 }
 
+interface MonthGridProps {
+  readonly month: IsoDate;
+  readonly focused: IsoDate;
+  readonly start: IsoDate;
+  readonly end: IsoDate;
+  readonly today: string;
+  readonly min?: string;
+  readonly max?: string;
+  readonly onChoose: (date: IsoDate) => void;
+}
+
 const TRIGGER =
-  "mt-1 flex h-[34px] w-full items-center justify-between gap-2 rounded-pill border border-rule bg-paper-raised px-[14px] py-0 text-left text-meta text-ink hover:border-rule-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "mt-1 flex min-h-[46px] w-full items-center gap-2 rounded-pill border border-rule bg-paper-raised px-[14px] py-[6px] text-left text-ink hover:border-rule-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 const MONTH_STEP =
-  "rounded-pill px-2 py-[3px] text-micro font-semibold text-terracotta-700 hover:bg-terracotta-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "flex h-8 w-8 shrink-0 items-center justify-center rounded-pill text-body font-semibold text-terracotta-700 hover:bg-terracotta-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
-/**
- * A date field with our own calendar behind it.
- *
- * The browser's date picker is drawn by the browser and cannot be reached with
- * CSS, so on a page that is meant to read like a printed guide it arrives as a
- * blue system panel. This is the same control in the palette from DESIGN.md.
- *
- * The month is stepped by two buttons that say which month they go to, because
- * a bare arrow is an icon without a text label.
- */
-export function DateField({
-  id,
-  name,
-  label,
-  value,
+function MonthGrid({
+  month,
+  focused,
+  start,
+  end,
+  today,
   min,
   max,
+  onChoose,
+}: MonthGridProps) {
+  const startCell = gridStart(month);
+  const shownMonth = parseIsoDate(month).month;
+  const cells = Array.from({ length: WEEKS_SHOWN * DAYS_IN_WEEK }, (_unused, index) =>
+    addDays(startCell, index),
+  );
+
+  return (
+    <div className="min-w-0 flex-1">
+      <p className="text-center font-display text-body text-ink">
+        {MONTH_AND_YEAR.format(asUtc(month))}
+      </p>
+
+      <div role="grid" aria-label={MONTH_AND_YEAR.format(asUtc(month))} className="mt-2">
+        <div role="row" className="grid grid-cols-7">
+          {WEEKDAYS.map((weekday, index) => (
+            <span
+              key={index}
+              role="columnheader"
+              className="pb-[5px] text-center text-tick font-semibold text-ink-muted"
+            >
+              <span aria-hidden="true">{weekday.short}</span>
+              <span className="sr-only">{weekday.full}</span>
+            </span>
+          ))}
+        </div>
+
+        {Array.from({ length: WEEKS_SHOWN }, (_unused, week) => (
+          <div role="row" key={week} className="grid grid-cols-7">
+            {cells
+              .slice(week * DAYS_IN_WEEK, week * DAYS_IN_WEEK + DAYS_IN_WEEK)
+              .map((date) => {
+                const thisMonth = parseIsoDate(date).month === shownMonth;
+                if (!thisMonth) {
+                  return <span role="gridcell" aria-hidden="true" key={date} className="h-8" />;
+                }
+
+                const disabled = outsideRange(date, min, max);
+                const isStart = date === start;
+                const isEnd = date === end;
+                const endpoint = isStart || isEnd;
+                const inRange = date > start && date < end;
+
+                return (
+                  <span
+                    role="gridcell"
+                    key={date}
+                    aria-selected={endpoint || inRange}
+                    className={`p-px ${endpoint || inRange ? "bg-terracotta-100" : ""}`}
+                  >
+                    <button
+                      type="button"
+                      data-date={date}
+                      disabled={disabled}
+                      tabIndex={date === focused ? 0 : -1}
+                      aria-current={date === today ? "date" : undefined}
+                      aria-label={`${READABLE.format(asUtc(date))}${
+                        isStart && isEnd
+                          ? ", first and last day"
+                          : isStart
+                            ? ", first day"
+                            : isEnd
+                              ? ", last day"
+                              : ""
+                      }${date === today ? ", today" : ""}`}
+                      onClick={() => {
+                        onChoose(date);
+                      }}
+                      className={[
+                        "relative z-10 flex h-[30px] w-full items-center justify-center rounded-pill border font-display text-micro tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta",
+                        endpoint
+                          ? "border-terracotta bg-terracotta text-paper"
+                          : inRange
+                            ? "border-transparent bg-terracotta-100 text-ink hover:bg-terracotta-200"
+                            : date === today
+                              ? "border-terracotta bg-transparent text-ink"
+                              : "border-transparent bg-transparent text-ink hover:bg-neutral-200",
+                        disabled ? "text-ink-faint" : "",
+                      ].join(" ")}
+                    >
+                      {parseIsoDate(date).day}
+                    </button>
+                  </span>
+                );
+              })}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * One field for both ends of a trip, with a range calendar behind it.
+ *
+ * The first pick begins a new range and the second completes it. Until that
+ * second pick, both ends share the same date so the form never contains an
+ * impossible range. A wide window gets the adjacent month as context; a small
+ * one keeps the same interaction in a single-month panel that fits the screen.
+ */
+export function DateRangeField({
+  id,
+  startName,
+  endName,
+  label,
+  start,
+  end,
+  min,
+  max,
+  maxDays,
   onChange,
   footer,
   onClose,
-}: DateFieldProps) {
+}: DateRangeFieldProps) {
   const [open, setOpen] = useState(false);
-  const [focused, setFocused] = useState<IsoDate>(value);
-  /** The field on the right of a row would open off the side of the window. */
+  const [selecting, setSelecting] = useState<"start" | "end">("start");
+  const [focused, setFocused] = useState<IsoDate>(start);
+  const [visibleMonth, setVisibleMonth] = useState<IsoDate>(firstOfMonth(start));
+  const [wide, setWide] = useState(false);
   const [alignEnd, setAlignEnd] = useState(false);
   const container = useRef<HTMLDivElement | null>(null);
   const trigger = useRef<HTMLButtonElement | null>(null);
   const grid = useRef<HTMLDivElement | null>(null);
-  /** Read by the dismiss listener, which outlives the render that set it up. */
   const closing = useRef(onClose);
+
   useEffect(() => {
     closing.current = onClose;
   });
 
-  // The roving focus follows the arrow keys, so the focused cell has to be the
-  // one the browser is actually on.
   useEffect(() => {
     if (!open) {
       return;
     }
     grid.current?.querySelector<HTMLButtonElement>(`[data-date="${focused}"]`)?.focus();
-  }, [open, focused]);
+  }, [focused, open, visibleMonth, wide]);
 
   useEffect(() => {
     if (!open) {
       return;
     }
+
+    const media = window.matchMedia("(min-width: 640px)");
+    const updateWidth = (): void => {
+      setWide(media.matches);
+    };
+    updateWidth();
+    media.addEventListener("change", updateWidth);
+
     const dismiss = (event: MouseEvent): void => {
       const target = event.target;
       const inside =
@@ -165,14 +283,10 @@ export function DateField({
     };
     document.addEventListener("mousedown", dismiss);
     return () => {
+      media.removeEventListener("change", updateWidth);
       document.removeEventListener("mousedown", dismiss);
     };
   }, [open]);
-
-  const month = firstOfMonth(focused);
-  const start = gridStart(month);
-  const shownMonth = parseIsoDate(month).month;
-  const today = new Date().toISOString().slice(0, 10);
 
   const close = (): void => {
     setOpen(false);
@@ -180,12 +294,28 @@ export function DateField({
     trigger.current?.focus();
   };
 
-  /**
-   * Choosing a day does not close the panel. The save button sits under the
-   * grid, and it cannot be under something that has just disappeared.
-   */
+  const keepVisible = (date: IsoDate): void => {
+    const dateMonth = firstOfMonth(date);
+    const afterPanels = shiftMonths(visibleMonth, wide ? 2 : 1);
+    if (dateMonth < visibleMonth) {
+      setVisibleMonth(dateMonth);
+    } else if (dateMonth >= afterPanels) {
+      setVisibleMonth(wide ? shiftMonths(dateMonth, -1) : dateMonth);
+    }
+  };
+
   const choose = (date: IsoDate): void => {
-    onChange(date);
+    setFocused(date);
+    keepVisible(date);
+
+    if (selecting === "start" || date < start) {
+      onChange({ start: date, end: date });
+      setSelecting("end");
+      return;
+    }
+
+    onChange({ start, end: date });
+    setSelecting("start");
   };
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>): void => {
@@ -199,12 +329,16 @@ export function DateField({
 
     if (step !== undefined) {
       event.preventDefault();
-      setFocused(addDays(focused, step));
+      const next = addDays(focused, step);
+      setFocused(next);
+      keepVisible(next);
       return;
     }
     if (event.key === "PageUp" || event.key === "PageDown") {
       event.preventDefault();
-      setFocused(shiftMonths(month, event.key === "PageUp" ? -1 : 1));
+      const next = shiftMonths(firstOfMonth(focused), event.key === "PageUp" ? -1 : 1);
+      setFocused(next);
+      keepVisible(next);
       return;
     }
     if (event.key === "Escape") {
@@ -213,14 +347,22 @@ export function DateField({
     }
   };
 
-  const cells = Array.from({ length: WEEKS_SHOWN * DAYS_IN_WEEK }, (_unused, index) =>
-    addDays(start, index),
-  );
+  const latestEnd =
+    selecting === "end" && maxDays !== undefined ? addDays(start, maxDays - 1) : max;
+  const availableMax =
+    max === undefined || latestEnd === undefined
+      ? latestEnd ?? max
+      : latestEnd < max
+        ? latestEnd
+        : max;
 
   return (
     <div className="relative" ref={container}>
-      <label className="text-label font-semibold text-ink-muted">{label}</label>
-      <input type="hidden" name={name} value={value} />
+      <label htmlFor={id} className="text-label font-semibold text-ink-muted">
+        {label}
+      </label>
+      <input type="hidden" name={startName} value={start} />
+      <input type="hidden" name={endName} value={end} />
 
       <button
         id={id}
@@ -228,6 +370,7 @@ export function DateField({
         type="button"
         aria-haspopup="dialog"
         aria-expanded={open}
+        aria-label={`${label}: ${READABLE.format(asUtc(start))} to ${READABLE.format(asUtc(end))}`}
         onClick={() => {
           if (open) {
             close();
@@ -235,15 +378,30 @@ export function DateField({
           }
           const box = trigger.current?.getBoundingClientRect();
           if (box !== undefined) {
-            setAlignEnd(box.left + CALENDAR_WIDTH > window.innerWidth - EDGE_GAP);
+            const panelWidth = window.matchMedia("(min-width: 640px)").matches
+              ? CALENDAR_WIDTH
+              : box.width;
+            setAlignEnd(box.left + panelWidth > window.innerWidth - EDGE_GAP);
           }
-          setFocused(value);
+          setSelecting("start");
+          setFocused(start);
+          setVisibleMonth(firstOfMonth(start));
           setOpen(true);
         }}
         className={TRIGGER}
       >
-        <span className="truncate tabular-nums">{READABLE.format(asUtc(value))}</span>
-        <span className="shrink-0 text-micro font-semibold text-terracotta-700">
+        <span className="min-w-0 flex-1">
+          <span className="block text-tick font-semibold text-ink-muted">First day</span>
+          <span className="block truncate text-meta tabular-nums">{READABLE.format(asUtc(start))}</span>
+        </span>
+        <span aria-hidden="true" className="shrink-0 text-meta text-ink-faint">
+          →
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-tick font-semibold text-ink-muted">Last day</span>
+          <span className="block truncate text-meta tabular-nums">{READABLE.format(asUtc(end))}</span>
+        </span>
+        <span className="hidden w-[42px] shrink-0 text-right text-micro font-semibold text-terracotta-700 min-[420px]:inline">
           {open ? "Close" : "Change"}
         </span>
       </button>
@@ -251,105 +409,64 @@ export function DateField({
       {open ? (
         <div
           role="dialog"
-          aria-label={`Choose the ${label.toLowerCase()}`}
-          className={`absolute top-full z-30 mt-2 w-[262px] rounded-panel border border-rule bg-paper-raised p-[10px] shadow-md ${
+          aria-label="Choose trip dates"
+          className={`absolute top-full z-30 mt-2 w-full rounded-panel border border-rule bg-paper-raised p-[10px] shadow-md sm:w-[542px] ${
             alignEnd ? "right-0" : "left-0"
           }`}
         >
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2 px-1 pb-2">
             <button
               type="button"
+              aria-label="Previous month"
               onClick={() => {
-                setFocused(shiftMonths(month, -1));
+                const previous = shiftMonths(visibleMonth, -1);
+                setVisibleMonth(previous);
+                setFocused(previous);
               }}
               className={MONTH_STEP}
             >
-              {MONTH_ONLY.format(asUtc(shiftMonths(month, -1)))}
+              ←
             </button>
-            <p aria-live="polite" className="font-display text-body text-ink">
-              {MONTH_AND_YEAR.format(asUtc(month))}
+            <p aria-live="polite" className="text-center text-micro font-semibold text-ink-muted">
+              {selecting === "start" ? "Choose the first day" : "Now choose the last day"}
             </p>
             <button
               type="button"
+              aria-label="Next month"
               onClick={() => {
-                setFocused(shiftMonths(month, 1));
+                const next = shiftMonths(visibleMonth, 1);
+                setVisibleMonth(next);
+                setFocused(next);
               }}
               className={MONTH_STEP}
             >
-              {MONTH_ONLY.format(asUtc(shiftMonths(month, 1)))}
+              →
             </button>
           </div>
 
-          <div
-            ref={grid}
-            role="grid"
-            aria-label={MONTH_AND_YEAR.format(asUtc(month))}
-            onKeyDown={onKeyDown}
-            className="mt-2"
-          >
-            <div role="row" className="grid grid-cols-7">
-              {WEEKDAYS.map((weekday, index) => (
-                <span
-                  key={index}
-                  role="columnheader"
-                  className="pb-[3px] text-center text-tick font-semibold text-ink-muted"
-                >
-                  <span aria-hidden="true">{weekday.short}</span>
-                  <span className="sr-only">{weekday.full}</span>
-                </span>
-              ))}
-            </div>
-
-            {Array.from({ length: WEEKS_SHOWN }, (_unused, week) => (
-              <div role="row" key={week} className="grid grid-cols-7">
-                {cells
-                  .slice(week * DAYS_IN_WEEK, week * DAYS_IN_WEEK + DAYS_IN_WEEK)
-                  .map((date) => {
-                    const disabled = outsideRange(date, min, max);
-                    const selected = date === value;
-                    const thisMonth = parseIsoDate(date).month === shownMonth;
-
-                    return (
-                      <span
-                        role="gridcell"
-                        key={date}
-                        aria-selected={selected}
-                        className="p-px"
-                      >
-                        <button
-                          type="button"
-                          data-date={date}
-                          disabled={disabled}
-                          tabIndex={date === focused ? 0 : -1}
-                          aria-current={date === today ? "date" : undefined}
-                          onClick={() => {
-                            choose(date);
-                          }}
-                          className={[
-                            "flex h-[30px] w-full items-center justify-center rounded-pill border font-display text-micro tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta",
-                            selected
-                              ? "border-terracotta bg-terracotta text-paper"
-                              : date === today
-                                ? "border-terracotta bg-transparent text-ink"
-                                : "border-transparent bg-transparent hover:bg-neutral-200",
-                            disabled
-                              ? "text-ink-faint"
-                              : thisMonth || selected
-                                ? ""
-                                : "text-ink-faint",
-                          ].join(" ")}
-                        >
-                          <span aria-hidden="true">{parseIsoDate(date).day}</span>
-                          <span className="sr-only">
-                            {READABLE.format(asUtc(date))}
-                            {date === today ? ", today" : ""}
-                          </span>
-                        </button>
-                      </span>
-                    );
-                  })}
-              </div>
-            ))}
+          <div ref={grid} onKeyDown={onKeyDown} className="flex gap-4">
+            <MonthGrid
+              month={visibleMonth}
+              focused={focused}
+              start={start}
+              end={end}
+              today={new Date().toISOString().slice(0, 10)}
+              min={min}
+              max={availableMax}
+              onChoose={choose}
+            />
+            {wide ? (
+              <MonthGrid
+                month={shiftMonths(visibleMonth, 1)}
+                focused={focused}
+                start={start}
+                end={end}
+                today={new Date().toISOString().slice(0, 10)}
+                min={min}
+                max={availableMax}
+                onChoose={choose}
+              />
+            ) : null}
           </div>
 
           {footer === undefined || footer === null ? null : (
