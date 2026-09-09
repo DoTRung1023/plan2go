@@ -40,6 +40,17 @@ function Glyph({
   );
 }
 
+/** Three dots: the conventional shape for "there are more actions here". */
+export function MoreIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <circle cx="5" cy="12" r="1" fill="currentColor" />
+      <circle cx="12" cy="12" r="1" fill="currentColor" />
+      <circle cx="19" cy="12" r="1" fill="currentColor" />
+    </Glyph>
+  );
+}
+
 export function PlusIcon(props: IconProps) {
   return (
     <Glyph {...props}>

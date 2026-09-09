@@ -327,13 +327,19 @@ and it is the product's own.
 
 ## Motion
 
-Nothing animates except reordering a stop.
+Two things animate: reordering a stop, and the trip's actions unfolding.
 
 Reordering: `transform` over 160ms `ease-out` on the card being moved and on the cards
 displacing around it. Nothing else, no opacity, no scale.
 
-No transitions on hover, focus, tab switching, panel opening, or map interaction. Those
-changes are instant.
+The trip's actions: `grid-template-columns` from `0fr` to `1fr` over 200ms `ease-out`,
+so the row grows from nothing without anything having to know how wide the buttons are.
+It is the one hover transition in the product, and it earns the exception because the
+movement is the affordance: a group that simply appeared would read as the row
+rearranging itself rather than as something folded away that has opened.
+
+Nothing else. No transitions on focus, tab switching, panel opening, or map interaction,
+and no other transition on hover. Those changes are instant.
 
 Focus is a 2px `terracotta` ring at 2px offset, visible immediately, on every
 interactive element.

@@ -8,6 +8,7 @@ import { DayPlanner } from "@/features/day-planner/day-planner";
 import { PlaceSearch } from "@/features/place-search/place-search";
 import { placesOnTheTrip } from "@/features/place-search/places-on-the-trip";
 import { searchBias } from "@/features/place-search/search-bias";
+import { CollapsingActions } from "@/features/trip-settings/collapsing-actions";
 import { ShareLinks } from "@/features/trip-settings/share-links";
 import { SavedNote } from "@/features/trip-settings/saved-note";
 import { TripActions } from "@/features/trip-settings/trip-actions";
@@ -281,7 +282,7 @@ export function TripEditor({
                 startDate={first.plan.date}
                 endDate={last.plan.date}
                 actions={
-                  <>
+                  <CollapsingActions label="Trip actions">
                     <ShareLinks slug={slug} editKey={editKey} />
                     <TripActions
                       slug={slug}
@@ -289,7 +290,7 @@ export function TripEditor({
                       onDelete={deleteTripAction}
                       startAnotherPath="/"
                     />
-                  </>
+                  </CollapsingActions>
                 }
                 onSave={(previous, formData) =>
                   recording(updateTripAction(previous, formData))
