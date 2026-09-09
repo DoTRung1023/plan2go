@@ -46,9 +46,9 @@ const STROKES: Readonly<Record<TravelMode, RouteStroke>> = {
     // recommending rather than as the way this traveller happens to be going.
     //
     // Orchid rather than the plum it was: same quarter of the wheel, far more
-    // of it. Plum was the darkest of the four and sat exactly where a city's
-    // roofs sit on the hybrid ground, so the busiest line was the one hardest
-    // to follow over the places most trips are actually planned in.
+    // of it. Plum was the darkest of the four by some way, and the line a trip
+    // is mostly made of should not be the one that recedes furthest into the
+    // ground it is drawn on.
     label: "Driving",
     colorProperty: "--color-orchid-700",
     inkClass: "text-orchid-700",

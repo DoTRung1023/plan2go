@@ -17,6 +17,7 @@ import {
   loadGoogleMaps,
   onGoogleMapsRefused,
 } from "./load-google-maps";
+import { paperMapStyle } from "./map-style";
 import type { RouteStroke } from "./route-style";
 import { ROUTE_STROKES, routeStroke } from "./route-style";
 import "./trip-map.css";
@@ -58,69 +59,6 @@ type MapState =
   | { readonly status: "refused" };
 
 /**
- * The zoom pair is one pill with a rule between the halves, the way every other
- * grouped control in this product is drawn.
- */
-/**
- * What Google draws under everything else. Hybrid is where the map opens: a
- * trip is planned against real ground, and imagery says more about whether a
- * walk is through a park or along a motorway than a drawn map does. The others
- * are here because imagery is not always the clearest, least of all where the
- * point is which road is which.
- */
-const MAP_TYPES = [
-  { id: "hybrid", label: "Hybrid" },
-  // Not "Map", which on a map says nothing, and not Google's own "Default",
-  // which would be a lie here: the default is the imagery above it. What it
-  // draws is streets, so that is what it is called.
-  { id: "roadmap", label: "Streets" },
-  { id: "satellite", label: "Satellite" },
-  { id: "terrain", label: "Terrain" },
-] as const;
-
-type MapTypeId = (typeof MAP_TYPES)[number]["id"];
-
-const OPENING_MAP_TYPE: MapTypeId = "hybrid";
-
-/**
- * Where the reader's last choice of ground is kept.
- *
- * In the browser rather than on the trip: which ground a map is drawn on is a
- * preference of whoever is reading it, not a fact about the trip, and a trip
- * shared with somebody should not arrive insisting on the imagery because the
- * person who planned it liked imagery.
- */
-const REMEMBERED = "plan2go.map-type";
-
-/** The ground last chosen here, or the one a map opens on. */
-function rememberedMapType(): MapTypeId {
-  try {
-    const saved = window.localStorage.getItem(REMEMBERED);
-    const known = MAP_TYPES.find((one) => one.id === saved);
-    return known?.id ?? OPENING_MAP_TYPE;
-  } catch {
-    // Storage can be switched off entirely, and reaching for it then throws
-    // rather than answering with nothing.
-    return OPENING_MAP_TYPE;
-  }
-}
-
-/** True when the choice will still be here next time, which it may not be. */
-function rememberMapType(id: MapTypeId): boolean {
-  try {
-    window.localStorage.setItem(REMEMBERED, id);
-    return true;
-  } catch {
-    // A browser told to keep nothing keeps nothing. The map still changes; it
-    // simply opens on the usual ground next time.
-    return false;
-  }
-}
-
-const TYPE_ROW =
-  "block w-full rounded-chip px-[9px] py-[5px] text-left text-micro whitespace-nowrap focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta";
-
-/**
  * Map chrome is its own scale, one step under the controls in the panel beside
  * it: it sits over somewhere rather than on the page, and a map covered in
  * buttons the size of the trip's own is a map you cannot see. Every control
@@ -132,14 +70,6 @@ const PILL = "overflow-hidden rounded-pill border border-rule bg-paper-raised sh
 
 const CONTROL =
   "flex items-center justify-center bg-paper-raised text-ink-muted hover:bg-paper-sunken hover:text-ink focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta";
-
-/**
- * A word needs room either side of it, and is set at the size of the list it
- * opens rather than the size of the field across the map from it. The two are
- * not a pair: one is where you type and the other is a label on a menu, and
- * matching them only made the label shout.
- */
-const WORD_CONTROL = `${CONTROL} h-[30px] px-[11px] text-micro font-semibold`;
 
 /** A glyph on its own sits in a square, so a column of them has one edge. */
 const ICON_CONTROL = `${CONTROL} h-[30px] w-[30px] text-[17px]`;
@@ -331,7 +261,6 @@ export function TripMap({
   centre,
 }: TripMapProps) {
   const container = useRef<HTMLDivElement | null>(null);
-  const types = useRef<HTMLDivElement | null>(null);
   /**
    * Each stop's marker, kept so the pointer can be answered without drawing
    * the day again: rebuilding every marker to shade one of them would blink
@@ -393,10 +322,10 @@ export function TripMap({
         map: new maps.Map(element, {
           center: openingView.current ?? WHOLE_WORLD,
           zoom: openingView.current === null ? WHOLE_WORLD_ZOOM : CITY_ZOOM,
-          // Imagery with the names on top of it, unless this reader has said
-          // otherwise before. Read here rather than taken from the state above
-          // so that changing the ground never rebuilds the map under it.
-          mapTypeId: rememberedMapType(),
+          // The warm palette, handed to Google as a style array. Roadmap is
+          // what it is drawn on, which is Google's own default, so there is
+          // nothing to name here.
+          styles: paperMapStyle(),
           // Every one of Google's controls off. Ours are drawn over the map in
           // this product's palette, in one corner rather than scattered around
           // the frame the way a default map puts them.
@@ -595,29 +524,6 @@ export function TripMap({
 
   const drawnLegs = routeLegs(start, end, stops, endTravelMode).length;
 
-  const [mapType, setMapType] = useState<MapTypeId>(rememberedMapType);
-  const [choosingType, setChoosingType] = useState(false);
-
-  useEffect(() => {
-    if (!choosingType) {
-      return;
-    }
-    const dismiss = (event: MouseEvent): void => {
-      const target = event.target;
-      const inside =
-        target instanceof Node &&
-        types.current !== null &&
-        types.current.contains(target);
-      if (!inside) {
-        setChoosingType(false);
-      }
-    };
-    document.addEventListener("mousedown", dismiss);
-    return () => {
-      document.removeEventListener("mousedown", dismiss);
-    };
-  }, [choosingType]);
-
   useEffect(() => {
     for (const [stopId, element] of markers.current) {
       element.classList.toggle("is-hovered", stopId === hoveredStopId);
@@ -632,15 +538,6 @@ export function TripMap({
       answer(index === hoveredLegIndex);
     }
   }, [hoveredLegIndex, state]);
-
-  const chooseType = (id: MapTypeId): void => {
-    setChoosingType(false);
-    setMapType(id);
-    rememberMapType(id);
-    if (state.status === "ready") {
-      state.map.setMapTypeId(id);
-    }
-  };
 
   const zoomBy = (step: number): void => {
     if (state.status !== "ready") {
@@ -683,71 +580,6 @@ export function TripMap({
           <Notice>
             The map is not switched on for this address. Your stops are saved.
           </Notice>
-        </div>
-      ) : null}
-
-      {/* The corner opposite the search, and on a phone below the button that
-          opens the map, which owns that corner until it is let go of. */}
-      {state.status === "ready" ? (
-        <div
-          className="absolute top-[52px] right-[14px] z-[2] lg:top-[22px] lg:right-[22px]"
-          ref={types}
-        >
-          {/* Nothing to read: it is the four words themselves, laid out and
-              hidden, so this corner is exactly as wide as the widest thing it
-              can ever say. The button and the list then both take that width
-              and agree without either being told a number, and the button
-              stops changing width as the ground changes under it. */}
-          <div aria-hidden="true" className="invisible h-0 overflow-hidden px-[6px]">
-            {MAP_TYPES.map((one) => (
-              <p key={one.id} className="px-[9px] text-micro font-semibold whitespace-nowrap">
-                {one.label}
-              </p>
-            ))}
-          </div>
-
-          <button
-            type="button"
-            aria-haspopup="dialog"
-            aria-expanded={choosingType}
-            onClick={() => {
-              setChoosingType(!choosingType);
-            }}
-            className={`${WORD_CONTROL} ${PILL} w-full`}
-          >
-            {MAP_TYPES.find((one) => one.id === mapType)?.label ?? "Map"}
-          </button>
-
-          {choosingType ? (
-            <div
-              role="dialog"
-              aria-label="What the map is drawn on"
-              onKeyDown={(event) => {
-                if (event.key === "Escape") {
-                  event.preventDefault();
-                  setChoosingType(false);
-                }
-              }}
-              className="absolute top-full right-0 mt-2 w-full rounded-panel border border-rule bg-paper-raised p-[5px] shadow-md"
-            >
-              {MAP_TYPES.map((one) => (
-                <button
-                  key={one.id}
-                  type="button"
-                  onClick={() => {
-                    chooseType(one.id);
-                  }}
-                  className={`${TYPE_ROW} ${
-                    one.id === mapType
-                      ? "bg-terracotta-800 text-paper"
-                      : "text-ink hover:bg-terracotta-100"
-                  }`}
-                >
-                  {one.label}
-                </button>
-              ))}
-            </div>
-          ) : null}
         </div>
       ) : null}
 

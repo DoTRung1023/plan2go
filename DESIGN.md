@@ -320,15 +320,15 @@ change with the modes this particular day happens to use. The markers have no ke
 their own, because a numbered disc in the order you visit them and a named marker for
 the ends of the day explain themselves.
 
-The map is Google's hybrid, unstyled: satellite imagery with the names over it. A warm
-ramp was tried underneath and abandoned, because a style array does not repaint
-photography, so the cream ground and the neutral water only ever applied to a layer the
-imagery covers. Every one of Google's controls is off and ours are drawn over the map
-instead: the search in the top left, the ground the map is drawn on in the top right,
-the route key in the bottom left, and in the bottom right the button that fills the
-screen with the zoom pair under it, where a thumb reaches first. The ground opens on
-hybrid and offers the map, the imagery on its own and the terrain, because imagery is
-not always the clearest, least of all where the question is which road is which.
+The map's own geometry is styled onto the warm ramp: cream ground, raised roads, sunken
+parks, and water in neutral 300 rather than a blue. Photography was tried in its place
+and taken out again. It is somebody else's palette, it dictates the page from
+underneath, and a product whose whole surface is one warm ramp cannot have its largest
+element opt out of it. Every one of Google's controls is off and ours are drawn over the
+map instead: the search in the top left, the route key in the bottom left, and in the
+bottom right the button that fills the screen with the zoom pair under it, where a thumb
+reaches first. What the map is drawn on is not offered as a choice. There is one ground,
+and it is the product's own.
 
 ## Motion
 
