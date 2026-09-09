@@ -89,9 +89,9 @@ describe("legRequestsFor", () => {
   });
 
   it("matches the leg order computeDay expects for a single stop", () => {
-    const requests = legRequestsFor(day([stop("Market", MARKET, "cycle")]));
+    const requests = legRequestsFor(day([stop("Market", MARKET, "transit")]));
     expect(requests).toEqual([
-      { from: HOME, to: MARKET, mode: "cycle" },
+      { from: HOME, to: MARKET, mode: "transit" },
       { from: MARKET, to: HOME, mode: "walk" },
     ]);
   });

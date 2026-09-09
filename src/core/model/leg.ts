@@ -10,8 +10,15 @@ import type { LatLng } from "./place";
  * API has no such mode, and a straight line at an assumed speed offered a
  * flight between any two points on earth, which was worse than not offering one
  * at all.
+ *
+ * Cycling is not one of them either, and for the nearer version of the same
+ * reason: the Routes API returns no cycling route at all across much of the
+ * world, so a mode that looked like the other three was in practice answered by
+ * a straight line at an assumed speed. A number nobody can act on is worse than
+ * a mode that was never offered. Adding it back means a provider that actually
+ * covers it, behind the same port.
  */
-export const TRAVEL_MODES = ["drive", "transit", "walk", "cycle"] as const;
+export const TRAVEL_MODES = ["drive", "transit", "walk"] as const;
 
 export type TravelMode = (typeof TRAVEL_MODES)[number];
 

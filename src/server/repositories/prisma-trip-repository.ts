@@ -80,14 +80,12 @@ const PARKING_OFFSET = 1000;
 
 const TRAVEL_MODE_FROM_DB: Readonly<Record<DbTravelMode, TravelMode>> = {
   WALK: "walk",
-  CYCLE: "cycle",
   DRIVE: "drive",
   TRANSIT: "transit",
 };
 
 const TRAVEL_MODE_TO_DB: Readonly<Record<TravelMode, DbTravelMode>> = {
   walk: "WALK",
-  cycle: "CYCLE",
   drive: "DRIVE",
   transit: "TRANSIT",
 };

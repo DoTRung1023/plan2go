@@ -54,21 +54,24 @@
   /*
    * The map's own hues, and nothing outside the map may spend them.
    *
-   * Four ways of getting somewhere need four lines that can be told apart at a
-   * glance. Only walking is patterned, so colour does nearly all of that work,
-   * and it has to do it without terracotta: terracotta is what the product
-   * itself is drawn in, and a route wearing it reads as the route the product
-   * is recommending rather than as the one you happen to be driving.
+   * Three ways of getting somewhere need three lines that can be told apart at
+   * a glance. Only walking is patterned, so colour does nearly all of that
+   * work, and it has to do it without terracotta: terracotta is what the
+   * product itself is drawn in, and a route wearing it reads as the route the
+   * product is recommending rather than as the one you happen to be driving.
    *
-   * All four are mixed to the warmth and the weight of the ramps above, so they
-   * sit in this palette rather than arriving from somewhere else, and they are
-   * spread as far apart on the wheel as four colours can be with the orange
-   * quarter of it spoken for. Crowded into one quarter, as an olive, a teal and
-   * a blue once were, three of the four routes read as one dark colour drawn
-   * three times.
+   * All three are mixed to the warmth and the weight of the ramps above, so
+   * they sit in this palette rather than arriving from somewhere else, and they
+   * are spread as far apart on the wheel as three colours can be with the
+   * orange quarter of it spoken for. Crowded into one quarter, as an olive, a
+   * teal and a blue once were, they read as one dark colour drawn three times.
    *
-   * Driving carries the most chroma of the four. It is the line drawn most
-   * often, and the darker plum this replaces sat well below the other three in
+   * There was a fourth, a cobalt, for cycling. It went with the mode: the
+   * Routes API does not answer for cycling across much of the world, so the
+   * product stopped offering a way to travel it could not actually cost.
+   *
+   * Driving carries the most chroma of the three. It is the line drawn most
+   * often, and the darker plum this replaces sat well below the others in
    * weight, so the route a trip is mostly made of was also the one that receded
    * furthest into the cream. At this value it reads at the strength the forest
    * and the gold do, which is what matching them was for.
@@ -76,7 +79,6 @@
   --color-orchid-700: #b4418c;
   --color-forest-700: #2f7a52;
   --color-gold-700: #8a6a1f;
-  --color-cobalt-700: #35607d;
 
   --font-display: var(--font-caprasimo), Georgia, "Times New Roman", serif;
   --font-body: var(--font-figtree), "Segoe UI", system-ui, sans-serif;

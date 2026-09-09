@@ -17,6 +17,7 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:reset-checkpoints": "node prisma/reset-checkpoints.mjs",
+    "db:reset-cycling": "node prisma/reset-cycling.mjs",
     "postinstall": "prisma generate"
   },
   "dependencies": {

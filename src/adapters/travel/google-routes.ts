@@ -20,7 +20,6 @@ const ROUTES_MODE: Readonly<Record<TravelMode, string>> = {
   drive: "DRIVE",
   transit: "TRANSIT",
   walk: "WALK",
-  cycle: "BICYCLE",
 };
 
 /** Google returns a duration as seconds with an "s" after them. */

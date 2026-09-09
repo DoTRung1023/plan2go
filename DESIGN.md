@@ -147,13 +147,13 @@ When one changes the other changes in the same commit.
 
 ## Colors
 
-The map keeps four hues of its own, at `orchid-700`, `forest-700`, `gold-700` and
-`cobalt-700`, drawn by the driving, public transport, walking and cycling routes and by
-nothing else. Four ways of getting
-somewhere need four lines that can be told apart, only walking is patterned, and none of
-them may be terracotta: a route in the product's own colour reads as the route the
-product is recommending. They are not accents and nothing outside the map may reach for
-them.
+The map keeps three hues of its own, at `orchid-700`, `forest-700` and `gold-700`,
+drawn by the driving, public transport and walking routes and by nothing else. Three
+ways of getting somewhere need three lines that can be told apart, only walking is
+patterned, and none of them may be terracotta: a route in the product's own colour reads
+as the route the product is recommending. They are not accents and nothing outside the
+map may reach for them. There was a fourth, a cobalt for cycling; it went when the mode
+did.
 
 There are two accents and they are not interchangeable. Terracotta is the product: the
 stop numbers, the active day, the primary action, the route lines. Sage is the second
@@ -299,13 +299,12 @@ mode is carried by the stroke pattern as well as by the colour, so colour is nev
 only thing distinguishing them:
 
 ```
-drive      3.4px  solid                terracotta-700
-transit    3.4px  dash 11 6            sage-700
-walk       4px    dash 0.5 8, round    terracotta-600
-cycle      3.4px  dash 6 5             neutral-700
+drive      4.6px  solid                orchid-700
+transit    4.6px  solid                forest-700
+walk       5px    dash 0.5 8, round    gold-700
 ```
 
-One table in `src/features/trip-map/route-style.ts` holds those four rows, and both the
+One table in `src/features/trip-map/route-style.ts` holds those three rows, and both the
 map and the key read from it, so a line and the sample that explains it cannot drift
 apart. Google draws a dash or a dot as a symbol repeated along an invisible line rather
 than as a stroke pattern, which is why each row also says what shape it repeats, and a

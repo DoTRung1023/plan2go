@@ -43,10 +43,16 @@ leg cache, composed in `src/app/t/[slug]/travel.ts`. The haversine provider is s
 there and still answers everything when there is no key. Neither of them changed the
 engine.
 
-There are four ways to travel and flying is not one of them. Nobody sells us flight
-availability, the Routes API has no such mode, and a straight line at an assumed speed
-offered a flight between any two points on earth. Adding it back means a flight data
-provider, Amadeus or Duffel or similar, behind the same port.
+There are three ways to travel: driving, public transport and walking. Flying is not one
+of them. Nobody sells us flight availability, the Routes API has no such mode, and a
+straight line at an assumed speed offered a flight between any two points on earth.
+Adding it back means a flight data provider, Amadeus or Duffel or similar, behind the
+same port.
+
+Cycling was one and no longer is, for the nearer version of the same reason. The Routes
+API returns no cycling route at all across much of the world, so the mode was in practice
+answered by a straight line at an assumed speed. Adding it back means a provider that
+actually covers it, behind the same port.
 
 `TravelRequest` carries no departure time, so transit answers are the service running
 when they were asked for and driving is asked for without traffic. Giving the engine a

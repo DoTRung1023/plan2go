@@ -60,8 +60,7 @@ const STROKES: Readonly<Record<TravelMode, RouteStroke>> = {
   transit: {
     mode: "transit",
     // Off the sage and onto a truer green. Sage is an olive, which sat between
-    // the blue of the cycling line and the yellow of the walking one instead of
-    // apart from either.
+    // the other two lines rather than apart from either.
     label: "Public transport",
     colorProperty: "--color-forest-700",
     inkClass: "text-forest-700",
@@ -83,19 +82,6 @@ const STROKES: Readonly<Record<TravelMode, RouteStroke>> = {
     roundCaps: true,
     drawn: { kind: "dots", repeat: "9px" },
   },
-  cycle: {
-    mode: "cycle",
-    // The one mode with no accent to give it. It had the ink, which was legible
-    // but said nothing: black is what everything else on a map is already drawn
-    // in. The palette's one blue is here for this line and nothing else.
-    label: "Cycling",
-    colorProperty: "--color-cobalt-700",
-    inkClass: "text-cobalt-700",
-    weight: 5,
-    dashArray: null,
-    roundCaps: false,
-    drawn: { kind: "solid" },
-  },
 };
 
 /** In the order Google lists them, which is the order the key is read in. */
@@ -103,7 +89,6 @@ export const ROUTE_STROKES: readonly RouteStroke[] = [
   STROKES.drive,
   STROKES.transit,
   STROKES.walk,
-  STROKES.cycle,
 ];
 
 /** Total by construction: the table has a row for every mode there is. */

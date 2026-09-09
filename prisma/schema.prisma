@@ -17,7 +17,6 @@ datasource db {
 
 enum TravelMode {
   WALK
-  CYCLE
   DRIVE
   TRANSIT
 }
