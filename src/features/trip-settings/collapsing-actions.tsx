@@ -78,7 +78,14 @@ export function CollapsingActions({ label, children }: CollapsingActionsProps) {
       }}
     >
       {/* Its own ground, so the trip name it opens over is covered rather than
-          showing through the gaps between the buttons. */}
+          showing through the gaps between the buttons.
+          
+          Its right edge touches the trigger, and the space before the last
+          button is padding inside it rather than a margin between the two. A
+          margin there is a strip of nothing that belongs to neither, and
+          crossing it on the way from the trigger to the buttons reads as
+          leaving: the pointer is over the row, then over neither, and the
+          buttons it was reaching for have gone. */}
       <div
         onFocus={() => {
           focusedInside.current = true;
@@ -92,7 +99,7 @@ export function CollapsingActions({ label, children }: CollapsingActionsProps) {
             settle();
           }
         }}
-        className={`absolute top-1/2 right-full z-20 mr-2 -translate-y-1/2 rounded-pill bg-paper px-2 transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none ${
+        className={`absolute top-1/2 right-full z-20 -translate-y-1/2 rounded-pill bg-paper pr-2 pl-2 transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none ${
           open
             ? "translate-x-0 opacity-100"
             : "pointer-events-none translate-x-3 opacity-0"
