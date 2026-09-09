@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { MoreIcon } from "@/ui/icons";
 
 /**
@@ -9,9 +9,6 @@ import { MoreIcon } from "@/ui/icons";
  */
 const TRIGGER =
   "inline-flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-pill border border-rule bg-paper-raised text-ink-muted hover:border-rule-strong hover:bg-paper-sunken hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
-
-/** Long enough to cover the opening. See the clipping note below. */
-const OPENING_MS = 220;
 
 interface CollapsingActionsProps {
   /** Read out in place of the three dots, which say nothing on their own. */
@@ -31,56 +28,33 @@ interface CollapsingActionsProps {
  * worth a render on its own: what the row is drawn from is whether any of them
  * is true, which is settled in one place below.
  *
- * The row grows from a zero width column rather than by animating a width in
- * pixels, so nothing here has to know how wide the buttons are. The contents
- * are aligned to the right end, so the button nearest the trigger appears first
- * and the rest follow it leftwards out of the fold.
+ * The buttons are taken out of the flow and hung off the left of the trigger,
+ * and that is not a detail. This row is built to wrap once the trip's name is
+ * squeezed past the width a name still reads at, so a group that grew in the
+ * flow would push itself onto the next line, out from under the pointer that
+ * was opening it: the pointer leaves, it folds, the row un-wraps, and the
+ * pointer is over it again. That oscillates as fast as the browser can lay it
+ * out. Out of the flow the row is always exactly one trigger wide, whatever is
+ * open, so hovering cannot change what hovering depends on.
  *
- * The clipping that makes the fold work would also cut off the panels Share and
- * Delete open downwards out of the row, so it is lifted once the opening has
- * had time to finish and goes back on the moment this closes. It is timed
- * rather than taken from the transition ending, because under
- * prefers-reduced-motion there is no transition to end and those panels still
- * have to be able to hang out of the row.
+ * Being out of the flow means nothing is clipped either, so the panels Share
+ * and Delete open downwards hang out of the row as they always did.
  */
 export function CollapsingActions({ label, children }: CollapsingActionsProps) {
   const hovered = useRef(false);
   const focused = useRef(false);
   const pinned = useRef(false);
-  const unclipping = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [open, setOpen] = useState(false);
-  const [clipped, setClipped] = useState(true);
-
-  useEffect(() => {
-    return () => {
-      if (unclipping.current !== null) {
-        clearTimeout(unclipping.current);
-      }
-    };
-  }, []);
 
   /** One place decides, whichever of the three has just changed. */
   const settle = (): void => {
-    const next = hovered.current || focused.current || pinned.current;
-    setOpen(next);
-
-    if (unclipping.current !== null) {
-      clearTimeout(unclipping.current);
-      unclipping.current = null;
-    }
-    if (next) {
-      unclipping.current = setTimeout(() => {
-        setClipped(false);
-      }, OPENING_MS);
-    } else {
-      setClipped(true);
-    }
+    setOpen(hovered.current || focused.current || pinned.current);
   };
 
   return (
     <div
-      className="flex shrink-0 items-center"
+      className="relative flex shrink-0 items-center"
       onMouseEnter={() => {
         hovered.current = true;
         settle();
@@ -102,16 +76,16 @@ export function CollapsingActions({ label, children }: CollapsingActionsProps) {
         }
       }}
     >
+      {/* Its own ground, so the trip name it opens over is covered rather than
+          showing through the gaps between the buttons. */}
       <div
-        className={`grid transition-[grid-template-columns] duration-200 ease-out motion-reduce:transition-none ${
-          open ? "grid-cols-[1fr]" : "grid-cols-[0fr]"
+        className={`absolute top-1/2 right-full z-20 mr-2 -translate-y-1/2 rounded-pill bg-paper px-2 transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none ${
+          open
+            ? "translate-x-0 opacity-100"
+            : "pointer-events-none translate-x-3 opacity-0"
         }`}
       >
-        <div
-          className={`flex min-w-0 justify-end ${clipped ? "overflow-hidden" : ""}`}
-        >
-          <div className="flex w-max items-center gap-2 pr-2">{children}</div>
-        </div>
+        <div className="flex w-max items-center gap-2">{children}</div>
       </div>
 
       <button
