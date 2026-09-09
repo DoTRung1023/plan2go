@@ -433,15 +433,31 @@ export function DateRangeField({
 
                             const isStart = thisMonth && date === shownStart;
                             const isEnd = thisMonth && date === shownEnd;
-                            const between =
-                              thisMonth && date > shownStart && date < shownEnd;
+                            /*
+                             * The band runs under the two ends as well as
+                             * between them, rounded off where it stops, so the
+                             * chosen days and the days they enclose read as one
+                             * selection rather than as two discs with a stripe
+                             * of something else in between. A trip of one day
+                             * has nothing to enclose and gets no band at all.
+                             */
+                            const banded =
+                              thisMonth &&
+                              shownEnd > shownStart &&
+                              date >= shownStart &&
+                              date <= shownEnd;
 
                             return (
                               <span
                                 role="gridcell"
                                 key={date}
                                 aria-selected={isStart || isEnd}
-                                className={`py-px ${between ? "bg-terracotta-100" : ""}`}
+                                className={[
+                                  "py-px",
+                                  banded ? "bg-terracotta-200" : "",
+                                  banded && date === shownStart ? "rounded-l-pill" : "",
+                                  banded && date === shownEnd ? "rounded-r-pill" : "",
+                                ].join(" ")}
                               >
                                 <button
                                   type="button"
@@ -459,8 +475,8 @@ export function DateRangeField({
                                     "flex h-[30px] w-full items-center justify-center rounded-pill border font-display text-micro tabular-nums focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta",
                                     isStart || isEnd
                                       ? "border-terracotta bg-terracotta text-paper"
-                                      : between
-                                        ? "border-transparent text-ink"
+                                      : banded
+                                        ? "border-transparent text-terracotta-900"
                                         : date === today
                                           ? "border-terracotta text-ink"
                                           : "border-transparent hover:bg-neutral-200",
