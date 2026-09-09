@@ -2,10 +2,15 @@
 
 /*
  * Tokens from DESIGN.md. Warm cream ground under warm ink, terracotta as the
- * accent and sage as a genuine second voice. Every role carries a 100 to 900
- * ramp generated on one shared lightness scale, so the same step of any ramp
- * has the same visual weight. Never pure white, never pure black, no dark
- * theme.
+ * accent and sage as a genuine second voice. Never pure white, never pure
+ * black, no dark theme.
+ *
+ * Each role's ramp was generated whole, 100 to 900, on one shared lightness
+ * scale, so the same step of any ramp carries the same visual weight. What is
+ * declared here is the part of each ramp the product actually spends: the
+ * steps nothing reached for have been cut. The scale they were cut from is
+ * still the authority, so a step that is needed later is computed from it
+ * rather than picked to sit between its neighbours here.
  */
 @theme {
   --color-paper: #f5ead8;
@@ -18,23 +23,16 @@
 
   --color-rule: color-mix(in srgb, #201e1d 13%, transparent);
   --color-rule-strong: color-mix(in srgb, #201e1d 28%, transparent);
-
-  --color-neutral-100: #f9f4ed;
   --color-neutral-200: #eee7db;
   --color-neutral-300: #dcd3c4;
   --color-neutral-400: #c0b6a5;
-  --color-neutral-500: #a19786;
   --color-neutral-600: #82796a;
   --color-neutral-700: #645c50;
-  --color-neutral-800: #474238;
   --color-neutral-900: #2e2b25;
 
   --color-terracotta: #c67139;
   --color-terracotta-100: #fff2eb;
   --color-terracotta-200: #ffe1d0;
-  --color-terracotta-300: #ffc6a5;
-  --color-terracotta-400: #f6a06b;
-  --color-terracotta-500: #d67f48;
   --color-terracotta-600: #b2622d;
   --color-terracotta-700: #8c491a;
   --color-terracotta-800: #643312;
@@ -43,9 +41,6 @@
   --color-sage: #7a8a5e;
   --color-sage-100: #f0fae1;
   --color-sage-200: #e1eecc;
-  --color-sage-300: #ccdbb2;
-  --color-sage-400: #aebf92;
-  --color-sage-500: #8fa073;
   --color-sage-600: #728157;
   --color-sage-700: #56633f;
   --color-sage-800: #3d472b;

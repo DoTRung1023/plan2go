@@ -16,9 +16,6 @@ colors:
   terracotta-ramp:
     100: "#FFF2EB"
     200: "#FFE1D0"
-    300: "#FFC6A5"
-    400: "#F6A06B"
-    500: "#D67F48"
     600: "#B2622D"
     700: "#8C491A"
     800: "#643312"
@@ -27,22 +24,16 @@ colors:
   sage-ramp:
     100: "#F0FAE1"
     200: "#E1EECC"
-    300: "#CCDBB2"
-    400: "#AEBF92"
-    500: "#8FA073"
     600: "#728157"
     700: "#56633F"
     800: "#3D472B"
     900: "#272E1B"
   neutral-ramp:
-    100: "#F9F4ED"
     200: "#EEE7DB"
     300: "#DCD3C4"
     400: "#C0B6A5"
-    500: "#A19786"
     600: "#82796A"
     700: "#645C50"
-    800: "#474238"
     900: "#2E2B25"
 typography:
   title:
@@ -167,16 +158,21 @@ itself, which in this product means a conflict. Everything else is paper and ink
   over all three surfaces.
 - **rule-strong:** the border of a control under the pointer, and dashed outlines.
 - **ink, ink-muted, ink-faint:** primary text, secondary text, and placeholders.
-- **terracotta:** the accent, with a 100 to 900 ramp. 100 and 200 are tinted fills, the
-  base is the accent itself, 600 is hover, 700 is pressed and is the step to use for
-  accent coloured text, 800 is the active day tab.
-- **sage:** the second accent, with the same ramp. 200 is the conflict block, 600 is
-  the marker for the ends of a day, 700 draws the public transport route line.
-- **neutral 100 to 900:** the warm greys behind everything, used for the drive tint,
-  the waiting band, and the map's own geometry.
+- **terracotta:** the accent. 100 and 200 are tinted fills, the base is the accent
+  itself, 600 is hover, 700 is pressed and is the step to use for accent coloured text,
+  800 is the active day tab.
+- **sage:** the second accent. 200 is the conflict block, 600 is the marker for the ends
+  of a day, 700 draws the public transport route line.
+- **neutral:** the warm greys behind everything, used for the drive tint, the waiting
+  band, and the map's own geometry.
 
-Each ramp is generated in OKLCH on one shared lightness scale, so the same step of any
-ramp carries the same visual weight. Prefer a ramp step to an ad hoc `color-mix()`.
+Every ramp is generated in OKLCH on one shared lightness scale, so the same step of any
+ramp carries the same visual weight. Only the steps the product spends are declared, so
+the ramps above have gaps in them; the scale is the authority, not the list. A step that
+is needed later is computed from that scale and added back, never chosen by eye to sit
+between the two steps that happen to survive around it.
+
+Prefer a ramp step to an ad hoc `color-mix()`.
 
 Never `#FFFFFF`, never `#000000`, on any surface, border, or text.
 
