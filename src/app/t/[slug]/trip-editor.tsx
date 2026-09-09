@@ -18,11 +18,11 @@ import { deleteTripAction } from "./delete-trip-action";
 import {
   moveStopAction,
   removeStopAction,
-  setStopCheckpointAction,
   setStopNoteAction,
   setStopStartAtAction,
   setStopStayAction,
 } from "./edit-stop-actions";
+import { setDayEndpointAction } from "./set-day-endpoint-action";
 import { setLegModeAction } from "./set-leg-mode-action";
 import { updateTripAction } from "./update-trip-action";
 
@@ -245,9 +245,17 @@ export function TripEditor({
                     recording(
                       setStopStartAtAction({ slug, editKey, stopId, startAtMinutes }),
                     ),
-                  setCheckpoint: ({ stopId, checkpoint }) =>
+                  setDayEndpoint: ({ which, providerPlaceId }) =>
                     recording(
-                      setStopCheckpointAction({ slug, editKey, stopId, checkpoint }),
+                      setDayEndpointAction({
+                        slug,
+                        editKey,
+                        dayId: selected.plan.id,
+                        which,
+                        providerPlaceId,
+                        label: null,
+                        session: null,
+                      }),
                     ),
                   setNote: ({ stopId, note }) =>
                     recording(setStopNoteAction({ slug, editKey, stopId, note })),

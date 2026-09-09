@@ -6,8 +6,8 @@ import { DateField } from "@/features/trip-settings/date-field";
 import { MAX_TRIP_DAYS } from "@/server/trips/new-trip-input";
 import type { Choice } from "./choice-field";
 import { ChoiceField } from "./choice-field";
-import type { City } from "./city-field";
-import { CityField } from "./city-field";
+import type { ChosenPlace } from "./place-field";
+import { PlaceField } from "./place-field";
 import { createTripAction } from "./create-trip-action";
 import type { CreateTripFormState } from "./create-trip-action";
 
@@ -37,7 +37,13 @@ export function CreateTripForm({ countries, today }: CreateTripFormProps) {
   const [first, setFirst] = useState(today);
   const [last, setLast] = useState(addDays(today, OPENING_SPAN_DAYS));
   const [country, setCountry] = useState("");
-  const [city, setCity] = useState<City | null>(null);
+  const [city, setCity] = useState<ChosenPlace | null>(null);
+  /**
+   * Where the first day sets off from. Optional: somebody who does not yet know
+   * where they are staying should not be stopped at the door, and the first day
+   * can be given its starting point in the planner whenever they do know.
+   */
+  const [startPlace, setStartPlace] = useState<ChosenPlace | null>(null);
 
   /**
    * A date field reads as an empty string while it is being cleared or typed
@@ -70,22 +76,49 @@ export function CreateTripForm({ countries, today }: CreateTripFormProps) {
           value={country}
           onChange={(picked) => {
             setCountry(picked);
-            // The city belonged to the country that was chosen before.
+            // The city belonged to the country that was chosen before, and the
+            // starting point belonged to that city.
             setCity(null);
+            setStartPlace(null);
           }}
           noMatch="No country matches that. Check the spelling."
         />
       </div>
 
       <div className="sm:col-span-2">
-        <CityField
+        <PlaceField
           id="cityPlaceId"
           name="cityPlaceId"
           label="City"
+          kind="city"
           countryCode={country}
+          waitingFor={country === "" ? "Choose a country first" : null}
+          placeholder="Type the city"
           chosen={city}
-          onChange={setCity}
+          onChange={(picked) => {
+            setCity(picked);
+            // The starting point was somewhere in the city chosen before.
+            setStartPlace(null);
+          }}
         />
+      </div>
+
+      <div className="sm:col-span-2">
+        <PlaceField
+          id="startPlaceId"
+          name="startPlaceId"
+          label="Starting point (optional)"
+          kind="place"
+          countryCode={country}
+          waitingFor={city === null ? "Choose a city first" : null}
+          placeholder="Hotel, station, wherever day 1 begins"
+          chosen={startPlace}
+          onChange={setStartPlace}
+        />
+        <p className="mt-[6px] text-micro text-ink-muted">
+          Where day 1 sets off from. The day passes through it rather than
+          spending time there, and you can add it later instead.
+        </p>
       </div>
 
       <DateField

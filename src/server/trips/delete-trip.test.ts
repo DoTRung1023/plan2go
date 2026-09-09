@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Trip } from "@/core/model/trip";
 import type {
   CreatedTrip,
+  DayEndpointSet,
   LegModeSet,
   SettingsUpdated,
   StopAdded,
@@ -43,6 +44,7 @@ function repositoryFor(known: string): {
       },
       findPlaceByProviderId: () => Promise.resolve(null),
       addStop: () => Promise.reject<StopAdded>(new Error(NOT_STUBBED)),
+      setDayEndpoint: () => Promise.reject<DayEndpointSet>(new Error(NOT_STUBBED)),
       setLegMode: () => Promise.reject<LegModeSet>(new Error(NOT_STUBBED)),
       updateStop: () => Promise.reject<StopChanged>(new Error(NOT_STUBBED)),
       removeStop: () => Promise.reject<StopChanged>(new Error(NOT_STUBBED)),

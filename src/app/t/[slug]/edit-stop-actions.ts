@@ -11,7 +11,6 @@ import {
   MAX_STAY_MINUTES,
   moveStop,
   removeStop,
-  setStopCheckpoint,
   setStopNote,
   setStopStartAt,
   setStopStay,
@@ -49,7 +48,6 @@ const startAtSchema = z.object({
   startAtMinutes: z.number().int().min(0).max(LAST_MINUTE_OF_DAY).nullable(),
 });
 
-const checkpointSchema = z.object({ ...stop, checkpoint: z.boolean() });
 
 const noteSchema = z.object({
   ...stop,
@@ -102,17 +100,6 @@ export async function setStopStartAtAction(input: unknown): Promise<StopEditStat
   return finish(
     parsed.data.slug,
     setStopStartAt(scoped(parsed.data), prismaTripRepository),
-  );
-}
-
-export async function setStopCheckpointAction(input: unknown): Promise<StopEditState> {
-  const parsed = checkpointSchema.safeParse(input);
-  if (!parsed.success) {
-    return { error: UNREADABLE };
-  }
-  return finish(
-    parsed.data.slug,
-    setStopCheckpoint(scoped(parsed.data), prismaTripRepository),
   );
 }
 

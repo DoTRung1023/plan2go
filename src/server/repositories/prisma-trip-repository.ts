@@ -17,6 +17,8 @@ import { openingHoursToJson, parseOpeningHours } from "../places/opening-hours";
 import { createTripSlug } from "../trips/slug";
 import type {
   CreatedTrip,
+  DayEndpointSet,
+  DayEndpointUpdate,
   LegModeSet,
   LegModeUpdate,
   NewStop,
@@ -32,6 +34,41 @@ import type {
   TripDeletion,
   TripSettingsUpdate,
 } from "./trip-repository";
+
+/**
+ * The trip's own row for a place, made if this trip has not seen it before.
+ *
+ * Matched on the provider's identifier rather than upserted by primary key,
+ * because that identifier is theirs and not ours. A pin dropped by hand has
+ * none, so it can never be matched and is always a new row, which is right: two
+ * pins dropped in the same spot are two things somebody meant separately.
+ */
+async function placeIdFor(tripId: string, place: Place): Promise<string> {
+  const existing =
+    place.providerPlaceId === null
+      ? null
+      : await db.place.findFirst({
+          where: { tripId, providerPlaceId: place.providerPlaceId },
+          select: { id: true },
+        });
+  if (existing !== null) {
+    return existing.id;
+  }
+
+  const created = await db.place.create({
+    data: {
+      tripId,
+      providerPlaceId: place.providerPlaceId,
+      name: place.name,
+      address: place.address,
+      lat: place.position.lat,
+      lng: place.position.lng,
+      openingHours: openingHoursToJson(place.openingHours),
+    },
+    select: { id: true },
+  });
+  return created.id;
+}
 
 /** Two slugs colliding is a lottery win, so a handful of attempts is plenty. */
 const SLUG_ATTEMPTS = 5;
@@ -157,8 +194,26 @@ async function insert(trip: NewTrip, slug: string): Promise<CreatedTrip> {
         })),
       },
     },
-    select: { slug: true },
+    select: { id: true, slug: true },
   });
+
+  // Written after the days exist, because it points at one of them. A trip
+  // opened without anybody being asked where they were starting simply has a
+  // first day that begins at its first stop, which is what every day did
+  // before this was asked at all.
+  if (trip.startPlace !== null) {
+    const first = await db.day.findFirst({
+      where: { tripId: created.id, position: 0 },
+      select: { id: true },
+    });
+    if (first !== null) {
+      await db.day.update({
+        where: { id: first.id },
+        data: { startPlaceId: await placeIdFor(created.id, trip.startPlace) },
+      });
+    }
+  }
+
   return { slug: created.slug };
 }
 
@@ -205,41 +260,43 @@ export const prismaTripRepository: TripRepository = {
       return { status: "refused" };
     }
 
-    // The place carries the provider's identifier, not one of ours, so it is
-    // matched on that rather than upserted by primary key.
-    const existing =
-      stop.place.providerPlaceId === null
-        ? null
-        : await db.place.findFirst({
-            where: { tripId: day.tripId, providerPlaceId: stop.place.providerPlaceId },
-            select: { id: true },
-          });
-
-    const place =
-      existing ??
-      (await db.place.create({
-        data: {
-          tripId: day.tripId,
-          providerPlaceId: stop.place.providerPlaceId,
-          name: stop.place.name,
-          address: stop.place.address,
-          lat: stop.place.position.lat,
-          lng: stop.place.position.lng,
-          openingHours: openingHoursToJson(stop.place.openingHours),
-        },
-        select: { id: true },
-      }));
-
     await db.stop.create({
       data: {
         dayId: day.id,
-        placeId: place.id,
+        placeId: await placeIdFor(day.tripId, stop.place),
         position: day._count.stops,
         stayMinutes: stop.stayMinutes,
         travelMode: TRAVEL_MODE_TO_DB[stop.travelMode],
       },
     });
     return { status: "added" };
+  },
+
+  async setDayEndpoint(update: DayEndpointUpdate): Promise<DayEndpointSet> {
+    // Scoped to the tokens the browser holds, so finding the day is also the
+    // check that this trip may be changed.
+    const day = await db.day.findFirst({
+      where: {
+        id: update.dayId,
+        trip: { slug: update.slug, editKeyHash: update.editKeyHash },
+      },
+      select: { id: true, tripId: true },
+    });
+    if (day === null) {
+      return { status: "refused" };
+    }
+
+    const placeId =
+      update.place === null ? null : await placeIdFor(day.tripId, update.place);
+
+    await db.day.update({
+      where: { id: day.id },
+      data:
+        update.which === "start"
+          ? { startPlaceId: placeId, startLabel: update.label }
+          : { endPlaceId: placeId, endLabel: update.label },
+    });
+    return { status: "set" };
   },
 
   async setLegMode(update: LegModeUpdate): Promise<LegModeSet> {

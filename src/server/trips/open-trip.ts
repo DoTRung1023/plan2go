@@ -50,8 +50,9 @@ export async function openTrip(
 
   const timeZone = openingTimeZone(headers);
   const { slug, editKey } = await createTrip(
-    // Nobody was asked where they were going, so the map opens on the world.
-    details ?? { ...blankTrip(timeZone), timeZone, centre: null },
+    // Nobody was asked where they were going, so the map opens on the world
+    // and the first day begins wherever its first stop turns out to be.
+    details ?? { ...blankTrip(timeZone), timeZone, centre: null, startPlace: null },
     repository,
   );
   return { status: "opened", slug, editKey };

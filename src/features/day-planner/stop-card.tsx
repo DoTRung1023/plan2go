@@ -15,28 +15,7 @@ import { TimePicker } from "./time-picker";
 const MAX_STAY_MINUTES = 99 * 60 + 59;
 
 /** The one thing about this stop that is currently being written down. */
-type Busy = "stay" | "time" | "note" | "checkpoint" | "remove" | null;
-
-/**
- * The one control on a card that is a word rather than a glyph, so it is the
- * one that cannot be quiet until the pointer finds it: a faded icon reads as
- * an icon waiting to be needed, and faded words read as words that have been
- * switched off. It wears the same small pill the stay does, and it changes on
- * the neutral ramp rather than going terracotta, because terracotta on this
- * card already means something is wrong.
- *
- * The height is stated, and it is the height of the two glyphs beside it: a
- * pill that arrived at its own size from padding and a line height sat a pixel
- * or two off the row it is in, which is the sort of thing that is only ever
- * noticed once and then cannot be unseen.
- *
- * It lifts on hover rather than sinking. Sinking took it to the very colour
- * the card behind it goes to at the same moment, since reaching for this
- * button means the card is under the pointer too, and the two met in the
- * middle and the button vanished into its own row.
- */
-const KIND =
-  "inline-flex h-[22px] shrink-0 items-center rounded-pill border border-rule bg-paper px-[9px] py-0 text-micro font-semibold whitespace-nowrap text-ink-muted hover:border-rule-strong hover:bg-paper-raised hover:text-ink disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+type Busy = "stay" | "time" | "note" | "remove" | null;
 
 const TOOL =
   "grid h-[22px] w-[22px] place-items-center rounded-pill text-ink-muted hover:bg-neutral-200 hover:text-ink disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
@@ -423,24 +402,6 @@ export function StopCard({
 
             {actions === null ? null : (
               <div className="flex items-center gap-[7px]">
-                {/* What this place is to the day. A word rather than a glyph:
-                    there is no drawing of "the day only goes through here". */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    run("checkpoint", () =>
-                      actions.setCheckpoint({
-                        stopId: stop.stopId,
-                        checkpoint: !checkpoint,
-                      }),
-                    );
-                  }}
-                  disabled={busy === "checkpoint"}
-                  className={KIND}
-                >
-                  {checkpoint ? "Stay here" : "Passing through"}
-                </button>
-
                 <div
                   className={`-mr-1 flex items-center group-hover:opacity-100 focus-within:opacity-100 ${
                     hovered ? "opacity-100" : "opacity-55"

@@ -3,7 +3,7 @@
 import { Fragment, useState, useTransition } from "react";
 import type { Conflict } from "@/core/model/conflict";
 import type { DayEndpoint, DayPlan } from "@/core/model/day";
-import type { Place } from "@/core/model/place";
+import type { LatLng, Place } from "@/core/model/place";
 import type { StopId } from "@/core/model/stop";
 import type { ComputedDay } from "@/core/time/compute-day";
 import { formatClock } from "@/core/time/minutes";
@@ -11,6 +11,7 @@ import { weekdayOf } from "@/core/time/zoned";
 import { HomeIcon } from "@/ui/icons";
 import type { PlannedDay } from "./compute-trip";
 import type { DayActions } from "./day-actions";
+import { EndpointPicker } from "./endpoint-picker";
 import { formatOpeningHours } from "./format-opening-hours";
 import { LegRow } from "./leg-row";
 import { StopCard } from "./stop-card";
@@ -65,11 +66,14 @@ function Anchor({
   endpoint,
   fallback,
   time,
+  controls,
 }: {
   readonly endpoint: DayEndpoint;
   /** Said when the place has no address of its own. */
   readonly fallback: string;
   readonly time: string | null;
+  /** What can be done to this end of the day, for a reader who may change it. */
+  readonly controls: React.ReactNode;
 }) {
   return (
     <div className="flex items-center gap-3 rounded-row px-[2px] py-[14px]">
@@ -84,9 +88,158 @@ function Anchor({
           {endpoint.place.address ?? fallback}
         </span>
       </span>
-      <span className="ml-auto pr-2 font-display text-place whitespace-nowrap text-ink-muted tabular-nums">
-        {time ?? "Time not known"}
+      <span className="ml-auto flex items-center gap-2 pr-2">
+        {controls}
+        <span className="font-display text-place whitespace-nowrap text-ink-muted tabular-nums">
+          {time ?? "Time not known"}
+        </span>
       </span>
+    </div>
+  );
+}
+
+const ENDPOINT_BUTTON =
+  "inline-flex h-[26px] shrink-0 items-center rounded-pill border border-rule bg-paper px-[11px] text-micro font-semibold whitespace-nowrap text-ink-muted hover:border-rule-strong hover:bg-paper-raised hover:text-ink disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+
+/** What each end of the day is called, wherever it has to be said out loud. */
+const ENDS = {
+  start: {
+    add: "Add where the day starts",
+    label: "Where the day starts",
+    placeholder: "Hotel, station, wherever the day begins",
+  },
+  end: {
+    add: "Add where the day ends",
+    label: "Where the day ends",
+    placeholder: "Hotel, station, wherever the day finishes",
+  },
+} as const;
+
+/**
+ * Where to look first when choosing an end of this day: somewhere the day
+ * already goes, so a search for "the station" answers with the one nearby.
+ */
+function nearestPoint(day: DayPlan): LatLng | null {
+  const first = day.stops[0];
+  if (first !== undefined) {
+    return first.place.position;
+  }
+  return day.start?.place.position ?? day.end?.place.position ?? null;
+}
+
+/**
+ * One end of a day: the point itself once there is one, the search while it is
+ * being chosen, and otherwise the button that starts that off.
+ *
+ * A reader who cannot edit sees the point and nothing else, the same way they
+ * see a stop without the controls on it.
+ */
+function EndpointSlot({
+  which,
+  day,
+  endpoint,
+  time,
+  actions,
+}: {
+  readonly which: "start" | "end";
+  readonly day: DayPlan;
+  readonly endpoint: DayEndpoint | null;
+  readonly time: string | null;
+  readonly actions: DayActions | null;
+}) {
+  const [picking, setPicking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, startSaving] = useTransition();
+  const words = ENDS[which];
+
+  const write = (providerPlaceId: string | null): void => {
+    if (actions === null) {
+      return;
+    }
+    setPicking(false);
+    const change = actions.setDayEndpoint;
+    startSaving(async () => {
+      setError((await change({ which, providerPlaceId })).error);
+    });
+  };
+
+  const controls =
+    actions === null ? null : (
+      <>
+        <button
+          type="button"
+          disabled={saving}
+          onClick={() => {
+            setPicking(true);
+          }}
+          className={ENDPOINT_BUTTON}
+        >
+          Change
+        </button>
+        <button
+          type="button"
+          disabled={saving}
+          onClick={() => {
+            write(null);
+          }}
+          className={ENDPOINT_BUTTON}
+        >
+          Remove
+        </button>
+      </>
+    );
+
+  return (
+    <div>
+      {endpoint === null ? null : (
+        <Anchor
+          endpoint={endpoint}
+          fallback={words.label}
+          time={time}
+          controls={picking ? null : controls}
+        />
+      )}
+
+      {picking ? (
+        <div className="py-2">
+          <EndpointPicker
+            label={words.label}
+            placeholder={words.placeholder}
+            near={nearestPoint(day)}
+            onChoose={write}
+            onCancel={() => {
+              setPicking(false);
+            }}
+          />
+        </div>
+      ) : null}
+
+      {/* The one case with nothing to show: an end nobody has set yet. The
+          button says which end it is, because on a day with neither set the
+          two of them are otherwise the same word twice. */}
+      {endpoint === null && !picking && actions !== null ? (
+        <p className="py-2">
+          <button
+            type="button"
+            disabled={saving}
+            onClick={() => {
+              setPicking(true);
+            }}
+            className={ENDPOINT_BUTTON}
+          >
+            {words.add}
+          </button>
+        </p>
+      ) : null}
+
+      {error === null ? null : (
+        <p
+          role="alert"
+          className="mt-1 mb-2 rounded-chip bg-terracotta-200 px-3 py-2 text-micro text-terracotta-900"
+        >
+          {error}
+        </p>
+      )}
     </div>
   );
 }
@@ -162,13 +315,13 @@ export function DayItinerary({
 
   return (
     <div>
-      {day.start === null ? null : (
-        <Anchor
-          endpoint={day.start}
-          fallback="Where the day starts"
-          time={formatClock(computed.begins.minutesFromMidnight)}
-        />
-      )}
+      <EndpointSlot
+        which="start"
+        day={day}
+        endpoint={day.start}
+        time={formatClock(computed.begins.minutesFromMidnight)}
+        actions={actions}
+      />
 
       {computed.stops.map((stop, index) => {
         const leg = computed.legs[index + legOffset];
@@ -221,15 +374,15 @@ export function DayItinerary({
         />
       )}
 
-      {day.end === null ? null : (
-        <Anchor
-          endpoint={day.end}
-          fallback="Where the day ends"
-          time={
-            computed.ends === null ? null : formatClock(computed.ends.minutesFromMidnight)
-          }
-        />
-      )}
+      <EndpointSlot
+        which="end"
+        day={day}
+        endpoint={day.end}
+        time={
+          computed.ends === null ? null : formatClock(computed.ends.minutesFromMidnight)
+        }
+        actions={actions}
+      />
 
       {moveError === null ? null : (
         <p

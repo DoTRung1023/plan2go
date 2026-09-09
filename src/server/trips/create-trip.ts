@@ -1,5 +1,5 @@
 import type { IsoDate } from "@/core/model/day";
-import type { LatLng } from "@/core/model/place";
+import type { LatLng, Place } from "@/core/model/place";
 import { createEditKey, hashEditKey } from "../ownership/edit-key";
 import type { TripRepository } from "../repositories/trip-repository";
 import { DEFAULT_START_AT_MINUTES } from "./day-start";
@@ -12,6 +12,12 @@ export interface NewTripRequest {
   readonly dayCount: number;
   /** The city the trip is in, for the map to open on. */
   readonly centre: LatLng | null;
+  /**
+   * Where the first day begins, or null when the traveller skipped the
+   * question. It is the trip's first checkpoint: somewhere the day sets off
+   * from rather than somewhere it spends time.
+   */
+  readonly startPlace: Place | null;
 }
 
 export interface CreatedTripResult {
@@ -24,10 +30,12 @@ export interface CreatedTripResult {
 }
 
 /**
- * Opens a trip and hands back the one key that authorises changes to it. The
- * days come out empty: no stops, and neither end of the day set, because at
- * this point nobody knows where the traveller is staying or whether they are
- * staying anywhere at all.
+ * Opens a trip and hands back the one key that authorises changes to it.
+ *
+ * The days come out empty apart from the one thing the traveller may have been
+ * asked: where the first of them begins. Every other end of every other day is
+ * left unset, because at this point nobody knows where they are staying or
+ * whether they are staying anywhere at all.
  */
 export async function createTrip(
   request: NewTripRequest,
@@ -40,6 +48,7 @@ export async function createTrip(
     startDate: request.startDate,
     dayCount: request.dayCount,
     centre: request.centre,
+    startPlace: request.startPlace,
     startAtMinutes: DEFAULT_START_AT_MINUTES,
     editKeyHash: hashEditKey(editKey),
   });

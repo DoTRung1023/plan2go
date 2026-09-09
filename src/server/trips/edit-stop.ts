@@ -93,25 +93,6 @@ export function setStopStartAt(
   });
 }
 
-/**
- * Whether the day passes through this place or spends time at it.
- *
- * The stay is left exactly as it was. A checkpoint takes none of the day's
- * time whatever its stay says, so keeping it costs nothing and means turning
- * one back into a stop gives back the hour it used to have.
- */
-export function setStopCheckpoint(
-  edit: StopEdit & { readonly checkpoint: boolean },
-  repository: TripRepository,
-): Promise<StopChanged> {
-  return repository.updateStop({
-    slug: edit.slug,
-    editKeyHash: edit.editKeyHash,
-    stopId: edit.stopId,
-    checkpoint: edit.checkpoint,
-  });
-}
-
 export function setStopNote(
   edit: StopEdit & { readonly note: string | null },
   repository: TripRepository,

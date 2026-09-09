@@ -14,6 +14,12 @@ export interface NewTrip {
   readonly startAtMinutes: number;
   /** The city the trip is in, for the map to open on. */
   readonly centre: LatLng | null;
+  /**
+   * Where the first day begins, or null when nobody was asked. Stored as the
+   * trip's own place, the same way a stop's place is, so the day it starts is
+   * pointing at a row this trip owns rather than at the provider.
+   */
+  readonly startPlace: Place | null;
   readonly editKeyHash: EditKeyHash;
 }
 
@@ -52,6 +58,29 @@ export interface StopUpdate {
   /** Null clears the note. Absent leaves it alone. */
   readonly note?: string | null;
 }
+
+/** Which end of a day is being written. */
+export type DayEnd = "start" | "end";
+
+/**
+ * Where a day begins or where it finishes.
+ *
+ * A null place clears that end, which is how a day goes back to beginning at
+ * its first stop. The label is what the traveller calls the point, "Hotel",
+ * and is theirs to write or to leave off.
+ */
+export interface DayEndpointUpdate {
+  readonly slug: string;
+  readonly editKeyHash: EditKeyHash;
+  readonly dayId: DayId;
+  readonly which: DayEnd;
+  readonly place: Place | null;
+  readonly label: string | null;
+}
+
+export type DayEndpointSet =
+  | { readonly status: "set" }
+  | { readonly status: "refused" };
 
 /** Which stop to take off its day. */
 export interface StopRemoval {
@@ -161,6 +190,13 @@ export interface TripRepository {
 
   /** Appends a stop to the end of a day, storing the place if it is new. */
   addStop(stop: NewStop): Promise<StopAdded>;
+
+  /**
+   * Sets where a day begins or where it finishes, storing the place if it is
+   * new to the trip. These are the trip's only checkpoints: a point the day
+   * passes through, taking none of its time.
+   */
+  setDayEndpoint(update: DayEndpointUpdate): Promise<DayEndpointSet>;
 
   /** Changes how one leg of a day is travelled. */
   setLegMode(update: LegModeUpdate): Promise<LegModeSet>;
