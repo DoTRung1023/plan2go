@@ -115,10 +115,6 @@ export function CreateTripForm({ countries, today }: CreateTripFormProps) {
           chosen={startPlace}
           onChange={setStartPlace}
         />
-        <p className="mt-[6px] text-micro text-ink-muted">
-          Where day 1 sets off from. The day passes through it rather than
-          spending time there, and you can add it later instead.
-        </p>
       </div>
 
       <DateField
