@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 import type { PlannedDay } from "./compute-trip";
 import { DayItinerary } from "./day-itinerary";
 import { DayTabs } from "./day-tabs";
-import { EmptyDay } from "./empty-day";
 import type { DayActions, EditOutcome } from "./day-actions";
 import { formatDayDate } from "./format-day-date";
 
@@ -121,20 +120,16 @@ export function DayPlanner({
            */
           className={`scroll-quiet min-h-0 flex-1 overflow-x-hidden overflow-y-auto pt-2 pb-8 [overflow-anchor:none] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${GUTTER}`}
         >
-          {selected.plan.stops.length === 0 ? (
-            <EmptyDay dayName={formatDayDate(selected.plan.date)} />
-          ) : (
-            <DayItinerary
-              day={selected.plan}
-              computed={selected.computed}
-              legs={selected.legs}
-              hoveredStopId={hoveredStopId}
-              onHoverStop={onHoverStop}
-              hoveredLegIndex={hoveredLegIndex}
-              onHoverLeg={onHoverLeg}
-              actions={actions}
-            />
-          )}
+          <DayItinerary
+            day={selected.plan}
+            computed={selected.computed}
+            legs={selected.legs}
+            hoveredStopId={hoveredStopId}
+            onHoverStop={onHoverStop}
+            hoveredLegIndex={hoveredLegIndex}
+            onHoverLeg={onHoverLeg}
+            actions={actions}
+          />
         </section>
       )}
     </>

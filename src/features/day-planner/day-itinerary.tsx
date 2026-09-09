@@ -11,7 +11,9 @@ import { weekdayOf } from "@/core/time/zoned";
 import { HomeIcon } from "@/ui/icons";
 import type { PlannedDay } from "./compute-trip";
 import type { DayActions } from "./day-actions";
+import { EmptyDay } from "./empty-day";
 import { EndpointPicker } from "./endpoint-picker";
+import { formatDayDate } from "./format-day-date";
 import { formatOpeningHours } from "./format-opening-hours";
 import { LegRow } from "./leg-row";
 import { StopCard } from "./stop-card";
@@ -307,6 +309,10 @@ export function DayItinerary({
         time={formatClock(computed.begins.minutesFromMidnight)}
         actions={actions}
       />
+
+      {day.stops.length === 0 ? (
+        <EmptyDay dayName={formatDayDate(day.date)} />
+      ) : null}
 
       {computed.stops.map((stop, index) => {
         const leg = computed.legs[index + legOffset];
