@@ -40,6 +40,22 @@ function Glyph({
   );
 }
 
+export function ChevronLeftIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="M15 5l-7 7 7 7" />
+    </Glyph>
+  );
+}
+
+export function ChevronRightIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="M9 5l7 7-7 7" />
+    </Glyph>
+  );
+}
+
 /** Three dots: the conventional shape for "there are more actions here". */
 export function MoreIcon(props: IconProps) {
   return (

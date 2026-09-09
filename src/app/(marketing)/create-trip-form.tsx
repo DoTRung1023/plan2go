@@ -1,8 +1,8 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { addDays, daysBetween } from "@/core/time/zoned";
-import { DateField } from "@/features/trip-settings/date-field";
+import { addDays } from "@/core/time/zoned";
+import { DateRangeField } from "@/features/trip-settings/date-range-field";
 import { MAX_TRIP_DAYS } from "@/server/trips/new-trip-input";
 import type { Choice } from "./choice-field";
 import { ChoiceField } from "./choice-field";
@@ -44,24 +44,6 @@ export function CreateTripForm({ countries, today }: CreateTripFormProps) {
    * can be given its starting point in the planner whenever they do know.
    */
   const [startPlace, setStartPlace] = useState<ChosenPlace | null>(null);
-
-  /**
-   * A date field reads as an empty string while it is being cleared or typed
-   * into, and date arithmetic on that throws, so the bounds are simply not
-   * offered until there is a date to work from.
-   */
-  const latestLast = addDays(first, MAX_TRIP_DAYS - 1);
-
-  /**
-   * Moving the first day carries the last one with it, keeping the trip the
-   * length it already was. Without that, a trip moved to next month has to have
-   * its last day changed before its first will accept a later date, which is
-   * the two fields arguing with each other over an answer nobody disputes.
-   */
-  const moveFirst = (picked: string): void => {
-    setFirst(picked);
-    setLast(addDays(picked, Math.max(0, daysBetween(first, last))));
-  };
 
   return (
     <form action={submit} className="mt-8 grid gap-4 sm:grid-cols-2">
@@ -117,23 +99,22 @@ export function CreateTripForm({ countries, today }: CreateTripFormProps) {
         />
       </div>
 
-      <DateField
-        id="startDate"
-        name="startDate"
-        label="First day"
-        value={first}
-        onChange={moveFirst}
-      />
-
-      <DateField
-        id="endDate"
-        name="endDate"
-        label="Last day"
-        value={last}
-        min={first}
-        max={latestLast}
-        onChange={setLast}
-      />
+      <div className="sm:col-span-2">
+        <DateRangeField
+          id="tripDates"
+          startName="startDate"
+          endName="endDate"
+          label="Dates"
+          start={first}
+          end={last}
+          min={today}
+          maxSpanDays={MAX_TRIP_DAYS}
+          onChange={(range) => {
+            setFirst(range.start);
+            setLast(range.end);
+          }}
+        />
+      </div>
 
       {state.error === null ? null : (
         <p
