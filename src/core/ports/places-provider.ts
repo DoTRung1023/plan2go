@@ -23,6 +23,20 @@ export interface PlaceSearchRequest {
 }
 
 /**
+ * What a city is known for, asked without anybody having typed anything.
+ *
+ * The point is the middle of the city the trip is in and not the day being
+ * planned: someone who has not typed yet is being shown where they are, and a
+ * day whose stops are all in one suburb should not narrow that to the suburb.
+ */
+export interface NearbyPlacesRequest {
+  readonly centre: LatLng;
+  /** How far out from the centre to look, in metres. */
+  readonly radiusMeters: number;
+  readonly limit: number;
+}
+
+/**
  * A search hit, which is cheap. It carries no coordinates and no opening hours,
  * because those cost a second and dearer call. Ask for details once the person
  * has actually chosen something.
@@ -38,5 +52,10 @@ export interface PlaceSuggestion {
 export interface PlacesProvider {
   readonly name: string;
   search(request: PlaceSearchRequest): Promise<readonly PlaceSuggestion[]>;
+  /**
+   * The places a city is known for, ordered by how well known they are rather
+   * than by how close they sit to the point given. Answers the empty field.
+   */
+  nearby(request: NearbyPlacesRequest): Promise<readonly PlaceSuggestion[]>;
   details(providerPlaceId: string, session: string | null): Promise<Place | null>;
 }

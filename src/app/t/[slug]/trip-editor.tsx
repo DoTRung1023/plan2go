@@ -6,6 +6,7 @@ import type { LatLng } from "@/core/model/place";
 import type { PlannedDay } from "@/features/day-planner/compute-trip";
 import { DayPlanner } from "@/features/day-planner/day-planner";
 import { PlaceSearch } from "@/features/place-search/place-search";
+import { placesOnTheTrip } from "@/features/place-search/places-on-the-trip";
 import { searchBias } from "@/features/place-search/search-bias";
 import { ShareLinks } from "@/features/trip-settings/share-links";
 import { SavedNote } from "@/features/trip-settings/saved-note";
@@ -178,6 +179,8 @@ export function TripEditor({
                     selectedIndex,
                     centre,
                   )}
+                  city={centre}
+                  onTheTrip={placesOnTheTrip(days.map((day) => day.plan))}
                   onAdd={(input) => recording(addStopAction({ ...input, editKey }))}
                 />
               </div>
