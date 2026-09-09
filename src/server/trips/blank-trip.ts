@@ -8,10 +8,10 @@ export const UNTITLED = "Untitled trip";
  * How far the last day sits from the first when a trip opens. Changed in the
  * trip details, along with everything else.
  */
-export const OPENING_SPAN_DAYS = 5;
+const OPENING_SPAN_DAYS = 5;
 
 /** A span of five days is six days counted, the first one included. */
-export const OPENING_DAY_COUNT = OPENING_SPAN_DAYS + 1;
+const OPENING_DAY_COUNT = OPENING_SPAN_DAYS + 1;
 
 /** A trip nobody has typed into yet. */
 export interface BlankTrip {

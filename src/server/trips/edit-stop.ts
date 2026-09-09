@@ -46,12 +46,12 @@ export interface StopEdit {
  * from outside is clamped rather than refused, because the only thing that
  * could send one is a stale page, and the traveller's next click should work.
  */
-export function clampStay(minutes: number): number {
+function clampStay(minutes: number): number {
   return Math.max(0, Math.min(MAX_STAY_MINUTES, Math.round(minutes)));
 }
 
 /** A note that is only whitespace is not a note. It clears the field instead. */
-export function tidyNote(note: string | null): string | null {
+function tidyNote(note: string | null): string | null {
   if (note === null) {
     return null;
   }

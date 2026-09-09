@@ -7,7 +7,7 @@ import { decide, windowStartFor } from "./window";
  * The address is hashed before it is stored, so our own table is not a log of
  * who visited. The hash is stable, which is all a counter needs.
  */
-export function clientKeyFor(address: string): string {
+function clientKeyFor(address: string): string {
   return createHash("sha256").update(address, "utf8").digest("hex");
 }
 
@@ -15,7 +15,7 @@ export function clientKeyFor(address: string): string {
  * The caller's address. Vercel puts it first in x-forwarded-for. Callers we
  * cannot identify share one bucket, which is the strict direction to fail in.
  */
-export function clientAddress(headers: Headers): string {
+function clientAddress(headers: Headers): string {
   const first = headers.get("x-forwarded-for")?.split(",")[0]?.trim();
   return first === undefined || first === "" ? "unidentified" : first;
 }

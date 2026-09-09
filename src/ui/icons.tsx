@@ -73,14 +73,6 @@ export function ShrinkIcon(props: IconProps) {
   );
 }
 
-export function MinusIcon(props: IconProps) {
-  return (
-    <Glyph {...props}>
-      <path d="M5 12h14" />
-    </Glyph>
-  );
-}
-
 /** Six dots, the shape a thing you can pick up and move has. Filled, not stroked. */
 export function GripIcon({ size, className }: Omit<IconProps, "strokeWidth">) {
   return (

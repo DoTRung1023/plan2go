@@ -7,7 +7,7 @@ import { fastestMode } from "@/core/time/fastest-mode";
 import type { TripRepository } from "../repositories/trip-repository";
 
 /** What a leg falls back to when there is nothing to measure. */
-export const DEFAULT_TRAVEL_MODE: TravelMode = "walk";
+const DEFAULT_TRAVEL_MODE: TravelMode = "walk";
 
 /**
  * The quickest way to cover a leg.
