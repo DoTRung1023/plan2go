@@ -55,6 +55,7 @@ function tripOf(days: readonly DayPlan[]): Trip {
     timeZone: "Asia/Ho_Chi_Minh",
     userId: null,
     centre: null,
+    cityName: null,
     days,
   };
 }

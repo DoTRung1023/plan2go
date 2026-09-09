@@ -24,7 +24,6 @@ function stop(name: string, providerPlaceId: string | null): Stop {
     place: place(name, providerPlaceId),
     stayMinutes: 60,
     startAtMinutes: null,
-    checkpoint: false,
     travelMode: "walk",
     note: null,
   };

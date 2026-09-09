@@ -191,10 +191,7 @@ export function computeDay({ day, legs }: ComputeDayInput): ComputedDay {
 
   const stayAt = (point: Extract<DayPoint, { kind: "stop" }>): void => {
     const { stop } = point;
-    // A checkpoint is somewhere the day goes through. It is timed like anywhere
-    // else, so the traveller knows when they are there, and it keeps whatever
-    // stay it was given, so making it an ordinary stop again gives that back.
-    const staying = stop.checkpoint ? 0 : stop.stayMinutes;
+    const staying = stop.stayMinutes;
     timeAtPlacesMinutes += staying;
 
     /** Both readings of a fixed time: the clock it was set to, and the instant. */

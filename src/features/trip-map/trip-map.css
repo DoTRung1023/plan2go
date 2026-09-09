@@ -28,7 +28,6 @@
 }
 
 .trip-map-stop,
-.trip-map-checkpoint,
 .trip-map-endpoint {
   display: flex;
   align-items: center;
@@ -54,18 +53,6 @@
   font-family: var(--font-display);
   font-size: 14px;
   font-variant-numeric: tabular-nums;
-}
-
-/* The same square cornered shape the panel gives a checkpoint, and far enough
-   up the same ramp to be told from a stop at a glance: pale with a dark mark on
-   it, against a stop that is the other way round. One hue, two weights, and no
-   need to read either of them to know which is which. */
-.trip-map-checkpoint {
-  width: 30px;
-  height: 30px;
-  border-radius: 12px 12px 12px 4px;
-  background-color: var(--color-terracotta-300);
-  color: var(--color-terracotta-900);
 }
 
 /*

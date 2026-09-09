@@ -36,7 +36,7 @@ interface DayTabsProps {
  * places passed through is not empty, so it says what it is instead.
  */
 function stopLine(day: DayPlan): string {
-  const stops = day.stops.filter((stop) => !stop.checkpoint).length;
+  const stops = day.stops.length;
   if (stops > 0) {
     return `${String(stops)} ${stops === 1 ? "stop" : "stops"}`;
   }

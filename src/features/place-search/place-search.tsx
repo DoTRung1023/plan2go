@@ -56,6 +56,11 @@ interface PlaceSearchProps {
    */
   readonly city: LatLng | null;
   /**
+   * What that city is called. Null on a trip opened before anyone was asked,
+   * and the panel then says "this city", which is true and says less.
+   */
+  readonly cityName: string | null;
+  /**
    * Everywhere the trip already goes, by provider identifier. Recommending a
    * place that is on the trip already wastes the only six lines this panel has
    * on somewhere the traveller has plainly decided about.
@@ -104,6 +109,7 @@ export function PlaceSearch({
   dayName,
   near,
   city,
+  cityName,
   onTheTrip,
   onAdd,
 }: PlaceSearchProps) {
@@ -302,6 +308,13 @@ export function PlaceSearch({
   const recommending = !searched;
 
   /**
+   * Named where the trip knows the name. It reads better, and on a trip to
+   * somewhere the reader has never been it is the line that says what the list
+   * underneath actually is.
+   */
+  const popularIn = cityName === null ? "Popular in this city" : `Popular in ${cityName}`;
+
+  /**
    * Clamped, because the list under the field is swapped for a shorter one the
    * moment the field is emptied, and the highlight must not be left pointing
    * past the end of it.
@@ -394,15 +407,13 @@ export function PlaceSearch({
           {listed ? (
             <>
               <p className="px-[11px] pt-1 pb-[9px] text-label font-semibold text-ink-muted">
-                {recommending ? "Popular in this city" : "Matching places"}
+                {recommending ? popularIn : "Matching places"}
               </p>
               <ul
                 id={listId}
                 role="listbox"
                 aria-label={
-                  recommending
-                    ? "Popular places in the city this trip is in"
-                    : "Places that match"
+                  recommending ? popularIn : "Places that match"
                 }
               >
                 {visible.map((suggestion, index) => (

@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import type { Conflict } from "@/core/model/conflict";
 import type { ComputedStop } from "@/core/time/compute-day";
 import { formatDuration } from "@/core/time/minutes";
-import { ClockIcon, CloseIcon, GripIcon, PinIcon, PlusIcon } from "@/ui/icons";
+import { ClockIcon, CloseIcon, GripIcon, PlusIcon } from "@/ui/icons";
 import type { DayActions } from "./day-actions";
 import { ConflictNotice } from "./conflict-notice";
 import { formatDayTime } from "./format-day-time";
@@ -36,10 +36,8 @@ const STAY_PILL =
   "inline-flex h-[26px] items-center rounded-pill border border-rule bg-paper";
 
 interface StopCardProps {
-  /** Its number in the day, or null for a checkpoint, which is not counted. */
-  readonly position: number | null;
-  /** Somewhere the day passes through: no stay, no number, no time of its own. */
-  readonly checkpoint: boolean;
+  /** Its number in the day, counted from one. */
+  readonly position: number;
   /** Whether the pointer is on this place, here or on the map beside it. */
   readonly hovered: boolean;
   readonly onHover: (stopId: string | null) => void;
@@ -79,7 +77,6 @@ interface StopCardProps {
  */
 export function StopCard({
   position,
-  checkpoint,
   hovered,
   onHover,
   index,
@@ -295,18 +292,9 @@ export function StopCard({
       onMouseLeave={() => {
         onHover(null);
       }}
-      /*
-       * A checkpoint is a quieter card, not a different thing: the same rule
-       * around it and a paler paper under it, sitting between the page and the
-       * places the day is actually for. Shorter, too, because there is less on
-       * it. Drawn with nothing at all it read as a gap in the list rather than
-       * as somewhere the day goes through, and drawn at full strength it read
-       * as another stop: both are barely there, and being barely there is the
-       * whole of what they have to say.
-       */
-      className={`group ml-[2px] grid grid-cols-[30px_minmax(0,1fr)] gap-x-[14px] rounded-card border ${
-        checkpoint ? "py-[9px] pr-[15px] pl-3" : "bg-paper-raised py-[14px] pr-[15px] pl-3"
-      } ${dragging ? "opacity-35" : ""} ${
+      className={`group ml-[2px] grid grid-cols-[30px_minmax(0,1fr)] gap-x-[14px] rounded-card border bg-paper-raised py-[14px] pr-[15px] pl-3 ${
+        dragging ? "opacity-35" : ""
+      } ${
         dragOver && !dragging
           ? "border-terracotta outline-2 outline-offset-[3px] outline-dashed outline-terracotta"
           : /*
@@ -317,49 +305,23 @@ export function StopCard({
              */
             hovered
             ? "border-terracotta/55 bg-paper-sunken"
-            : checkpoint
-              ? "border-rule/45 bg-paper-raised/30"
-              : "border-rule"
+            : "border-rule"
       }`}
     >
       <div className="flex flex-col items-center gap-[7px]">
-        {/* A checkpoint is passed through, so it is not one of the numbers
-            the day counts off. A quiet ring says it is on the route without
-            claiming a place in the order. */}
-        {position === null ? (
-          <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-[12px_12px_12px_4px] bg-terracotta-300 text-terracotta-900">
-            <PinIcon size={15} strokeWidth={2.75} />
-            <span className="sr-only">Checkpoint</span>
-          </span>
-        ) : (
-          <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-pill bg-terracotta font-display text-[14px] text-paper tabular-nums">
-            <span aria-hidden="true">{position}</span>
-            <span className="sr-only">Stop {position}</span>
-          </span>
-        )}
+        <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-pill bg-terracotta font-display text-[14px] text-paper tabular-nums">
+          <span aria-hidden="true">{position}</span>
+          <span className="sr-only">Stop {position}</span>
+        </span>
         <span aria-hidden="true" className="thread flex-1" />
       </div>
 
       <div className="flex min-w-0 flex-col gap-[9px]">
         <div className="flex items-start gap-[10px]">
           <div className="min-w-0 flex-1">
-            <h3
-              className={
-                checkpoint
-                  ? "text-meta font-semibold text-ink"
-                  : "font-display text-place text-ink"
-              }
-            >
-              {stop.placeName}
-            </h3>
+            <h3 className="font-display text-place text-ink">{stop.placeName}</h3>
             {address === null ? null : (
-              <p
-                className={
-                  checkpoint ? "text-micro text-ink-muted" : "mt-[3px] text-meta text-ink-muted"
-                }
-              >
-                {address}
-              </p>
+              <p className="mt-[3px] text-meta text-ink-muted">{address}</p>
             )}
           </div>
 
@@ -434,72 +396,70 @@ export function StopCard({
           </div>
         </div>
 
-        {checkpoint ? null : (
-          <div className="flex flex-wrap items-center gap-[11px]">
-            {actions === null ? (
-              <span className={`${STAY_PILL} px-[11px] font-display text-meta text-ink tabular-nums`}>
-                Stay for {formatDuration(stop.stayMinutes)}
+        <div className="flex flex-wrap items-center gap-[11px]">
+          {actions === null ? (
+            <span className={`${STAY_PILL} px-[11px] font-display text-meta text-ink tabular-nums`}>
+              Stay for {formatDuration(stop.stayMinutes)}
+            </span>
+          ) : (
+            <div
+              // Remounted when the stored stay changes, so the two fields show
+              // what was actually kept: type ninety minutes and they come back
+              // as an hour and a half.
+              key={stop.stayMinutes}
+              className={`${STAY_PILL} gap-[2px] pr-[11px] pl-[9px]`}
+              onBlur={(event) => {
+                // Moving between the two fields is still one edit, so nothing
+                // is written until the pair as a whole is left.
+                const next = event.relatedTarget;
+                if (next !== hourField.current && next !== minuteField.current) {
+                  commitStay();
+                }
+              }}
+            >
+              <span className="pr-[5px] text-micro whitespace-nowrap text-ink-muted">
+                Stay for
               </span>
-            ) : (
-              <div
-                // Remounted when the stored stay changes, so the two fields show
-                // what was actually kept: type ninety minutes and they come back
-                // as an hour and a half.
-                key={stop.stayMinutes}
-                className={`${STAY_PILL} gap-[2px] pr-[11px] pl-[9px]`}
-                onBlur={(event) => {
-                  // Moving between the two fields is still one edit, so nothing
-                  // is written until the pair as a whole is left.
-                  const next = event.relatedTarget;
-                  if (next !== hourField.current && next !== minuteField.current) {
-                    commitStay();
-                  }
-                }}
-              >
-                <span className="pr-[5px] text-micro whitespace-nowrap text-ink-muted">
-                  Stay for
-                </span>
-                <input
-                  ref={hourField}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={2}
-                  disabled={busy === "stay"}
-                  defaultValue={String(Math.floor(stop.stayMinutes / 60))}
-                  onKeyDown={onStayKey}
-                  aria-label={`Hours at ${stop.placeName}`}
-                  className={STAY_FIELD}
-                />
-                <span className="pr-[3px] text-micro text-ink-muted">hr</span>
-                <input
-                  ref={minuteField}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={2}
-                  disabled={busy === "stay"}
-                  defaultValue={String(stop.stayMinutes % 60)}
-                  onKeyDown={onStayKey}
-                  aria-label={`Minutes at ${stop.placeName}`}
-                  className={STAY_FIELD}
-                />
-                <span className="text-micro text-ink-muted">min</span>
-              </div>
-            )}
+              <input
+                ref={hourField}
+                type="text"
+                inputMode="numeric"
+                maxLength={2}
+                disabled={busy === "stay"}
+                defaultValue={String(Math.floor(stop.stayMinutes / 60))}
+                onKeyDown={onStayKey}
+                aria-label={`Hours at ${stop.placeName}`}
+                className={STAY_FIELD}
+              />
+              <span className="pr-[3px] text-micro text-ink-muted">hr</span>
+              <input
+                ref={minuteField}
+                type="text"
+                inputMode="numeric"
+                maxLength={2}
+                disabled={busy === "stay"}
+                defaultValue={String(stop.stayMinutes % 60)}
+                onKeyDown={onStayKey}
+                aria-label={`Minutes at ${stop.placeName}`}
+                className={STAY_FIELD}
+              />
+              <span className="text-micro text-ink-muted">min</span>
+            </div>
+          )}
 
 
-            {openingHours === null ? null : (
-              <span className="flex items-center gap-[5px] text-micro text-ink-muted tabular-nums">
-                <ClockIcon size={12} className="shrink-0" />
-                {openingHours}
-              </span>
-            )}
-          </div>
-        )}
+          {openingHours === null ? null : (
+            <span className="flex items-center gap-[5px] text-micro text-ink-muted tabular-nums">
+              <ClockIcon size={12} className="shrink-0" />
+              {openingHours}
+            </span>
+          )}
+        </div>
         {conflicts.map((conflict, at) => (
           <ConflictNotice key={`${conflict.kind}-${String(at)}`} conflict={conflict} />
         ))}
 
-        {checkpoint ? null : shownNote === null && !writingNote ? (
+        {shownNote === null && !writingNote ? (
           actions === null ? null : (
             <button
               type="button"

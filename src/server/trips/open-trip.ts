@@ -52,7 +52,13 @@ export async function openTrip(
   const { slug, editKey } = await createTrip(
     // Nobody was asked where they were going, so the map opens on the world
     // and the first day begins wherever its first stop turns out to be.
-    details ?? { ...blankTrip(timeZone), timeZone, centre: null, startPlace: null },
+    details ?? {
+      ...blankTrip(timeZone),
+      timeZone,
+      centre: null,
+      cityName: null,
+      startPlace: null,
+    },
     repository,
   );
   return { status: "opened", slug, editKey };

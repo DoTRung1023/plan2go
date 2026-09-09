@@ -33,7 +33,6 @@ function stop(
     place: place(name, openingHours),
     stayMinutes,
     startAtMinutes: null,
-    checkpoint: false,
     travelMode: "walk",
     note: null,
   };
@@ -481,49 +480,5 @@ describe("computeDay, stops fixed to a time", () => {
     // The gap itself is still unmeasured, so the totals stay partial.
     expect(result.totals.complete).toBe(false);
     expect(result.totals.travelMinutes).toBeNull();
-  });
-});
-
-describe("computeDay, checkpoints", () => {
-  function checkpoint(name: string, stayMinutes: number): Stop {
-    return { ...stop(name, stayMinutes), checkpoint: true };
-  }
-
-  it("spends none of the day at a checkpoint, whatever stay it carries", () => {
-    const plan = day({
-      start: null,
-      end: null,
-      startAtMinutes: 9 * 60,
-      stops: [checkpoint("Station", 60), stop("Market", 30)],
-    });
-    const result = computeDay({ day: plan, legs: [leg(10)] });
-
-    expect(result.stops[0]?.stayMinutes).toBe(0);
-    // Nine, straight on to the market at ten past, half an hour there.
-    expect(result.stops[1]?.arrival?.minutesFromMidnight).toBe(9 * 60 + 10);
-    expect(result.ends?.minutesFromMidnight).toBe(9 * 60 + 40);
-    expect(result.totals.timeAtPlacesMinutes).toBe(30);
-  });
-
-  it("gives the stay back when it is made an ordinary stop again", () => {
-    const stops = [stop("Station", 60), stop("Market", 30)];
-    const result = computeDay({ day: day({ start: null, end: null, stops }), legs: [leg(10)] });
-
-    expect(result.stops[0]?.stayMinutes).toBe(60);
-    expect(result.totals.timeAtPlacesMinutes).toBe(90);
-  });
-
-  it("still times a checkpoint, and still checks it against opening hours", () => {
-    const hours = openEveryDay([{ opensAt: 10 * 60, closesAt: 17 * 60 }]);
-    const plan = day({
-      start: null,
-      end: null,
-      startAtMinutes: 9 * 60,
-      stops: [{ ...stop("Gate", 0, hours), checkpoint: true }],
-    });
-    const result = computeDay({ day: plan, legs: [] });
-
-    expect(result.stops[0]?.arrival?.minutesFromMidnight).toBe(9 * 60);
-    expect(result.stops[0]?.waitMinutes).toBe(60);
   });
 });

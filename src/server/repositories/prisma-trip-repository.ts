@@ -125,7 +125,6 @@ function toStop(row: StopRow & { place: PlaceRow }): Stop {
     place: toPlace(row.place),
     stayMinutes: row.stayMinutes,
     startAtMinutes: row.startAtMinutes,
-    checkpoint: row.checkpoint,
     travelMode: TRAVEL_MODE_FROM_DB[row.travelMode],
     note: row.note,
   };
@@ -164,6 +163,7 @@ function toTrip(row: TripRow): Trip {
       row.centreLat === null || row.centreLng === null
         ? null
         : { lat: row.centreLat, lng: row.centreLng },
+    cityName: row.cityName,
     days: row.days.map((day) => toDay(day, row.timeZone, row.startDate)),
   };
 }
@@ -184,6 +184,7 @@ async function insert(trip: NewTrip, slug: string): Promise<CreatedTrip> {
       startDate: trip.startDate,
       centreLat: trip.centre?.lat ?? null,
       centreLng: trip.centre?.lng ?? null,
+      cityName: trip.cityName,
       editKeyHash: trip.editKeyHash,
       days: {
         create: Array.from({ length: trip.dayCount }, (_unused, index) => ({
@@ -342,7 +343,6 @@ export const prismaTripRepository: TripRepository = {
         ...(update.startAtMinutes === undefined
           ? {}
           : { startAtMinutes: update.startAtMinutes }),
-        ...(update.checkpoint === undefined ? {} : { checkpoint: update.checkpoint }),
         ...(update.note === undefined ? {} : { note: update.note }),
       },
     });

@@ -48,6 +48,8 @@ interface TripEditorProps {
   readonly days: readonly PlannedDay[];
   /** The city the trip is in, where the map opens and a search looks first. */
   readonly centre: LatLng | null;
+  /** What that city is called, so the search can name it rather than point. */
+  readonly cityName: string | null;
   /** Today's date in the trip's own zone, so the day strip can mark it. */
   readonly today: string;
   /**
@@ -73,6 +75,7 @@ export function TripEditor({
   slug,
   days,
   centre,
+  cityName,
   today,
   editKey,
 }: TripEditorProps) {
@@ -180,6 +183,7 @@ export function TripEditor({
                     centre,
                   )}
                   city={centre}
+                  cityName={cityName}
                   onTheTrip={placesOnTheTrip(days.map((day) => day.plan))}
                   onAdd={(input) => recording(addStopAction({ ...input, editKey }))}
                 />

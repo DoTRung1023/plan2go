@@ -78,6 +78,7 @@ export async function createTripAction(
     title: UNTITLED,
     timeZone: zone ?? openingTimeZone(asked),
     centre: city.position,
+    cityName: city.name,
     startPlace,
   });
 

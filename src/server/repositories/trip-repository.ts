@@ -14,6 +14,8 @@ export interface NewTrip {
   readonly startAtMinutes: number;
   /** The city the trip is in, for the map to open on. */
   readonly centre: LatLng | null;
+  /** What that city is called, for saying rather than pointing. */
+  readonly cityName: string | null;
   /**
    * Where the first day begins, or null when nobody was asked. Stored as the
    * trip's own place, the same way a stop's place is, so the day it starts is
@@ -53,8 +55,6 @@ export interface StopUpdate {
   readonly stayMinutes?: number;
   /** Null unpins the stop and lets it follow the day. Absent leaves it alone. */
   readonly startAtMinutes?: number | null;
-  /** Whether the day passes through rather than stops. Absent leaves it alone. */
-  readonly checkpoint?: boolean;
   /** Null clears the note. Absent leaves it alone. */
   readonly note?: string | null;
 }

@@ -36,6 +36,7 @@ export async function TripPage({ slug, editKey }: TripPageProps) {
       slug={trip.slug}
       days={days}
       centre={trip.centre}
+      cityName={trip.cityName}
       /* Today where the trip is, not where the reader is: a trip in Hanoi read
          from Adelaide is on its Tuesday, whatever the reader's clock says. */
       today={todayIn(trip.timeZone)}

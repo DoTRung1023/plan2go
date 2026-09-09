@@ -6,7 +6,6 @@ import type { TravelMode } from "@/core/model/leg";
 import type { LatLng } from "@/core/model/place";
 import type { Stop } from "@/core/model/stop";
 import {
-  checkpointMarkerElement,
   endpointMarkerElement,
   placeDomMarker,
   stopMarkerElement,
@@ -473,21 +472,14 @@ export function TripMap({
     }
 
     markers.current.clear();
-    // The numbers count the stops and skip the checkpoints, the same way the
-    // panel does, so a place is called the same thing in both.
-    let counted = 0;
-    stops.forEach((stop) => {
+    // Counted the same way the panel counts, so a place is called the same
+    // thing in both.
+    stops.forEach((stop, at) => {
       const point = {
         lat: stop.place.position.lat,
         lng: stop.place.position.lng,
       };
-      let element: HTMLElement;
-      if (stop.checkpoint) {
-        element = checkpointMarkerElement(stop.place.name);
-      } else {
-        counted += 1;
-        element = stopMarkerElement(counted, stop.place.name);
-      }
+      const element = stopMarkerElement(at + 1, stop.place.name);
       element.addEventListener("mouseenter", () => {
         hovering.current(stop.id);
       });

@@ -12,6 +12,8 @@ export interface NewTripRequest {
   readonly dayCount: number;
   /** The city the trip is in, for the map to open on. */
   readonly centre: LatLng | null;
+  /** What that city is called, so the product can name it rather than point. */
+  readonly cityName: string | null;
   /**
    * Where the first day begins, or null when the traveller skipped the
    * question. It is the trip's first checkpoint: somewhere the day sets off
@@ -48,6 +50,7 @@ export async function createTrip(
     startDate: request.startDate,
     dayCount: request.dayCount,
     centre: request.centre,
+    cityName: request.cityName,
     startPlace: request.startPlace,
     startAtMinutes: DEFAULT_START_AT_MINUTES,
     editKeyHash: hashEditKey(editKey),
