@@ -289,11 +289,7 @@ export function ExportDialog({
               }}
               className="mt-[18px] w-full rounded-pill bg-terracotta px-4 py-[10px] font-display text-body/none font-semibold text-paper hover:bg-terracotta-600 active:bg-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
             >
-              {printing
-                ? "Preparing the pages"
-                : picked.length === 0
-                  ? "Choose a day"
-                  : `Export ${String(picked.length)} ${picked.length === 1 ? "day" : "days"}`}
+              {printing ? "Preparing the pages" : "Export"}
             </button>
             {printing && !ready ? (
               <p className="mt-2 text-micro text-ink-muted">Waiting for the maps to arrive.</p>
