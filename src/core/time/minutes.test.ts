@@ -3,18 +3,18 @@ import { formatClock, formatDuration, wholeMinutes } from "./minutes";
 
 describe("formatClock", () => {
   it("reads midnight and noon the way a person says them", () => {
-    expect(formatClock(0)).toBe("12:00 am");
-    expect(formatClock(720)).toBe("12:00 pm");
+    expect(formatClock(0)).toBe("00:00");
+    expect(formatClock(720)).toBe("12:00");
   });
 
   it("pads the minutes and drops the leading hour zero", () => {
-    expect(formatClock(9 * 60 + 5)).toBe("9:05 am");
-    expect(formatClock(16 * 60 + 30)).toBe("4:30 pm");
+    expect(formatClock(9 * 60 + 5)).toBe("09:05");
+    expect(formatClock(16 * 60 + 30)).toBe("16:30");
   });
 
   it("wraps past midnight, because the day is carried separately", () => {
-    expect(formatClock(1440)).toBe("12:00 am");
-    expect(formatClock(1470)).toBe("12:30 am");
+    expect(formatClock(1440)).toBe("00:00");
+    expect(formatClock(1470)).toBe("00:30");
   });
 });
 

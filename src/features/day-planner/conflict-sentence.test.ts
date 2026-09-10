@@ -45,7 +45,7 @@ const DASHES = /[-\u2013\u2014]/;
 describe("conflictSentence", () => {
   it("gives both times when you arrive after closing", () => {
     expect(conflictSentence(ARRIVES_AFTER_CLOSE)).toBe(
-      "Closes at 4:00 pm and you arrive at 4:30 pm.",
+      "Closes at 16:00 and you arrive at 16:30.",
     );
   });
 
@@ -55,7 +55,7 @@ describe("conflictSentence", () => {
 
   it("says when you are still there after closing", () => {
     expect(conflictSentence(STAY_OVERRUNS_CLOSE)).toBe(
-      "Closes at 5:00 pm and you are still there at 5:30 pm.",
+      "Closes at 17:00 and you are still there at 17:30.",
     );
   });
 

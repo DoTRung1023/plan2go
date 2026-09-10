@@ -15,17 +15,17 @@ export function clockToMinutes(hours: number, minutes: number): number {
 }
 
 /**
- * "9:15 am", "12:00 pm", "4:30 pm". Values at or beyond 1440 wrap, because the
- * day they belong to is carried separately as a day offset.
+ * "09:15", "12:00", "16:30": the 24-hour clock, two digits each, so a column
+ * of times lines up and no time needs a word after it. Values at or beyond
+ * 1440 wrap, because the day they belong to is carried separately as a day
+ * offset.
  */
 export function formatClock(minutesFromMidnight: number): string {
   const wrapped =
     ((minutesFromMidnight % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY;
-  const hours24 = Math.floor(wrapped / MINUTES_PER_HOUR);
+  const hours = Math.floor(wrapped / MINUTES_PER_HOUR);
   const minutes = wrapped % MINUTES_PER_HOUR;
-  const suffix = hours24 < 12 ? "am" : "pm";
-  const hours12 = hours24 % 12 === 0 ? 12 : hours24 % 12;
-  return `${String(hours12)}:${String(minutes).padStart(2, "0")} ${suffix}`;
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
 }
 
 /** "25 min", "1 hr", "1 hr 40 min". Never decimal hours. */
