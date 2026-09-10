@@ -135,7 +135,7 @@ const SIZES = {
       "w-auto rounded-pill border-transparent bg-transparent px-2 py-[5px] text-[13px] leading-none font-semibold text-ink-muted hover:border-transparent hover:bg-terracotta-100 hover:text-terracotta-700",
     label: "sr-only",
     change: "shrink-0 text-[13px] leading-none font-bold text-terracotta-700",
-    stack: "",
+    stack: "shrink-0",
   },
   large: {
     // Room kept clear on the right for the word, which is taken out of the flow

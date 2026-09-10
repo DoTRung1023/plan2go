@@ -163,7 +163,7 @@ export function TripSettings({
       <label className="sr-only" htmlFor={`${fieldId}-title`}>
         Trip name
       </label>
-      <div className="relative flex items-start gap-[10px]">
+      <div className="relative flex items-center gap-[10px]">
         {/* Not `required`. requestSubmit runs the browser's own validation, and
             a field marked required stops there and puts up a grey system
             bubble reading "Please fill out this field", in a typeface this
@@ -191,7 +191,32 @@ export function TripSettings({
           }}
           className={NAME_FIELD}
         />
+        <DateRangeField
+          id={`${fieldId}-dates`}
+          startName="startDate"
+          endName="endDate"
+          label="Dates"
+          start={first}
+          end={last}
+          onChange={(range) => {
+            setFirst(range.start);
+            setLast(range.end);
+          }}
+          footer={saveDates}
+          onClose={abandonDates}
+          size="inline"
+        />
+
         {actions}
+
+        {span === null ? (
+          <p
+            role="alert"
+            className="absolute top-full right-0 z-20 mt-[5px] max-w-full rounded-chip bg-terracotta-200 px-[11px] py-[6px] text-micro font-semibold text-terracotta-900 shadow-md"
+          >
+            The last day is before the first day.
+          </p>
+        ) : null}
 
         {/* Hangs off the field, where the browser would have put its own bubble,
             and over what is under it rather than in the column with it. In the
@@ -209,39 +234,11 @@ export function TripSettings({
 
       <div className="mt-[14px]">{tabs}</div>
 
-      {/* The day's own line, and the dates at the end of it: what is open and
-          what it is part of, read together rather than in two places. */}
-      <div className="relative mt-4 flex flex-wrap items-baseline gap-[10px] border-t border-rule pt-[14px]">
+      {/* Nothing but which day is open now: the dates that used to end this
+          line have gone up to the row that names the trip. */}
+      <div className="mt-4 flex flex-wrap items-baseline gap-[10px] border-t border-rule pt-[14px]">
         {dayLine}
-        <span className="flex-1" />
-        <DateRangeField
-          id={`${fieldId}-dates`}
-          startName="startDate"
-          endName="endDate"
-          label="Dates"
-          start={first}
-          end={last}
-          onChange={(range) => {
-            setFirst(range.start);
-            setLast(range.end);
-          }}
-          footer={saveDates}
-          onClose={abandonDates}
-          size="inline"
-        />
-
-        {/* Hung off the dates the way the name's message is hung off the name,
-            and over what is under it rather than in the column with it. */}
-        {span === null ? (
-          <p
-            role="alert"
-            className="absolute top-full left-0 z-20 mt-[5px] max-w-full rounded-chip bg-terracotta-200 px-[11px] py-[6px] text-micro font-semibold text-terracotta-900 shadow-md"
-          >
-            The last day is before the first day.
-          </p>
-        ) : null}
       </div>
-
 
       {state.error === null || state.field !== null ? null : (
         <p
