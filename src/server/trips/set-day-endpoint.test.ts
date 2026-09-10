@@ -1,14 +1,18 @@
 import { describe, expect, it } from "vitest";
 import type { DayPlan } from "@/core/model/day";
 import type { Place } from "@/core/model/place";
+import type { LegResolution, TravelMode } from "@/core/model/leg";
+import type { Stop } from "@/core/model/stop";
 import type { Trip } from "@/core/model/trip";
 import type { PlacesProvider } from "@/core/ports/places-provider";
+import type { TravelProvider } from "@/core/ports/travel-provider";
 import type {
   CreatedTrip,
   DayEndpointSet,
   DayEndpointUpdate,
   DayStartSet,
   LegModeSet,
+  LegModeUpdate,
   SettingsUpdated,
   StopAdded,
   StopChanged,
@@ -31,6 +35,10 @@ function place(name: string): Place {
     position: { lat: 21.0278, lng: 105.8342 },
     openingHours: null,
   };
+}
+
+function stop(name: string): Stop {
+  return { id: `stop-${name}`, place: place(name), stayMinutes: 60, travelMode: "walk", note: null };
 }
 
 function day(id: string, overrides: Partial<DayPlan> = {}): DayPlan {
@@ -68,10 +76,13 @@ function repositoryFor(
 ): {
   readonly repository: TripRepository;
   readonly written: DayEndpointUpdate[];
+  readonly modes: LegModeUpdate[];
 } {
   const written: DayEndpointUpdate[] = [];
+  const modes: LegModeUpdate[] = [];
   return {
     written,
+    modes,
     repository: {
       findBySlug: () => Promise.resolve(trip),
       findEditKeyHash: () => Promise.resolve<string | null>(null),
@@ -87,7 +98,10 @@ function repositoryFor(
       updateSettings: () => Promise.reject<SettingsUpdated>(new Error(NOT_STUBBED)),
       delete: () => Promise.reject<TripDeleted>(new Error(NOT_STUBBED)),
       addStop: () => Promise.reject<StopAdded>(new Error(NOT_STUBBED)),
-      setLegMode: () => Promise.reject<LegModeSet>(new Error(NOT_STUBBED)),
+      setLegMode: (update) => {
+        modes.push(update);
+        return Promise.resolve<LegModeSet>({ status: "set" });
+      },
       updateStop: () => Promise.reject<StopChanged>(new Error(NOT_STUBBED)),
       removeStop: () => Promise.reject<StopChanged>(new Error(NOT_STUBBED)),
       moveStop: () => Promise.reject<StopChanged>(new Error(NOT_STUBBED)),
@@ -115,6 +129,33 @@ function providerFor(known: Place | null): {
   };
 }
 
+/** Answers every leg with a time per mode, so the quickest is knowable. */
+function travelFor(minutes: Readonly<Record<TravelMode, number>>): TravelProvider {
+  return {
+    name: "stub",
+    estimate: ({ mode }) =>
+      Promise.resolve<LegResolution>({
+        status: "resolved",
+        estimate: {
+          mode,
+          durationMinutes: minutes[mode],
+          distanceMeters: 1000,
+          source: "haversine",
+          path: null,
+        },
+      }),
+  };
+}
+
+/** Never reached by a day with nothing on it, which has no leg to ask about. */
+const NO_TRAVEL: TravelProvider = {
+  name: "stub",
+  estimate: () => Promise.reject(new Error(NOT_STUBBED)),
+};
+
+/** Driving quickest, then the train, with walking a long way behind. */
+const BY_CAR = travelFor({ drive: 12, transit: 25, walk: 90 });
+
 function request(overrides: Partial<Parameters<typeof setDayEndpoint>[0]> = {}) {
   return {
     slug: SLUG,
@@ -136,7 +177,7 @@ describe("setDayEndpoint", () => {
     });
     const { provider } = providerFor(null);
 
-    const result = await setDayEndpoint(request(), repository, provider);
+    const result = await setDayEndpoint(request(), repository, provider, NO_TRAVEL);
 
     expect(result).toEqual({ status: "set", placeName: "Hotel" });
     expect(written[0]?.dayId).toBe("day-1");
@@ -151,7 +192,7 @@ describe("setDayEndpoint", () => {
     );
     const { provider } = providerFor(null);
 
-    await setDayEndpoint(request(), repository, provider);
+    await setDayEndpoint(request(), repository, provider, NO_TRAVEL);
 
     expect(written).toHaveLength(2);
     expect(written[1]).toMatchObject({ dayId: "day-2", which: "start" });
@@ -168,7 +209,7 @@ describe("setDayEndpoint", () => {
     );
     const { provider } = providerFor(null);
 
-    await setDayEndpoint(request(), repository, provider);
+    await setDayEndpoint(request(), repository, provider, NO_TRAVEL);
 
     expect(written).toHaveLength(1);
   });
@@ -179,7 +220,7 @@ describe("setDayEndpoint", () => {
     });
     const { provider } = providerFor(null);
 
-    await setDayEndpoint(request(), repository, provider);
+    await setDayEndpoint(request(), repository, provider, NO_TRAVEL);
 
     expect(written).toHaveLength(1);
   });
@@ -191,7 +232,7 @@ describe("setDayEndpoint", () => {
     );
     const { provider } = providerFor(null);
 
-    await setDayEndpoint(request({ which: "start" }), repository, provider);
+    await setDayEndpoint(request({ which: "start" }), repository, provider, NO_TRAVEL);
 
     expect(written).toHaveLength(1);
     expect(written[0]?.which).toBe("start");
@@ -207,6 +248,7 @@ describe("setDayEndpoint", () => {
       request({ providerPlaceId: null }),
       repository,
       provider,
+      NO_TRAVEL,
     );
 
     expect(result).toEqual({ status: "set", placeName: null });
@@ -220,7 +262,7 @@ describe("setDayEndpoint", () => {
     });
     const { provider, asked } = providerFor(place("Hotel"));
 
-    await setDayEndpoint(request(), repository, provider);
+    await setDayEndpoint(request(), repository, provider, NO_TRAVEL);
 
     expect(asked).toEqual([]);
   });
@@ -229,7 +271,7 @@ describe("setDayEndpoint", () => {
     const { repository } = repositoryFor(tripOf([day("day-1")]));
     const { provider, asked } = providerFor(place("Hotel"));
 
-    await setDayEndpoint(request(), repository, provider);
+    await setDayEndpoint(request(), repository, provider, NO_TRAVEL);
 
     expect(asked).toEqual(["g-Hotel"]);
   });
@@ -238,10 +280,74 @@ describe("setDayEndpoint", () => {
     const { repository, written } = repositoryFor(tripOf([day("day-1")]));
     const { provider } = providerFor(null);
 
-    const result = await setDayEndpoint(request(), repository, provider);
+    const result = await setDayEndpoint(request(), repository, provider, NO_TRAVEL);
 
     expect(result).toEqual({ status: "no-such-place" });
     expect(written).toEqual([]);
+  });
+
+  it("puts the fastest way home on the leg a new end gives the last stop", async () => {
+    const { repository, modes } = repositoryFor(
+      tripOf([day("day-1", { stops: [stop("Market"), stop("Gallery")] })]),
+      { stored: place("Hotel") },
+    );
+    const { provider } = providerFor(null);
+
+    await setDayEndpoint(request(), repository, provider, BY_CAR);
+
+    // Only the leg out to the end: the two stops still travel between the
+    // same places they did, and the way chosen for them stands.
+    expect(modes).toEqual([
+      { slug: SLUG, editKeyHash: HASH, dayId: "day-1", stopId: null, mode: "drive" },
+    ]);
+  });
+
+  it("puts the fastest way on the leg a new start gives the first stop", async () => {
+    const { repository, modes } = repositoryFor(
+      tripOf([day("day-1", { stops: [stop("Market"), stop("Gallery")] })]),
+      { stored: place("Hotel") },
+    );
+    const { provider } = providerFor(null);
+
+    await setDayEndpoint(request({ which: "start" }), repository, provider, BY_CAR);
+
+    expect(modes).toEqual([
+      { slug: SLUG, editKeyHash: HASH, dayId: "day-1", stopId: "stop-Market", mode: "drive" },
+    ]);
+  });
+
+  it("answers the next day's first leg too when the end is offered forward", async () => {
+    const { repository, modes } = repositoryFor(
+      tripOf([
+        day("day-1", { stops: [stop("Market")] }),
+        day("day-2", { stops: [stop("Temple")] }),
+      ]),
+      { stored: place("Hotel") },
+    );
+    const { provider } = providerFor(null);
+
+    await setDayEndpoint(request(), repository, provider, BY_CAR);
+
+    expect(modes).toEqual([
+      { slug: SLUG, editKeyHash: HASH, dayId: "day-1", stopId: null, mode: "drive" },
+      { slug: SLUG, editKeyHash: HASH, dayId: "day-2", stopId: "stop-Temple", mode: "drive" },
+    ]);
+  });
+
+  it("asks nothing when an end is taken off, since no leg that is left has changed", async () => {
+    const { repository, modes } = repositoryFor(
+      tripOf([
+        day("day-1", {
+          stops: [stop("Market")],
+          end: { place: place("Hotel"), label: null },
+        }),
+      ]),
+    );
+    const { provider } = providerFor(null);
+
+    await setDayEndpoint(request({ providerPlaceId: null }), repository, provider, NO_TRAVEL);
+
+    expect(modes).toEqual([]);
   });
 
   it("passes a refusal on rather than going on to the next day", async () => {
@@ -251,7 +357,7 @@ describe("setDayEndpoint", () => {
     );
     const { provider } = providerFor(null);
 
-    const result = await setDayEndpoint(request(), repository, provider);
+    const result = await setDayEndpoint(request(), repository, provider, NO_TRAVEL);
 
     expect(result).toEqual({ status: "refused" });
     expect(written).toHaveLength(1);
