@@ -111,7 +111,28 @@ export function formatDateRange(start: IsoDate, end: IsoDate): string {
 }
 
 const TRIGGER =
-  "mt-1 flex h-[34px] w-full items-center justify-between gap-2 rounded-pill border border-rule bg-paper-raised px-[14px] py-0 text-left text-meta text-ink hover:border-rule-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "flex w-full items-center justify-between gap-2 rounded-pill border border-rule bg-paper-raised text-left text-ink hover:border-rule-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+
+/**
+ * Two heights, because this field has two homes. On the trip's own name row it
+ * is one control among several on a 34px line and has to match them. On the
+ * starter page it is one of four stacked questions and has to match those.
+ */
+const SIZES = {
+  compact: {
+    trigger: "mt-1 h-[34px] px-[14px] py-0 text-meta",
+    label: "text-label font-semibold text-ink-muted",
+    change: "shrink-0 text-micro font-semibold text-terracotta-700",
+    stack: "",
+  },
+  large: {
+    trigger: "px-5 py-[17px] text-[16px] leading-[1.2]",
+    label: "text-[14px] leading-none font-semibold text-ink-muted",
+    change:
+      "shrink-0 rounded-pill px-2 py-[6px] text-[14px] leading-none font-bold text-terracotta-700",
+    stack: "flex flex-col gap-2",
+  },
+} as const;
 
 const STEP =
   "grid h-[28px] w-[28px] shrink-0 place-items-center rounded-pill text-ink-muted hover:bg-terracotta-100 hover:text-terracotta-700 disabled:opacity-35 disabled:hover:bg-transparent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
@@ -136,6 +157,8 @@ interface DateRangeFieldProps {
    * so this is the caller's chance to put back what was there.
    */
   readonly onClose?: () => void;
+  /** Which of its two homes this one is in. See SIZES above. */
+  readonly size?: keyof typeof SIZES;
 }
 
 /**
@@ -169,7 +192,9 @@ export function DateRangeField({
   onChange,
   footer,
   onClose,
+  size = "compact",
 }: DateRangeFieldProps) {
+  const dressed = SIZES[size];
   const [open, setOpen] = useState(false);
   /** The left of the two months on show. */
   const [leftMonth, setLeftMonth] = useState<IsoDate>(firstOfMonth(start));
@@ -305,8 +330,8 @@ export function DateRangeField({
   };
 
   return (
-    <div className="relative" ref={container}>
-      <label className="text-label font-semibold text-ink-muted">{label}</label>
+    <div className={`relative ${dressed.stack}`} ref={container}>
+      <label className={dressed.label}>{label}</label>
       <input type="hidden" name={startName} value={start} />
       <input type="hidden" name={endName} value={end} />
 
@@ -330,12 +355,10 @@ export function DateRangeField({
           setDrawingFrom(null);
           setOpen(true);
         }}
-        className={TRIGGER}
+        className={`${TRIGGER} ${dressed.trigger}`}
       >
         <span className="truncate tabular-nums">{formatDateRange(start, end)}</span>
-        <span className="shrink-0 text-micro font-semibold text-terracotta-700">
-          {open ? "Close" : "Change"}
-        </span>
+        <span className={dressed.change}>{open ? "Close" : "Change"}</span>
       </button>
 
       {open ? (

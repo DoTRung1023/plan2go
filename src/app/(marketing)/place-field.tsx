@@ -4,6 +4,7 @@ import type { KeyboardEvent } from "react";
 import { useEffect, useId, useRef, useState } from "react";
 import { z } from "zod";
 import { SearchIcon } from "@/ui/icons";
+import { FIELD_LABEL, FIELD_PILL, FIELD_STACK, FIELD_WAITING } from "./field-styles";
 
 /** Long enough that typing does not spend money on every letter. */
 const DEBOUNCE_MS = 250;
@@ -28,8 +29,7 @@ export interface ChosenPlace {
   readonly address: string | null;
 }
 
-const FIELD =
-  "mt-[6px] flex items-center gap-[9px] rounded-pill border border-rule bg-paper-raised px-[16px] focus-within:border-terracotta";
+const FIELD = `${FIELD_PILL} flex items-center gap-3 py-0 focus-within:border-terracotta`;
 
 /**
  * What the panel says while it is looking and when it finds nothing. Both name
@@ -208,14 +208,17 @@ export function PlaceField({
   const listed = open && found.length > 0;
 
   return (
-    <div className="relative" ref={container}>
-      <label className="text-label font-semibold text-ink-muted" htmlFor={id}>
+    <div className={`relative ${FIELD_STACK}`} ref={container}>
+      <label className={FIELD_LABEL} htmlFor={id}>
         {label}
       </label>
       <input type="hidden" name={name} value={chosen?.providerPlaceId ?? ""} />
 
-      <div className={`${FIELD} ${waiting ? "opacity-45" : ""}`}>
-        <SearchIcon size={16} strokeWidth={2.75} className="shrink-0 text-ink-muted" />
+      {/* Waiting on the field above rather than switched off: it loses its
+          ground instead of being faded out, so it reads as a question not yet
+          reachable rather than as a control that is broken. */}
+      <div className={`${FIELD} ${waiting ? FIELD_WAITING : ""}`}>
+        <SearchIcon size={18} strokeWidth={2.75} className="shrink-0 text-ink-faint" />
         <input
           id={id}
           type="text"
@@ -236,7 +239,7 @@ export function PlaceField({
             setOpen(true);
           }}
           onKeyDown={onKeyDown}
-          className="min-w-0 flex-1 py-[9px] text-body text-ink caret-terracotta outline-none placeholder:text-ink-faint"
+          className="min-w-0 flex-1 bg-transparent py-[17px] text-[16px] leading-[1.2] text-ink caret-terracotta outline-none placeholder:text-ink-faint"
         />
       </div>
 
