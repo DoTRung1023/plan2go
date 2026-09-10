@@ -29,17 +29,6 @@ const ROW =
 
 const ROW_CHOSEN = "bg-terracotta-800 text-paper hover:bg-terracotta-800";
 
-/**
- * Where the picker sits decides how its time is set. On a stop card it is the
- * arrival time, the loudest thing on the card. Against an end of the day it is
- * the place step and a shade quieter, which is how the ends of a day are drawn
- * everywhere: the day passes through them rather than being for them.
- */
-const SIZES = {
-  stop: { step: "text-time", ink: "text-ink" },
-  anchor: { step: "text-place", ink: "text-ink-muted" },
-} as const;
-
 interface TimePickerProps {
   /** The time on the card: the one that is fixed, or the one worked out. */
   readonly value: number;
@@ -49,7 +38,6 @@ interface TimePickerProps {
   /** What the trigger reads, already written the way the day writes times. */
   readonly label: string;
   readonly placeName: string;
-  readonly size?: keyof typeof SIZES;
   readonly onChoose: (minutes: number) => void;
   /**
    * Absent where following makes no sense, and the panel then offers no way to
@@ -79,11 +67,9 @@ export function TimePicker({
   disabled,
   label,
   placeName,
-  size = "stop",
   onChoose,
   onClear,
 }: TimePickerProps) {
-  const look = SIZES[size];
   const [open, setOpen] = useState(false);
   const [hour, setHour] = useState(() => Math.floor(value / 60) % 24);
   const [minute, setMinute] = useState(
@@ -166,8 +152,8 @@ export function TimePicker({
         // The accent says the time is being changed, not that it was fixed:
         // what a stop is set to is the panel's business, and a colour that
         // reads as "chosen" on a card nobody is touching says nothing.
-        className={`-mr-[5px] rounded-chip px-[5px] font-display ${look.step} whitespace-nowrap tabular-nums hover:bg-neutral-200 focus-visible:text-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
-          open ? "text-terracotta-700" : look.ink
+        className={`-mr-[5px] rounded-chip px-[5px] font-display text-time whitespace-nowrap tabular-nums hover:bg-neutral-200 focus-visible:text-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
+          open ? "text-terracotta-700" : "text-ink"
         }`}
       >
         {label}

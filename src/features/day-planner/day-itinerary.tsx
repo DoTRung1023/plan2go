@@ -111,16 +111,14 @@ function Anchor({
 
   return (
     /*
-     * One quiet line rather than a card. The ends of a day are where it passes
-     * through, and a raised card gave them the weight of the places it is for,
-     * so the row has no border and no ground until it is pointed at, and then
-     * the sunken paper, which is how every other row here answers the pointer.
-     *
-     * The marker sits on the thread's axis, the column the stops' discs are
-     * centred on, so the day reads as one line from end to end. The name is
-     * set in the body face rather than the display one, because the place a
-     * day starts is not a place the day is for, and the time is the display
-     * face on the right, where the eye finds it on every stop card too.
+     * On the stop card's grid, to the pixel: the same marker column, the same
+     * gap beside it, the same padding around it, so the name and address here
+     * sit on the same left edge as every stop's and the time and the tools on
+     * the same right edge, with the marker under the discs. Only the card is
+     * missing. The ends of a day are where it passes through, and a raised
+     * card gave them the weight of the places it is for, so the row has no
+     * border and no ground until it is pointed at, and then the sunken paper,
+     * which is how every other row here answers the pointer.
      */
     <div
       ref={row}
@@ -130,41 +128,46 @@ function Anchor({
       onMouseLeave={() => {
         onHover(null);
       }}
-      className={`group flex items-center gap-[13px] rounded-row py-[14px] pr-[10px] pl-[17px] ${
+      className={`group grid grid-cols-[30px_minmax(0,1fr)] gap-x-[13px] rounded-row px-[17px] py-[15px] ${
         hovered ? "bg-paper-sunken" : ""
       }`}
     >
       <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-[13px_13px_13px_4px] bg-sage-600 text-paper">
         <HomeIcon size={15} strokeWidth={2.75} />
       </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-small/[1.3] font-semibold text-ink">
-          {endpointName(endpoint)}
-        </span>
-        <span className="block truncate text-micro text-ink-muted">
-          {endpoint.place.address ?? fallback}
-        </span>
-      </span>
-      {onChooseTime === null || minutes === null ? (
-        <span className="shrink-0 font-display text-place whitespace-nowrap text-ink-muted tabular-nums">
-          {time ?? "Time not known"}
-        </span>
-      ) : (
-        <TimePicker
-          value={minutes}
-          fixed={true}
-          disabled={false}
-          label={time ?? "Time not known"}
-          placeName={endpointName(endpoint)}
-          size="anchor"
-          onChoose={onChooseTime}
-        />
-      )}
-      {controls === null ? null : (
-        <span className="flex shrink-0 items-center opacity-55 group-hover:opacity-100 focus-within:opacity-100">
-          {controls}
-        </span>
-      )}
+
+      <div className="flex items-start gap-[10px]">
+        <div className="min-w-0 flex-1">
+          <p className="font-display text-place text-ink">{endpointName(endpoint)}</p>
+          <p className="mt-[3px] text-meta text-ink-faint">
+            {endpoint.place.address ?? fallback}
+          </p>
+        </div>
+
+        {/* The time, and under it what can be done to this end of the day:
+            the same column a stop card keeps at its top right. */}
+        <div className="flex flex-none flex-col items-end gap-[3px]">
+          {onChooseTime === null || minutes === null ? (
+            <p className="text-time whitespace-nowrap text-ink tabular-nums">
+              {time ?? "Time not known"}
+            </p>
+          ) : (
+            <TimePicker
+              value={minutes}
+              fixed={true}
+              disabled={false}
+              label={time ?? "Time not known"}
+              placeName={endpointName(endpoint)}
+              onChoose={onChooseTime}
+            />
+          )}
+          {controls === null ? null : (
+            <span className="-mr-1 flex items-center opacity-55 group-hover:opacity-100 focus-within:opacity-100">
+              {controls}
+            </span>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
