@@ -203,14 +203,9 @@ export function ExportDialog({
 
       <div className="export-frame relative flex w-full max-w-[1180px] flex-col overflow-hidden border-rule bg-paper shadow-lg lg:rounded-panel lg:border">
         <header className="export-chrome flex shrink-0 items-center gap-3 border-b border-rule px-5 py-[14px]">
-          <h2 id={titleId} className="font-display text-lead/none text-ink">
+          <h2 id={titleId} className="min-w-0 flex-1 font-display text-lead/none text-ink">
             Export
           </h2>
-          <p className="min-w-0 flex-1 truncate text-small text-ink-muted">
-            {picked.length === 0
-              ? "Choose at least one day."
-              : `${String(picked.length)} ${picked.length === 1 ? "sheet" : "sheets"}, A4. Saved as a PDF from your browser's print window.`}
-          </p>
           <button
             type="button"
             ref={closeButton}
