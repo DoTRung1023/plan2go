@@ -617,31 +617,39 @@ export function TripMap({
       ) : null}
 
       {drawnLegs === 0 ? null : (
-        <div className="pointer-events-none absolute bottom-[14px] left-[14px] z-[2] rounded-row border border-rule bg-paper-raised px-[15px] pt-3 pb-[13px] lg:bottom-[22px] lg:left-[22px]">
-          <p className="text-label font-semibold text-ink-muted">Route key</p>
-          <ul className="mt-[9px] flex flex-col gap-[6px] text-micro text-ink-muted">
-            {ROUTE_STROKES.map((stroke) => (
-              <li key={stroke.mode} className="flex items-center gap-3">
-                <svg
-                  aria-hidden="true"
-                  viewBox="0 0 42 7"
-                  width="42"
-                  height="7"
-                  className={stroke.inkClass}
-                >
-                  <path
-                    d="M0 3.5h42"
-                    stroke="currentColor"
-                    strokeWidth={stroke.weight}
-                    strokeDasharray={stroke.dashArray ?? undefined}
-                    strokeLinecap={stroke.roundCaps ? "round" : "butt"}
-                  />
-                </svg>
-                <span>{stroke.label}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        /*
+         * One line along the bottom of the map rather than a card stacked up
+         * the side of it. It is a key: three samples and three words, read
+         * left to right in the time it takes to glance down, and the heading
+         * that used to sit over them was a label on a thing that explains
+         * itself. Laid flat it also stops eating the corner of the map, which
+         * is the part of the page it was covering.
+         */
+        <ul className="pointer-events-none absolute bottom-[14px] left-[14px] z-[2] flex list-none items-center gap-4 rounded-pill border border-rule bg-paper-raised/90 px-[18px] py-[10px] text-[11.5px] leading-none text-ink-muted lg:bottom-[22px] lg:left-[22px]">
+          {ROUTE_STROKES.map((stroke) => (
+            <li key={stroke.mode} className="flex items-center gap-[7px]">
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 26 6"
+                width="26"
+                height="6"
+                className={`shrink-0 ${stroke.inkClass}`}
+              >
+                <path
+                  d="M0 3h26"
+                  stroke="currentColor"
+                  /* Thinner than the map draws, because 26px of it is a sample
+                     and not a route: at the weight the map uses, a 26px line
+                     reads as a block rather than as a line. */
+                  strokeWidth={stroke.roundCaps ? 3.6 : 3.2}
+                  strokeDasharray={stroke.dashArray ?? undefined}
+                  strokeLinecap={stroke.roundCaps ? "round" : "butt"}
+                />
+              </svg>
+              <span className="whitespace-nowrap">{stroke.label}</span>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );
