@@ -163,7 +163,7 @@ function PrintedDay({
       <header className={`flex items-start gap-6 border-b pb-5 ${RULE}`}>
         <div className="min-w-0 flex-1">
           <p className={`text-small ${MUTED}`}>
-            {cityName === null ? title : `${cityName} · ${title}`} · {range}
+            {cityName === null ? title : `${title} · ${cityName}`} · {range}
           </p>
           <div className="mt-[7px] flex flex-wrap items-baseline gap-x-[14px]">
             <h1 className="font-display text-title text-ink">Day {number}</h1>
