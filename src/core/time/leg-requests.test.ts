@@ -21,7 +21,7 @@ function place(name: string, position: LatLng): Place {
 }
 
 function stop(name: string, position: LatLng, travelMode: TravelMode): Stop {
-  return { id: `stop-${name}`, place: place(name, position), stayMinutes: 30, startAtMinutes: null, checkpoint: false, travelMode, note: null };
+  return { id: `stop-${name}`, place: place(name, position), stayMinutes: 30, travelMode, note: null };
 }
 
 function endpoint(name: string, position: LatLng): DayEndpoint {
@@ -89,9 +89,9 @@ describe("legRequestsFor", () => {
   });
 
   it("matches the leg order computeDay expects for a single stop", () => {
-    const requests = legRequestsFor(day([stop("Market", MARKET, "cycle")]));
+    const requests = legRequestsFor(day([stop("Market", MARKET, "transit")]));
     expect(requests).toEqual([
-      { from: HOME, to: MARKET, mode: "cycle" },
+      { from: HOME, to: MARKET, mode: "transit" },
       { from: MARKET, to: HOME, mode: "walk" },
     ]);
   });

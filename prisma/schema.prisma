@@ -17,7 +17,6 @@ datasource db {
 
 enum TravelMode {
   WALK
-  CYCLE
   DRIVE
   TRANSIT
 }
@@ -45,6 +44,11 @@ model Trip {
   /// opened before anyone was asked.
   centreLat Float?
   centreLng Float?
+  /// What that city is called, so the product can say "Popular in Hanoi"
+  /// rather than "in this city". Held rather than looked up again: it is one
+  /// short string, and asking the provider to re-read a name we already had is
+  /// a paid call to learn something that cannot have changed.
+  cityName  String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -125,16 +129,8 @@ model Stop {
 
   /// Order within the day, starting at 0.
   position    Int
-  /// Minutes from local midnight that the traveller has fixed this stop to.
-  /// Null, which is the usual case, means it simply follows whatever came
-  /// before it.
-  startAtMinutes Int?
   /// Whole minutes at the place. Zero is legal.
   stayMinutes Int
-  /// A place the day passes through rather than spends time at: where it
-  /// starts, where it ends, a station changed at. It takes no time of its own
-  /// and is not counted among the stops.
-  checkpoint  Boolean @default(false)
   /// Mode used to travel from the previous point to this stop.
   travelMode  TravelMode
   note        String?
@@ -192,6 +188,21 @@ model PlaceSearchCache {
   expiresAt DateTime
 
   @@unique([query, biasKey, size])
+  @@index([expiresAt])
+}
+
+/// One drawn map from the static map provider, kept so the same day is never
+/// paid for twice. Keyed by everything that decides the picture: the points,
+/// the routes between them and the size of the sheet it is drawn for.
+model StaticMapCache {
+  /// sha256 of the request, less the key.
+  key         String @id
+  image       Bytes
+  contentType String
+
+  fetchedAt DateTime @default(now())
+  expiresAt DateTime
+
   @@index([expiresAt])
 }
 

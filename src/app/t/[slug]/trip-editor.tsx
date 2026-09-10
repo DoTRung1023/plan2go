@@ -6,7 +6,15 @@ import type { LatLng } from "@/core/model/place";
 import type { PlannedDay } from "@/features/day-planner/compute-trip";
 import { DayPlanner } from "@/features/day-planner/day-planner";
 import { PlaceSearch } from "@/features/place-search/place-search";
+import { DayTabs } from "@/features/day-planner/day-tabs";
+import { dayStatus } from "@/features/day-planner/day-status";
+import { ExportDialog } from "@/features/day-planner/export-dialog";
+import { LeaveAt } from "@/features/day-planner/leave-at";
+import { PrintedTrip } from "@/features/day-planner/printed-trip";
+import { placesOnTheTrip } from "@/features/place-search/places-on-the-trip";
 import { searchBias } from "@/features/place-search/search-bias";
+import { TripMenu } from "@/features/trip-settings/trip-menu";
+import { TripExport } from "@/features/trip-settings/trip-export";
 import { ShareLinks } from "@/features/trip-settings/share-links";
 import { SavedNote } from "@/features/trip-settings/saved-note";
 import { TripActions } from "@/features/trip-settings/trip-actions";
@@ -17,11 +25,11 @@ import { deleteTripAction } from "./delete-trip-action";
 import {
   moveStopAction,
   removeStopAction,
-  setStopCheckpointAction,
   setStopNoteAction,
-  setStopStartAtAction,
   setStopStayAction,
 } from "./edit-stop-actions";
+import { setDayEndpointAction } from "./set-day-endpoint-action";
+import { setDayStartAction } from "./set-day-start-action";
 import { setLegModeAction } from "./set-leg-mode-action";
 import { updateTripAction } from "./update-trip-action";
 
@@ -47,6 +55,8 @@ interface TripEditorProps {
   readonly days: readonly PlannedDay[];
   /** The city the trip is in, where the map opens and a search looks first. */
   readonly centre: LatLng | null;
+  /** What that city is called, so the search can name it rather than point. */
+  readonly cityName: string | null;
   /** Today's date in the trip's own zone, so the day strip can mark it. */
   readonly today: string;
   /**
@@ -72,6 +82,7 @@ export function TripEditor({
   slug,
   days,
   centre,
+  cityName,
   today,
   editKey,
 }: TripEditorProps) {
@@ -92,6 +103,13 @@ export function TripEditor({
    */
   const [hoveredStopId, setHoveredStopId] = useState<string | null>(null);
   const [hoveredLegIndex, setHoveredLegIndex] = useState<number | null>(null);
+  const [hoveredEndpointId, setHoveredEndpointId] = useState<string | null>(null);
+  /**
+   * Whether the export dialog is open. While it is, its preview is what the
+   * printer gets; while it is not, the page keeps the open day as a sheet for
+   * the browser's own print command, so the two come out the same way.
+   */
+  const [exportOpen, setExportOpen] = useState(false);
 
   const recording = <T extends { readonly error: string | null }>(
     change: Promise<T>,
@@ -109,6 +127,17 @@ export function TripEditor({
   const selected = days[selectedIndex] ?? days[0];
   const first = days[0];
   const last = days[days.length - 1];
+
+  const nothingToExport = days.every((day) => day.plan.stops.length === 0);
+  const exportControl = (where: "menu" | "heading") => (
+    <TripExport
+      where={where}
+      disabled={nothingToExport}
+      onOpen={() => {
+        setExportOpen(true);
+      }}
+    />
+  );
 
   /**
    * The shape of each leg the day travels, in the same order the map builds
@@ -132,7 +161,7 @@ export function TripEditor({
      * the guarantee: nothing in either pane can scroll the window instead of
      * itself.
      */
-    <main className="planner-shell lg:grid lg:h-dvh lg:grid-cols-[minmax(0,1fr)_clamp(520px,40%,660px)] lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden">
+    <main className="planner-shell lg:grid lg:h-dvh lg:grid-cols-[minmax(0,1fr)_clamp(460px,38%,600px)] lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden">
       <section
         aria-label="Map of this day"
         className={
@@ -151,6 +180,8 @@ export function TripEditor({
               onHoverStop={setHoveredStopId}
               hoveredLegIndex={hoveredLegIndex}
               onHoverLeg={setHoveredLegIndex}
+              hoveredEndpointId={hoveredEndpointId}
+              onHoverEndpoint={setHoveredEndpointId}
               expanded={expanded}
               onToggleExpanded={() => {
                 setExpanded(!expanded);
@@ -178,6 +209,9 @@ export function TripEditor({
                     selectedIndex,
                     centre,
                   )}
+                  city={centre}
+                  cityName={cityName}
+                  onTheTrip={placesOnTheTrip(days.map((day) => day.plan))}
                   onAdd={(input) => recording(addStopAction({ ...input, editKey }))}
                 />
               </div>
@@ -214,8 +248,11 @@ export function TripEditor({
           onHoverStop={setHoveredStopId}
           hoveredLegIndex={hoveredLegIndex}
           onHoverLeg={setHoveredLegIndex}
+          hoveredEndpointId={hoveredEndpointId}
+          onHoverEndpoint={setHoveredEndpointId}
           selectedIndex={selectedIndex}
           onSelect={setChosenIndex}
+          exporting={exportControl("heading")}
           onAddDay={
             editKey === null
               ? null
@@ -238,13 +275,17 @@ export function TripEditor({
                     recording(
                       setStopStayAction({ slug, editKey, stopId, stayMinutes }),
                     ),
-                  setStartAt: ({ stopId, startAtMinutes }) =>
+                  setDayEndpoint: ({ which, providerPlaceId }) =>
                     recording(
-                      setStopStartAtAction({ slug, editKey, stopId, startAtMinutes }),
-                    ),
-                  setCheckpoint: ({ stopId, checkpoint }) =>
-                    recording(
-                      setStopCheckpointAction({ slug, editKey, stopId, checkpoint }),
+                      setDayEndpointAction({
+                        slug,
+                        editKey,
+                        dayId: selected.plan.id,
+                        which,
+                        providerPlaceId,
+                        label: null,
+                        session: null,
+                      }),
                     ),
                   setNote: ({ stopId, note }) =>
                     recording(setStopNoteAction({ slug, editKey, stopId, note })),
@@ -265,16 +306,60 @@ export function TripEditor({
                 title={title}
                 startDate={first.plan.date}
                 endDate={last.plan.date}
+                tabs={
+                  <DayTabs
+                    days={days.map((day) => day.plan)}
+                    today={today}
+                    selectedIndex={selectedIndex}
+                    onSelect={setChosenIndex}
+                    onAddDay={
+                      editKey === null
+                        ? null
+                        : () => recording(addDayAction({ slug, editKey }))
+                    }
+                  />
+                }
+                dayLine={
+                  selected === undefined ? null : (
+                    <>
+                      <span className="font-display text-lead/none text-ink">
+                        Day {selectedIndex + 1}
+                      </span>
+                      <span className="text-small/[1.3] text-ink-faint">
+                        {dayStatus(selected)}
+                      </span>
+                    </>
+                  )
+                }
+                leaveAt={
+                  selected === undefined ? null : (
+                    <LeaveAt
+                      key={selected.plan.id}
+                      value={selected.plan.startAtMinutes}
+                      onChoose={(startAtMinutes) =>
+                        recording(
+                          setDayStartAction({
+                            slug,
+                            editKey,
+                            dayId: selected.plan.id,
+                            startAtMinutes,
+                          }),
+                        )
+                      }
+                    />
+                  )
+                }
                 actions={
-                  <>
+                  <TripMenu label="Trip actions">
                     <ShareLinks slug={slug} editKey={editKey} />
+                    {exportControl("menu")}
                     <TripActions
                       slug={slug}
                       editKey={editKey}
                       onDelete={deleteTripAction}
                       startAnotherPath="/"
                     />
-                  </>
+                  </TripMenu>
                 }
                 onSave={(previous, formData) =>
                   recording(updateTripAction(previous, formData))
@@ -284,6 +369,35 @@ export function TripEditor({
           }
         />
       </section>
+
+      {exportOpen && selected !== undefined ? (
+        <ExportDialog
+          title={title}
+          slug={slug}
+          cityName={cityName}
+          days={days}
+          selectedDayId={selected.plan.id}
+          onClose={() => {
+            setExportOpen(false);
+          }}
+        />
+      ) : (
+        <PrintedTrip
+          key={selected?.plan.id}
+          title={title}
+          slug={slug}
+          cityName={cityName}
+          days={days}
+          request={{
+            dayIds: selected === undefined ? [] : [selected.plan.id],
+            map: false,
+            notes: true,
+            legDetails: true,
+          }}
+          visible={false}
+          onReady={() => {}}
+        />
+      )}
     </main>
   );
 }

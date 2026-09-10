@@ -43,19 +43,19 @@ const EVERY_KIND: readonly Conflict[] = [
 const DASHES = /[-\u2013\u2014]/;
 
 describe("conflictSentence", () => {
-  it("names the place and both times when you arrive after closing", () => {
+  it("gives both times when you arrive after closing", () => {
     expect(conflictSentence(ARRIVES_AFTER_CLOSE)).toBe(
-      "Fish Market closes at 4:00 pm and you arrive at 4:30 pm.",
+      "Closes at 16:00 and you arrive at 16:30.",
     );
   });
 
   it("names the weekday when the place is closed all day", () => {
-    expect(conflictSentence(CLOSED_ALL_DAY)).toBe("Adelaide Central Market is closed on Sunday.");
+    expect(conflictSentence(CLOSED_ALL_DAY)).toBe("Closed on Sunday.");
   });
 
   it("says when you are still there after closing", () => {
     expect(conflictSentence(STAY_OVERRUNS_CLOSE)).toBe(
-      "Art Gallery of South Australia closes at 5:00 pm and you are still there at 5:30 pm.",
+      "Closes at 17:00 and you are still there at 17:30.",
     );
   });
 

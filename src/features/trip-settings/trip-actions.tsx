@@ -2,19 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
+import { PlusIcon, TrashIcon } from "@/ui/icons";
+import { MENU_ITEM, MENU_RULE } from "./trip-menu";
 
 /** Deleting this trip either happened or it did not. */
 export interface DeleteTripOutcome {
   readonly error: string | null;
 }
-
-/**
- * Neither of these is the primary action on the page, so neither is terracotta.
- * The height is stated because one of the two is a link, which takes no height
- * of its own until it is told to lay out as a box.
- */
-const BUTTON =
-  "inline-flex h-[34px] items-center justify-center rounded-pill border border-rule bg-paper-raised px-[14px] py-0 text-meta font-semibold text-ink hover:border-rule-strong hover:bg-paper-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta disabled:opacity-45";
 
 const ANSWER = "inline-flex h-[30px] flex-1 items-center justify-center rounded-pill px-[14px] text-meta font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
@@ -121,7 +115,17 @@ export function TripActions({
 
   return (
     <div className="relative" ref={container}>
-      <div className="flex flex-wrap items-center gap-2">
+      <div>
+        {/* Its own tab, so the trip being read is still there behind it. */}
+        <Link href={startAnotherPath} target="_blank" className={MENU_ITEM}>
+          <PlusIcon size={15} strokeWidth={2.75} className="shrink-0" />
+          New trip
+        </Link>
+
+        {/* What ends the trip is kept apart from what the trip does, and wears
+            the accent, so it is never the row a hand lands on by accident. */}
+        <div className={MENU_RULE} />
+
         <button
           type="button"
           ref={trigger}
@@ -131,14 +135,11 @@ export function TripActions({
           onClick={() => {
             setAsking(!asking);
           }}
-          className={BUTTON}
+          className={`${MENU_ITEM} text-terracotta-700 disabled:opacity-45`}
         >
-          {deleting ? "Deleting" : "Delete"}
+          <TrashIcon size={15} strokeWidth={2.75} className="shrink-0" />
+          {deleting ? "Deleting" : "Delete trip"}
         </button>
-        {/* Its own tab, so the trip being read is still there behind it. */}
-        <Link href={startAnotherPath} target="_blank" className={BUTTON}>
-          New trip
-        </Link>
       </div>
 
       {asking ? (
@@ -151,7 +152,7 @@ export function TripActions({
               close();
             }
           }}
-          className="absolute top-full right-0 z-30 mt-2 w-[268px] rounded-panel border border-rule bg-paper-raised p-[13px] text-left shadow-md"
+          className="absolute top-full right-0 z-50 mt-2 w-[268px] rounded-panel border border-rule bg-paper-raised p-[13px] text-left shadow-lg"
         >
           <p className="font-display text-body text-ink">Delete this trip?</p>
           <p className="mt-[5px] text-meta text-ink-muted">

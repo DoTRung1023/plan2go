@@ -65,3 +65,36 @@ export function decodePolyline(encoded: string): readonly LatLng[] {
 
   return points;
 }
+
+/** One signed number, packed the way Google packs it. */
+function writeValue(value: number): string {
+  // The sign goes in the low bit, so a negative number is inverted rather than
+  // negated and every value is left non-negative for the chunking below.
+  let remaining = value < 0 ? ~(value << 1) : value << 1;
+  let out = "";
+  while (remaining >= CONTINUES) {
+    out += String.fromCharCode(((remaining & CHUNK_MASK) | CONTINUES) + ASCII_OFFSET);
+    remaining >>= CHUNK_BITS;
+  }
+  return out + String.fromCharCode(remaining + ASCII_OFFSET);
+}
+
+/**
+ * The points of a route back into Google's own encoding, for handing a shape
+ * to the static map, which takes a route as an encoded polyline and nothing
+ * else. Decoding what this writes gives the same points back to five decimal
+ * places, which is the precision the encoding has.
+ */
+export function encodePolyline(points: readonly LatLng[]): string {
+  let out = "";
+  let lat = 0;
+  let lng = 0;
+  for (const point of points) {
+    const nextLat = Math.round(point.lat * DEGREES_SCALE);
+    const nextLng = Math.round(point.lng * DEGREES_SCALE);
+    out += writeValue(nextLat - lat) + writeValue(nextLng - lng);
+    lat = nextLat;
+    lng = nextLng;
+  }
+  return out;
+}

@@ -13,9 +13,11 @@ import { withLegCache } from "@/server/travel/leg-cache";
  * saying so.
  *
  * The Routes API is not the Google Maps app and does not cover the same
- * ground: it returns no cycling route at all in places the app happily draws
- * one, and "Unavailable" for a ride somebody could obviously take is worse
- * than a rough number that says it is rough.
+ * ground. It was cycling that showed this up worst, and that mode is gone
+ * now, but the gap did not go with it: there are still walks and drives the
+ * app will happily draw that the API answers nothing for, and "Unavailable"
+ * for a journey somebody could obviously make is worse than a rough number
+ * that says it is rough.
  */
 function withStraightLineFallback(
   primary: TravelProvider,
@@ -38,7 +40,7 @@ function withStraightLineFallback(
  * render, a stop being added and a day being reordered all get their times from
  * the same source.
  *
- * Google answers all four ways of getting somewhere, and says so when there is
+ * Google answers all three ways of getting somewhere, and says so when there is
  * no route: there is no driving to an island and no train where there is no
  * line. Where it says so, the straight line answers instead, carrying its own
  * source and no shape, which is how the list knows to call it a crow flies.

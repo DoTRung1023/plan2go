@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 import type { PlannedDay } from "./compute-trip";
 import { DayItinerary } from "./day-itinerary";
 import { DayTabs } from "./day-tabs";
-import { EmptyDay } from "./empty-day";
 import type { DayActions, EditOutcome } from "./day-actions";
 import { formatDayDate } from "./format-day-date";
 
@@ -19,6 +18,9 @@ interface DayPlannerProps {
   /** The leg under the pointer, here or on the map beside it. */
   readonly hoveredLegIndex: number | null;
   readonly onHoverLeg: (legIndex: number | null) => void;
+  /** The end of the day under the pointer, here or on the map, by its place. */
+  readonly hoveredEndpointId: string | null;
+  readonly onHoverEndpoint: (placeId: string | null) => void;
   readonly selectedIndex: number;
   readonly onSelect: (index: number) => void;
   /**
@@ -26,6 +28,12 @@ interface DayPlannerProps {
    * holds no edit token, who gets the heading and the range as plain text.
    */
   readonly settings: ReactNode;
+  /**
+   * What sits at the end of a reader's name row, in the place an editor's menu
+   * takes: the one thing a reader can do to the trip, which is take it away
+   * on paper. Ignored when there are settings, which carry their own row.
+   */
+  readonly exporting: ReactNode;
   /**
    * Puts one more empty day on the end of the trip. Kept apart from the day's
    * own actions, which are about what is on a day rather than how many there
@@ -71,9 +79,12 @@ export function DayPlanner({
   onHoverStop,
   hoveredLegIndex,
   onHoverLeg,
+  hoveredEndpointId,
+  onHoverEndpoint,
   selectedIndex,
   onSelect,
   settings,
+  exporting,
   onAddDay,
   actions,
 }: DayPlannerProps) {
@@ -82,28 +93,40 @@ export function DayPlanner({
 
   return (
     <>
-      <div className={`shrink-0 pt-4 pb-[10px] ${GUTTER}`}>
+      {/* One block: the trip's name, the days, and which of them is open. An
+          editor gets all three from the settings form, because the dates on the
+          day's line are part of it. A reader who cannot edit gets the heading
+          and the strip on their own.
+
+          A rule closes the block, the full width of the panel, where the day
+          starts scrolling under it. Without one the day's line and the first
+          row of the day sat either side of a stretch of bare paper that read
+          as a gap rather than as two things: the heading, then its list. */}
+      <div className={`relative z-20 shrink-0 border-b border-rule pt-5 pb-[14px] ${GUTTER}`}>
         {settings ?? (
           <>
-            <h1 className="font-display text-title text-ink">{title}</h1>
-            {range === null ? null : (
-              <p className="mt-1 text-meta text-ink-muted">{range}</p>
-            )}
+            <div className="flex items-center gap-[10px]">
+              <div className="min-w-0 flex-1">
+                <h1 className="font-display text-title tracking-[-0.01em] text-ink">
+                  {title}
+                </h1>
+                {range === null ? null : (
+                  <p className="mt-1 text-meta text-ink-muted">{range}</p>
+                )}
+              </div>
+              {exporting}
+            </div>
+            <div className="mt-[14px]">
+              <DayTabs
+                days={days.map((day) => day.plan)}
+                today={today}
+                selectedIndex={selectedIndex}
+                onSelect={onSelect}
+                onAddDay={onAddDay}
+              />
+            </div>
           </>
         )}
-      </div>
-
-      {/* 140px is the height of the map strip on a phone, from DESIGN.md. */}
-      <div
-        className={`sticky top-[140px] z-10 shrink-0 bg-paper lg:static ${GUTTER}`}
-      >
-        <DayTabs
-          days={days.map((day) => day.plan)}
-          today={today}
-          selectedIndex={selectedIndex}
-          onSelect={onSelect}
-          onAddDay={onAddDay}
-        />
       </div>
 
       {selected === undefined ? null : (
@@ -119,22 +142,20 @@ export function DayPlanner({
            * hold the stop underneath it in place. Off, the list stays exactly
            * where it was and the panel opens downwards, where it was clicked.
            */
-          className={`scroll-quiet min-h-0 flex-1 overflow-x-hidden overflow-y-auto pt-2 pb-8 [overflow-anchor:none] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${GUTTER}`}
+          className={`scroll-quiet min-h-0 flex-1 overflow-x-hidden overflow-y-auto pt-1 pb-[26px] [overflow-anchor:none] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${GUTTER}`}
         >
-          {selected.plan.stops.length === 0 ? (
-            <EmptyDay dayName={formatDayDate(selected.plan.date)} />
-          ) : (
-            <DayItinerary
-              day={selected.plan}
-              computed={selected.computed}
-              legs={selected.legs}
-              hoveredStopId={hoveredStopId}
-              onHoverStop={onHoverStop}
-              hoveredLegIndex={hoveredLegIndex}
-              onHoverLeg={onHoverLeg}
-              actions={actions}
-            />
-          )}
+          <DayItinerary
+            day={selected.plan}
+            computed={selected.computed}
+            legs={selected.legs}
+            hoveredStopId={hoveredStopId}
+            onHoverStop={onHoverStop}
+            hoveredLegIndex={hoveredLegIndex}
+            onHoverLeg={onHoverLeg}
+            hoveredEndpointId={hoveredEndpointId}
+            onHoverEndpoint={onHoverEndpoint}
+            actions={actions}
+          />
         </section>
       )}
     </>

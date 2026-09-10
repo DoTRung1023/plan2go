@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { useActionState, useId, useRef, useState } from "react";
 import { daysBetween } from "@/core/time/zoned";
-import { DateRangeField } from "./date-field";
+import { DateRangeField } from "./date-range-field";
 
 export interface TripSettingsOutcome {
   readonly saved: boolean;
@@ -26,7 +26,7 @@ const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/;
  * width a trip name still reads at, below which the row wraps instead.
  */
 const NAME_FIELD =
-  "h-[34px] min-w-[200px] flex-1 rounded-pill border border-rule bg-paper-raised px-[14px] py-0 font-display text-place text-ink caret-terracotta hover:border-rule-strong aria-invalid:border-terracotta focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "min-w-0 flex-1 border-0 bg-transparent px-0 py-[2px] font-display text-title tracking-[-0.01em] text-ink caret-terracotta outline-none placeholder:text-ink-faint aria-invalid:text-terracotta-700 focus-visible:rounded-[6px] focus-visible:outline-2 focus-visible:outline-offset-[4px] focus-visible:outline-terracotta";
 
 interface TripSettingsProps {
   readonly slug: string;
@@ -42,6 +42,24 @@ interface TripSettingsProps {
    * app's routes or its mutations.
    */
   readonly actions: ReactNode;
+  /**
+   * Which day is open and what it comes to, said on the same line the dates
+   * are changed from. Passed in because the day is the planner's business and
+   * the trip's name is this one's, and they share a row rather than an owner.
+   */
+  readonly dayLine: ReactNode;
+  /**
+   * When the open day leaves, at the end of its line. The one clock on the
+   * day, kept beside the line that names the day rather than on the day
+   * itself, because every time down the panel follows from it.
+   */
+  readonly leaveAt: ReactNode;
+  /**
+   * The strip of days, which belongs between the trip's name and the day's own
+   * line. It is passed through rather than rendered here because choosing a day
+   * is the planner's business; this only owns the row it sits in.
+   */
+  readonly tabs: ReactNode;
   /**
    * Passed in rather than imported, because a feature may not reach into the
    * route that owns the mutation.
@@ -79,6 +97,9 @@ export function TripSettings({
   startDate,
   endDate,
   actions,
+  dayLine,
+  leaveAt,
+  tabs,
   onSave,
 }: TripSettingsProps) {
   const [state, submit, pending] = useActionState(onSave, UNSAVED);
@@ -149,7 +170,7 @@ export function TripSettings({
       <label className="sr-only" htmlFor={`${fieldId}-title`}>
         Trip name
       </label>
-      <div className="relative flex flex-wrap items-center gap-3">
+      <div className="relative flex items-center gap-[10px]">
         {/* Not `required`. requestSubmit runs the browser's own validation, and
             a field marked required stops there and puts up a grey system
             bubble reading "Please fill out this field", in a typeface this
@@ -177,9 +198,32 @@ export function TripSettings({
           }}
           className={NAME_FIELD}
         />
-        {actions === null ? null : (
-          <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>
-        )}
+        <DateRangeField
+          id={`${fieldId}-dates`}
+          startName="startDate"
+          endName="endDate"
+          label="Dates"
+          start={first}
+          end={last}
+          onChange={(range) => {
+            setFirst(range.start);
+            setLast(range.end);
+          }}
+          footer={saveDates}
+          onClose={abandonDates}
+          size="inline"
+        />
+
+        {actions}
+
+        {span === null ? (
+          <p
+            role="alert"
+            className="absolute top-full right-0 z-20 mt-[5px] max-w-full rounded-chip bg-terracotta-200 px-[11px] py-[6px] text-micro font-semibold text-terracotta-900 shadow-md"
+          >
+            The last day is before the first day.
+          </p>
+        ) : null}
 
         {/* Hangs off the field, where the browser would have put its own bubble,
             and over what is under it rather than in the column with it. In the
@@ -195,34 +239,19 @@ export function TripSettings({
         ) : null}
       </div>
 
-      <div className="relative mt-[10px]">
-        <DateRangeField
-          id={`${fieldId}-dates`}
-          startName="startDate"
-          endName="endDate"
-          label="Trip dates"
-          start={first}
-          end={last}
-          onChange={(range) => {
-            setFirst(range.start);
-            setLast(range.end);
-          }}
-          footer={saveDates}
-          onClose={abandonDates}
-        />
+      <div className="mt-[14px]">{tabs}</div>
 
-        {/* Hung off the dates the way the name's message is hung off the name,
-            and over what is under it rather than in the column with it. */}
-        {span === null ? (
-          <p
-            role="alert"
-            className="absolute top-full left-0 z-20 mt-[5px] max-w-full rounded-chip bg-terracotta-200 px-[11px] py-[6px] text-micro font-semibold text-terracotta-900 shadow-md"
-          >
-            The last day is before the first day.
-          </p>
-        ) : null}
+      {/* Nothing but which day is open now: the dates that used to end this
+          line have gone up to the row that names the trip. Close under the
+          strip and with no rule between them, because the line names the tab
+          that is chosen and belongs with it; the rule that closes the block
+          is under this line, where the day itself begins. */}
+      <div className="mt-[10px] flex items-center gap-[22px]">
+        <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-[10px]">
+          {dayLine}
+        </div>
+        {leaveAt}
       </div>
-
 
       {state.error === null || state.field !== null ? null : (
         <p

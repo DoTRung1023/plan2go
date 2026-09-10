@@ -14,6 +14,16 @@ const MINIMUM_LETTERS = 2;
 /** Degrees kept on the bias point. Any more is spurious and misses the cache. */
 const BIAS_DECIMALS = 4;
 
+/** Recommendations shown, once whatever is already on the trip is out of them. */
+const RECOMMENDED_SHOWN = 6;
+
+/**
+ * Recommendations asked for, which is more than are shown. What the trip
+ * already holds comes out of this list, and a traveller half way through
+ * planning a city would otherwise be left looking at two.
+ */
+const RECOMMENDED_ASKED = 10;
+
 const suggestionSchema = z.object({
   providerPlaceId: z.string(),
   name: z.string(),
@@ -38,6 +48,24 @@ interface PlaceSearchProps {
   readonly dayName: string;
   /** Where to look first, or null when the trip has nothing on it yet. */
   readonly near: LatLng | null;
+  /**
+   * The middle of the city the trip is in, which is what the panel offers
+   * before anything is typed. Deliberately not `near`: that one follows the day
+   * being planned, and a day whose stops are all in one suburb would have the
+   * empty field recommending that suburb rather than the city.
+   */
+  readonly city: LatLng | null;
+  /**
+   * What that city is called. Null on a trip opened before anyone was asked,
+   * and the panel then says "this city", which is true and says less.
+   */
+  readonly cityName: string | null;
+  /**
+   * Everywhere the trip already goes, by provider identifier. Recommending a
+   * place that is on the trip already wastes the only six lines this panel has
+   * on somewhere the traveller has plainly decided about.
+   */
+  readonly onTheTrip: ReadonlySet<string>;
   /**
    * Passed in rather than imported, because a feature may not reach into the
    * route that owns the mutation.
@@ -75,7 +103,16 @@ const PANEL_LINE = "px-[11px] py-[10px] text-meta text-ink-muted";
  * which is the confirmation, so the only thing left to announce is for a reader
  * who cannot see it happen.
  */
-export function PlaceSearch({ slug, dayId, dayName, near, onAdd }: PlaceSearchProps) {
+export function PlaceSearch({
+  slug,
+  dayId,
+  dayName,
+  near,
+  city,
+  cityName,
+  onTheTrip,
+  onAdd,
+}: PlaceSearchProps) {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<readonly Suggestion[]>([]);
   const [active, setActive] = useState(0);
@@ -86,6 +123,8 @@ export function PlaceSearch({ slug, dayId, dayName, near, onAdd }: PlaceSearchPr
   const [addError, setAddError] = useState<string | null>(null);
   const [landed, setLanded] = useState<string | null>(null);
   const [adding, setAdding] = useState<string | null>(null);
+  /** What the city is known for, for the field nobody has typed in yet. */
+  const [popular, setPopular] = useState<readonly Suggestion[]>([]);
   const [pending, startTransition] = useTransition();
 
   const fieldId = useId();
@@ -96,6 +135,8 @@ export function PlaceSearch({ slug, dayId, dayName, near, onAdd }: PlaceSearchPr
   const session = useRef<string | null>(null);
   /** Answers can arrive out of order, so only the newest is allowed to land. */
   const newest = useRef(0);
+  /** The city is asked about once, however often the panel is opened. */
+  const askedAboutCity = useRef(false);
 
   const trimmed = query.trim();
   const searched = trimmed.length >= MINIMUM_LETTERS;
@@ -149,6 +190,39 @@ export function PlaceSearch({ slug, dayId, dayName, near, onAdd }: PlaceSearchPr
       clearTimeout(timer);
     };
   }, [trimmed, near]);
+
+  /**
+   * Asked when the panel first opens on an empty field, and not on mounting:
+   * the call is metered, and a reader who types straight away should never
+   * cause it. The trip's city cannot change under a mounted field, so once is
+   * genuinely once.
+   */
+  useEffect(() => {
+    if (!open || searched || city === null || askedAboutCity.current) {
+      return;
+    }
+    askedAboutCity.current = true;
+
+    const parameters = new URLSearchParams({
+      lat: city.lat.toFixed(BIAS_DECIMALS),
+      lng: city.lng.toFixed(BIAS_DECIMALS),
+      limit: String(RECOMMENDED_ASKED),
+    });
+
+    const run = async (): Promise<void> => {
+      const response = await fetch(`/api/places/nearby?${parameters.toString()}`);
+      const body: unknown = await response.json();
+      if (!response.ok) {
+        // Nobody asked for this out loud, so nothing is said about its not
+        // being there. The field still works and two letters still search.
+        return;
+      }
+      const parsed = searchResponseSchema.safeParse(body);
+      setPopular(parsed.success ? parsed.data.suggestions : []);
+    };
+
+    void run();
+  }, [open, searched, city]);
 
   useEffect(() => {
     if (!open) {
@@ -210,11 +284,42 @@ export function PlaceSearch({ slug, dayId, dayName, near, onAdd }: PlaceSearchPr
   };
 
   /**
-   * The last answer stays on screen while the next one is being worked out,
-   * rather than blinking out and back. Below two letters nothing is shown at
-   * all, which is derived rather than stored so typing cannot cascade renders.
+   * What the city is known for, less everywhere the trip already goes, and cut
+   * to the handful the panel has room for.
+   *
+   * Filtered here rather than asked for filtered, because the answer is cached
+   * for every trip to this city at once and one traveller's itinerary is no
+   * part of that question. It also means a place recommended a moment ago
+   * leaves the list the instant it lands on a day, without asking again.
    */
-  const visible = searched ? suggestions : [];
+  const recommended = popular
+    .filter((one) => !onTheTrip.has(one.providerPlaceId))
+    .slice(0, RECOMMENDED_SHOWN);
+
+  /**
+   * The last answer stays on screen while the next one is being worked out,
+   * rather than blinking out and back. Below two letters the panel falls back
+   * to the city, which is what a field nobody has typed in has to offer.
+   * Derived rather than stored, so typing cannot cascade renders.
+   */
+  const visible = searched ? suggestions : recommended;
+
+  /** True while the panel is offering the city rather than what was typed. */
+  const recommending = !searched;
+
+  /**
+   * Named where the trip knows the name. It reads better, and on a trip to
+   * somewhere the reader has never been it is the line that says what the list
+   * underneath actually is.
+   */
+  const popularIn = cityName === null ? "Popular in this city" : `Popular in ${cityName}`;
+
+  /**
+   * Clamped, because the list under the field is swapped for a shorter one the
+   * moment the field is emptied, and the highlight must not be left pointing
+   * past the end of it.
+   */
+  const activeIndex = active < visible.length ? active : 0;
 
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
     if (event.key === "Escape") {
@@ -226,12 +331,12 @@ export function PlaceSearch({ slug, dayId, dayName, near, onAdd }: PlaceSearchPr
     }
     if (event.key === "ArrowDown") {
       event.preventDefault();
-      setActive((current) => (current + 1) % visible.length);
+      setActive(() => (activeIndex + 1) % visible.length);
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
-      setActive((current) => (current === 0 ? visible.length - 1 : current - 1));
+      setActive(() => (activeIndex === 0 ? visible.length - 1 : activeIndex - 1));
     } else if (event.key === "Enter") {
-      const chosen = visible[active];
+      const chosen = visible[activeIndex];
       if (chosen !== undefined) {
         event.preventDefault();
         choose(chosen);
@@ -243,9 +348,11 @@ export function PlaceSearch({ slug, dayId, dayName, near, onAdd }: PlaceSearchPr
   /**
    * Two letters in, the panel always has something to say: the matches, the
    * line saying they are being looked for, or the sentence saying there were
-   * none. It stays open while a place is being added, to say which one.
+   * none. Before that it opens only once the city has answered, so a field on
+   * a trip with no city stays a field and nothing more. It stays open while a
+   * place is being added, to say which one.
    */
-  const panel = adding !== null || (open && searched);
+  const panel = adding !== null || (open && (searched || recommended.length > 0));
 
   return (
     <div className="relative" ref={container}>
@@ -265,7 +372,7 @@ export function PlaceSearch({ slug, dayId, dayName, near, onAdd }: PlaceSearchPr
           aria-controls={listId}
           aria-autocomplete="list"
           aria-activedescendant={
-            listed ? `${listId}-option-${String(active)}` : undefined
+            listed ? `${listId}-option-${String(activeIndex)}` : undefined
           }
           value={query}
           onChange={(event) => {
@@ -300,15 +407,21 @@ export function PlaceSearch({ slug, dayId, dayName, near, onAdd }: PlaceSearchPr
           {listed ? (
             <>
               <p className="px-[11px] pt-1 pb-[9px] text-label font-semibold text-ink-muted">
-                Matching places
+                {recommending ? popularIn : "Matching places"}
               </p>
-              <ul id={listId} role="listbox" aria-label="Places that match">
+              <ul
+                id={listId}
+                role="listbox"
+                aria-label={
+                  recommending ? popularIn : "Places that match"
+                }
+              >
                 {visible.map((suggestion, index) => (
                   <li
                     key={suggestion.providerPlaceId}
                     id={`${listId}-option-${String(index)}`}
                     role="option"
-                    aria-selected={index === active}
+                    aria-selected={index === activeIndex}
                   >
                     <button
                       type="button"
@@ -319,7 +432,7 @@ export function PlaceSearch({ slug, dayId, dayName, near, onAdd }: PlaceSearchPr
                         choose(suggestion);
                       }}
                       className={`flex w-full items-start gap-[10px] rounded-chip px-[11px] py-2 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${
-                        index === active ? "bg-terracotta-100" : ""
+                        index === activeIndex ? "bg-terracotta-100" : ""
                       }`}
                     >
                       <PinIcon
@@ -344,11 +457,11 @@ export function PlaceSearch({ slug, dayId, dayName, near, onAdd }: PlaceSearchPr
             </>
           ) : null}
 
-          {adding === null && searchMessage !== null ? (
+          {adding === null && searched && searchMessage !== null ? (
             <p className={PANEL_LINE}>{searchMessage}</p>
           ) : null}
 
-          {adding === null && searchMessage === null && visible.length === 0 ? (
+          {adding === null && searched && searchMessage === null && visible.length === 0 ? (
             <p className={PANEL_LINE}>
               {searching
                 ? "Looking for places."

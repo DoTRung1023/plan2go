@@ -17,5 +17,11 @@ export interface Trip {
    * opened before anyone was asked where they were going.
    */
   readonly centre: LatLng | null;
+  /**
+   * What that city is called, for the places the product would rather name it
+   * than point at it. Null wherever centre is null, and on trips opened before
+   * anyone was asked.
+   */
+  readonly cityName: string | null;
   readonly days: readonly DayPlan[];
 }

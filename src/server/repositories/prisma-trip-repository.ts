@@ -17,6 +17,10 @@ import { openingHoursToJson, parseOpeningHours } from "../places/opening-hours";
 import { createTripSlug } from "../trips/slug";
 import type {
   CreatedTrip,
+  DayEndpointSet,
+  DayEndpointUpdate,
+  DayStartSet,
+  DayStartUpdate,
   LegModeSet,
   LegModeUpdate,
   NewStop,
@@ -33,6 +37,41 @@ import type {
   TripSettingsUpdate,
 } from "./trip-repository";
 
+/**
+ * The trip's own row for a place, made if this trip has not seen it before.
+ *
+ * Matched on the provider's identifier rather than upserted by primary key,
+ * because that identifier is theirs and not ours. A pin dropped by hand has
+ * none, so it can never be matched and is always a new row, which is right: two
+ * pins dropped in the same spot are two things somebody meant separately.
+ */
+async function placeIdFor(tripId: string, place: Place): Promise<string> {
+  const existing =
+    place.providerPlaceId === null
+      ? null
+      : await db.place.findFirst({
+          where: { tripId, providerPlaceId: place.providerPlaceId },
+          select: { id: true },
+        });
+  if (existing !== null) {
+    return existing.id;
+  }
+
+  const created = await db.place.create({
+    data: {
+      tripId,
+      providerPlaceId: place.providerPlaceId,
+      name: place.name,
+      address: place.address,
+      lat: place.position.lat,
+      lng: place.position.lng,
+      openingHours: openingHoursToJson(place.openingHours),
+    },
+    select: { id: true },
+  });
+  return created.id;
+}
+
 /** Two slugs colliding is a lottery win, so a handful of attempts is plenty. */
 const SLUG_ATTEMPTS = 5;
 
@@ -43,14 +82,12 @@ const PARKING_OFFSET = 1000;
 
 const TRAVEL_MODE_FROM_DB: Readonly<Record<DbTravelMode, TravelMode>> = {
   WALK: "walk",
-  CYCLE: "cycle",
   DRIVE: "drive",
   TRANSIT: "transit",
 };
 
 const TRAVEL_MODE_TO_DB: Readonly<Record<TravelMode, DbTravelMode>> = {
   walk: "WALK",
-  cycle: "CYCLE",
   drive: "DRIVE",
   transit: "TRANSIT",
 };
@@ -89,8 +126,6 @@ function toStop(row: StopRow & { place: PlaceRow }): Stop {
     id: row.id,
     place: toPlace(row.place),
     stayMinutes: row.stayMinutes,
-    startAtMinutes: row.startAtMinutes,
-    checkpoint: row.checkpoint,
     travelMode: TRAVEL_MODE_FROM_DB[row.travelMode],
     note: row.note,
   };
@@ -129,6 +164,7 @@ function toTrip(row: TripRow): Trip {
       row.centreLat === null || row.centreLng === null
         ? null
         : { lat: row.centreLat, lng: row.centreLng },
+    cityName: row.cityName,
     days: row.days.map((day) => toDay(day, row.timeZone, row.startDate)),
   };
 }
@@ -149,6 +185,7 @@ async function insert(trip: NewTrip, slug: string): Promise<CreatedTrip> {
       startDate: trip.startDate,
       centreLat: trip.centre?.lat ?? null,
       centreLng: trip.centre?.lng ?? null,
+      cityName: trip.cityName,
       editKeyHash: trip.editKeyHash,
       days: {
         create: Array.from({ length: trip.dayCount }, (_unused, index) => ({
@@ -205,41 +242,64 @@ export const prismaTripRepository: TripRepository = {
       return { status: "refused" };
     }
 
-    // The place carries the provider's identifier, not one of ours, so it is
-    // matched on that rather than upserted by primary key.
-    const existing =
-      stop.place.providerPlaceId === null
-        ? null
-        : await db.place.findFirst({
-            where: { tripId: day.tripId, providerPlaceId: stop.place.providerPlaceId },
-            select: { id: true },
-          });
-
-    const place =
-      existing ??
-      (await db.place.create({
-        data: {
-          tripId: day.tripId,
-          providerPlaceId: stop.place.providerPlaceId,
-          name: stop.place.name,
-          address: stop.place.address,
-          lat: stop.place.position.lat,
-          lng: stop.place.position.lng,
-          openingHours: openingHoursToJson(stop.place.openingHours),
-        },
-        select: { id: true },
-      }));
-
     await db.stop.create({
       data: {
         dayId: day.id,
-        placeId: place.id,
+        placeId: await placeIdFor(day.tripId, stop.place),
         position: day._count.stops,
         stayMinutes: stop.stayMinutes,
         travelMode: TRAVEL_MODE_TO_DB[stop.travelMode],
       },
     });
     return { status: "added" };
+  },
+
+  async setDayEndpoint(update: DayEndpointUpdate): Promise<DayEndpointSet> {
+    // Scoped to the tokens the browser holds, so finding the day is also the
+    // check that this trip may be changed.
+    const day = await db.day.findFirst({
+      where: {
+        id: update.dayId,
+        trip: { slug: update.slug, editKeyHash: update.editKeyHash },
+      },
+      select: { id: true, tripId: true },
+    });
+    if (day === null) {
+      return { status: "refused" };
+    }
+
+    const placeId =
+      update.place === null ? null : await placeIdFor(day.tripId, update.place);
+
+    await db.day.update({
+      where: { id: day.id },
+      data:
+        update.which === "start"
+          ? { startPlaceId: placeId, startLabel: update.label }
+          : { endPlaceId: placeId, endLabel: update.label },
+    });
+    return { status: "set" };
+  },
+
+  async setDayStart(update: DayStartUpdate): Promise<DayStartSet> {
+    // Scoped to the tokens the browser holds, so finding the day is also the
+    // check that this trip may be changed.
+    const day = await db.day.findFirst({
+      where: {
+        id: update.dayId,
+        trip: { slug: update.slug, editKeyHash: update.editKeyHash },
+      },
+      select: { id: true },
+    });
+    if (day === null) {
+      return { status: "refused" };
+    }
+
+    await db.day.update({
+      where: { id: day.id },
+      data: { startAtMinutes: update.startAtMinutes },
+    });
+    return { status: "set" };
   },
 
   async setLegMode(update: LegModeUpdate): Promise<LegModeSet> {
@@ -284,10 +344,6 @@ export const prismaTripRepository: TripRepository = {
       },
       data: {
         ...(update.stayMinutes === undefined ? {} : { stayMinutes: update.stayMinutes }),
-        ...(update.startAtMinutes === undefined
-          ? {}
-          : { startAtMinutes: update.startAtMinutes }),
-        ...(update.checkpoint === undefined ? {} : { checkpoint: update.checkpoint }),
         ...(update.note === undefined ? {} : { note: update.note }),
       },
     });
@@ -311,13 +367,9 @@ export const prismaTripRepository: TripRepository = {
     const order = await db.stop.findMany({
       where: { dayId: stop.dayId },
       orderBy: { position: "asc" },
-      select: { id: true, startAtMinutes: true },
+      select: { id: true },
     });
 
-    // A fixed time is a slot in the day rather than something a place owns, so
-    // the times stay where they are: each stop after the gap moves down into
-    // the time above it, and the last slot leaves with the stop that left.
-    const times = order.map((row) => row.startAtMinutes);
     const after = order.filter((row) => row.id !== stop.id).slice(stop.position);
 
     // The stops after it close the gap in the same transaction, so a day is
@@ -330,7 +382,7 @@ export const prismaTripRepository: TripRepository = {
         const position = stop.position + offset;
         return db.stop.update({
           where: { id: row.id },
-          data: { position, startAtMinutes: times[position] ?? null },
+          data: { position },
         });
       }),
     ]);
@@ -354,13 +406,8 @@ export const prismaTripRepository: TripRepository = {
     const order = await db.stop.findMany({
       where: { dayId: stop.dayId },
       orderBy: { position: "asc" },
-      select: { id: true, startAtMinutes: true },
+      select: { id: true },
     });
-
-    // Read off the order as it stands, and written back by position below. A
-    // fixed time is a slot in the day rather than something the place owns, so
-    // it stays where it is and whatever lands on it takes it.
-    const times = order.map((row) => row.startAtMinutes);
 
     const from = order.findIndex((row) => row.id === stop.id);
     const to = Math.max(0, Math.min(move.toPosition, order.length - 1));
@@ -387,7 +434,7 @@ export const prismaTripRepository: TripRepository = {
     const settled = moved.map((row, index) =>
       db.stop.update({
         where: { id: row.id },
-        data: { position: index, startAtMinutes: times[index] ?? null },
+        data: { position: index },
       }),
     );
     await db.$transaction([...parked, ...settled]);

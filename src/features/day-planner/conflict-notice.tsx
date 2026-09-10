@@ -13,7 +13,9 @@ interface ConflictNoticeProps {
  */
 export function ConflictNotice({ conflict }: ConflictNoticeProps) {
   return (
-    <div className="flex items-start gap-[7px] rounded-chip bg-sage-200 px-[11px] py-2">
+    /* As wide as the sentence and no wider. A block that ran to the card's edge
+       read as a section of the card rather than as a note on it. */
+    <div className="flex w-fit max-w-full items-start gap-[7px] rounded-chip bg-sage-200 px-[11px] py-2">
       <ClockIcon size={13} className="mt-[2px] shrink-0 text-sage-700" />
       <p className="text-micro text-sage-900 tabular-nums">{conflictSentence(conflict)}</p>
     </div>

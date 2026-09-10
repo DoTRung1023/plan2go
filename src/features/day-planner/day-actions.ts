@@ -25,21 +25,16 @@ export interface DayActions {
   }) => Promise<EditOutcome>;
 
   /**
-   * Fixes the stop to a time on the day's clock. Null lets it follow whatever
-   * comes before it again, which is how a stop starts out.
+   * Where the day begins or where it finishes: the two checkpoints a day has,
+   * passed through rather than spent time at. Null takes that end off again,
+   * and the day goes back to beginning at its first stop.
+   *
+   * Setting where a day ends offers the same place to the next day as its
+   * start, which is only written if that day has none of its own.
    */
-  readonly setStartAt: (input: {
-    readonly stopId: string;
-    readonly startAtMinutes: number | null;
-  }) => Promise<EditOutcome>;
-
-  /**
-   * Whether the day passes through this place or spends time at it. A
-   * checkpoint keeps the stay it had, so this can be turned back.
-   */
-  readonly setCheckpoint: (input: {
-    readonly stopId: string;
-    readonly checkpoint: boolean;
+  readonly setDayEndpoint: (input: {
+    readonly which: "start" | "end";
+    readonly providerPlaceId: string | null;
   }) => Promise<EditOutcome>;
 
   readonly setNote: (input: {

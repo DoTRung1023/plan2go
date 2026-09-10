@@ -73,8 +73,23 @@ export async function addStopFromSearch(
     stayMinutes: DEFAULT_STAY_MINUTES,
     travelMode: await fastestTravelMode(travelsFrom(day), place.position, travel),
   });
+  if (added.status === "refused") {
+    return { status: "refused" };
+  }
 
-  return added.status === "refused"
-    ? { status: "refused" }
-    : { status: "added", placeName: place.name };
+  // A new last stop is also where the leg out to the day's end now starts
+  // from, and the way home from somewhere else was an answer to a different
+  // question. Asked again, the way every leg with new ends is.
+  const end = day?.end;
+  if (end !== null && end !== undefined) {
+    await repository.setLegMode({
+      slug: request.slug,
+      editKeyHash: request.editKeyHash,
+      dayId: request.dayId,
+      stopId: null,
+      mode: await fastestTravelMode(place.position, end.place.position, travel),
+    });
+  }
+
+  return { status: "added", placeName: place.name };
 }

@@ -3,12 +3,19 @@
 import type { KeyboardEvent } from "react";
 import { useEffect, useId, useRef, useState } from "react";
 import { SearchIcon } from "@/ui/icons";
+import {
+  FIELD_CHANGE,
+  FIELD_GROUND,
+  FIELD_LABEL,
+  FIELD_PAD_ACTION,
+  FIELD_SHELL,
+  FIELD_STACK,
+} from "./field-styles";
 
 /** Enough of the list to scroll through, not so much that it swallows the page. */
 const PANEL_HEIGHT = "max-h-[260px]";
 
-const TRIGGER =
-  "mt-[6px] flex w-full items-center justify-between gap-2 rounded-pill border border-rule bg-paper-raised px-[16px] py-[9px] text-left text-body text-ink hover:border-rule-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+const TRIGGER = `${FIELD_SHELL} ${FIELD_PAD_ACTION} ${FIELD_GROUND} relative flex items-center text-left hover:border-rule-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta`;
 
 /** One thing that can be chosen: what is stored, and how it is read. */
 export interface Choice {
@@ -131,8 +138,8 @@ export function ChoiceField({
   };
 
   return (
-    <div className="relative" ref={container}>
-      <label className="text-label font-semibold text-ink-muted" htmlFor={id}>
+    <div className={`relative ${FIELD_STACK}`} ref={container}>
+      <label className={FIELD_LABEL} htmlFor={id}>
         {label}
       </label>
       <input type="hidden" name={name} value={value} />
@@ -158,9 +165,7 @@ export function ChoiceField({
         <span className={chosen === undefined ? "truncate text-ink-faint" : "truncate"}>
           {chosen?.label ?? placeholder}
         </span>
-        <span className="shrink-0 text-micro font-semibold text-terracotta-700">
-          {open ? "Close" : "Change"}
-        </span>
+        <span className={FIELD_CHANGE}>{open ? "Close" : "Change"}</span>
       </button>
 
       {open ? (

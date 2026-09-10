@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-
-/** The same pill as everything else on the trip's name row. */
-const BUTTON =
-  "inline-flex h-[34px] items-center justify-center rounded-pill border border-rule bg-paper-raised px-[14px] py-0 text-meta font-semibold text-ink hover:border-rule-strong hover:bg-paper-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+import { ShareIcon } from "@/ui/icons";
+import { MENU_ITEM } from "./trip-menu";
 
 const COPY =
   "shrink-0 rounded-pill px-[10px] py-[5px] text-micro font-semibold text-terracotta-700 hover:bg-terracotta-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
@@ -146,8 +144,9 @@ export function ShareLinks({ slug, editKey }: ShareLinksProps) {
           }
           setOpen(!open);
         }}
-        className={BUTTON}
+        className={MENU_ITEM}
       >
+        <ShareIcon size={15} strokeWidth={2.75} className="shrink-0" />
         Share
       </button>
 
@@ -161,7 +160,7 @@ export function ShareLinks({ slug, editKey }: ShareLinksProps) {
               close();
             }
           }}
-          className="absolute top-full right-0 z-30 mt-2 w-[300px] rounded-panel border border-rule bg-paper-raised p-[13px] text-left shadow-md"
+          className="absolute top-full right-0 z-50 mt-2 w-[300px] rounded-panel border border-rule bg-paper-raised p-[13px] text-left shadow-lg"
         >
           <p className={HEADING}>Read only</p>
           <p className={EXPLAINER}>Anyone with it can read the trip.</p>

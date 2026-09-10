@@ -50,10 +50,12 @@ export async function createTripAction(
   // It does not name the trip: a trip is not one city, and the traveller names
   // it themselves in the planner.
   const { cityPlaceId, ...rest } = parsed.data;
-  const city = await createGooglePlacesProvider({ apiKey }).details(cityPlaceId, null);
+  const places = createGooglePlacesProvider({ apiKey });
+  const city = await places.details(cityPlaceId, null);
   if (city === null) {
     return { error: "That city could not be found. Choose it from the list again." };
   }
+
 
   // The clock the trip keeps is the city's, not the one the browser is sitting
   // in. Where that cannot be worked out, the request's own guess is a better
@@ -66,6 +68,7 @@ export async function createTripAction(
     title: UNTITLED,
     timeZone: zone ?? openingTimeZone(asked),
     centre: city.position,
+    cityName: city.name,
   });
 
   if (opened.status === "too-many") {

@@ -2,8 +2,8 @@
  * A marker that is our own DOM rather than Google's.
  *
  * DESIGN.md is specific about these: a stop is a numbered disc with a 2px
- * terracotta ring, an endpoint is a different shape in olive, and both carry a
- * name that is read out but never drawn. Google's own markers take an image, so
+ * terracotta ring, an endpoint is a sage square with one corner cut, and both
+ * carry a name that is read out but never drawn. Google's own markers take an image, so
  * an OverlayView is what lets the markup and the tokens stay in this repo.
  *
  * The class is built after the script loads, because OverlayView does not exist
@@ -61,14 +61,36 @@ export function stopMarkerElement(order: number, name: string): HTMLElement {
   return marker;
 }
 
+/** Which end of the day a marker stands for, or both where they are one place. */
+export type EndpointKind = "start" | "end" | "both";
+
 /**
- * Somewhere the day goes through. The shape the panel gives it and the shape
- * the day's own ends have: olive, cornered, and holding a pin rather than a
- * number, because a checkpoint is not one of the numbers the day counts off.
+ * The same glyphs the panel draws, so a place is one shape wherever it is: a
+ * house where the day sets out from, a flag where it finishes. One place that
+ * is both gets the house, because there and back is what a house says.
  */
-export function checkpointMarkerElement(name: string): HTMLElement {
+const ENDPOINT_MARKS: Readonly<
+  Record<EndpointKind, { readonly word: string; readonly paths: readonly string[] }>
+> = {
+  start: {
+    word: "Start",
+    paths: ["m3 10 9-7 9 7v10a1.6 1.6 0 0 1-1.6 1.6H4.6A1.6 1.6 0 0 1 3 20Z", "M9.5 21.5v-7h5v7"],
+  },
+  end: {
+    word: "End",
+    paths: ["M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z", "M4 22v-7"],
+  },
+  both: {
+    word: "Start and end",
+    paths: ["m3 10 9-7 9 7v10a1.6 1.6 0 0 1-1.6 1.6H4.6A1.6 1.6 0 0 1 3 20Z", "M9.5 21.5v-7h5v7"],
+  },
+};
+
+/** An end of the day. Which end decides the glyph and what is read out. */
+export function endpointMarkerElement(kind: EndpointKind, name: string): HTMLElement {
+  const mark = ENDPOINT_MARKS[kind];
   const marker = document.createElement("span");
-  marker.className = "trip-map-marker trip-map-checkpoint";
+  marker.className = "trip-map-marker trip-map-endpoint";
 
   const glyph = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   glyph.setAttribute("aria-hidden", "true");
@@ -80,36 +102,16 @@ export function checkpointMarkerElement(name: string): HTMLElement {
   glyph.setAttribute("stroke-width", "2.75");
   glyph.setAttribute("stroke-linecap", "round");
   glyph.setAttribute("stroke-linejoin", "round");
-
-  const outline = document.createElementNS("http://www.w3.org/2000/svg", "path");
-  outline.setAttribute("d", "M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z");
-  const eye = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-  eye.setAttribute("cx", "12");
-  eye.setAttribute("cy", "10");
-  eye.setAttribute("r", "2.6");
-  glyph.append(outline, eye);
+  for (const d of mark.paths) {
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", d);
+    glyph.append(path);
+  }
 
   const spoken = document.createElement("span");
   spoken.className = "trip-map-name";
-  spoken.textContent = `Checkpoint, ${name}`;
+  spoken.textContent = `${mark.word} of the day, ${name}`;
 
   marker.append(glyph, spoken);
-  return marker;
-}
-
-/** Sized by its own padding, since it may say Start, End, or both. */
-export function endpointMarkerElement(word: string, name: string): HTMLElement {
-  const marker = document.createElement("span");
-  marker.className = "trip-map-marker trip-map-endpoint";
-
-  const shown = document.createElement("span");
-  shown.setAttribute("aria-hidden", "true");
-  shown.textContent = word;
-
-  const spoken = document.createElement("span");
-  spoken.className = "trip-map-name";
-  spoken.textContent = `${word} of the day, ${name}`;
-
-  marker.append(shown, spoken);
   return marker;
 }

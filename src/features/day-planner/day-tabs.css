@@ -11,18 +11,39 @@
    * Only one axis scrolls. Saying so is not optional: setting overflow on one
    * axis computes the other from visible to auto, and then a single pixel of
    * vertical overflow raises a scrollbar nobody asked for.
+   *
+   * Scroll rather than auto, so the room the scrollbar takes is always taken.
+   * With auto the bar arrives the moment the days no longer fit, and the line
+   * that names the day and the field beside it drop by its height at that
+   * moment: adding a day moved everything under the strip. The track is
+   * transparent and nothing draws a thumb while the days fit, so the space is
+   * simply held open until it is needed.
    */
-  overflow-x: auto;
+  overflow-x: scroll;
   overflow-y: hidden;
 
   /* Firefox. The track is left as the surface the strip is sitting on. */
   scrollbar-width: thin;
+  scrollbar-color: var(--color-rule) transparent;
+}
+
+.day-tabs:hover {
   scrollbar-color: var(--color-rule-strong) transparent;
 }
 
-/* The rest is Chrome and Safari, which ignore the two properties above. */
+/*
+ * The rest is Chrome and Safari, which ignore the properties above.
+ *
+ * A hairline under the strip rather than a bar across it: three pixels of
+ * paint inside a seven pixel track, the paint clipped to the content box
+ * behind a transparent border, which is the only way a scrollbar thumb gets a
+ * margin. At rest it is the weight of a rule, so it reads as the edge of the
+ * strip and not as a control; under the pointer it darkens to say it is one.
+ * Never hidden, since half the people using this have no pointer to find it
+ * with.
+ */
 .day-tabs::-webkit-scrollbar {
-  height: 6px;
+  height: 7px;
 }
 
 .day-tabs::-webkit-scrollbar-track {
@@ -30,10 +51,17 @@
 }
 
 .day-tabs::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
   border-radius: var(--radius-pill);
+  background-color: var(--color-rule);
+  background-clip: content-box;
+}
+
+.day-tabs:hover::-webkit-scrollbar-thumb {
   background-color: var(--color-rule-strong);
 }
 
-.day-tabs::-webkit-scrollbar-thumb:hover {
+.day-tabs::-webkit-scrollbar-thumb:hover,
+.day-tabs::-webkit-scrollbar-thumb:active {
   background-color: var(--color-ink-muted);
 }

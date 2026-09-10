@@ -16,9 +16,6 @@ colors:
   terracotta-ramp:
     100: "#FFF2EB"
     200: "#FFE1D0"
-    300: "#FFC6A5"
-    400: "#F6A06B"
-    500: "#D67F48"
     600: "#B2622D"
     700: "#8C491A"
     800: "#643312"
@@ -27,59 +24,66 @@ colors:
   sage-ramp:
     100: "#F0FAE1"
     200: "#E1EECC"
-    300: "#CCDBB2"
-    400: "#AEBF92"
-    500: "#8FA073"
     600: "#728157"
     700: "#56633F"
     800: "#3D472B"
     900: "#272E1B"
   neutral-ramp:
-    100: "#F9F4ED"
     200: "#EEE7DB"
     300: "#DCD3C4"
     400: "#C0B6A5"
-    500: "#A19786"
     600: "#82796A"
     700: "#645C50"
-    800: "#474238"
     900: "#2E2B25"
 typography:
   title:
-    fontFamily: Caprasimo
-    fontSize: 24px
-    lineHeight: 1.14
+    fontFamily: Baloo 2
+    fontSize: 23px
+    lineHeight: 1.25
+    fontWeight: 600
+  lead:
+    fontFamily: Baloo 2
+    fontSize: 20px
+    lineHeight: 1.25
+    fontWeight: 600
   place:
-    fontFamily: Caprasimo
-    fontSize: 17.5px
-    lineHeight: 1.2
+    fontFamily: Baloo 2
+    fontSize: 16px
+    lineHeight: 1.25
+    fontWeight: 600
   time:
-    fontFamily: Caprasimo
-    fontSize: 15px
+    fontFamily: Baloo 2
+    fontSize: 14.5px
     lineHeight: 1.1
+    fontWeight: 600
     fontVariantNumeric: tabular-nums
   body:
-    fontFamily: Figtree
+    fontFamily: Be Vietnam Pro
     fontSize: 14px
     lineHeight: 1.5
     fontWeight: 400
+  small:
+    fontFamily: Be Vietnam Pro
+    fontSize: 13px
+    lineHeight: 1.4
+    fontWeight: 400
   meta:
-    fontFamily: Figtree
+    fontFamily: Be Vietnam Pro
     fontSize: 12px
     lineHeight: 1.45
     fontWeight: 400
   micro:
-    fontFamily: Figtree
+    fontFamily: Be Vietnam Pro
     fontSize: 11.5px
     lineHeight: 1.4
     fontWeight: 400
   label:
-    fontFamily: Figtree
+    fontFamily: Be Vietnam Pro
     fontSize: 10.5px
     lineHeight: 1
     fontWeight: 600
   tick:
-    fontFamily: Figtree
+    fontFamily: Be Vietnam Pro
     fontSize: 9.5px
     lineHeight: 1
     fontVariantNumeric: tabular-nums
@@ -147,13 +151,20 @@ When one changes the other changes in the same commit.
 
 ## Colors
 
-The map keeps four hues of its own, at `orchid-700`, `forest-700`, `gold-700` and
-`cobalt-700`, drawn by the driving, public transport, walking and cycling routes and by
-nothing else. Four ways of getting
-somewhere need four lines that can be told apart, only walking is patterned, and none of
-them may be terracotta: a route in the product's own colour reads as the route the
-product is recommending. They are not accents and nothing outside the map may reach for
-them.
+The map keeps no hues of its own. Driving is `terracotta-700`, walking `terracotta-600`,
+and public transport `sage-700`: two steps of the accent and the second voice, all three
+already in the ramps above.
+
+It kept three of its own for a while, spread as far apart on the wheel as three colours
+could be, on the argument that a route in the product's own colour reads as the route
+the product is recommending. That argument does not survive the drawing. What a route is
+is settled by its pattern and by the key beside it, and a map whose ground, markers and
+lines all come from one family reads as one thing rather than as a chart laid over a
+map. Driving and walking are deliberately close, because the pattern is what separates
+them and a line of separated marks says "on foot" without being read; transport is the
+one line that is not a shade of the accent, and is therefore the one told apart at a
+glance. There was a fourth mode once, cycling, with a cobalt of its own; it went when
+the mode did.
 
 There are two accents and they are not interchangeable. Terracotta is the product: the
 stop numbers, the active day, the primary action, the route lines. Sage is the second
@@ -167,16 +178,21 @@ itself, which in this product means a conflict. Everything else is paper and ink
   over all three surfaces.
 - **rule-strong:** the border of a control under the pointer, and dashed outlines.
 - **ink, ink-muted, ink-faint:** primary text, secondary text, and placeholders.
-- **terracotta:** the accent, with a 100 to 900 ramp. 100 and 200 are tinted fills, the
-  base is the accent itself, 600 is hover, 700 is pressed and is the step to use for
-  accent coloured text, 800 is the active day tab.
-- **sage:** the second accent, with the same ramp. 200 is the conflict block, 600 is
-  the marker for the ends of a day, 700 draws the public transport route line.
-- **neutral 100 to 900:** the warm greys behind everything, used for the drive tint,
-  the waiting band, and the map's own geometry.
+- **terracotta:** the accent. 100 and 200 are tinted fills, the base is the accent
+  itself, 600 is hover, 700 is pressed and is the step to use for accent coloured text,
+  800 is the active day tab.
+- **sage:** the second accent. 200 is the conflict block, 600 is the marker for the ends
+  of a day, 700 draws the public transport route line.
+- **neutral:** the warm greys behind everything, used for the drive tint, the waiting
+  band, and the map's own geometry.
 
-Each ramp is generated in OKLCH on one shared lightness scale, so the same step of any
-ramp carries the same visual weight. Prefer a ramp step to an ad hoc `color-mix()`.
+Every ramp is generated in OKLCH on one shared lightness scale, so the same step of any
+ramp carries the same visual weight. Only the steps the product spends are declared, so
+the ramps above have gaps in them; the scale is the authority, not the list. A step that
+is needed later is computed from that scale and added back, never chosen by eye to sit
+between the two steps that happen to survive around it.
+
+Prefer a ramp step to an ad hoc `color-mix()`.
 
 Never `#FFFFFF`, never `#000000`, on any surface, border, or text.
 
@@ -192,14 +208,37 @@ for paragraphs, so accent coloured text at body size uses `terracotta-700`.
 
 ## Typography
 
-Two families, no more. Caprasimo for display, falling back to Georgia, "Times New
-Roman", serif. Figtree for body, falling back to "Segoe UI", system-ui, sans-serif.
+Two families, no more, and both of them carry Vietnamese. Baloo 2 for display, falling
+back to Be Vietnam Pro, system-ui, sans-serif. Be Vietnam Pro for body, falling back to
+system-ui, -apple-system, "Segoe UI", sans-serif. Both are loaded with the latin,
+latin-ext and vietnamese subsets named explicitly.
 
-Caprasimo has one weight and it is already heavy. Headings never ask for bold on top of
-it, because a browser with only the one weight will synthesise the rest.
+That is a requirement and not a preference. This product is read in cities whose place
+names it cannot spell without it: a face carrying latin only drops out of the typeface
+part way through "Nhà hát Lớn Hà Nội" and hands the rest to whatever the system has, and
+the stacked marks Vietnamese depends on, a tone over a circumflex in ế or ộ, come back
+undersized and out of position. A face considered for this product is checked for
+vietnamese before it is checked for anything else.
+
+Baloo 2 is variable from 400 to 800, where the display face before it had one weight
+that was already heavy. Headings ask for 600, which is what 400 used to give. They still
+never ask the browser to synthesise a weight the face does not have.
+
+Nothing in the display face is set under 1.25 line height where a place name can reach
+it. Two marks stacked above a letter need the room, and a line box tight enough for
+English clips the upper one.
 
 Display carries times, place names, durations and the day heading. Body carries
-everything else. Every element that renders a time or a duration sets
+everything else.
+
+Ten steps and no others. Every size in the planner is one of them, set with its own
+line height and, where it is a pill, with `text-step/none` rather than a second leading
+utility fighting the first. Lead is the day a panel is open on, the one heading that is
+neither the trip's title nor a place. Small is the tier the interface is mostly made of,
+tab labels, menu rows, the words on a leg, which used to be a scatter of 13px and 13.5px
+chosen one component at a time. A number that is not on the scale is a number that has
+not been thought about, and the marketing page, which the scale does not govern, is the
+one place such a number may appear. Every element that renders a time or a duration sets
 `font-variant-numeric: tabular-nums` so numbers stack in a column.
 
 - **title:** the trip name, and the heading of an empty day.
@@ -299,13 +338,12 @@ mode is carried by the stroke pattern as well as by the colour, so colour is nev
 only thing distinguishing them:
 
 ```
-drive      3.4px  solid                terracotta-700
-transit    3.4px  dash 11 6            sage-700
-walk       4px    dash 0.5 8, round    terracotta-600
-cycle      3.4px  dash 6 5             neutral-700
+drive      4.6px  solid                terracotta-700
+transit    4.6px  solid                sage-700
+walk       5px    dash 0.5 8, round    terracotta-600
 ```
 
-One table in `src/features/trip-map/route-style.ts` holds those four rows, and both the
+One table in `src/features/trip-map/route-style.ts` holds those three rows, and both the
 map and the key read from it, so a line and the sample that explains it cannot drift
 apart. Google draws a dash or a dot as a symbol repeated along an invisible line rather
 than as a stroke pattern, which is why each row also says what shape it repeats, and a
@@ -320,25 +358,31 @@ change with the modes this particular day happens to use. The markers have no ke
 their own, because a numbered disc in the order you visit them and a named marker for
 the ends of the day explain themselves.
 
-The map is Google's hybrid, unstyled: satellite imagery with the names over it. A warm
-ramp was tried underneath and abandoned, because a style array does not repaint
-photography, so the cream ground and the neutral water only ever applied to a layer the
-imagery covers. Every one of Google's controls is off and ours are drawn over the map
-instead: the search in the top left, the ground the map is drawn on in the top right,
-the route key in the bottom left, and in the bottom right the button that fills the
-screen with the zoom pair under it, where a thumb reaches first. The ground opens on
-hybrid and offers the map, the imagery on its own and the terrain, because imagery is
-not always the clearest, least of all where the question is which road is which.
+The map's own geometry is styled onto the warm ramp: cream ground, raised roads, sunken
+parks, and water in neutral 300 rather than a blue. Photography was tried in its place
+and taken out again. It is somebody else's palette, it dictates the page from
+underneath, and a product whose whole surface is one warm ramp cannot have its largest
+element opt out of it. Every one of Google's controls is off and ours are drawn over the
+map instead: the search in the top left, the route key in the bottom left, and in the
+bottom right the button that fills the screen with the zoom pair under it, where a thumb
+reaches first. What the map is drawn on is not offered as a choice. There is one ground,
+and it is the product's own.
 
 ## Motion
 
-Nothing animates except reordering a stop.
+Two things animate: reordering a stop, and the trip's actions unfolding.
 
 Reordering: `transform` over 160ms `ease-out` on the card being moved and on the cards
 displacing around it. Nothing else, no opacity, no scale.
 
-No transitions on hover, focus, tab switching, panel opening, or map interaction. Those
-changes are instant.
+The trip's actions: `grid-template-columns` from `0fr` to `1fr` over 200ms `ease-out`,
+so the row grows from nothing without anything having to know how wide the buttons are.
+It is the one hover transition in the product, and it earns the exception because the
+movement is the affordance: a group that simply appeared would read as the row
+rearranging itself rather than as something folded away that has opened.
+
+Nothing else. No transitions on focus, tab switching, panel opening, or map interaction,
+and no other transition on hover. Those changes are instant.
 
 Focus is a 2px `terracotta` ring at 2px offset, visible immediately, on every
 interactive element.

@@ -8,7 +8,7 @@ import type { StopId } from "./stop";
  * ones that say a visit cannot happen taught its reader to skim all of them.
  * The wait is on the card as a number instead. Conflicts are returned as data
  * and carry the numbers needed to name the problem, so the UI can write
- * "Fish Market closes at 4:00 pm and you arrive at 4:30 pm" rather than
+ * "Fish Market closes at 16:00 and you arrive at 16:30" rather than
  * "Timing issue detected".
  */
 export type Conflict =

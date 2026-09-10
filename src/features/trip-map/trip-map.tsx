@@ -5,8 +5,8 @@ import type { DayEndpoint } from "@/core/model/day";
 import type { TravelMode } from "@/core/model/leg";
 import type { LatLng } from "@/core/model/place";
 import type { Stop } from "@/core/model/stop";
+import type { EndpointKind } from "./dom-marker";
 import {
-  checkpointMarkerElement,
   endpointMarkerElement,
   placeDomMarker,
   stopMarkerElement,
@@ -17,6 +17,7 @@ import {
   loadGoogleMaps,
   onGoogleMapsRefused,
 } from "./load-google-maps";
+import { paperMapStyle } from "./map-style";
 import type { RouteStroke } from "./route-style";
 import { ROUTE_STROKES, routeStroke } from "./route-style";
 import "./trip-map.css";
@@ -58,69 +59,6 @@ type MapState =
   | { readonly status: "refused" };
 
 /**
- * The zoom pair is one pill with a rule between the halves, the way every other
- * grouped control in this product is drawn.
- */
-/**
- * What Google draws under everything else. Hybrid is where the map opens: a
- * trip is planned against real ground, and imagery says more about whether a
- * walk is through a park or along a motorway than a drawn map does. The others
- * are here because imagery is not always the clearest, least of all where the
- * point is which road is which.
- */
-const MAP_TYPES = [
-  { id: "hybrid", label: "Hybrid" },
-  // Not "Map", which on a map says nothing, and not Google's own "Default",
-  // which would be a lie here: the default is the imagery above it. What it
-  // draws is streets, so that is what it is called.
-  { id: "roadmap", label: "Streets" },
-  { id: "satellite", label: "Satellite" },
-  { id: "terrain", label: "Terrain" },
-] as const;
-
-type MapTypeId = (typeof MAP_TYPES)[number]["id"];
-
-const OPENING_MAP_TYPE: MapTypeId = "hybrid";
-
-/**
- * Where the reader's last choice of ground is kept.
- *
- * In the browser rather than on the trip: which ground a map is drawn on is a
- * preference of whoever is reading it, not a fact about the trip, and a trip
- * shared with somebody should not arrive insisting on the imagery because the
- * person who planned it liked imagery.
- */
-const REMEMBERED = "plan2go.map-type";
-
-/** The ground last chosen here, or the one a map opens on. */
-function rememberedMapType(): MapTypeId {
-  try {
-    const saved = window.localStorage.getItem(REMEMBERED);
-    const known = MAP_TYPES.find((one) => one.id === saved);
-    return known?.id ?? OPENING_MAP_TYPE;
-  } catch {
-    // Storage can be switched off entirely, and reaching for it then throws
-    // rather than answering with nothing.
-    return OPENING_MAP_TYPE;
-  }
-}
-
-/** True when the choice will still be here next time, which it may not be. */
-function rememberMapType(id: MapTypeId): boolean {
-  try {
-    window.localStorage.setItem(REMEMBERED, id);
-    return true;
-  } catch {
-    // A browser told to keep nothing keeps nothing. The map still changes; it
-    // simply opens on the usual ground next time.
-    return false;
-  }
-}
-
-const TYPE_ROW =
-  "block w-full rounded-chip px-[9px] py-[5px] text-left text-micro whitespace-nowrap focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta";
-
-/**
  * Map chrome is its own scale, one step under the controls in the panel beside
  * it: it sits over somewhere rather than on the page, and a map covered in
  * buttons the size of the trip's own is a map you cannot see. Every control
@@ -132,14 +70,6 @@ const PILL = "overflow-hidden rounded-pill border border-rule bg-paper-raised sh
 
 const CONTROL =
   "flex items-center justify-center bg-paper-raised text-ink-muted hover:bg-paper-sunken hover:text-ink focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta";
-
-/**
- * A word needs room either side of it, and is set at the size of the list it
- * opens rather than the size of the field across the map from it. The two are
- * not a pair: one is where you type and the other is a label on a menu, and
- * matching them only made the label shout.
- */
-const WORD_CONTROL = `${CONTROL} h-[30px] px-[11px] text-micro font-semibold`;
 
 /** A glyph on its own sits in a square, so a column of them has one edge. */
 const ICON_CONTROL = `${CONTROL} h-[30px] w-[30px] text-[17px]`;
@@ -153,6 +83,12 @@ interface TripMapProps {
   /** The leg under the pointer, here or in the panel beside the map. */
   readonly hoveredLegIndex: number | null;
   readonly onHoverLeg: (legIndex: number | null) => void;
+  /**
+   * The end of the day under the pointer, here or in the panel, by the place
+   * it is at. A day that starts and ends in one place has one marker for both.
+   */
+  readonly hoveredEndpointId: string | null;
+  readonly onHoverEndpoint: (placeId: string | null) => void;
   /**
    * Asked for rather than done here: what the map grows over belongs to
    * whoever laid the two panes out, and a map that resized itself would be
@@ -323,6 +259,8 @@ export function TripMap({
   onHoverStop,
   hoveredLegIndex,
   onHoverLeg,
+  hoveredEndpointId,
+  onHoverEndpoint,
   start,
   end,
   stops,
@@ -331,13 +269,14 @@ export function TripMap({
   centre,
 }: TripMapProps) {
   const container = useRef<HTMLDivElement | null>(null);
-  const types = useRef<HTMLDivElement | null>(null);
   /**
    * Each stop's marker, kept so the pointer can be answered without drawing
    * the day again: rebuilding every marker to shade one of them would blink
    * the whole map each time the pointer crossed a card.
    */
   const markers = useRef(new Map<string, HTMLElement>());
+  /** The ends of the day, the same way, keyed by the place each is at. */
+  const endpointMarkers = useRef(new Map<string, HTMLElement>());
   /**
    * How each leg answers the pointer: its ring on or off, and its own line at
    * the weight that goes with it. Kept as the work to do rather than as the
@@ -353,9 +292,11 @@ export function TripMap({
    */
   const hovering = useRef(onHoverStop);
   const hoveringLeg = useRef(onHoverLeg);
+  const hoveringEndpoint = useRef(onHoverEndpoint);
   useEffect(() => {
     hovering.current = onHoverStop;
     hoveringLeg.current = onHoverLeg;
+    hoveringEndpoint.current = onHoverEndpoint;
   });
   const overlays = useRef<google.maps.OverlayView[]>([]);
   const lines = useRef<google.maps.Polyline[]>([]);
@@ -393,10 +334,10 @@ export function TripMap({
         map: new maps.Map(element, {
           center: openingView.current ?? WHOLE_WORLD,
           zoom: openingView.current === null ? WHOLE_WORLD_ZOOM : CITY_ZOOM,
-          // Imagery with the names on top of it, unless this reader has said
-          // otherwise before. Read here rather than taken from the state above
-          // so that changing the ground never rebuilds the map under it.
-          mapTypeId: rememberedMapType(),
+          // The warm palette, handed to Google as a style array. Roadmap is
+          // what it is drawn on, which is Google's own default, so there is
+          // nothing to name here.
+          styles: paperMapStyle(),
           // Every one of Google's controls off. Ours are drawn over the map in
           // this product's palette, in one corner rather than scattered around
           // the frame the way a default map puts them.
@@ -514,51 +455,46 @@ export function TripMap({
 
     const points: google.maps.LatLngLiteral[] = [];
 
-    const drawEndpoint = (endpoint: DayEndpoint, word: string): void => {
+    endpointMarkers.current.clear();
+    const drawEndpoint = (endpoint: DayEndpoint, kind: EndpointKind): void => {
       const point = {
         lat: endpoint.place.position.lat,
         lng: endpoint.place.position.lng,
       };
-      overlays.current.push(
-        placeDomMarker(
-          maps,
-          map,
-          point,
-          endpointMarkerElement(word, endpoint.place.name),
-        ),
-      );
+      const element = endpointMarkerElement(kind, endpoint.place.name);
+      element.addEventListener("mouseenter", () => {
+        hoveringEndpoint.current(endpoint.place.id);
+      });
+      element.addEventListener("mouseleave", () => {
+        hoveringEndpoint.current(null);
+      });
+      endpointMarkers.current.set(endpoint.place.id, element);
+      overlays.current.push(placeDomMarker(maps, map, point, element));
       points.push(point);
     };
 
     // A day that starts and ends in the same place gets one marker, not two on
     // top of each other.
     if (start !== null && end !== null && start.place.id === end.place.id) {
-      drawEndpoint(start, "Start and end");
+      drawEndpoint(start, "both");
     } else {
       if (start !== null) {
-        drawEndpoint(start, "Start");
+        drawEndpoint(start, "start");
       }
       if (end !== null) {
-        drawEndpoint(end, "End");
+        drawEndpoint(end, "end");
       }
     }
 
     markers.current.clear();
-    // The numbers count the stops and skip the checkpoints, the same way the
-    // panel does, so a place is called the same thing in both.
-    let counted = 0;
-    stops.forEach((stop) => {
+    // Counted the same way the panel counts, so a place is called the same
+    // thing in both.
+    stops.forEach((stop, at) => {
       const point = {
         lat: stop.place.position.lat,
         lng: stop.place.position.lng,
       };
-      let element: HTMLElement;
-      if (stop.checkpoint) {
-        element = checkpointMarkerElement(stop.place.name);
-      } else {
-        counted += 1;
-        element = stopMarkerElement(counted, stop.place.name);
-      }
+      const element = stopMarkerElement(at + 1, stop.place.name);
       element.addEventListener("mouseenter", () => {
         hovering.current(stop.id);
       });
@@ -595,34 +531,17 @@ export function TripMap({
 
   const drawnLegs = routeLegs(start, end, stops, endTravelMode).length;
 
-  const [mapType, setMapType] = useState<MapTypeId>(rememberedMapType);
-  const [choosingType, setChoosingType] = useState(false);
-
-  useEffect(() => {
-    if (!choosingType) {
-      return;
-    }
-    const dismiss = (event: MouseEvent): void => {
-      const target = event.target;
-      const inside =
-        target instanceof Node &&
-        types.current !== null &&
-        types.current.contains(target);
-      if (!inside) {
-        setChoosingType(false);
-      }
-    };
-    document.addEventListener("mousedown", dismiss);
-    return () => {
-      document.removeEventListener("mousedown", dismiss);
-    };
-  }, [choosingType]);
-
   useEffect(() => {
     for (const [stopId, element] of markers.current) {
       element.classList.toggle("is-hovered", stopId === hoveredStopId);
     }
   }, [hoveredStopId]);
+
+  useEffect(() => {
+    for (const [placeId, element] of endpointMarkers.current) {
+      element.classList.toggle("is-hovered", placeId === hoveredEndpointId);
+    }
+  }, [hoveredEndpointId]);
 
   useEffect(() => {
     if (state.status !== "ready") {
@@ -632,15 +551,6 @@ export function TripMap({
       answer(index === hoveredLegIndex);
     }
   }, [hoveredLegIndex, state]);
-
-  const chooseType = (id: MapTypeId): void => {
-    setChoosingType(false);
-    setMapType(id);
-    rememberMapType(id);
-    if (state.status === "ready") {
-      state.map.setMapTypeId(id);
-    }
-  };
 
   const zoomBy = (step: number): void => {
     if (state.status !== "ready") {
@@ -686,71 +596,6 @@ export function TripMap({
         </div>
       ) : null}
 
-      {/* The corner opposite the search, and on a phone below the button that
-          opens the map, which owns that corner until it is let go of. */}
-      {state.status === "ready" ? (
-        <div
-          className="absolute top-[52px] right-[14px] z-[2] lg:top-[22px] lg:right-[22px]"
-          ref={types}
-        >
-          {/* Nothing to read: it is the four words themselves, laid out and
-              hidden, so this corner is exactly as wide as the widest thing it
-              can ever say. The button and the list then both take that width
-              and agree without either being told a number, and the button
-              stops changing width as the ground changes under it. */}
-          <div aria-hidden="true" className="invisible h-0 overflow-hidden px-[6px]">
-            {MAP_TYPES.map((one) => (
-              <p key={one.id} className="px-[9px] text-micro font-semibold whitespace-nowrap">
-                {one.label}
-              </p>
-            ))}
-          </div>
-
-          <button
-            type="button"
-            aria-haspopup="dialog"
-            aria-expanded={choosingType}
-            onClick={() => {
-              setChoosingType(!choosingType);
-            }}
-            className={`${WORD_CONTROL} ${PILL} w-full`}
-          >
-            {MAP_TYPES.find((one) => one.id === mapType)?.label ?? "Map"}
-          </button>
-
-          {choosingType ? (
-            <div
-              role="dialog"
-              aria-label="What the map is drawn on"
-              onKeyDown={(event) => {
-                if (event.key === "Escape") {
-                  event.preventDefault();
-                  setChoosingType(false);
-                }
-              }}
-              className="absolute top-full right-0 mt-2 w-full rounded-panel border border-rule bg-paper-raised p-[5px] shadow-md"
-            >
-              {MAP_TYPES.map((one) => (
-                <button
-                  key={one.id}
-                  type="button"
-                  onClick={() => {
-                    chooseType(one.id);
-                  }}
-                  className={`${TYPE_ROW} ${
-                    one.id === mapType
-                      ? "bg-terracotta-800 text-paper"
-                      : "text-ink hover:bg-terracotta-100"
-                  }`}
-                >
-                  {one.label}
-                </button>
-              ))}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-
       {state.status === "ready" ? (
         <div className="absolute right-[14px] bottom-[14px] z-[2] flex flex-col items-end gap-2 lg:right-[22px] lg:bottom-[22px]">
           {/* Wrapped the way the zoom pair is, so the rule sits outside the
@@ -793,31 +638,39 @@ export function TripMap({
       ) : null}
 
       {drawnLegs === 0 ? null : (
-        <div className="pointer-events-none absolute bottom-[14px] left-[14px] z-[2] rounded-row border border-rule bg-paper-raised px-[15px] pt-3 pb-[13px] lg:bottom-[22px] lg:left-[22px]">
-          <p className="text-label font-semibold text-ink-muted">Route key</p>
-          <ul className="mt-[9px] flex flex-col gap-[6px] text-micro text-ink-muted">
-            {ROUTE_STROKES.map((stroke) => (
-              <li key={stroke.mode} className="flex items-center gap-3">
-                <svg
-                  aria-hidden="true"
-                  viewBox="0 0 42 7"
-                  width="42"
-                  height="7"
-                  className={stroke.inkClass}
-                >
-                  <path
-                    d="M0 3.5h42"
-                    stroke="currentColor"
-                    strokeWidth={stroke.weight}
-                    strokeDasharray={stroke.dashArray ?? undefined}
-                    strokeLinecap={stroke.roundCaps ? "round" : "butt"}
-                  />
-                </svg>
-                <span>{stroke.label}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        /*
+         * One line along the bottom of the map rather than a card stacked up
+         * the side of it. It is a key: three samples and three words, read
+         * left to right in the time it takes to glance down, and the heading
+         * that used to sit over them was a label on a thing that explains
+         * itself. Laid flat it also stops eating the corner of the map, which
+         * is the part of the page it was covering.
+         */
+        <ul className="pointer-events-none absolute bottom-[14px] left-[14px] z-[2] flex list-none items-center gap-4 rounded-pill border border-rule bg-paper-raised/90 px-[18px] py-[10px] text-micro/none text-ink-muted lg:bottom-[22px] lg:left-[22px]">
+          {ROUTE_STROKES.map((stroke) => (
+            <li key={stroke.mode} className="flex items-center gap-[7px]">
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 26 6"
+                width="26"
+                height="6"
+                className={`shrink-0 ${stroke.inkClass}`}
+              >
+                <path
+                  d="M0 3h26"
+                  stroke="currentColor"
+                  /* Thinner than the map draws, because 26px of it is a sample
+                     and not a route: at the weight the map uses, a 26px line
+                     reads as a block rather than as a line. */
+                  strokeWidth={stroke.roundCaps ? 3.6 : 3.2}
+                  strokeDasharray={stroke.dashArray ?? undefined}
+                  strokeLinecap={stroke.roundCaps ? "round" : "butt"}
+                />
+              </svg>
+              <span className="whitespace-nowrap">{stroke.label}</span>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );

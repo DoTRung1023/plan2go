@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { OpeningWindow, Place, Weekday, WeeklyOpeningHours } from "@/core/model/place";
 import type {
+  NearbyPlacesRequest,
   PlaceSearchRequest,
   PlaceSuggestion,
   PlacesProvider,
@@ -8,6 +9,7 @@ import type {
 import { MINUTES_PER_DAY, clockToMinutes } from "@/core/time/minutes";
 
 const AUTOCOMPLETE_URL = "https://places.googleapis.com/v1/places:autocomplete";
+const NEARBY_URL = "https://places.googleapis.com/v1/places:searchNearby";
 
 /**
  * The language a place comes back in. Fixed rather than taken from the reader,
@@ -23,6 +25,24 @@ const DETAILS_FIELDS = "id,displayName,formattedAddress,location,regularOpeningH
 
 /** How wide a bias circle is drawn around the point we were given, in metres. */
 const BIAS_RADIUS_METERS = 20_000;
+
+/**
+ * The three fields a suggestion carries and nothing dearer. A nearby search is
+ * billed by the fields asked for, and asking for coordinates or opening hours
+ * here would pay for them on every place in the list when the reader is going
+ * to choose at most one. Details are looked up on the choice, as ever.
+ */
+const NEARBY_FIELDS = "places.id,places.displayName,places.formattedAddress";
+
+/**
+ * What a city is worth being shown for. Attractions are most of it, and the
+ * other two are here because a city's best park or museum is not always filed
+ * as an attraction, and leaving them out makes the list read as a coach tour.
+ */
+const NEARBY_TYPES = ["tourist_attraction", "museum", "park"];
+
+/** Google will not return more than this from one nearby search. */
+const NEARBY_MAX_RESULTS = 20;
 
 const WEEKDAYS: readonly Weekday[] = [0, 1, 2, 3, 4, 5, 6];
 
@@ -44,6 +64,19 @@ const predictionSchema = z.object({
 /** No results at all comes back as an object with nothing in it. */
 const autocompleteSchema = z.object({
   suggestions: z.array(predictionSchema).optional(),
+});
+
+/** Likewise: a circle with nothing in it answers with no places key at all. */
+const nearbySchema = z.object({
+  places: z
+    .array(
+      z.object({
+        id: z.string(),
+        displayName: z.object({ text: z.string() }).optional(),
+        formattedAddress: z.string().optional(),
+      }),
+    )
+    .optional(),
 });
 
 const timeOfDaySchema = z.object({
@@ -200,6 +233,43 @@ export function createGooglePlacesProvider(options: GooglePlacesOptions): Places
           providerPlaceId: prediction.placeId,
           name,
           address: prediction.structuredFormat?.secondaryText?.text ?? null,
+        });
+      }
+      return suggestions.slice(0, request.limit);
+    },
+
+    async nearby(request: NearbyPlacesRequest): Promise<readonly PlaceSuggestion[]> {
+      const response = await fetch(NEARBY_URL, {
+        method: "POST",
+        headers: { ...headers, "X-Goog-FieldMask": NEARBY_FIELDS },
+        body: JSON.stringify({
+          languageCode: PLACE_LANGUAGE,
+          includedTypes: NEARBY_TYPES,
+          // By how well known a place is, not by how near it is to the middle
+          // of the city. Nobody opening an empty field is asking what is
+          // closest to the town hall.
+          rankPreference: "POPULARITY",
+          maxResultCount: Math.min(request.limit, NEARBY_MAX_RESULTS),
+          locationRestriction: {
+            circle: {
+              center: { latitude: request.centre.lat, longitude: request.centre.lng },
+              radius: request.radiusMeters,
+            },
+          },
+        }),
+      });
+      const parsed = nearbySchema.parse(await readJson(response, "places nearby"));
+
+      const suggestions: PlaceSuggestion[] = [];
+      for (const place of parsed.places ?? []) {
+        const name = place.displayName?.text ?? null;
+        if (name === null) {
+          continue;
+        }
+        suggestions.push({
+          providerPlaceId: place.id,
+          name,
+          address: place.formattedAddress ?? null,
         });
       }
       return suggestions.slice(0, request.limit);

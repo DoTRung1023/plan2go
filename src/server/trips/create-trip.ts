@@ -12,6 +12,8 @@ export interface NewTripRequest {
   readonly dayCount: number;
   /** The city the trip is in, for the map to open on. */
   readonly centre: LatLng | null;
+  /** What that city is called, so the product can name it rather than point. */
+  readonly cityName: string | null;
 }
 
 export interface CreatedTripResult {
@@ -25,9 +27,9 @@ export interface CreatedTripResult {
 
 /**
  * Opens a trip and hands back the one key that authorises changes to it. The
- * days come out empty: no stops, and neither end of the day set, because at
+ * days come out empty: no stops, and neither end of any day set, because at
  * this point nobody knows where the traveller is staying or whether they are
- * staying anywhere at all.
+ * staying anywhere at all. Both ends of a day are set from inside the planner.
  */
 export async function createTrip(
   request: NewTripRequest,
@@ -40,6 +42,7 @@ export async function createTrip(
     startDate: request.startDate,
     dayCount: request.dayCount,
     centre: request.centre,
+    cityName: request.cityName,
     startAtMinutes: DEFAULT_START_AT_MINUTES,
     editKeyHash: hashEditKey(editKey),
   });

@@ -13,7 +13,7 @@ export interface HaversineOptions {
 }
 
 export const DEFAULT_HAVERSINE_OPTIONS: HaversineOptions = {
-  speedsKmh: { walk: 4.8, cycle: 15, drive: 30, transit: 20 },
+  speedsKmh: { walk: 4.8, drive: 30, transit: 20 },
   detourFactor: 1.3,
 };
 

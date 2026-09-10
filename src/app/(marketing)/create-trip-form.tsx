@@ -2,12 +2,12 @@
 
 import { useActionState, useState } from "react";
 import { addDays } from "@/core/time/zoned";
-import { DateRangeField } from "@/features/trip-settings/date-field";
+import { DateRangeField } from "@/features/trip-settings/date-range-field";
 import { MAX_TRIP_DAYS } from "@/server/trips/new-trip-input";
 import type { Choice } from "./choice-field";
 import { ChoiceField } from "./choice-field";
-import type { City } from "./city-field";
-import { CityField } from "./city-field";
+import type { ChosenPlace } from "./place-field";
+import { PlaceField } from "./place-field";
 import { createTripAction } from "./create-trip-action";
 import type { CreateTripFormState } from "./create-trip-action";
 
@@ -37,11 +37,18 @@ export function CreateTripForm({ countries, today }: CreateTripFormProps) {
   const [first, setFirst] = useState(today);
   const [last, setLast] = useState(addDays(today, OPENING_SPAN_DAYS));
   const [country, setCountry] = useState("");
-  const [city, setCity] = useState<City | null>(null);
+  const [city, setCity] = useState<ChosenPlace | null>(null);
 
   return (
-    <form action={submit} className="mt-8 grid gap-4 sm:grid-cols-2">
-      <div className="sm:col-span-2">
+    <form
+      action={submit}
+      className="flex flex-col gap-5 rounded-card border border-rule bg-paper-sunken p-7 shadow-md"
+    >
+      <p className="text-[12px] leading-none font-bold tracking-[0.14em] text-ink-faint uppercase">
+        Where and when
+      </p>
+
+      <div>
         <ChoiceField
           id="country"
           name="country"
@@ -59,26 +66,30 @@ export function CreateTripForm({ countries, today }: CreateTripFormProps) {
         />
       </div>
 
-      <div className="sm:col-span-2">
-        <CityField
+      <div>
+        <PlaceField
           id="cityPlaceId"
           name="cityPlaceId"
           label="City"
           countryCode={country}
+          waitingFor={country === "" ? "Choose a country first" : null}
+          placeholder="Type the city"
           chosen={city}
           onChange={setCity}
         />
       </div>
 
-      <div className="sm:col-span-2">
+      <div>
         <DateRangeField
           id="tripDates"
           startName="startDate"
           endName="endDate"
-          label="Trip dates"
+          label="Dates"
           start={first}
           end={last}
-          maxDays={MAX_TRIP_DAYS}
+          min={today}
+          maxSpanDays={MAX_TRIP_DAYS}
+          size="large"
           onChange={(range) => {
             setFirst(range.start);
             setLast(range.end);
@@ -89,21 +100,19 @@ export function CreateTripForm({ countries, today }: CreateTripFormProps) {
       {state.error === null ? null : (
         <p
           role="alert"
-          className="rounded-chip bg-terracotta-200 px-3 py-2 text-meta text-terracotta-900 sm:col-span-2"
+          className="rounded-chip bg-terracotta-200 px-3 py-2 text-meta text-terracotta-900"
         >
           {state.error}
         </p>
       )}
 
-      <p className="sm:col-span-2">
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-pill bg-terracotta px-6 py-[11px] text-body font-semibold text-paper hover:bg-terracotta-600 active:bg-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
-        >
-          {pending ? "Making the trip" : "Start planning"}
-        </button>
-      </p>
+      <button
+        type="submit"
+        disabled={pending}
+        className="mt-1 w-full rounded-pill bg-terracotta px-6 py-4 font-display text-[16px] leading-[1.2] font-semibold text-paper hover:bg-terracotta-600 active:bg-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+      >
+        {pending ? "Making the trip" : "Start planning"}
+      </button>
     </form>
   );
 }

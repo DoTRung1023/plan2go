@@ -2,10 +2,15 @@
 
 /*
  * Tokens from DESIGN.md. Warm cream ground under warm ink, terracotta as the
- * accent and sage as a genuine second voice. Every role carries a 100 to 900
- * ramp generated on one shared lightness scale, so the same step of any ramp
- * has the same visual weight. Never pure white, never pure black, no dark
- * theme.
+ * accent and sage as a genuine second voice. Never pure white, never pure
+ * black, no dark theme.
+ *
+ * Each role's ramp was generated whole, 100 to 900, on one shared lightness
+ * scale, so the same step of any ramp carries the same visual weight. What is
+ * declared here is the part of each ramp the product actually spends: the
+ * steps nothing reached for have been cut. The scale they were cut from is
+ * still the authority, so a step that is needed later is computed from it
+ * rather than picked to sit between its neighbours here.
  */
 @theme {
   --color-paper: #f5ead8;
@@ -18,23 +23,16 @@
 
   --color-rule: color-mix(in srgb, #201e1d 13%, transparent);
   --color-rule-strong: color-mix(in srgb, #201e1d 28%, transparent);
-
-  --color-neutral-100: #f9f4ed;
   --color-neutral-200: #eee7db;
   --color-neutral-300: #dcd3c4;
   --color-neutral-400: #c0b6a5;
-  --color-neutral-500: #a19786;
   --color-neutral-600: #82796a;
   --color-neutral-700: #645c50;
-  --color-neutral-800: #474238;
   --color-neutral-900: #2e2b25;
 
   --color-terracotta: #c67139;
   --color-terracotta-100: #fff2eb;
   --color-terracotta-200: #ffe1d0;
-  --color-terracotta-300: #ffc6a5;
-  --color-terracotta-400: #f6a06b;
-  --color-terracotta-500: #d67f48;
   --color-terracotta-600: #b2622d;
   --color-terracotta-700: #8c491a;
   --color-terracotta-800: #643312;
@@ -43,53 +41,82 @@
   --color-sage: #7a8a5e;
   --color-sage-100: #f0fae1;
   --color-sage-200: #e1eecc;
-  --color-sage-300: #ccdbb2;
-  --color-sage-400: #aebf92;
-  --color-sage-500: #8fa073;
   --color-sage-600: #728157;
   --color-sage-700: #56633f;
   --color-sage-800: #3d472b;
   --color-sage-900: #272e1b;
 
   /*
-   * The map's own hues, and nothing outside the map may spend them.
+   * The map has no hues of its own any more.
    *
-   * Four ways of getting somewhere need four lines that can be told apart at a
-   * glance. Only walking is patterned, so colour does nearly all of that work,
-   * and it has to do it without terracotta: terracotta is what the product
-   * itself is drawn in, and a route wearing it reads as the route the product
-   * is recommending rather than as the one you happen to be driving.
+   * It kept three, spread as far apart on the wheel as three colours could be,
+   * on the argument that a route wearing the product's own colour reads as the
+   * route the product is recommending. The design canvas draws them on the
+   * accent instead, and it is right: what a route is is settled by its pattern
+   * and by the key beside it, and a map whose ground, markers and lines all
+   * come from one family reads as one thing rather than as a chart laid over a
+   * map. Driving takes the accent at its pressed weight, walking one step up
+   * from it, and public transport takes sage, which is the one line on the map
+   * that is not a shade of the accent and is therefore the one told apart
+   * without reading anything.
    *
-   * All four are mixed to the warmth and the weight of the ramps above, so they
-   * sit in this palette rather than arriving from somewhere else, and they are
-   * spread as far apart on the wheel as four colours can be with the orange
-   * quarter of it spoken for. Crowded into one quarter, as an olive, a teal and
-   * a blue once were, three of the four routes read as one dark colour drawn
-   * three times.
-   *
-   * Driving carries the most chroma of the four, and is the one that breaks the
-   * matched weight on purpose. It is the line drawn most often, and on the
-   * hybrid ground a dense city's roofs are themselves a grey-purple: the darker
-   * plum this replaces held the right hue and none of the presence, and it sank
-   * into the rooftops of anywhere built up. What separates a route from imagery
-   * is chroma rather than lightness, because roofs have almost none.
+   * Nothing is declared here for it. The three steps it spends are steps of the
+   * ramps above, which is what a ramp is for.
    */
-  --color-orchid-700: #b4418c;
-  --color-forest-700: #2f7a52;
-  --color-gold-700: #8a6a1f;
-  --color-cobalt-700: #35607d;
 
-  --font-display: var(--font-caprasimo), Georgia, "Times New Roman", serif;
-  --font-body: var(--font-figtree), "Segoe UI", system-ui, sans-serif;
+  /*
+   * Both faces carry Vietnamese. The display falls back to the body face rather
+   * than to a serif: Baloo 2 is a rounded sans, and Georgia standing in for it
+   * would change the voice of a heading rather than merely the shape of it.
+   */
+  --font-display: var(--font-baloo-2), var(--font-be-vietnam-pro), system-ui, sans-serif;
+  --font-body: var(--font-be-vietnam-pro), system-ui, -apple-system, "Segoe UI", sans-serif;
 
-  --text-title: 24px;
-  --text-title--line-height: 1.14;
-  --text-place: 17.5px;
-  --text-place--line-height: 1.2;
-  --text-time: 15px;
+  /*
+   * Every size in the display face came down about five percent with the change
+   * of face. Baloo 2 has a taller x-height and shorter ascenders than the face
+   * before it, so the same number set larger, and headings that used to end
+   * their line began to run past it.
+   *
+   * The leading went the other way. A tone mark over a circumflex, the ế in
+   * "Miếu" or the ộ in "Một", stacks two marks above the letter, and a line box
+   * tight enough for English clips the upper one. Nothing that can hold a place
+   * name is set under 1.25 now.
+   *
+   * The weights are stated because 400 in a variable face this wide is not the
+   * 400 of a face that only had one: headings ask for 600 to read as solidly as
+   * they did.
+   */
+  --text-title: 23px;
+  --text-title--line-height: 1.25;
+  --text-title--font-weight: 600;
+  /*
+   * Between a heading and a place name, for the one thing that is neither: the
+   * day a panel is open on. Without it that heading was set at a number picked
+   * to sit between the two, which is how a scale stops being a scale.
+   */
+  --text-lead: 20px;
+  --text-lead--line-height: 1.25;
+  --text-lead--font-weight: 600;
+  --text-place: 16px;
+  --text-place--line-height: 1.25;
+  --text-place--font-weight: 600;
+  --text-time: 14.5px;
   --text-time--line-height: 1.1;
+  --text-time--font-weight: 600;
   --text-body: 14px;
   --text-body--line-height: 1.5;
+  /*
+   * The tier the interface is mostly made of: tab labels, menu rows, the words
+   * on a leg. It sat between body and meta as a scatter of 13px and 13.5px
+   * picked one component at a time, and is one number now.
+   *
+   * Where it lands in a pill the line height is turned off at the point of use
+   * with text-small/none, which is one declaration rather than a leading
+   * utility arguing with the one the size brought with it.
+   */
+  --text-small: 13px;
+  --text-small--line-height: 1.4;
   --text-meta: 12px;
   --text-meta--line-height: 1.45;
   --text-micro: 11.5px;
@@ -157,13 +184,17 @@
  * The dotted thread that runs down the left of the day, joining a stop to the
  * leg under it. Drawn rather than bordered, because a dotted border rounds its
  * dots off at this width and a gradient keeps them square.
+ *
+ * How dark its dots are is read from --thread-ink, so the thread can be a
+ * shade quieter where it runs over a raised card than where it runs over the
+ * page: the same line, not competing with the card it is drawn on.
  */
 @utility thread {
   width: 2px;
   border-radius: var(--radius-pill);
   background-image: repeating-linear-gradient(
     to bottom,
-    color-mix(in srgb, var(--color-ink) 16%, transparent) 0 4px,
+    color-mix(in srgb, var(--color-ink) var(--thread-ink, 22%), transparent) 0 4px,
     transparent 4px 9px
   );
 }
@@ -233,5 +264,83 @@
 
   button:disabled {
     cursor: not-allowed;
+  }
+}
+
+/*
+ * The printed page, from DESIGN.md: a first class target rather than a
+ * fallback. What prints is not the planner but the sheets it keeps for the
+ * purpose, one day to a sheet, drawn by printed-trip.tsx. Without this an
+ * export would hand somebody a screenshot of an application, map and all,
+ * rather than the days they asked for.
+ *
+ * One column, no chrome. Surfaces print as unpainted paper because a cream
+ * ground over a whole page is a great deal of ink for something a reader
+ * already has, and the times keep the display face so they stay the loudest
+ * thing on the sheet.
+ */
+/* What a sheet is drawn on, for anything on it that has to hide the thread
+   behind it: the raised paper on screen, and white paper when printed. */
+.printed-trip {
+  --sheet: var(--color-paper-raised);
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 16mm;
+  }
+
+  html,
+  body {
+    height: auto;
+    overflow: visible;
+    background: #fff;
+  }
+
+  /* The planner is for the screen. What is printed is the sheets, which are
+     in the page for exactly this and never seen otherwise. */
+  .planner-shell > section {
+    display: none !important;
+  }
+
+  .planner-shell {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Every day after the first starts a sheet of its own, and each is as tall
+     as the sheet, a hair under A4 less its margins so that rounding never
+     spills a blank page, which is what puts the day's foot at the foot of the
+     page. */
+  .printed-day + .printed-day {
+    break-before: page;
+  }
+
+  .printed-day {
+    min-height: 264mm;
+  }
+
+  /* A stop is never split across two sheets, and a day's name is never
+     left at the foot of one with the day itself on the next. */
+  .printed-stop {
+    break-inside: avoid;
+  }
+
+  .printed-day > header {
+    break-after: avoid;
+  }
+
+  /* The discs the stops hang on are the one fill on the page, and a browser
+     that drops backgrounds to save ink would drop the numbers with them. */
+  .printed-trip * {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* The sheet is white paper here, not the raised paper it is drawn on. */
+  .printed-trip {
+    --sheet: #fff;
   }
 }

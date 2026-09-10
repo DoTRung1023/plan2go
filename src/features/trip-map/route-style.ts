@@ -18,7 +18,12 @@ import type { TravelMode } from "@/core/model/leg";
  */
 export interface RouteStroke {
   readonly mode: TravelMode;
-  /** The words in the key. Google's own name for the mode, where it has one. */
+  /**
+   * The word in the key, and only there. The key is one line along the foot of
+   * the map with three samples on it, so each word is as short as it can be
+   * and still be the mode: the panel beside it has room to say "Public
+   * transport" in full and does.
+   */
   readonly label: string;
   /** Read at runtime, because Google is handed a colour and not a class. */
   readonly colorProperty: string;
@@ -41,17 +46,16 @@ export interface RouteStroke {
 const STROKES: Readonly<Record<TravelMode, RouteStroke>> = {
   drive: {
     mode: "drive",
-    // Not terracotta. The busiest line on most days was wearing the colour the
-    // product itself is drawn in, so a route read as something the product was
-    // recommending rather than as the way this traveller happens to be going.
-    //
-    // Orchid rather than the plum it was: same quarter of the wheel, far more
-    // of it. Plum was the darkest of the four and sat exactly where a city's
-    // roofs sit on the hybrid ground, so the busiest line was the one hardest
-    // to follow over the places most trips are actually planned in.
+    // The accent at its pressed weight. Routes were kept off terracotta for a
+    // while, on the argument that a line in the product's own colour reads as
+    // the line the product is recommending; the design canvas puts them back on
+    // it, and the argument does not survive contact with the drawing. What a
+    // route is is settled by the pattern and the key beside it, and a map whose
+    // ground, markers and lines are all one family reads as one thing rather
+    // than as a chart that happens to be over a map.
     label: "Driving",
-    colorProperty: "--color-orchid-700",
-    inkClass: "text-orchid-700",
+    colorProperty: "--color-terracotta-700",
+    inkClass: "text-terracotta-700",
     weight: 4.6,
     dashArray: null,
     roundCaps: false,
@@ -59,12 +63,11 @@ const STROKES: Readonly<Record<TravelMode, RouteStroke>> = {
   },
   transit: {
     mode: "transit",
-    // Off the sage and onto a truer green. Sage is an olive, which sat between
-    // the blue of the cycling line and the yellow of the walking one instead of
-    // apart from either.
-    label: "Public transport",
-    colorProperty: "--color-forest-700",
-    inkClass: "text-forest-700",
+    // Sage, the second voice, which is the one thing on the map that is not a
+    // shade of the accent and is therefore the line told apart at a glance.
+    label: "Transport",
+    colorProperty: "--color-sage-700",
+    inkClass: "text-sage-700",
     weight: 4.6,
     dashArray: null,
     roundCaps: false,
@@ -73,28 +76,16 @@ const STROKES: Readonly<Record<TravelMode, RouteStroke>> = {
   walk: {
     mode: "walk",
     label: "Walking",
-    // The warm quarter of the wheel, without being the terracotta the product
-    // is drawn in: a gold rather than a rust. It is also the one line still
-    // drawn as separated marks, so it has the pattern to lean on as well.
-    colorProperty: "--color-gold-700",
-    inkClass: "text-gold-700",
+    // One step up the accent from driving. The two are close on purpose: the
+    // pattern is what separates them, and it is the strongest signal of the
+    // three, because a line of separated marks is the one that says "on foot"
+    // without being read.
+    colorProperty: "--color-terracotta-600",
+    inkClass: "text-terracotta-600",
     weight: 5,
     dashArray: "0.5 8",
     roundCaps: true,
     drawn: { kind: "dots", repeat: "9px" },
-  },
-  cycle: {
-    mode: "cycle",
-    // The one mode with no accent to give it. It had the ink, which was legible
-    // but said nothing: black is what everything else on a map is already drawn
-    // in. The palette's one blue is here for this line and nothing else.
-    label: "Cycling",
-    colorProperty: "--color-cobalt-700",
-    inkClass: "text-cobalt-700",
-    weight: 5,
-    dashArray: null,
-    roundCaps: false,
-    drawn: { kind: "solid" },
   },
 };
 
@@ -103,7 +94,6 @@ export const ROUTE_STROKES: readonly RouteStroke[] = [
   STROKES.drive,
   STROKES.transit,
   STROKES.walk,
-  STROKES.cycle,
 ];
 
 /** Total by construction: the table has a row for every mode there is. */

@@ -5,33 +5,23 @@ import type { Conflict } from "@/core/model/conflict";
 import type { TravelMode } from "@/core/model/leg";
 import type { ComputedLeg } from "@/core/time/compute-day";
 import { formatDuration } from "@/core/time/minutes";
-import { BikeIcon, CarIcon, TrainIcon, WalkIcon } from "@/ui/icons";
+import { CarIcon, TrainIcon, WalkIcon } from "@/ui/icons";
 import type { LegOption, PlannedLeg } from "./compute-trip";
 import { ConflictNotice } from "./conflict-notice";
 import type { DayActions } from "./day-actions";
 import { formatDistance } from "./format-distance";
 
 /** The mode in words, so the map's stroke pattern is never the only source. */
-const MODE_WORDS: Readonly<Record<TravelMode, string>> = {
+export const MODE_WORDS: Readonly<Record<TravelMode, string>> = {
   walk: "Walk",
-  cycle: "Cycle",
   drive: "Drive",
   transit: "Public transport",
 };
 
 const MODE_ICON: Readonly<Record<TravelMode, typeof WalkIcon>> = {
   walk: WalkIcon,
-  cycle: BikeIcon,
   drive: CarIcon,
   transit: TrainIcon,
-};
-
-/** The two accents split the modes: what you power yourself, and what you ride. */
-const MODE_TINT: Readonly<Record<TravelMode, string>> = {
-  walk: "bg-terracotta-200 text-terracotta-700",
-  cycle: "bg-terracotta-200 text-terracotta-700",
-  drive: "bg-neutral-200 text-neutral-700",
-  transit: "bg-sage-200 text-sage-700",
 };
 
 interface LegRowProps {
@@ -183,43 +173,61 @@ export function LegRow({
   const shown = planned.options.find((option) => option.mode === leg.mode);
   const crowFlies = covered && shown !== undefined && shown.path === null;
 
+  /**
+   * How long and how far, as one phrase rather than as two facts of different
+   * weights. The duration was set in the display face and the distance beside
+   * it in body text, which made a leg shout a number louder than the stop it
+   * leads to. Between two places the interesting thing is the pair of them.
+   */
+  const covering = [
+    formatDuration(leg.durationMinutes ?? 0),
+    leg.distanceMeters === null ? null : formatDistance(leg.distanceMeters),
+    crowFlies ? "crow flies" : null,
+  ]
+    .filter((part) => part !== null)
+    .join(" · ");
+
   const summary = covered ? (
     <>
-      <span
-        className={`grid h-[26px] w-[26px] shrink-0 place-items-center rounded-pill ${MODE_TINT[leg.mode]}`}
-      >
-        <Icon size={15} strokeWidth={2.4} />
-      </span>
-      <span className="text-meta font-semibold whitespace-nowrap text-ink">
+      {/* The glyph on its own, uncircled: a disc around it made the leg look
+          like another numbered stop in the list it sits between. */}
+      <Icon size={17} strokeWidth={2.4} className="shrink-0 text-ink-muted" />
+      <span className="text-small/none font-semibold whitespace-nowrap text-ink">
         {MODE_WORDS[leg.mode]}
       </span>
-      <span className="font-display text-body whitespace-nowrap text-ink tabular-nums">
-        {formatDuration(leg.durationMinutes ?? 0)}
+      <span className="text-small/none whitespace-nowrap text-ink-muted tabular-nums">
+        {covering}
       </span>
-      {leg.distanceMeters === null ? null : (
-        <span className="text-meta whitespace-nowrap text-ink-muted tabular-nums">
-          {formatDistance(leg.distanceMeters)}
-        </span>
-      )}
-      {crowFlies ? (
-        <span className="text-micro whitespace-nowrap text-ink-faint">Crow flies</span>
-      ) : null}
     </>
   ) : (
-    <span className="text-meta text-ink-muted">
+    <span className="text-small/none text-ink-muted">
       {anyWay ? "No way chosen to get there yet" : "No way to get there"}
     </span>
   );
 
   return (
-    <div className="ml-[2px] grid grid-cols-[30px_minmax(0,1fr)] gap-x-[14px]">
+    /*
+     * The stop card's grid, set a step to the left of it. A card's thread
+     * hangs from its disc, inside its border and padding; the leg's runs down
+     * the margin outside, thirteen pixels nearer the edge, which is how the
+     * design file draws it and what makes a leg read as the space between two
+     * cards rather than as a third column of them. The words on the leg move
+     * with the line, so the glyph in front of them still lands under the
+     * name of the stop it leads to.
+     *
+     * The thread is the row's full height less a hair at each end, so the
+     * line reads as one from the card above to the card below, with the
+     * cards' own padding as the only breaks in it. The space above and below
+     * the words is the row's own, which is what lets the thread run through
+     * it: a margin would have been a gap in the line.
+     */
+    <div className="grid grid-cols-[30px_minmax(0,1fr)] gap-x-[13px] pr-[17px] pl-1">
       <div className="flex justify-center py-[2px]">
-        <span aria-hidden="true" className="thread" />
+        <span className="thread" aria-hidden="true" />
       </div>
-
       <div
         ref={row}
-        className="py-[9px]"
+        className="pt-[9px] pb-[10px]"
         onMouseEnter={() => {
           onHover(leg.index);
         }}
@@ -229,8 +237,8 @@ export function LegRow({
       >
         {onChange === null ? (
           <div
-            className={`flex flex-wrap items-center gap-x-[10px] gap-y-[6px] rounded-row border py-2 pr-[14px] pl-3 ${
-              hovered ? "border-terracotta/55 bg-paper-sunken" : "border-rule"
+            className={`flex flex-wrap items-center gap-x-[11px] gap-y-[6px] rounded-chip px-[10px] py-2 ${
+              hovered ? "bg-paper-sunken" : ""
             }`}
           >
             {summary}
@@ -238,7 +246,7 @@ export function LegRow({
         ) : open ? (
           /* Its own scrollbar on a short window, so a panel too tall to fit
              scrolls inside itself rather than pushing the day down past it. */
-          <div className="scroll-quiet max-h-[50vh] overflow-y-auto rounded-panel border border-rule bg-paper-sunken px-[14px] pt-[13px] pb-[14px]">
+          <div className="scroll-quiet max-h-[50vh] overflow-y-auto rounded-row bg-paper-sunken px-[14px] pt-[13px] pb-[14px]">
             <div className="flex items-baseline gap-2">
               {/* No distance beside the heading: every way of covering the leg
                   is about to say its own, and they are not all the same. */}
@@ -287,14 +295,12 @@ export function LegRow({
               setOpen(true);
               setError(null);
             }}
-            className={`flex w-full flex-wrap items-center gap-x-[10px] gap-y-[6px] rounded-row border py-2 pr-[14px] pl-3 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
-              hovered
-                ? "border-terracotta/55 bg-paper-sunken"
-                : "border-rule hover:border-rule-strong"
+            className={`flex w-full flex-wrap items-center gap-x-[11px] gap-y-[6px] rounded-chip border-0 px-[10px] py-2 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${
+              hovered ? "bg-paper-sunken" : "bg-transparent hover:bg-neutral-200"
             }`}
           >
             {summary}
-            <span className="ml-auto text-micro font-semibold whitespace-nowrap text-terracotta-700">
+            <span className="ml-auto text-small/none font-bold whitespace-nowrap text-terracotta-700">
               Change
             </span>
           </button>

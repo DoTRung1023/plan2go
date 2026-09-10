@@ -1,78 +1,45 @@
 "use client";
 
-import type { DragEvent, KeyboardEvent } from "react";
+import type { DragEvent } from "react";
 import { useEffect, useRef, useState, useTransition } from "react";
 import type { Conflict } from "@/core/model/conflict";
 import type { ComputedStop } from "@/core/time/compute-day";
 import { formatDuration } from "@/core/time/minutes";
-import { ClockIcon, CloseIcon, GripIcon, PinIcon, PlusIcon } from "@/ui/icons";
+import { ClockIcon, CloseIcon, GripIcon, MinusIcon, PlusIcon } from "@/ui/icons";
 import type { DayActions } from "./day-actions";
 import { ConflictNotice } from "./conflict-notice";
 import { formatDayTime } from "./format-day-time";
-import { TimePicker } from "./time-picker";
 
 /** The server's own limit, repeated because that module may not reach the browser. */
 const MAX_STAY_MINUTES = 99 * 60 + 59;
 
 /** The one thing about this stop that is currently being written down. */
-type Busy = "stay" | "time" | "note" | "checkpoint" | "remove" | null;
+type Busy = "stay" | "note" | "remove" | null;
 
 /**
- * The one control on a card that is a word rather than a glyph, so it is the
- * one that cannot be quiet until the pointer finds it: a faded icon reads as
- * an icon waiting to be needed, and faded words read as words that have been
- * switched off. It wears the same small pill the stay does, and it changes on
- * the neutral ramp rather than going terracotta, because terracotta on this
- * card already means something is wrong.
- *
- * The height is stated, and it is the height of the two glyphs beside it: a
- * pill that arrived at its own size from padding and a line height sat a pixel
- * or two off the row it is in, which is the sort of thing that is only ever
- * noticed once and then cannot be unseen.
- *
- * It lifts on hover rather than sinking. Sinking took it to the very colour
- * the card behind it goes to at the same moment, since reaching for this
- * button means the card is under the pointer too, and the two met in the
- * middle and the button vanished into its own row.
+ * A small round button holding one glyph, for what acts on a whole row. The
+ * ends of a day draw theirs the same way, so a control means the same thing
+ * wherever on the thread it hangs.
  */
-const KIND =
-  "inline-flex h-[22px] shrink-0 items-center rounded-pill border border-rule bg-paper px-[9px] py-0 text-micro font-semibold whitespace-nowrap text-ink-muted hover:border-rule-strong hover:bg-paper-raised hover:text-ink disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
-
-const TOOL =
+export const TOOL =
   "grid h-[22px] w-[22px] place-items-center rounded-pill text-ink-muted hover:bg-neutral-200 hover:text-ink disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
-/**
- * Two digits and no more, so the pair reads as one number written in parts.
- *
- * Set a step under what it was. At the body size the numbers stood taller than
- * anything else on their row, so the pill they sit in towered over the opening
- * hours beside it and the two read as different kinds of thing rather than as
- * two facts about the same place.
- */
-const STAY_FIELD =
-  "w-[24px] rounded-chip bg-transparent py-0 text-center font-display text-meta text-ink caret-terracotta tabular-nums outline-none focus-visible:bg-terracotta-100";
+/** A quarter of an hour: the smallest amount of time worth naming on a day. */
+const STAY_STEP = 15;
 
-/** Stated, and the same whether the stay is being read or written. */
-const STAY_PILL =
-  "inline-flex h-[26px] items-center rounded-pill border border-rule bg-paper";
+/** The little round button either side of the stay. */
+const STAY_STEPPER =
+  "grid h-6 w-6 shrink-0 place-items-center rounded-pill border border-rule bg-paper-raised text-ink-muted hover:border-terracotta hover:bg-terracotta hover:text-paper disabled:opacity-40 disabled:hover:border-rule disabled:hover:bg-paper-raised disabled:hover:text-ink-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 interface StopCardProps {
-  /** Its number in the day, or null for a checkpoint, which is not counted. */
-  readonly position: number | null;
-  /** Somewhere the day passes through: no stay, no number, no time of its own. */
-  readonly checkpoint: boolean;
+  /** Its number in the day, counted from one. */
+  readonly position: number;
   /** Whether the pointer is on this place, here or on the map beside it. */
   readonly hovered: boolean;
   readonly onHover: (stopId: string | null) => void;
   /** Where the stop sits in its day, counted from zero, which is what a move needs. */
   readonly index: number;
   readonly stop: ComputedStop;
-  /**
-   * The time the traveller fixed this stop to, or null when it follows the day.
-   * It is what was asked for rather than what came out, so it is read from the
-   * plan and not from the computed stop beside it.
-   */
-  readonly startAtMinutes: number | null;
   readonly address: string | null;
   readonly note: string | null;
   /** When the place is open on this day, or null when we do not know. */
@@ -100,12 +67,10 @@ interface StopCardProps {
  */
 export function StopCard({
   position,
-  checkpoint,
   hovered,
   onHover,
   index,
   stop,
-  startAtMinutes,
   address,
   note,
   openingHours,
@@ -131,8 +96,6 @@ export function StopCard({
   const [sent, setSent] = useState<string | null | undefined>(undefined);
   const card = useRef<HTMLElement | null>(null);
   const noteField = useRef<HTMLTextAreaElement | null>(null);
-  const hourField = useRef<HTMLInputElement | null>(null);
-  const minuteField = useRef<HTMLInputElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, startSaving] = useTransition();
   const [busy, setBusy] = useState<Busy>(null);
@@ -168,71 +131,19 @@ export function StopCard({
   };
 
   /**
-   * How long the stop lasts, written rather than stepped.
-   *
-   * Two fields and not one, because an hour and ten minutes is how a person
-   * says it and "70" is not. Anything unreadable counts as nothing, and the
-   * server clamps the total to the range it allows, so ninety minutes typed
-   * into the minutes field is simply an hour and a half.
+   * Never below one step, and never past what storage will take: a stop nobody
+   * stays at is a stop to remove, and a stay longer than the server's limit is
+   * a write that would be refused after the fact.
    */
-  const commitStay = (): void => {
-    const partOf = (field: HTMLInputElement | null): number => {
-      const read = Number(field?.value.trim() ?? "");
-      return Number.isFinite(read) && read > 0 ? Math.floor(read) : 0;
-    };
-    const minutes = Math.min(
-      MAX_STAY_MINUTES,
-      partOf(hourField.current) * 60 + partOf(minuteField.current),
-    );
-    // Written back whether or not anything is being sent. The fields are only
-    // remounted when the stored stay changes, so leaving them to that showed
-    // ninety of anything tidied up the first time and left standing the
-    // second, when the total happened to come out the same.
-    if (hourField.current !== null) {
-      hourField.current.value = String(Math.floor(minutes / 60));
+  const stepStay = (by: number): void => {
+    if (actions === null) {
+      return;
     }
-    if (minuteField.current !== null) {
-      minuteField.current.value = String(minutes % 60);
-    }
-
-    if (actions === null || minutes === stop.stayMinutes) {
+    const minutes = Math.min(MAX_STAY_MINUTES, Math.max(STAY_STEP, stop.stayMinutes + by));
+    if (minutes === stop.stayMinutes) {
       return;
     }
     run("stay", () => actions.setStay({ stopId: stop.stopId, stayMinutes: minutes }));
-  };
-
-  /** Enter is done, and escape puts back what the stop already said. */
-  const onStayKey = (event: KeyboardEvent<HTMLInputElement>): void => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      event.currentTarget.blur();
-    } else if (event.key === "Escape") {
-      event.preventDefault();
-      if (hourField.current !== null) {
-        hourField.current.value = String(Math.floor(stop.stayMinutes / 60));
-      }
-      if (minuteField.current !== null) {
-        minuteField.current.value = String(stop.stayMinutes % 60);
-      }
-      event.currentTarget.blur();
-    }
-  };
-
-  /** Setting a time to the one it already had is not a change worth a write. */
-  const setStartAt = (minutes: number): void => {
-    if (actions === null || minutes === startAtMinutes) {
-      return;
-    }
-    run("time", () =>
-      actions.setStartAt({ stopId: stop.stopId, startAtMinutes: minutes }),
-    );
-  };
-
-  const clearStartAt = (): void => {
-    if (actions === null || startAtMinutes === null) {
-      return;
-    }
-    run("time", () => actions.setStartAt({ stopId: stop.stopId, startAtMinutes: null }));
   };
 
   const commitNote = (value: string): void => {
@@ -316,18 +227,9 @@ export function StopCard({
       onMouseLeave={() => {
         onHover(null);
       }}
-      /*
-       * A checkpoint is a quieter card, not a different thing: the same rule
-       * around it and a paler paper under it, sitting between the page and the
-       * places the day is actually for. Shorter, too, because there is less on
-       * it. Drawn with nothing at all it read as a gap in the list rather than
-       * as somewhere the day goes through, and drawn at full strength it read
-       * as another stop: both are barely there, and being barely there is the
-       * whole of what they have to say.
-       */
-      className={`group ml-[2px] grid grid-cols-[30px_minmax(0,1fr)] gap-x-[14px] rounded-card border ${
-        checkpoint ? "py-[9px] pr-[15px] pl-3" : "bg-paper-raised py-[14px] pr-[15px] pl-3"
-      } ${dragging ? "opacity-35" : ""} ${
+      className={`day-stop group grid grid-cols-[30px_minmax(0,1fr)] gap-x-[13px] rounded-row border bg-paper-raised px-4 py-[15px] ${
+        dragging ? "opacity-35" : ""
+      } ${
         dragOver && !dragging
           ? "border-terracotta outline-2 outline-offset-[3px] outline-dashed outline-terracotta"
           : /*
@@ -338,72 +240,40 @@ export function StopCard({
              */
             hovered
             ? "border-terracotta/55 bg-paper-sunken"
-            : checkpoint
-              ? "border-rule/45 bg-paper-raised/30"
-              : "border-rule"
+            : "border-rule"
       }`}
     >
-      <div className="flex flex-col items-center gap-[7px]">
-        {/* A checkpoint is passed through, so it is not one of the numbers
-            the day counts off. A quiet ring says it is on the route without
-            claiming a place in the order. */}
-        {position === null ? (
-          <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-[12px_12px_12px_4px] bg-terracotta-300 text-terracotta-900">
-            <PinIcon size={15} strokeWidth={2.75} />
-            <span className="sr-only">Checkpoint</span>
-          </span>
-        ) : (
-          <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-pill bg-terracotta font-display text-[14px] text-paper tabular-nums">
-            <span aria-hidden="true">{position}</span>
-            <span className="sr-only">Stop {position}</span>
-          </span>
-        )}
-        <span aria-hidden="true" className="thread flex-1" />
+      {/* The disc, and the thread running on down behind it to the foot of
+          the card, so the line the day hangs on is seen to pass through the
+          stop rather than stopping at it. Quieter here than on the page,
+          because it is over a raised card and should not compete with it. */}
+      <div className="flex flex-col items-center gap-[7px] [--thread-ink:16%]">
+        <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-pill bg-terracotta font-display text-body/none font-semibold text-paper tabular-nums">
+          <span aria-hidden="true">{position}</span>
+          <span className="sr-only">Stop {position}</span>
+        </span>
+        <span className="thread flex-1" aria-hidden="true" />
       </div>
 
-      <div className="flex min-w-0 flex-col gap-[9px]">
+      <div className="flex min-w-0 flex-col gap-[11px]">
         <div className="flex items-start gap-[10px]">
           <div className="min-w-0 flex-1">
-            <h3
-              className={
-                checkpoint
-                  ? "text-meta font-semibold text-ink"
-                  : "font-display text-place text-ink"
-              }
-            >
-              {stop.placeName}
-            </h3>
+            <h3 className="font-display text-place text-ink">{stop.placeName}</h3>
             {address === null ? null : (
-              <p
-                className={
-                  checkpoint ? "text-micro text-ink-muted" : "mt-[3px] text-meta text-ink-muted"
-                }
-              >
-                {address}
-              </p>
+              <p className="mt-[3px] text-meta text-ink-faint">{address}</p>
             )}
           </div>
 
           <div className="flex flex-none flex-col items-end gap-[3px]">
-            {actions === null ? (
-              <p className="font-display text-time whitespace-nowrap text-ink tabular-nums">
-                {stop.arrival === null ? "Time not known" : formatDayTime(stop.arrival)}
-              </p>
-            ) : (
-              <TimePicker
-                value={startAtMinutes ?? stop.arrival?.minutesFromMidnight ?? 0}
-                fixed={startAtMinutes !== null}
-                disabled={busy === "time"}
-                label={
-                  stop.arrival === null ? "Time not known" : formatDayTime(stop.arrival)
-                }
-                placeName={stop.placeName}
-                onChoose={setStartAt}
-                // The first stop is what the day opens on, so following what
-                // came before it is not offered there.
-                onClear={index === 0 ? undefined : clearStartAt}
-              />
-            )}
+            {/* Read, never set. Every time on the day follows from when it
+                leaves, worked out through the legs and the stays, so the one
+                clock to change is beside the day's name at the top of the
+                panel. In the accent, a shade down for text at this size: the
+                time is the loudest thing on the card, and it is warm rather
+                than black beside the disc that shares its colour. */}
+            <p className="font-display text-time whitespace-nowrap text-terracotta-700 tabular-nums">
+              {stop.arrival === null ? "Time not known" : formatDayTime(stop.arrival)}
+            </p>
             {stop.waitMinutes === 0 ? null : (
               /* Waiting is a fact about the morning, not a fault in it, so it
                  is a number in the quiet colour rather than a notice. */
@@ -412,40 +282,12 @@ export function StopCard({
               </p>
             )}
 
-            {stop.overlapMinutes === 0 ? null : (
-              /* Said where it happens and nowhere else: the day was still
-                 somewhere else when this stop was due to start. Not a refusal
-                 and not a correction, only the number. */
-              <p className="text-micro font-semibold whitespace-nowrap text-terracotta-700 tabular-nums">
-                Overlaps by {formatDuration(stop.overlapMinutes)}
-              </p>
-            )}
-
             {actions === null ? null : (
-              <div className="flex items-center gap-[7px]">
-                {/* What this place is to the day. A word rather than a glyph:
-                    there is no drawing of "the day only goes through here". */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    run("checkpoint", () =>
-                      actions.setCheckpoint({
-                        stopId: stop.stopId,
-                        checkpoint: !checkpoint,
-                      }),
-                    );
-                  }}
-                  disabled={busy === "checkpoint"}
-                  className={KIND}
-                >
-                  {checkpoint ? "Stay here" : "Passing through"}
-                </button>
-
-                <div
-                  className={`-mr-1 flex items-center group-hover:opacity-100 focus-within:opacity-100 ${
-                    hovered ? "opacity-100" : "opacity-55"
-                  }`}
-                >
+              <div
+                className={`-mr-1 flex items-center group-hover:opacity-100 focus-within:opacity-100 ${
+                  hovered ? "opacity-100" : "opacity-55"
+                }`}
+              >
                 {/* A handle, not a shortcut. The arrow keys are left to the
                     page, so a card under the pointer still scrolls. */}
                 <button
@@ -467,78 +309,62 @@ export function StopCard({
                 >
                   <CloseIcon size={13} strokeWidth={2.75} />
                 </button>
-                </div>
               </div>
             )}
+
           </div>
         </div>
 
-        {checkpoint ? null : (
-          <div className="flex flex-wrap items-center gap-[11px]">
-            {actions === null ? (
-              <span className={`${STAY_PILL} px-[11px] font-display text-meta text-ink tabular-nums`}>
-                Stay for {formatDuration(stop.stayMinutes)}
-              </span>
-            ) : (
-              <div
-                // Remounted when the stored stay changes, so the two fields show
-                // what was actually kept: type ninety minutes and they come back
-                // as an hour and a half.
-                key={stop.stayMinutes}
-                className={`${STAY_PILL} gap-[2px] pr-[11px] pl-[9px]`}
-                onBlur={(event) => {
-                  // Moving between the two fields is still one edit, so nothing
-                  // is written until the pair as a whole is left.
-                  const next = event.relatedTarget;
-                  if (next !== hourField.current && next !== minuteField.current) {
-                    commitStay();
-                  }
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Fifteen minutes a press. A stay is a rough intention, not a
+              measurement, and two number fields asked for a precision nobody
+              planning a morning actually has. */}
+          {actions === null ? (
+            <span className="text-meta/none text-ink-muted">
+              Stay for {formatDuration(stop.stayMinutes)}
+            </span>
+          ) : (
+            <span className="flex items-center gap-[7px] text-meta/none text-ink-muted">
+              <button
+                type="button"
+                disabled={busy === "stay" || stop.stayMinutes <= STAY_STEP}
+                aria-label={`Less time at ${stop.placeName}`}
+                onClick={() => {
+                  stepStay(-STAY_STEP);
                 }}
+                className={STAY_STEPPER}
               >
-                <span className="pr-[5px] text-micro whitespace-nowrap text-ink-muted">
-                  Stay for
-                </span>
-                <input
-                  ref={hourField}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={2}
-                  disabled={busy === "stay"}
-                  defaultValue={String(Math.floor(stop.stayMinutes / 60))}
-                  onKeyDown={onStayKey}
-                  aria-label={`Hours at ${stop.placeName}`}
-                  className={STAY_FIELD}
-                />
-                <span className="pr-[3px] text-micro text-ink-muted">hr</span>
-                <input
-                  ref={minuteField}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={2}
-                  disabled={busy === "stay"}
-                  defaultValue={String(stop.stayMinutes % 60)}
-                  onKeyDown={onStayKey}
-                  aria-label={`Minutes at ${stop.placeName}`}
-                  className={STAY_FIELD}
-                />
-                <span className="text-micro text-ink-muted">min</span>
-              </div>
-            )}
-
-
-            {openingHours === null ? null : (
-              <span className="flex items-center gap-[5px] text-micro text-ink-muted tabular-nums">
-                <ClockIcon size={12} className="shrink-0" />
-                {openingHours}
+                <MinusIcon size={11} strokeWidth={3} />
+              </button>
+              <span className="min-w-[74px] text-center font-semibold tabular-nums">
+                {formatDuration(stop.stayMinutes)}
               </span>
-            )}
-          </div>
-        )}
+              <button
+                type="button"
+                disabled={busy === "stay" || stop.stayMinutes >= MAX_STAY_MINUTES}
+                aria-label={`More time at ${stop.placeName}`}
+                onClick={() => {
+                  stepStay(STAY_STEP);
+                }}
+                className={STAY_STEPPER}
+              >
+                <PlusIcon size={11} strokeWidth={3} />
+              </button>
+            </span>
+          )}
+
+          {openingHours === null ? null : (
+            <span className="flex items-center gap-[5px] text-micro text-ink-muted tabular-nums">
+              <ClockIcon size={12} className="shrink-0" />
+              {openingHours}
+            </span>
+          )}
+        </div>
         {conflicts.map((conflict, at) => (
           <ConflictNotice key={`${conflict.kind}-${String(at)}`} conflict={conflict} />
         ))}
 
-        {checkpoint ? null : shownNote === null && !writingNote ? (
+        {shownNote === null && !writingNote ? (
           actions === null ? null : (
             <button
               type="button"

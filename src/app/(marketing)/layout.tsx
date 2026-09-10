@@ -11,12 +11,12 @@ export const metadata: Metadata = {
     "Plan a multi-day trip, see how far apart the places really are, and see how long a day actually takes. No account needed.",
 };
 
-const COLUMN = "mx-auto w-full max-w-[560px] px-5";
+const COLUMN = "mx-auto w-full max-w-[1060px] px-8";
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col">
-      <main className={`${COLUMN} grow py-16`}>{children}</main>
+      <main className={`${COLUMN} flex grow flex-col justify-center pt-12 pb-16`}>{children}</main>
       <footer className="border-t border-rule bg-paper-sunken">
         <div className={`${COLUMN} py-6 text-meta text-ink-muted`}>
           <p className="flex items-center justify-center gap-1">
