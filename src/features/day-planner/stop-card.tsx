@@ -270,7 +270,7 @@ export function StopCard({
         </span>
       </div>
 
-      <div className="flex min-w-0 flex-col gap-[9px]">
+      <div className="flex min-w-0 flex-col gap-[11px]">
         <div className="flex items-start gap-[10px]">
           <div className="min-w-0 flex-1">
             <h3 className="font-display text-place text-ink">{stop.placeName}</h3>
@@ -316,41 +316,10 @@ export function StopCard({
               </p>
             )}
 
-            {actions === null ? null : (
-              <div className="flex items-center gap-[7px]">
-                <div
-                  className={`-mr-1 flex items-center group-hover:opacity-100 focus-within:opacity-100 ${
-                    hovered ? "opacity-100" : "opacity-55"
-                  }`}
-                >
-                {/* A handle, not a shortcut. The arrow keys are left to the
-                    page, so a card under the pointer still scrolls. */}
-                <button
-                  type="button"
-                  title="Drag to reorder"
-                  aria-label={`Move ${stop.placeName} by dragging it`}
-                  className={`${TOOL} cursor-grab active:cursor-grabbing`}
-                >
-                  <GripIcon size={13} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    run("remove", () => actions.removeStop({ stopId: stop.stopId }));
-                  }}
-                  disabled={busy === "remove"}
-                  aria-label={`Remove ${stop.placeName} from this day`}
-                  className={TOOL}
-                >
-                  <CloseIcon size={13} strokeWidth={2.75} />
-                </button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
 
-        <div className="mt-[11px] flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {/* Fifteen minutes a press. A stay is a rough intention, not a
               measurement, and two number fields asked for a precision nobody
               planning a morning actually has. */}
@@ -393,6 +362,36 @@ export function StopCard({
               <ClockIcon size={12} className="shrink-0" />
               {openingHours}
             </span>
+          )}
+
+          {actions === null ? null : (
+            <div
+              className={`ml-auto flex items-center group-hover:opacity-100 focus-within:opacity-100 ${
+                hovered ? "opacity-100" : "opacity-55"
+              }`}
+            >
+              {/* A handle, not a shortcut. The arrow keys are left to the
+                  page, so a card under the pointer still scrolls. */}
+              <button
+                type="button"
+                title="Drag to reorder"
+                aria-label={`Move ${stop.placeName} by dragging it`}
+                className={`${TOOL} cursor-grab active:cursor-grabbing`}
+              >
+                <GripIcon size={13} />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  run("remove", () => actions.removeStop({ stopId: stop.stopId }));
+                }}
+                disabled={busy === "remove"}
+                aria-label={`Remove ${stop.placeName} from this day`}
+                className={TOOL}
+              >
+                <CloseIcon size={13} strokeWidth={2.75} />
+              </button>
+            </div>
           )}
         </div>
         {conflicts.map((conflict, at) => (
