@@ -164,14 +164,14 @@ const ENDPOINT_BUTTON =
 /** What each end of the day is called, wherever it has to be said out loud. */
 const ENDS = {
   start: {
-    add: "Add where the day starts",
+    add: "Add start point",
     label: "Where the day starts",
     placeholder: "Hotel, station, wherever the day begins",
     change: "Change where the day starts",
     remove: "Remove where the day starts",
   },
   end: {
-    add: "Add where the day ends",
+    add: "Add end point",
     label: "Where the day ends",
     placeholder: "Hotel, station, wherever the day finishes",
     change: "Change where the day ends",
