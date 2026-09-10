@@ -7,7 +7,8 @@ import { formatDayLong } from "./format-day-date";
  *
  * Said beside the day's number rather than under it, because "Day 3" alone is
  * a label and this is the thing a reader actually wants from it. A day with
- * nothing on it says so plainly instead of reporting a total of nothing.
+ * nothing on it gives only its date: the empty day below already says what
+ * that means, and a total of nothing is not worth a phrase.
  *
  * It does not say what time the day hands you back. That is written further
  * down the panel, against the last stop, and a heading that repeats what the
@@ -18,7 +19,7 @@ export function dayStatus(day: PlannedDay): string {
   const stops = day.plan.stops.length;
 
   if (stops === 0) {
-    return `${when} · nothing planned yet`;
+    return when;
   }
   return `${when} · ${String(stops)} ${stops === 1 ? "stop" : "stops"}`;
 }
