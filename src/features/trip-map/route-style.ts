@@ -18,7 +18,12 @@ import type { TravelMode } from "@/core/model/leg";
  */
 export interface RouteStroke {
   readonly mode: TravelMode;
-  /** The words in the key. Google's own name for the mode, where it has one. */
+  /**
+   * The word in the key, and only there. The key is one line along the foot of
+   * the map with three samples on it, so each word is as short as it can be
+   * and still be the mode: the panel beside it has room to say "Public
+   * transport" in full and does.
+   */
   readonly label: string;
   /** Read at runtime, because Google is handed a colour and not a class. */
   readonly colorProperty: string;
@@ -60,7 +65,7 @@ const STROKES: Readonly<Record<TravelMode, RouteStroke>> = {
     mode: "transit",
     // Sage, the second voice, which is the one thing on the map that is not a
     // shade of the accent and is therefore the line told apart at a glance.
-    label: "Public transport",
+    label: "Transport",
     colorProperty: "--color-sage-700",
     inkClass: "text-sage-700",
     weight: 4.6,
