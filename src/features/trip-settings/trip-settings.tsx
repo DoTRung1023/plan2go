@@ -49,6 +49,12 @@ interface TripSettingsProps {
    */
   readonly dayLine: ReactNode;
   /**
+   * When the open day leaves, at the end of its line. The one clock on the
+   * day, kept beside the line that names the day rather than on the day
+   * itself, because every time down the panel follows from it.
+   */
+  readonly leaveAt: ReactNode;
+  /**
    * The strip of days, which belongs between the trip's name and the day's own
    * line. It is passed through rather than rendered here because choosing a day
    * is the planner's business; this only owns the row it sits in.
@@ -92,6 +98,7 @@ export function TripSettings({
   endDate,
   actions,
   dayLine,
+  leaveAt,
   tabs,
   onSave,
 }: TripSettingsProps) {
@@ -239,8 +246,11 @@ export function TripSettings({
           strip and with no rule between them, because the line names the tab
           that is chosen and belongs with it; the rule that closes the block
           is under this line, where the day itself begins. */}
-      <div className="mt-3 flex flex-wrap items-baseline gap-[10px]">
-        {dayLine}
+      <div className="mt-3 flex items-center gap-[10px]">
+        <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-[10px]">
+          {dayLine}
+        </div>
+        {leaveAt}
       </div>
 
       {state.error === null || state.field !== null ? null : (

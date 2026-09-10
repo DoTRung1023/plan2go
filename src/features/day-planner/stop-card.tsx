@@ -9,13 +9,12 @@ import { ClockIcon, CloseIcon, GripIcon, MinusIcon, PlusIcon } from "@/ui/icons"
 import type { DayActions } from "./day-actions";
 import { ConflictNotice } from "./conflict-notice";
 import { formatDayTime } from "./format-day-time";
-import { TimePicker } from "./time-picker";
 
 /** The server's own limit, repeated because that module may not reach the browser. */
 const MAX_STAY_MINUTES = 99 * 60 + 59;
 
 /** The one thing about this stop that is currently being written down. */
-type Busy = "stay" | "time" | "note" | "remove" | null;
+type Busy = "stay" | "note" | "remove" | null;
 
 /**
  * A small round button holding one glyph, for what acts on a whole row. The
@@ -41,12 +40,6 @@ interface StopCardProps {
   /** Where the stop sits in its day, counted from zero, which is what a move needs. */
   readonly index: number;
   readonly stop: ComputedStop;
-  /**
-   * The time the traveller fixed this stop to, or null when it follows the day.
-   * It is what was asked for rather than what came out, so it is read from the
-   * plan and not from the computed stop beside it.
-   */
-  readonly startAtMinutes: number | null;
   readonly address: string | null;
   readonly note: string | null;
   /** When the place is open on this day, or null when we do not know. */
@@ -78,7 +71,6 @@ export function StopCard({
   onHover,
   index,
   stop,
-  startAtMinutes,
   address,
   note,
   openingHours,
@@ -152,23 +144,6 @@ export function StopCard({
       return;
     }
     run("stay", () => actions.setStay({ stopId: stop.stopId, stayMinutes: minutes }));
-  };
-
-  /** Setting a time to the one it already had is not a change worth a write. */
-  const setStartAt = (minutes: number): void => {
-    if (actions === null || minutes === startAtMinutes) {
-      return;
-    }
-    run("time", () =>
-      actions.setStartAt({ stopId: stop.stopId, startAtMinutes: minutes }),
-    );
-  };
-
-  const clearStartAt = (): void => {
-    if (actions === null || startAtMinutes === null) {
-      return;
-    }
-    run("time", () => actions.setStartAt({ stopId: stop.stopId, startAtMinutes: null }));
   };
 
   const commitNote = (value: string): void => {
@@ -290,25 +265,15 @@ export function StopCard({
           </div>
 
           <div className="flex flex-none flex-col items-end gap-[3px]">
-            {actions === null ? (
-              <p className="font-display text-time whitespace-nowrap text-ink tabular-nums">
-                {stop.arrival === null ? "Time not known" : formatDayTime(stop.arrival)}
-              </p>
-            ) : (
-              <TimePicker
-                value={startAtMinutes ?? stop.arrival?.minutesFromMidnight ?? 0}
-                fixed={startAtMinutes !== null}
-                disabled={busy === "time"}
-                label={
-                  stop.arrival === null ? "Time not known" : formatDayTime(stop.arrival)
-                }
-                placeName={stop.placeName}
-                onChoose={setStartAt}
-                // The first stop is what the day opens on, so following what
-                // came before it is not offered there.
-                onClear={index === 0 ? undefined : clearStartAt}
-              />
-            )}
+            {/* Read, never set. Every time on the day follows from when it
+                leaves, worked out through the legs and the stays, so the one
+                clock to change is beside the day's name at the top of the
+                panel. In the accent, a shade down for text at this size: the
+                time is the loudest thing on the card, and it is warm rather
+                than black beside the disc that shares its colour. */}
+            <p className="font-display text-time whitespace-nowrap text-terracotta-700 tabular-nums">
+              {stop.arrival === null ? "Time not known" : formatDayTime(stop.arrival)}
+            </p>
             {stop.waitMinutes === 0 ? null : (
               /* Waiting is a fact about the morning, not a fault in it, so it
                  is a number in the quiet colour rather than a notice. */

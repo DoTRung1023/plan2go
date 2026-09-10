@@ -8,6 +8,7 @@ import { DayPlanner } from "@/features/day-planner/day-planner";
 import { PlaceSearch } from "@/features/place-search/place-search";
 import { DayTabs } from "@/features/day-planner/day-tabs";
 import { dayStatus } from "@/features/day-planner/day-status";
+import { LeaveAt } from "@/features/day-planner/leave-at";
 import { placesOnTheTrip } from "@/features/place-search/places-on-the-trip";
 import { searchBias } from "@/features/place-search/search-bias";
 import { TripMenu } from "@/features/trip-settings/trip-menu";
@@ -23,7 +24,6 @@ import {
   moveStopAction,
   removeStopAction,
   setStopNoteAction,
-  setStopStartAtAction,
   setStopStayAction,
 } from "./edit-stop-actions";
 import { setDayEndpointAction } from "./set-day-endpoint-action";
@@ -259,10 +259,6 @@ export function TripEditor({
                     recording(
                       setStopStayAction({ slug, editKey, stopId, stayMinutes }),
                     ),
-                  setStartAt: ({ stopId, startAtMinutes }) =>
-                    recording(
-                      setStopStartAtAction({ slug, editKey, stopId, startAtMinutes }),
-                    ),
                   setDayEndpoint: ({ which, providerPlaceId }) =>
                     recording(
                       setDayEndpointAction({
@@ -273,15 +269,6 @@ export function TripEditor({
                         providerPlaceId,
                         label: null,
                         session: null,
-                      }),
-                    ),
-                  setDayStartAt: ({ startAtMinutes }) =>
-                    recording(
-                      setDayStartAction({
-                        slug,
-                        editKey,
-                        dayId: selected.plan.id,
-                        startAtMinutes,
                       }),
                     ),
                   setNote: ({ stopId, note }) =>
@@ -326,6 +313,24 @@ export function TripEditor({
                         {dayStatus(selected)}
                       </span>
                     </>
+                  )
+                }
+                leaveAt={
+                  selected === undefined ? null : (
+                    <LeaveAt
+                      key={selected.plan.id}
+                      value={selected.plan.startAtMinutes}
+                      onChoose={(startAtMinutes) =>
+                        recording(
+                          setDayStartAction({
+                            slug,
+                            editKey,
+                            dayId: selected.plan.id,
+                            startAtMinutes,
+                          }),
+                        )
+                      }
+                    />
                   )
                 }
                 actions={

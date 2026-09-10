@@ -17,7 +17,6 @@ import { formatDayDate } from "./format-day-date";
 import { formatOpeningHours } from "./format-opening-hours";
 import { LegRow } from "./leg-row";
 import { StopCard, TOOL } from "./stop-card";
-import { TimePicker } from "./time-picker";
 
 interface DayItineraryProps {
   readonly day: DayPlan;
@@ -77,25 +76,20 @@ function Anchor({
   fallback,
   time,
   controls,
-  onChooseTime,
-  minutes,
   hovered,
   onHover,
 }: {
   readonly endpoint: DayEndpoint;
   /** Said when the place has no address of its own. */
   readonly fallback: string;
+  /**
+   * Read, never set here. When the day leaves is chosen beside the day's
+   * name at the top of the panel, and where it ends is worked out from
+   * everything before it.
+   */
   readonly time: string | null;
   /** What can be done to this end of the day, for a reader who may change it. */
   readonly controls: React.ReactNode;
-  /**
-   * How to change the time, where the time can be changed. The start of a day
-   * can: every time on it follows from when it begins. The end cannot, because
-   * that is where the day arrives, worked out from everything before it.
-   */
-  readonly onChooseTime: ((minutes: number) => void) | null;
-  /** The time as minutes from midnight, for the picker to open on. */
-  readonly minutes: number | null;
   /** Whether the pointer is on this place, here or on the map beside it. */
   readonly hovered: boolean;
   readonly onHover: (placeId: string | null) => void;
@@ -150,20 +144,9 @@ function Anchor({
         {/* The time, and under it what can be done to this end of the day:
             the same column a stop card keeps at its top right. */}
         <div className="flex flex-none flex-col items-end gap-[3px]">
-          {onChooseTime === null || minutes === null ? (
-            <p className="font-display text-time whitespace-nowrap text-ink tabular-nums">
-              {time ?? "Time not known"}
-            </p>
-          ) : (
-            <TimePicker
-              value={minutes}
-              fixed={true}
-              disabled={false}
-              label={time ?? "Time not known"}
-              placeName={endpointName(endpoint)}
-              onChoose={onChooseTime}
-            />
-          )}
+          <p className="font-display text-time whitespace-nowrap text-ink tabular-nums">
+            {time ?? "Time not known"}
+          </p>
           {controls === null ? null : (
             <span className="-mr-1 flex items-center opacity-55 group-hover:opacity-100 focus-within:opacity-100">
               {controls}
@@ -288,17 +271,6 @@ function EndpointSlot({
           fallback={words.label}
           time={time}
           controls={picking ? null : controls}
-          onChooseTime={
-            which === "start" && actions !== null
-              ? (minutes) => {
-                  const change = actions.setDayStartAt;
-                  startSaving(async () => {
-                    setError((await change({ startAtMinutes: minutes })).error);
-                  });
-                }
-              : null
-          }
-          minutes={which === "start" ? day.startAtMinutes : null}
           hovered={hoveredEndpointId === endpoint.place.id}
           onHover={onHoverEndpoint}
         />
@@ -375,8 +347,6 @@ export function DayItinerary({
 
   const notes = new Map(day.stops.map((stop) => [stop.id, stop.note]));
   const places = new Map(day.stops.map((stop) => [stop.id, stop.place]));
-  /** The times the traveller fixed, which the computed stop does not carry. */
-  const fixed = new Map(day.stops.map((stop) => [stop.id, stop.startAtMinutes]));
 
   /** With no start point the first stop has no leg arriving at it. */
   const legOffset = day.start === null ? -1 : 0;
@@ -444,7 +414,6 @@ export function DayItinerary({
               stop={stop}
               address={place?.address ?? null}
               note={notes.get(stop.stopId) ?? null}
-              startAtMinutes={fixed.get(stop.stopId) ?? null}
               openingHours={place === undefined ? null : hoursOn(place, day)}
               conflicts={conflictsAtStop(computed.conflicts, stop.stopId)}
               actions={actions}

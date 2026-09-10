@@ -6,13 +6,11 @@ import { EDIT_KEY_PATTERN, hashEditKey } from "@/server/ownership/edit-key";
 import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
 import type { StopChanged } from "@/server/repositories/trip-repository";
 import {
-  LAST_MINUTE_OF_DAY,
   MAX_NOTE_LENGTH,
   MAX_STAY_MINUTES,
   moveStop,
   removeStop,
   setStopNote,
-  setStopStartAt,
   setStopStay,
 } from "@/server/trips/edit-stop";
 import { travelProvider } from "./travel";
@@ -42,12 +40,6 @@ const staySchema = z.object({
   ...stop,
   stayMinutes: z.number().int().min(0).max(MAX_STAY_MINUTES),
 });
-
-const startAtSchema = z.object({
-  ...stop,
-  startAtMinutes: z.number().int().min(0).max(LAST_MINUTE_OF_DAY).nullable(),
-});
-
 
 const noteSchema = z.object({
   ...stop,
@@ -89,17 +81,6 @@ export async function setStopStayAction(input: unknown): Promise<StopEditState> 
       scoped(parsed.data),
       prismaTripRepository,
     ),
-  );
-}
-
-export async function setStopStartAtAction(input: unknown): Promise<StopEditState> {
-  const parsed = startAtSchema.safeParse(input);
-  if (!parsed.success) {
-    return { error: UNREADABLE };
-  }
-  return finish(
-    parsed.data.slug,
-    setStopStartAt(scoped(parsed.data), prismaTripRepository),
   );
 }
 
