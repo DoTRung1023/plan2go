@@ -43,24 +43,14 @@ const FIELD = `${FIELD_SHELL} flex items-center gap-3 px-5 focus-within:border-t
  * the thing being searched for, because "nothing matched" in a form of several
  * fields does not say which of them is being answered.
  */
-const WORDS = {
-  city: {
-    looking: "Looking for cities.",
-    noMatch: "No city matches that. Check the spelling, or the country you chose.",
-  },
-  place: {
-    looking: "Looking for places.",
-    noMatch: "No place matches that. Try its name, or the street it is on.",
-  },
-} as const;
+const LOOKING = "Looking for cities.";
+const NO_MATCH = "No city matches that. Check the spelling, or the country you chose.";
 
 interface PlaceFieldProps {
   readonly id: string;
   /** Submitted with the form. What is stored is the provider's own identifier. */
   readonly name: string;
   readonly label: string;
-  /** Whole cities, for choosing where a trip is, or any place inside one. */
-  readonly kind: "city" | "place";
   /** ISO 3166-1 alpha-2 to search inside. Empty searches everywhere. */
   readonly countryCode: string;
   /**
@@ -75,20 +65,17 @@ interface PlaceFieldProps {
 }
 
 /**
- * A place, searched rather than typed.
+ * The city a trip is in, searched rather than typed.
  *
  * A trip needs somewhere real: the map has to open on it, and a search inside
  * the trip has to know which Central Market is meant, neither of which is
- * possible from a line of text. Narrowed to whole cities it answers where the
- * trip is, and narrowed to a country it answers where inside one the traveller
- * is setting off from, so "Barcelona" is never a question about which
- * continent.
+ * possible from a line of text. The answers are whole cities in the country
+ * already chosen, so "Barcelona" is never a question about which continent.
  */
 export function PlaceField({
   id,
   name,
   label,
-  kind,
   countryCode,
   waitingFor,
   placeholder,
@@ -122,7 +109,9 @@ export function PlaceField({
       const attempt = newest.current + 1;
       newest.current = attempt;
 
-      const parameters = new URLSearchParams({ q: trimmed, kind });
+      // Whole cities, never places inside one: this field answers where a trip
+      // is, and the places on it are chosen from inside the trip.
+      const parameters = new URLSearchParams({ q: trimmed, kind: "city" });
       if (countryCode !== "") {
         parameters.set("country", countryCode);
       }
@@ -157,7 +146,7 @@ export function PlaceField({
     return () => {
       clearTimeout(timer);
     };
-  }, [trimmed, searched, kind, countryCode, waitingFor, chosen]);
+  }, [trimmed, searched, countryCode, waitingFor, chosen]);
 
   useEffect(() => {
     if (!open) {
@@ -286,7 +275,7 @@ export function PlaceField({
             </ul>
           ) : (
             <p className="px-[11px] py-[10px] text-meta text-ink-muted">
-              {message ?? (searching ? WORDS[kind].looking : WORDS[kind].noMatch)}
+              {message ?? (searching ? LOOKING : NO_MATCH)}
             </p>
           )}
         </div>

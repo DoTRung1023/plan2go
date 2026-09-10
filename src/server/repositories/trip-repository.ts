@@ -16,12 +16,6 @@ export interface NewTrip {
   readonly centre: LatLng | null;
   /** What that city is called, for saying rather than pointing. */
   readonly cityName: string | null;
-  /**
-   * Where the first day begins, or null when nobody was asked. Stored as the
-   * trip's own place, the same way a stop's place is, so the day it starts is
-   * pointing at a row this trip owns rather than at the provider.
-   */
-  readonly startPlace: Place | null;
   readonly editKeyHash: EditKeyHash;
 }
 

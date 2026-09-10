@@ -28,7 +28,6 @@ export async function createTripAction(
 ): Promise<CreateTripFormState> {
   const parsed = newTripInputSchema.safeParse({
     cityPlaceId: formData.get("cityPlaceId"),
-    startPlaceId: formData.get("startPlaceId"),
     timeZone: formData.get("timeZone"),
     startDate: formData.get("startDate"),
     endDate: formData.get("endDate"),
@@ -50,22 +49,13 @@ export async function createTripAction(
   // opens where the place actually is and the clock is the one kept there.
   // It does not name the trip: a trip is not one city, and the traveller names
   // it themselves in the planner.
-  const { cityPlaceId, startPlaceId, ...rest } = parsed.data;
+  const { cityPlaceId, ...rest } = parsed.data;
   const places = createGooglePlacesProvider({ apiKey });
   const city = await places.details(cityPlaceId, null);
   if (city === null) {
     return { error: "That city could not be found. Choose it from the list again." };
   }
 
-  // Looked up for the same reason the city is: the day has to point at a real
-  // place, and the form carries only an identifier. Asked for second so that a
-  // trip is never charged for it by somebody who left the field alone.
-  const startPlace = startPlaceId === null ? null : await places.details(startPlaceId, null);
-  if (startPlaceId !== null && startPlace === null) {
-    return {
-      error: "That starting point could not be found. Choose it from the list again.",
-    };
-  }
 
   // The clock the trip keeps is the city's, not the one the browser is sitting
   // in. Where that cannot be worked out, the request's own guess is a better
@@ -79,7 +69,6 @@ export async function createTripAction(
     timeZone: zone ?? openingTimeZone(asked),
     centre: city.position,
     cityName: city.name,
-    startPlace,
   });
 
   if (opened.status === "too-many") {

@@ -193,26 +193,8 @@ async function insert(trip: NewTrip, slug: string): Promise<CreatedTrip> {
         })),
       },
     },
-    select: { id: true, slug: true },
+    select: { slug: true },
   });
-
-  // Written after the days exist, because it points at one of them. A trip
-  // opened without anybody being asked where they were starting simply has a
-  // first day that begins at its first stop, which is what every day did
-  // before this was asked at all.
-  if (trip.startPlace !== null) {
-    const first = await db.day.findFirst({
-      where: { tripId: created.id, position: 0 },
-      select: { id: true },
-    });
-    if (first !== null) {
-      await db.day.update({
-        where: { id: first.id },
-        data: { startPlaceId: await placeIdFor(created.id, trip.startPlace) },
-      });
-    }
-  }
-
   return { slug: created.slug };
 }
 

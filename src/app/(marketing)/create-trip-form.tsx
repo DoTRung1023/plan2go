@@ -38,12 +38,6 @@ export function CreateTripForm({ countries, today }: CreateTripFormProps) {
   const [last, setLast] = useState(addDays(today, OPENING_SPAN_DAYS));
   const [country, setCountry] = useState("");
   const [city, setCity] = useState<ChosenPlace | null>(null);
-  /**
-   * Where the first day sets off from. Optional: somebody who does not yet know
-   * where they are staying should not be stopped at the door, and the first day
-   * can be given its starting point in the planner whenever they do know.
-   */
-  const [startPlace, setStartPlace] = useState<ChosenPlace | null>(null);
 
   /** Both ends counted, so a trip that starts and ends on one day is one day. */
   const days = daysBetween(first, last) + 1;
@@ -68,10 +62,8 @@ export function CreateTripForm({ countries, today }: CreateTripFormProps) {
           value={country}
           onChange={(picked) => {
             setCountry(picked);
-            // The city belonged to the country that was chosen before, and the
-            // starting point belonged to that city.
+            // The city belonged to the country that was chosen before.
             setCity(null);
-            setStartPlace(null);
           }}
           noMatch="No country matches that. Check the spelling."
         />
@@ -82,30 +74,11 @@ export function CreateTripForm({ countries, today }: CreateTripFormProps) {
           id="cityPlaceId"
           name="cityPlaceId"
           label="City"
-          kind="city"
           countryCode={country}
           waitingFor={country === "" ? "Choose a country first" : null}
           placeholder="Type the city"
           chosen={city}
-          onChange={(picked) => {
-            setCity(picked);
-            // The starting point was somewhere in the city chosen before.
-            setStartPlace(null);
-          }}
-        />
-      </div>
-
-      <div>
-        <PlaceField
-          id="startPlaceId"
-          name="startPlaceId"
-          label="Starting point (optional)"
-          kind="place"
-          countryCode={country}
-          waitingFor={city === null ? "Choose a city first" : null}
-          placeholder="Hotel, station, wherever day 1 begins"
-          chosen={startPlace}
-          onChange={setStartPlace}
+          onChange={setCity}
         />
       </div>
 

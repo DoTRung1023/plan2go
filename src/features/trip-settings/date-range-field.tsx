@@ -143,8 +143,8 @@ const SIZES = {
   },
   /*
    * The only size of the three that never appears inside a trip: it is the
-   * Dates field on the front page, sitting in a row with the country, the city
-   * and the starting point. Its numbers are those fields' numbers, taken from
+   * Dates field on the front page, sitting in a column with the country and
+   * the city. Its numbers are those fields' numbers, taken from
    * field-styles beside them, rather than the type scale that governs the
    * planner. DESIGN.md says as much: it owns src/app/t, src/features and
    * src/ui, and the marketing page answers to the skill instead.

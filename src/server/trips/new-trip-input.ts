@@ -41,17 +41,6 @@ export const newTripInputSchema = z
       .trim()
       .min(1, "The city is missing. Choose where you are going.")
       .max(300),
-    /**
-     * Where the first day sets off from. Optional, and empty when the field was
-     * left alone: somebody who has not booked anywhere yet is not stopped at
-     * the door, and the first day can be given its point in the planner later.
-     */
-    startPlaceId: z
-      .string()
-      .trim()
-      .max(300)
-      .nullish()
-      .transform((value) => (value === undefined || value === null || value === "" ? null : value)),
     startDate: calendarDate("The first day is missing. Enter a date."),
     endDate: calendarDate("The last day is missing. Enter a date."),
   })
@@ -65,7 +54,6 @@ export const newTripInputSchema = z
   })
   .transform((value) => ({
     cityPlaceId: value.cityPlaceId,
-    startPlaceId: value.startPlaceId,
     startDate: value.startDate,
     dayCount: daysAcross(value.startDate, value.endDate),
   }));
