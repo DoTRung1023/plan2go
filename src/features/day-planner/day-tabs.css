@@ -17,12 +17,26 @@
 
   /* Firefox. The track is left as the surface the strip is sitting on. */
   scrollbar-width: thin;
+  scrollbar-color: var(--color-rule) transparent;
+}
+
+.day-tabs:hover {
   scrollbar-color: var(--color-rule-strong) transparent;
 }
 
-/* The rest is Chrome and Safari, which ignore the two properties above. */
+/*
+ * The rest is Chrome and Safari, which ignore the properties above.
+ *
+ * A hairline under the strip rather than a bar across it: three pixels of
+ * paint inside a seven pixel track, the paint clipped to the content box
+ * behind a transparent border, which is the only way a scrollbar thumb gets a
+ * margin. At rest it is the weight of a rule, so it reads as the edge of the
+ * strip and not as a control; under the pointer it darkens to say it is one.
+ * Never hidden, since half the people using this have no pointer to find it
+ * with.
+ */
 .day-tabs::-webkit-scrollbar {
-  height: 6px;
+  height: 7px;
 }
 
 .day-tabs::-webkit-scrollbar-track {
@@ -30,10 +44,17 @@
 }
 
 .day-tabs::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
   border-radius: var(--radius-pill);
+  background-color: var(--color-rule);
+  background-clip: content-box;
+}
+
+.day-tabs:hover::-webkit-scrollbar-thumb {
   background-color: var(--color-rule-strong);
 }
 
-.day-tabs::-webkit-scrollbar-thumb:hover {
+.day-tabs::-webkit-scrollbar-thumb:hover,
+.day-tabs::-webkit-scrollbar-thumb:active {
   background-color: var(--color-ink-muted);
 }
