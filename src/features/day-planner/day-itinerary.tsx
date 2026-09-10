@@ -8,7 +8,7 @@ import type { StopId } from "@/core/model/stop";
 import type { ComputedDay } from "@/core/time/compute-day";
 import { formatClock } from "@/core/time/minutes";
 import { weekdayOf } from "@/core/time/zoned";
-import { HomeIcon } from "@/ui/icons";
+import { CloseIcon, HomeIcon, PencilIcon } from "@/ui/icons";
 import type { PlannedDay } from "./compute-trip";
 import type { DayActions } from "./day-actions";
 import { EmptyDay } from "./empty-day";
@@ -16,7 +16,7 @@ import { EndpointPicker } from "./endpoint-picker";
 import { formatDayDate } from "./format-day-date";
 import { formatOpeningHours } from "./format-opening-hours";
 import { LegRow } from "./leg-row";
-import { StopCard } from "./stop-card";
+import { StopCard, TOOL } from "./stop-card";
 import { TimePicker } from "./time-picker";
 
 interface DayItineraryProps {
@@ -98,11 +98,13 @@ function Anchor({
      * The disc is sage where a stop's is terracotta and round where a stop's
      * carries a number, which is the whole difference.
      *
-     * The time leads. Change and Remove sit at the end of the address line as
-     * two quiet words, there at all times, so that what can be done to this end
-     * of the day is never something a reader has to discover by pointing at it.
+     * The time leads. Changing and removing sit at the end of the address line
+     * as the same two small round tools a stop card carries, drawn at 55
+     * percent until the pointer is over the row and never hidden, so that what
+     * can be done to this end of the day is never something a reader has to
+     * discover by pointing at it.
      */
-    <div className="mt-[9px] grid grid-cols-[30px_minmax(0,1fr)] gap-x-[13px] px-4 py-[15px]">
+    <div className="group mt-[9px] grid grid-cols-[30px_minmax(0,1fr)] gap-x-[13px] px-4 py-[15px]">
       <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-pill bg-sage text-paper">
         <HomeIcon size={15} strokeWidth={2.75} />
       </span>
@@ -131,21 +133,15 @@ function Anchor({
             {endpoint.place.address ?? fallback}
           </span>
           {controls === null ? null : (
-            <span className="flex shrink-0 items-center gap-[2px]">{controls}</span>
+            <span className="-mr-1 flex shrink-0 items-center opacity-55 group-hover:opacity-100 focus-within:opacity-100">
+              {controls}
+            </span>
           )}
         </div>
       </div>
     </div>
   );
 }
-
-/**
- * A word with nothing around it. No border and no ground at rest or under the
- * pointer; reaching for it turns the word itself to the accent, which is how
- * every other quiet action in the panel answers a pointer.
- */
-const QUIET =
-  "rounded-pill border-0 bg-transparent px-[11px] py-[7px] text-small/none font-semibold text-ink-muted hover:text-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 const ENDPOINT_BUTTON =
   "inline-flex shrink-0 items-center rounded-pill border-[1.5px] border-dashed border-rule-strong bg-transparent px-4 py-[9px] text-small/none font-semibold whitespace-nowrap text-ink-faint hover:border-terracotta hover:text-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
@@ -156,11 +152,15 @@ const ENDS = {
     add: "Add where the day starts",
     label: "Where the day starts",
     placeholder: "Hotel, station, wherever the day begins",
+    change: "Change where the day starts",
+    remove: "Remove where the day starts",
   },
   end: {
     add: "Add where the day ends",
     label: "Where the day ends",
     placeholder: "Hotel, station, wherever the day finishes",
+    change: "Change where the day ends",
+    remove: "Remove where the day ends",
   },
 } as const;
 
@@ -212,6 +212,8 @@ function EndpointSlot({
     });
   };
 
+  /* The word each glyph stands for is kept as its name and as the tooltip,
+     so it is read out and can be hovered for, only not spelled out on the row. */
   const controls =
     actions === null ? null : (
       <>
@@ -221,9 +223,11 @@ function EndpointSlot({
           onClick={() => {
             setPicking(true);
           }}
-          className={QUIET}
+          title="Change"
+          aria-label={words.change}
+          className={TOOL}
         >
-          Change
+          <PencilIcon size={13} strokeWidth={2.75} />
         </button>
         <button
           type="button"
@@ -231,9 +235,11 @@ function EndpointSlot({
           onClick={() => {
             write(null);
           }}
-          className={QUIET}
+          title="Remove"
+          aria-label={words.remove}
+          className={TOOL}
         >
-          Remove
+          <CloseIcon size={13} strokeWidth={2.75} />
         </button>
       </>
     );

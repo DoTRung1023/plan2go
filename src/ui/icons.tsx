@@ -51,6 +51,17 @@ export function ShareIcon(props: IconProps) {
   );
 }
 
+/** Into a tray and down: the mirror of Share, what a file landing with you looks like. */
+export function DownloadIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="M12 3v12" />
+      <path d="M7 10l5 5 5-5" />
+      <path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4" />
+    </Glyph>
+  );
+}
+
 export function TrashIcon(props: IconProps) {
   return (
     <Glyph {...props}>
@@ -155,6 +166,16 @@ export function SearchIcon(props: IconProps) {
     <Glyph {...props}>
       <circle cx="11" cy="11" r="7" />
       <path d="m20 20-3.5-3.5" />
+    </Glyph>
+  );
+}
+
+/** A pencil: the conventional shape for "this can be changed". */
+export function PencilIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="M21.2 6.8a2.8 2.8 0 0 0-4-4L3.9 16.2a2 2 0 0 0-.5.8l-1.4 4.4a.5.5 0 0 0 .6.6l4.4-1.3a2 2 0 0 0 .8-.5Z" />
+      <path d="m15 5 4 4" />
     </Glyph>
   );
 }

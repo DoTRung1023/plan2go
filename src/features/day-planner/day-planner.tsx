@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 import type { PlannedDay } from "./compute-trip";
 import { DayItinerary } from "./day-itinerary";
 import { DayTabs } from "./day-tabs";
-import { ExportDay } from "./export-day";
 import type { DayActions, EditOutcome } from "./day-actions";
 import { formatDayDate } from "./format-day-date";
 
@@ -121,7 +120,7 @@ export function DayPlanner({
            * hold the stop underneath it in place. Off, the list stays exactly
            * where it was and the panel opens downwards, where it was clicked.
            */
-          className={`scroll-quiet min-h-0 flex-1 overflow-x-hidden overflow-y-auto pt-[6px] pb-[70px] [overflow-anchor:none] lg:pb-[76px] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${GUTTER}`}
+          className={`scroll-quiet min-h-0 flex-1 overflow-x-hidden overflow-y-auto pt-[6px] pb-[26px] [overflow-anchor:none] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${GUTTER}`}
         >
           <DayItinerary
             day={selected.plan}
@@ -134,17 +133,6 @@ export function DayPlanner({
             actions={actions}
           />
         </section>
-      )}
-
-      {/* The one thing here that leaves the screen, floating alone in the
-          bottom left corner over the day rather than sitting in a strip of its
-          own. On a desktop the panel is the frame it floats in; on a phone the
-          page scrolls, so the frame is the viewport. The day above pads its
-          foot so its last row can scroll clear of it. */}
-      {selected === undefined ? null : (
-        <div className="fixed bottom-5 left-5 z-30 print:hidden lg:absolute lg:bottom-[26px] lg:left-[26px]">
-          <ExportDay disabled={selected.plan.stops.length === 0} />
-        </div>
       )}
     </>
   );

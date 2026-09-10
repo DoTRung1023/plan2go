@@ -11,6 +11,7 @@ import { dayStatus } from "@/features/day-planner/day-status";
 import { placesOnTheTrip } from "@/features/place-search/places-on-the-trip";
 import { searchBias } from "@/features/place-search/search-bias";
 import { TripMenu } from "@/features/trip-settings/trip-menu";
+import { ExportDay } from "@/features/trip-settings/export-day";
 import { ShareLinks } from "@/features/trip-settings/share-links";
 import { SavedNote } from "@/features/trip-settings/saved-note";
 import { TripActions } from "@/features/trip-settings/trip-actions";
@@ -321,6 +322,11 @@ export function TripEditor({
                 actions={
                   <TripMenu label="Trip actions">
                     <ShareLinks slug={slug} editKey={editKey} />
+                    <ExportDay
+                      disabled={
+                        selected === undefined || selected.plan.stops.length === 0
+                      }
+                    />
                     <TripActions
                       slug={slug}
                       editKey={editKey}

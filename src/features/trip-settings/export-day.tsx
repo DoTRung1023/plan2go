@@ -1,26 +1,28 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { DownloadIcon } from "@/ui/icons";
+import { MENU_ITEM } from "./trip-menu";
 
 const TITLE = "Export settings";
 
 interface ExportDayProps {
-  /** A day with nothing on it has nothing to export, and the button says so. */
+  /** A day with nothing on it has nothing to export, and the row says so. */
   readonly disabled: boolean;
 }
 
 /**
- * The button that exports the day, and the window it opens.
+ * The row in the trip's menu that exports the open day, and the window it
+ * opens.
  *
- * Clicking no longer prints on the spot. It opens the window where how the
- * page comes out will be chosen, and for now that window carries its name and
- * nothing under it: the choices are the next piece of work, and this is the
- * place they land.
+ * It sits beside Share because the two are the same kind of thing: both hand
+ * the plan to somebody who is not looking at this screen. Choosing it opens
+ * the window where how the page comes out will be chosen, and for now that
+ * window carries its name and nothing under it: the choices are the next piece
+ * of work, and this is the place they land.
  *
- * The button floats over the day, so it carries the shadow a floating control
- * has. The window opens upwards, because the button sits in the bottom corner
- * and the only room is above it. Clicking anywhere else closes it, as does
- * Escape, which hands focus back to the button it came from.
+ * Clicking anywhere else closes the window, as does Escape, which hands focus
+ * back to the row it came from.
  */
 export function ExportDay({ disabled }: ExportDayProps) {
   const [open, setOpen] = useState(false);
@@ -55,7 +57,7 @@ export function ExportDay({ disabled }: ExportDayProps) {
   return (
     <div
       ref={container}
-      className="relative flex-none"
+      className="relative"
       onKeyDown={(event) => {
         if (open && event.key === "Escape") {
           event.preventDefault();
@@ -76,8 +78,9 @@ export function ExportDay({ disabled }: ExportDayProps) {
           }
           setOpen(true);
         }}
-        className="rounded-pill bg-terracotta px-5 py-[11px] font-display text-body/none font-semibold text-paper shadow-sm hover:bg-terracotta-600 active:bg-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+        className={`${MENU_ITEM} disabled:opacity-45`}
       >
+        <DownloadIcon size={15} strokeWidth={2.75} className="shrink-0" />
         Export day as PDF
       </button>
 
@@ -85,7 +88,7 @@ export function ExportDay({ disabled }: ExportDayProps) {
         <div
           role="dialog"
           aria-label={TITLE}
-          className="absolute bottom-full left-0 z-30 mb-2 w-[300px] rounded-panel border border-rule bg-paper-raised p-[13px] text-left shadow-md"
+          className="absolute top-full right-0 z-50 mt-2 w-[300px] rounded-panel border border-rule bg-paper-raised p-[13px] text-left shadow-lg"
         >
           <p className="text-small/[1.3] font-semibold text-ink">{TITLE}</p>
         </div>

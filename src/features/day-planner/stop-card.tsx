@@ -17,7 +17,12 @@ const MAX_STAY_MINUTES = 99 * 60 + 59;
 /** The one thing about this stop that is currently being written down. */
 type Busy = "stay" | "time" | "note" | "remove" | null;
 
-const TOOL =
+/**
+ * A small round button holding one glyph, for what acts on a whole row. The
+ * ends of a day draw theirs the same way, so a control means the same thing
+ * wherever on the thread it hangs.
+ */
+export const TOOL =
   "grid h-[22px] w-[22px] place-items-center rounded-pill text-ink-muted hover:bg-neutral-200 hover:text-ink disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 /** A quarter of an hour: the smallest amount of time worth naming on a day. */
