@@ -112,13 +112,16 @@ function Anchor({
   return (
     /*
      * On the stop card's grid, to the pixel: the same marker column, the same
-     * gap beside it, the same padding around it, so the name and address here
+     * gap beside it, the same gutter either side, so the name and address here
      * sit on the same left edge as every stop's and the time and the tools on
      * the same right edge, with the marker under the discs. Only the card is
-     * missing. The ends of a day are where it passes through, and a raised
-     * card gave them the weight of the places it is for, so the row has no
-     * border and no ground until it is pointed at, and then the sunken paper,
-     * which is how every other row here answers the pointer.
+     * missing, and with it a third of the card's height: the ends of a day are
+     * where it passes through, and a box as deep as a stop's gave them the
+     * weight of the places it is for. The row has no border and no ground
+     * until it is pointed at, and then the sunken paper, which is how every
+     * other row here answers the pointer. The marker sits in the middle of
+     * the shorter row rather than at its top, where a disc sits on a card
+     * whose content runs on below it.
      */
     <div
       ref={row}
@@ -128,11 +131,11 @@ function Anchor({
       onMouseLeave={() => {
         onHover(null);
       }}
-      className={`group grid grid-cols-[30px_minmax(0,1fr)] gap-x-[13px] rounded-row px-[17px] py-[15px] ${
+      className={`group grid grid-cols-[30px_minmax(0,1fr)] gap-x-[13px] rounded-row px-[17px] py-[10px] ${
         hovered ? "bg-paper-sunken" : ""
       }`}
     >
-      <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-[13px_13px_13px_4px] bg-sage-600 text-paper">
+      <span className="grid h-[30px] w-[30px] shrink-0 place-items-center self-center rounded-[13px_13px_13px_4px] bg-sage-600 text-paper">
         <HomeIcon size={15} strokeWidth={2.75} />
       </span>
 
