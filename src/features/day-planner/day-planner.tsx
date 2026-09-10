@@ -96,8 +96,13 @@ export function DayPlanner({
       {/* One block: the trip's name, the days, and which of them is open. An
           editor gets all three from the settings form, because the dates on the
           day's line are part of it. A reader who cannot edit gets the heading
-          and the strip on their own. */}
-      <div className={`relative z-20 shrink-0 pt-5 pb-[14px] ${GUTTER}`}>
+          and the strip on their own.
+
+          A rule closes the block, the full width of the panel, where the day
+          starts scrolling under it. Without one the day's line and the first
+          row of the day sat either side of a stretch of bare paper that read
+          as a gap rather than as two things: the heading, then its list. */}
+      <div className={`relative z-20 shrink-0 border-b border-rule pt-5 pb-[14px] ${GUTTER}`}>
         {settings ?? (
           <>
             <div className="flex items-center gap-[10px]">
@@ -137,7 +142,7 @@ export function DayPlanner({
            * hold the stop underneath it in place. Off, the list stays exactly
            * where it was and the panel opens downwards, where it was clicked.
            */
-          className={`scroll-quiet min-h-0 flex-1 overflow-x-hidden overflow-y-auto pt-[6px] pb-[26px] [overflow-anchor:none] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${GUTTER}`}
+          className={`scroll-quiet min-h-0 flex-1 overflow-x-hidden overflow-y-auto pt-1 pb-[26px] [overflow-anchor:none] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${GUTTER}`}
         >
           <DayItinerary
             day={selected.plan}
