@@ -126,10 +126,12 @@ const SIZES = {
     stack: "",
   },
   large: {
-    trigger: "px-5 py-[17px] text-[16px] leading-[1.2]",
+    // Room kept clear on the right for the word, which is taken out of the flow
+    // so its own padding cannot make this pill taller than the fields beside it.
+    trigger: "relative py-[17px] pr-24 pl-5 text-[16px] leading-[1.2]",
     label: "text-[14px] leading-none font-semibold text-ink-muted",
     change:
-      "shrink-0 rounded-pill px-2 py-[6px] text-[14px] leading-none font-bold text-terracotta-700",
+      "absolute top-1/2 right-3 -translate-y-1/2 rounded-pill px-2 py-[6px] text-[14px] leading-none font-bold text-terracotta-700",
     stack: "flex flex-col gap-2",
   },
 } as const;

@@ -4,7 +4,13 @@ import type { KeyboardEvent } from "react";
 import { useEffect, useId, useRef, useState } from "react";
 import { z } from "zod";
 import { SearchIcon } from "@/ui/icons";
-import { FIELD_LABEL, FIELD_PILL, FIELD_STACK, FIELD_WAITING } from "./field-styles";
+import {
+  FIELD_GROUND,
+  FIELD_LABEL,
+  FIELD_SHELL,
+  FIELD_STACK,
+  FIELD_WAITING,
+} from "./field-styles";
 
 /** Long enough that typing does not spend money on every letter. */
 const DEBOUNCE_MS = 250;
@@ -29,7 +35,8 @@ export interface ChosenPlace {
   readonly address: string | null;
 }
 
-const FIELD = `${FIELD_PILL} flex items-center gap-3 py-0 focus-within:border-terracotta`;
+/** No vertical padding here: the input inside sets the height for both. */
+const FIELD = `${FIELD_SHELL} flex items-center gap-3 px-5 focus-within:border-terracotta`;
 
 /**
  * What the panel says while it is looking and when it finds nothing. Both name
@@ -217,7 +224,7 @@ export function PlaceField({
       {/* Waiting on the field above rather than switched off: it loses its
           ground instead of being faded out, so it reads as a question not yet
           reachable rather than as a control that is broken. */}
-      <div className={`${FIELD} ${waiting ? FIELD_WAITING : ""}`}>
+      <div className={`${FIELD} ${waiting ? FIELD_WAITING : FIELD_GROUND}`}>
         <SearchIcon size={18} strokeWidth={2.75} className="shrink-0 text-ink-faint" />
         <input
           id={id}

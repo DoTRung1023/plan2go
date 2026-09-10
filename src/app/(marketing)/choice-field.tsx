@@ -3,12 +3,19 @@
 import type { KeyboardEvent } from "react";
 import { useEffect, useId, useRef, useState } from "react";
 import { SearchIcon } from "@/ui/icons";
-import { FIELD_CHANGE, FIELD_LABEL, FIELD_PILL, FIELD_STACK } from "./field-styles";
+import {
+  FIELD_CHANGE,
+  FIELD_GROUND,
+  FIELD_LABEL,
+  FIELD_PAD_ACTION,
+  FIELD_SHELL,
+  FIELD_STACK,
+} from "./field-styles";
 
 /** Enough of the list to scroll through, not so much that it swallows the page. */
 const PANEL_HEIGHT = "max-h-[260px]";
 
-const TRIGGER = `${FIELD_PILL} flex items-center justify-between gap-2 text-left hover:border-rule-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta`;
+const TRIGGER = `${FIELD_SHELL} ${FIELD_PAD_ACTION} ${FIELD_GROUND} relative flex items-center text-left hover:border-rule-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta`;
 
 /** One thing that can be chosen: what is stored, and how it is read. */
 export interface Choice {
