@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     "Plan a multi-day trip, see how far apart the places really are, and see how long a day actually takes. No account needed.",
 };
 
-const COLUMN = "mx-auto w-full max-w-[980px] px-8";
+const COLUMN = "mx-auto w-full max-w-[1060px] px-8";
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (

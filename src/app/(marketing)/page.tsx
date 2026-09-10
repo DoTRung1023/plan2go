@@ -36,7 +36,7 @@ export default async function MarketingPage() {
      * below the shorter column is shared out above and beneath the pair rather
      * than piled under it.
      */
-    <div className="grid items-start gap-12 [grid-template-columns:repeat(auto-fit,minmax(300px,1fr))]">
+    <div className="grid items-start gap-14 [grid-template-columns:repeat(auto-fit,minmax(300px,1fr))]">
       <div className="flex flex-col gap-[26px] pt-[6px]">
         <Image
           src={lockup}
