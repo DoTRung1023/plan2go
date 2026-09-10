@@ -11,8 +11,15 @@
    * Only one axis scrolls. Saying so is not optional: setting overflow on one
    * axis computes the other from visible to auto, and then a single pixel of
    * vertical overflow raises a scrollbar nobody asked for.
+   *
+   * Scroll rather than auto, so the room the scrollbar takes is always taken.
+   * With auto the bar arrives the moment the days no longer fit, and the line
+   * that names the day and the field beside it drop by its height at that
+   * moment: adding a day moved everything under the strip. The track is
+   * transparent and nothing draws a thumb while the days fit, so the space is
+   * simply held open until it is needed.
    */
-  overflow-x: auto;
+  overflow-x: scroll;
   overflow-y: hidden;
 
   /* Firefox. The track is left as the surface the strip is sitting on. */
