@@ -78,27 +78,56 @@ function Anchor({
   readonly controls: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-row px-[2px] py-[14px]">
-      <span className="ml-2 grid h-[30px] w-[30px] shrink-0 place-items-center rounded-[12px_12px_12px_4px] bg-sage-600 text-paper">
-        <HomeIcon size={15} strokeWidth={2.75} />
+    /*
+     * The same card a stop gets, so the ends of a day sit in the same list as
+     * the stops between them rather than beside it. The disc is sage where a
+     * stop's is terracotta and round where a stop's carries a number, which is
+     * the whole difference: somewhere the day passes through, not somewhere it
+     * is for.
+     *
+     * The time leads and the actions retreat. Change and Remove are on the
+     * address line, and they are only drawn while the pointer or the focus is
+     * on the card: a row that is read far more often than it is edited should
+     * not carry two buttons at all times for the once it is. Where there is no
+     * pointer to hover with, they are simply there.
+     */
+    <div className="group flex items-start gap-[14px] rounded-panel border border-rule bg-paper-raised px-[18px] py-4">
+      <span className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-pill bg-sage text-paper">
+        <HomeIcon size={18} strokeWidth={2.75} />
       </span>
-      <span className="min-w-0">
-        <span className="block text-meta font-semibold text-ink">
-          {endpointName(endpoint)}
-        </span>
-        <span className="block text-micro text-ink-muted">
-          {endpoint.place.address ?? fallback}
-        </span>
-      </span>
-      <span className="ml-auto flex items-center gap-2 pr-2">
-        {controls}
-        <span className="font-display text-place whitespace-nowrap text-ink-muted tabular-nums">
-          {time ?? "Time not known"}
-        </span>
-      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline gap-[14px]">
+          <span className="min-w-0 flex-1 font-display text-place text-ink">
+            {endpointName(endpoint)}
+          </span>
+          <span className="shrink-0 text-time whitespace-nowrap text-ink tabular-nums">
+            {time ?? "Time not known"}
+          </span>
+        </div>
+        <div className="mt-[5px] flex items-center gap-[10px]">
+          <span className="min-w-0 flex-1 truncate text-meta text-ink-muted">
+            {endpoint.place.address ?? fallback}
+          </span>
+          {controls === null ? null : (
+            <span className="flex shrink-0 items-center gap-[2px] opacity-0 transition-opacity duration-150 group-focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100 motion-reduce:transition-none">
+              {controls}
+            </span>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
+
+/**
+ * A word with nothing around it until it is wanted. What the canvas draws for
+ * the actions on an anchor: no border, no ground, a pill only on hover.
+ */
+const QUIET =
+  "rounded-pill border-0 bg-transparent px-[11px] py-[7px] text-small/none font-semibold text-ink-muted hover:bg-neutral-200 hover:text-ink disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+
+/** The one that takes something away goes to the accent when reached for. */
+const QUIET_REMOVE = `${QUIET} hover:bg-terracotta-100 hover:text-terracotta-700`;
 
 const ENDPOINT_BUTTON =
   "inline-flex shrink-0 items-center rounded-pill border-[1.5px] border-dashed border-rule-strong bg-transparent px-4 py-[9px] text-small/none font-semibold whitespace-nowrap text-ink-faint hover:border-terracotta hover:text-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
@@ -174,7 +203,7 @@ function EndpointSlot({
           onClick={() => {
             setPicking(true);
           }}
-          className={ENDPOINT_BUTTON}
+          className={QUIET}
         >
           Change
         </button>
@@ -184,7 +213,7 @@ function EndpointSlot({
           onClick={() => {
             write(null);
           }}
-          className={ENDPOINT_BUTTON}
+          className={QUIET_REMOVE}
         >
           Remove
         </button>

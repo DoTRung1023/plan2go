@@ -370,7 +370,8 @@ and it is the product's own.
 
 ## Motion
 
-Two things animate: reordering a stop, and the trip's actions unfolding.
+Three things animate: reordering a stop, the trip's actions unfolding, and the actions
+on the two ends of a day appearing.
 
 Reordering: `transform` over 160ms `ease-out` on the card being moved and on the cards
 displacing around it. Nothing else, no opacity, no scale.
@@ -380,6 +381,12 @@ so the row grows from nothing without anything having to know how wide the butto
 It is the one hover transition in the product, and it earns the exception because the
 movement is the affordance: a group that simply appeared would read as the row
 rearranging itself rather than as something folded away that has opened.
+
+The ends of a day: `opacity` over 150ms on the Change and Remove words, which are not
+drawn until the pointer or the focus is on the card. A row read far more often than it
+is edited should not carry two buttons at all times, and a pair of words that snapped
+into being read as the row changing shape. Where there is no pointer they are simply
+there.
 
 Nothing else. No transitions on focus, tab switching, panel opening, or map interaction,
 and no other transition on hover. Those changes are instant.
