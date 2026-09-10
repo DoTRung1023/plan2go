@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { Conflict } from "@/core/model/conflict";
 import type { StopId } from "@/core/model/stop";
@@ -12,6 +13,7 @@ import { formatDayDate, formatDayLong } from "./format-day-date";
 import { formatDayTime } from "./format-day-time";
 import { formatDistance } from "./format-distance";
 import { MODE_WORDS } from "./leg-row";
+import lockup from "../../../logo/logo-text.png";
 
 /** The stop card's grid, at the sheet's scale: a marker column and the rest. */
 const ROW = "grid grid-cols-[34px_minmax(0,1fr)_auto] items-start gap-x-4";
@@ -168,7 +170,8 @@ function PrintedDay({
             <p className={`text-body ${MUTED}`}>{formatDayLong(plan.date)}</p>
           </div>
         </div>
-        <p className="pt-1 font-display text-place text-terracotta-700">plan2go</p>
+        {/* The lockup the front door wears, at the height of the day's name. */}
+        <Image src={lockup} alt="plan2go" className="h-7 w-auto shrink-0 pt-[2px]" />
       </header>
 
       {request.map && !mapFailed ? (
