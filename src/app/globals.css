@@ -286,9 +286,26 @@
 }
 
 @media print {
+  /*
+   * The page number, set by the printer in the bottom margin of every sheet,
+   * because only the printer knows where the sheets break. It inherits from
+   * the root element, which is why the body face and the muted ink are put on
+   * html here rather than on body, where the page context cannot see them.
+   */
   @page {
     size: A4;
     margin: 16mm;
+
+    @bottom-right {
+      content: "Page " counter(page) " of " counter(pages);
+      font-size: 11.5px;
+      line-height: 1;
+    }
+  }
+
+  html {
+    font-family: var(--font-body);
+    color: var(--color-ink-muted);
   }
 
   html,
@@ -296,6 +313,12 @@
     height: auto;
     overflow: visible;
     background: #fff;
+  }
+
+  /* On screen the preview numbers its sheets itself; on paper the margin
+     box above does, so the sheet's own number would say it twice. */
+  .printed-page-number {
+    display: none !important;
   }
 
   /* The planner is for the screen. What is printed is the sheets, which are
@@ -311,9 +334,16 @@
   }
 
   /* Every day after the first starts a sheet of its own, unless the days
-     were asked to run on, in which case only a breath separates them. */
+     were asked to run on, in which case only a breath separates them. A day
+     on its own sheet is as tall as the sheet, a hair under A4 less its
+     margins so that rounding never spills a blank page, which is what puts
+     the day's foot at the foot of the page. */
   .printed-trip.is-separate .printed-day + .printed-day {
     break-before: page;
+  }
+
+  .printed-trip.is-separate .printed-day {
+    min-height: 264mm;
   }
 
   .printed-trip.is-flow .printed-day + .printed-day {

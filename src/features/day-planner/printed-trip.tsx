@@ -147,6 +147,11 @@ interface PrintedDayProps {
   readonly request: ExportRequest;
   /** The share link, on the first sheet only. Null on every other. */
   readonly link: string | null;
+  /**
+   * Which sheet this is of those shown, where each day is a sheet of its own.
+   * Null where the days run on, since then only the printer knows.
+   */
+  readonly sheet: { readonly at: number; readonly of: number } | null;
   /** Said once the map has arrived, or failed to. */
   readonly onMapSettled: () => void;
 }
@@ -168,6 +173,7 @@ function PrintedDay({
   slug,
   request,
   link,
+  sheet,
   onMapSettled,
 }: PrintedDayProps) {
   const [mapFailed, setMapFailed] = useState(false);
@@ -182,8 +188,13 @@ function PrintedDay({
   const totals = computed.totals;
 
   return (
-    <article className="printed-day">
-      <header className={`flex items-start gap-6 border-b pb-5 ${RULE}`}>
+    /*
+     * A column, with the day taking whatever height the sheet has to spare,
+     * so what the day adds up to sits at the foot of the sheet rather than
+     * wherever the last row happened to end.
+     */
+    <article className="printed-day flex flex-col">
+      <header className={`flex shrink-0 items-start gap-6 border-b pb-5 ${RULE}`}>
         <div className="min-w-0 flex-1">
           <p className={`text-small ${MUTED}`}>
             {cityName === null ? title : `${title} · ${cityName}`} · {range}
@@ -198,7 +209,7 @@ function PrintedDay({
       </header>
 
       {request.map && !mapFailed ? (
-        <figure className={`mt-5 overflow-hidden rounded-chip border ${RULE}`}>
+        <figure className={`mt-5 shrink-0 overflow-hidden rounded-chip border ${RULE}`}>
           {/* Plain img rather than the framework's: the picture is ours, drawn
               once per day and cached, and it is loaded for its arrival to be
               waited on before the print window opens. */}
@@ -216,7 +227,7 @@ function PrintedDay({
         </figure>
       ) : null}
 
-      <section className="mt-6">
+      <section className="mt-6 flex-1">
         {plan.start === null ? null : (
           <div className={ROW}>
             <MarkColumn thread="from-centre">
@@ -297,7 +308,7 @@ function PrintedDay({
         )}
       </section>
 
-      <footer className={`mt-5 border-t pt-4 ${RULE}`}>
+      <footer className={`mt-5 shrink-0 border-t pt-4 ${RULE}`}>
         <p className="text-body text-ink">
           {totals.timeOutMinutes === null || totals.travelMinutes === null ? (
             "Not every time on this day could be worked out."
@@ -312,6 +323,12 @@ function PrintedDay({
           <p className={`mt-[3px] text-small ${MUTED}`}>Planned with plan2go · {link}</p>
         )}
       </footer>
+
+      {sheet === null ? null : (
+        <p className="printed-page-number" aria-hidden="true">
+          Page {sheet.at} of {sheet.of}
+        </p>
+      )}
     </article>
   );
 }
@@ -380,6 +397,7 @@ export function PrintedTrip({
           slug={slug}
           request={request}
           link={index === 0 ? `${origin}/t/${slug}` : null}
+          sheet={request.separateSheets ? { at: index + 1, of: chosen.length } : null}
           onMapSettled={() => {
             setSettled((count) => count + 1);
           }}

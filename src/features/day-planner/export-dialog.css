@@ -27,6 +27,22 @@
   margin-top: 24px;
 }
 
+/* Where the printer will put the page number: in the bottom margin, on the
+   right, in the muted ink. Each sheet on screen is one day, so the number
+   counts sheets; a day long enough for two will be numbered by the printer. */
+.export-sheets .is-separate .printed-day {
+  position: relative;
+}
+
+.export-sheets .printed-page-number {
+  position: absolute;
+  right: 60px;
+  bottom: 24px;
+  font-size: 11.5px;
+  line-height: 1;
+  color: var(--color-ink-muted);
+}
+
 .export-sheets .is-flow .printed-day + .printed-day {
   margin-top: 40px;
 }
@@ -61,19 +77,33 @@
     box-shadow: none !important;
   }
 
-  /* Full size again, and the page rule's margins rather than the sheet's own. */
+  /* Full size again, and the page rule's margins rather than the sheet's
+     own. The width goes too: the sheets are laid out at A4's full width on
+     screen, margins and all, which is wider than the page's printable area,
+     and a page wider than the paper is shrunk to fit, text and all. */
   .export-sheets {
     zoom: 1 !important;
+    width: auto !important;
+    margin: 0 !important;
   }
 
   .export-sheets .is-separate .printed-day,
   .export-sheets .is-flow {
     width: auto;
-    min-height: 0;
     padding: 0;
     border-radius: 0;
     background: transparent;
     box-shadow: none;
+  }
+
+  /* A day on its own sheet keeps the page's height, so its foot stays at the
+     foot of the page; the run-on layout has no sheet of its own to fill. */
+  .export-sheets .is-separate .printed-day {
+    min-height: 264mm;
+  }
+
+  .export-sheets .is-flow {
+    min-height: 0;
   }
 
   .export-sheets .is-separate .printed-day + .printed-day {
