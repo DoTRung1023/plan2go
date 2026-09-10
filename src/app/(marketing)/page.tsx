@@ -10,7 +10,10 @@ import { countries } from "./countries";
 
 /** The small pill a claim about the product is made in. */
 const TAG =
-  "inline-flex items-center rounded-pill px-[10px] py-[3px] text-[11px] tracking-[0.02em]";
+  // Half a pixel under what the canvas draws them at. The body face that
+  // replaced Figtree is fractionally wider, and at 11px the third tag fell to a
+  // second line on exactly the viewport the page is designed for.
+  "inline-flex items-center rounded-pill px-[10px] py-[3px] text-[10.5px] tracking-[0.02em]";
 
 /** Read on the server so the browser is not asked to build the list. */
 function countryChoices(): readonly Choice[] {
