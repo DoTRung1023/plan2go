@@ -235,8 +235,11 @@ export function TripSettings({
       <div className="mt-[14px]">{tabs}</div>
 
       {/* Nothing but which day is open now: the dates that used to end this
-          line have gone up to the row that names the trip. */}
-      <div className="mt-4 flex flex-wrap items-baseline gap-[10px] border-t border-rule pt-[14px]">
+          line have gone up to the row that names the trip. Close under the
+          strip and with no rule between them, because the line names the tab
+          that is chosen and belongs with it; the rule that closes the block
+          is under this line, where the day itself begins. */}
+      <div className="mt-3 flex flex-wrap items-baseline gap-[10px]">
         {dayLine}
       </div>
 
