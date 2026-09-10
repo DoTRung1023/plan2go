@@ -191,6 +191,21 @@ model PlaceSearchCache {
   @@index([expiresAt])
 }
 
+/// One drawn map from the static map provider, kept so the same day is never
+/// paid for twice. Keyed by everything that decides the picture: the points,
+/// the routes between them and the size of the sheet it is drawn for.
+model StaticMapCache {
+  /// sha256 of the request, less the key.
+  key         String @id
+  image       Bytes
+  contentType String
+
+  fetchedAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([expiresAt])
+}
+
 /// A fixed window request counter. One row per caller, route and window.
 model RateLimit {
   id String @id @default(cuid())

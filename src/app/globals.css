@@ -268,18 +268,20 @@
 }
 
 /*
- * The printed page, from DESIGN.md. It was specified there as a first class
- * target and never written, which mattered the moment the panel grew a button
- * that prints: without this, "Export day as PDF" hands somebody a screenshot of
- * an application, map and all, rather than the day they asked for.
+ * The printed page, from DESIGN.md: a first class target rather than a
+ * fallback. What prints is not the planner but the sheets it keeps for the
+ * purpose, one day to a sheet, drawn by printed-trip.tsx. Without this an
+ * export would hand somebody a screenshot of an application, map and all,
+ * rather than the days they asked for.
  *
  * One column, no chrome. Surfaces print as unpainted paper because a cream
  * ground over a whole page is a great deal of ink for something a reader
- * already has, hairlines drop to a hair, and the times keep the display face so
- * they stay the loudest thing on the sheet.
+ * already has, and the times keep the display face so they stay the loudest
+ * thing on the sheet.
  */
 @media print {
   @page {
+    size: A4;
     margin: 16mm;
   }
 
@@ -290,44 +292,32 @@
     background: #fff;
   }
 
-  /* The panel is the page: it stops being a column beside a map and becomes
-     the whole of it, scrolling nowhere. */
+  /* The planner is for the screen. What is printed is the sheets, which are
+     in the page for exactly this and never seen otherwise. */
+  .planner-shell > section {
+    display: none !important;
+  }
+
   .planner-shell {
     display: block !important;
     height: auto !important;
     overflow: visible !important;
   }
 
-  .planner-shell section,
-  .planner-shell .scroll-quiet {
-    height: auto !important;
-    max-height: none !important;
-    min-height: 0 !important;
-    overflow: visible !important;
-    border: 0 !important;
-  }
-
-  /* Nothing that only exists to be operated. */
-  .trip-map,
-  .day-tabs,
-  [role="tablist"] {
-    display: none !important;
+  /* Every day after the first starts a sheet of its own. */
+  .printed-day + .printed-day {
+    break-before: page;
   }
 
   /* A stop is never split across two sheets. */
-  .day-stop {
+  .printed-stop {
     break-inside: avoid;
   }
 
-  * {
-    background: transparent !important;
-    box-shadow: none !important;
-    color: var(--color-ink) !important;
-  }
-
-  .border-rule,
-  .border-rule-strong {
-    border-color: var(--color-neutral-400) !important;
-    border-width: 0.5pt !important;
+  /* The discs the stops hang on are the one fill on the page, and a browser
+     that drops backgrounds to save ink would drop the numbers with them. */
+  .printed-trip * {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
 }

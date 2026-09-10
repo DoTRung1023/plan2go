@@ -12,7 +12,7 @@ import type { DayActions } from "./day-actions";
 import { formatDistance } from "./format-distance";
 
 /** The mode in words, so the map's stroke pattern is never the only source. */
-const MODE_WORDS: Readonly<Record<TravelMode, string>> = {
+export const MODE_WORDS: Readonly<Record<TravelMode, string>> = {
   walk: "Walk",
   drive: "Drive",
   transit: "Public transport",

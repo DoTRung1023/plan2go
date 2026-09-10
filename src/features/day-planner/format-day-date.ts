@@ -14,6 +14,19 @@ export function formatDayDate(date: IsoDate): string {
   return DAY_FORMAT.format(new Date(Date.UTC(year, month - 1, day)));
 }
 
+const LONG_FORMAT = new Intl.DateTimeFormat("en-AU", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  timeZone: "UTC",
+});
+
+/** "Thursday 10 September", for the printed page, which has room to say it in full. */
+export function formatDayLong(date: IsoDate): string {
+  const { year, month, day } = parseIsoDate(date);
+  return LONG_FORMAT.format(new Date(Date.UTC(year, month - 1, day)));
+}
+
 const TAB_FORMAT = new Intl.DateTimeFormat("en-AU", {
   weekday: "short",
   day: "numeric",

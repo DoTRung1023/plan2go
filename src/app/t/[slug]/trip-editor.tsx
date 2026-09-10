@@ -1,14 +1,17 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { LatLng } from "@/core/model/place";
 import type { PlannedDay } from "@/features/day-planner/compute-trip";
 import { DayPlanner } from "@/features/day-planner/day-planner";
 import { PlaceSearch } from "@/features/place-search/place-search";
 import { DayTabs } from "@/features/day-planner/day-tabs";
 import { dayStatus } from "@/features/day-planner/day-status";
+import type { ExportRequest } from "@/features/day-planner/export-request";
+import { exportRequestKey } from "@/features/day-planner/export-request";
 import { LeaveAt } from "@/features/day-planner/leave-at";
+import { PrintedTrip } from "@/features/day-planner/printed-trip";
 import { placesOnTheTrip } from "@/features/place-search/places-on-the-trip";
 import { searchBias } from "@/features/place-search/search-bias";
 import { TripMenu } from "@/features/trip-settings/trip-menu";
@@ -102,6 +105,22 @@ export function TripEditor({
   const [hoveredStopId, setHoveredStopId] = useState<string | null>(null);
   const [hoveredLegIndex, setHoveredLegIndex] = useState<number | null>(null);
   const [hoveredEndpointId, setHoveredEndpointId] = useState<string | null>(null);
+  /**
+   * What is being taken away on paper, while it is. Set by the export window,
+   * which readies the sheets; cleared when the print window closes, whichever
+   * way it closed. While nothing is being exported the sheets still carry the
+   * open day, so the browser's own print command comes out the same way.
+   */
+  const [exporting, setExporting] = useState<ExportRequest | null>(null);
+  useEffect(() => {
+    const done = (): void => {
+      setExporting(null);
+    };
+    window.addEventListener("afterprint", done);
+    return () => {
+      window.removeEventListener("afterprint", done);
+    };
+  }, []);
 
   const recording = <T extends { readonly error: string | null }>(
     change: Promise<T>,
@@ -119,9 +138,28 @@ export function TripEditor({
   const selected = days[selectedIndex] ?? days[0];
   const first = days[0];
   const last = days[days.length - 1];
-  /* Whether the day or the whole trip is chosen in the export window, so the
-     way in is only closed when there is nothing anywhere to take away. */
-  const nothingToExport = days.every((day) => day.plan.stops.length === 0);
+
+  const printing: ExportRequest = exporting ?? {
+    dayIds: selected === undefined ? [] : [selected.plan.id],
+    map: false,
+    notes: true,
+    legDetails: true,
+  };
+  const exportable = days.map((day) => ({
+    id: day.plan.id,
+    date: day.plan.date,
+    stops: day.plan.stops.length,
+  }));
+  const exportControl = (where: "menu" | "heading") =>
+    selected === undefined ? null : (
+      <TripExport
+        where={where}
+        days={exportable}
+        selectedDayId={selected.plan.id}
+        busy={exporting !== null}
+        onExport={setExporting}
+      />
+    );
 
   /**
    * The shape of each leg the day travels, in the same order the map builds
@@ -236,7 +274,7 @@ export function TripEditor({
           onHoverEndpoint={setHoveredEndpointId}
           selectedIndex={selectedIndex}
           onSelect={setChosenIndex}
-          exporting={<TripExport where="heading" disabled={nothingToExport} />}
+          exporting={exportControl("heading")}
           onAddDay={
             editKey === null
               ? null
@@ -336,7 +374,7 @@ export function TripEditor({
                 actions={
                   <TripMenu label="Trip actions">
                     <ShareLinks slug={slug} editKey={editKey} />
-                    <TripExport where="menu" disabled={nothingToExport} />
+                    {exportControl("menu")}
                     <TripActions
                       slug={slug}
                       editKey={editKey}
@@ -353,6 +391,23 @@ export function TripEditor({
           }
         />
       </section>
+
+      {/* Keyed on the request, so each export is a fresh set of sheets that
+          says when its pictures have arrived, and only an export asked for in
+          the window opens the print window when they have. */}
+      <PrintedTrip
+        key={exportRequestKey(printing)}
+        title={title}
+        slug={slug}
+        cityName={cityName}
+        days={days}
+        request={printing}
+        onReady={() => {
+          if (exporting !== null) {
+            window.print();
+          }
+        }}
+      />
     </main>
   );
 }

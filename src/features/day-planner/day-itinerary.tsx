@@ -51,7 +51,7 @@ function conflictsOnLeg(conflicts: readonly Conflict[], legIndex: number): reado
 }
 
 /** What the place says about itself on the day being read. */
-function hoursOn(place: Place, day: DayPlan): string | null {
+export function hoursOn(place: Place, day: DayPlan): string | null {
   if (place.openingHours === null) {
     return null;
   }
@@ -59,7 +59,7 @@ function hoursOn(place: Place, day: DayPlan): string | null {
 }
 
 /** The traveller's own label first, then the place it stands for. */
-function endpointName(endpoint: DayEndpoint): string {
+export function endpointName(endpoint: DayEndpoint): string {
   if (endpoint.label === null) {
     return endpoint.place.name;
   }
