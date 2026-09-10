@@ -8,8 +8,12 @@
  */
 
 /* A sheet as the printer will see it: A4 at screen resolution, with the
-   margins the page rule gives it, on the raised paper a page is made of. */
-.export-sheets .printed-day {
+   margins the page rule gives it, on the raised paper a page is made of.
+   With each day on its own sheet, each day is one; with the days running on,
+   the whole trip is one long sheet, since where the printer will cut it is
+   not knowable here. */
+.export-sheets .is-separate .printed-day,
+.export-sheets .is-flow {
   box-sizing: border-box;
   width: 794px;
   min-height: 1123px;
@@ -19,8 +23,12 @@
   box-shadow: var(--shadow-md);
 }
 
-.export-sheets .printed-day + .printed-day {
+.export-sheets .is-separate .printed-day + .printed-day {
   margin-top: 24px;
+}
+
+.export-sheets .is-flow .printed-day + .printed-day {
+  margin-top: 40px;
 }
 
 @media print {
@@ -58,13 +66,17 @@
     zoom: 1 !important;
   }
 
-  .export-sheets .printed-day {
+  .export-sheets .is-separate .printed-day,
+  .export-sheets .is-flow {
     width: auto;
     min-height: 0;
-    margin: 0;
     padding: 0;
     border-radius: 0;
     background: transparent;
     box-shadow: none;
+  }
+
+  .export-sheets .is-separate .printed-day + .printed-day {
+    margin-top: 0;
   }
 }

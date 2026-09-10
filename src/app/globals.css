@@ -304,14 +304,24 @@
     overflow: visible !important;
   }
 
-  /* Every day after the first starts a sheet of its own. */
-  .printed-day + .printed-day {
+  /* Every day after the first starts a sheet of its own, unless the days
+     were asked to run on, in which case only a breath separates them. */
+  .printed-trip.is-separate .printed-day + .printed-day {
     break-before: page;
   }
 
-  /* A stop is never split across two sheets. */
+  .printed-trip.is-flow .printed-day + .printed-day {
+    margin-top: 40px;
+  }
+
+  /* A stop is never split across two sheets, and a day's name is never
+     left at the foot of one with the day itself on the next. */
   .printed-stop {
     break-inside: avoid;
+  }
+
+  .printed-day > header {
+    break-after: avoid;
   }
 
   /* The discs the stops hang on are the one fill on the page, and a browser

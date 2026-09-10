@@ -339,7 +339,11 @@ export function PrintedTrip({
   }, [settled, awaited, onReady]);
 
   return (
-    <div className={`printed-trip ${visible ? "" : "hidden print:block"}`}>
+    <div
+      className={`printed-trip ${request.separateSheets ? "is-separate" : "is-flow"} ${
+        visible ? "" : "hidden print:block"
+      }`}
+    >
       {chosen.map((day, index) => (
         <PrintedDay
           key={day.plan.id}

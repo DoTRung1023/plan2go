@@ -5,6 +5,12 @@
 export interface ExportRequest {
   /** The days to put on paper, in the trip's own order. */
   readonly dayIds: readonly string[];
+  /**
+   * Each day starting a sheet of its own, which is the usual way, or the days
+   * running on one after another, which spends less paper on short days. A
+   * day too long for one sheet runs onto a second either way.
+   */
+  readonly separateSheets: boolean;
   /** A map of each day above its list. */
   readonly map: boolean;
   /** The note written on each stop. */
@@ -17,6 +23,7 @@ export interface ExportRequest {
 export function exportRequestKey(request: ExportRequest): string {
   return [
     request.dayIds.join(","),
+    request.separateSheets ? "separate" : "flow",
     request.map ? "map" : "",
     request.notes ? "notes" : "",
     request.legDetails ? "legs" : "",

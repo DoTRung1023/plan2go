@@ -390,6 +390,7 @@ export function TripEditor({
           days={days}
           request={{
             dayIds: selected === undefined ? [] : [selected.plan.id],
+            separateSheets: true,
             map: false,
             notes: true,
             legDetails: true,
