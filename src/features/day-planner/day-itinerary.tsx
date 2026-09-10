@@ -79,22 +79,24 @@ function Anchor({
 }) {
   return (
     /*
-     * Laid out like a stop's card but drawn on the panel's own ground, with no
-     * card of its own: the ends of a day are where it passes through, and a
-     * raised card gave them the same weight as the places it is for. The disc
-     * is sage where a stop's is terracotta and round where a stop's carries a
-     * number, which is the whole difference.
+     * On the stop card's grid, to the pixel: the same disc column, the same gap
+     * beside it, the same padding around it, so the name and address here sit
+     * on the same left edge as every stop's, and the disc sits under theirs.
+     * Only the card itself is missing. The ends of a day are where it passes
+     * through, and a raised card gave them the weight of the places it is for.
+     * The disc is sage where a stop's is terracotta and round where a stop's
+     * carries a number, which is the whole difference.
      *
      * The time leads. Change and Remove sit at the end of the address line as
      * two quiet words, there at all times, so that what can be done to this end
      * of the day is never something a reader has to discover by pointing at it.
      */
-    <div className="flex items-start gap-[14px] px-[2px] py-[14px]">
-      <span className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-pill bg-sage text-paper">
-        <HomeIcon size={18} strokeWidth={2.75} />
+    <div className="mt-[9px] grid grid-cols-[30px_minmax(0,1fr)] gap-x-[13px] px-4 py-[15px]">
+      <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-pill bg-sage text-paper">
+        <HomeIcon size={15} strokeWidth={2.75} />
       </span>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-baseline gap-[14px]">
+      <div className="flex min-w-0 flex-col">
+        <div className="flex items-start gap-[10px]">
           <span className="min-w-0 flex-1 font-display text-place text-ink">
             {endpointName(endpoint)}
           </span>
@@ -102,8 +104,8 @@ function Anchor({
             {time ?? "Time not known"}
           </span>
         </div>
-        <div className="mt-[5px] flex items-center gap-[10px]">
-          <span className="min-w-0 flex-1 truncate text-meta text-ink-muted">
+        <div className="mt-[3px] flex items-center gap-[10px]">
+          <span className="min-w-0 flex-1 truncate text-meta text-ink-faint">
             {endpoint.place.address ?? fallback}
           </span>
           {controls === null ? null : (
