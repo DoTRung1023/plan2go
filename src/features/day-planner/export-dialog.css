@@ -27,22 +27,6 @@
   margin-top: 24px;
 }
 
-/* Where the printer will put the page number: in the bottom margin, on the
-   right, in the muted ink. Each sheet on screen is one day, so the number
-   counts sheets; a day long enough for two will be numbered by the printer. */
-.export-sheets .is-separate .printed-day {
-  position: relative;
-}
-
-.export-sheets .printed-page-number {
-  position: absolute;
-  right: 60px;
-  bottom: 24px;
-  font-size: 11.5px;
-  line-height: 1;
-  color: var(--color-ink-muted);
-}
-
 .export-sheets .is-flow .printed-day + .printed-day {
   margin-top: 40px;
 }
