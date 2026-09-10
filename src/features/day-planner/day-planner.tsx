@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import type { PlannedDay } from "./compute-trip";
 import { DayItinerary } from "./day-itinerary";
 import { DayTabs } from "./day-tabs";
+import { exportLine } from "./day-status";
 import type { DayActions, EditOutcome } from "./day-actions";
 import { formatDayDate } from "./format-day-date";
 
@@ -81,28 +82,30 @@ export function DayPlanner({
 
   return (
     <>
-      <div className={`shrink-0 pt-4 pb-[10px] ${GUTTER}`}>
+      {/* One block: the trip's name, the days, and which of them is open. An
+          editor gets all three from the settings form, because the dates on the
+          day's line are part of it. A reader who cannot edit gets the heading
+          and the strip on their own. */}
+      <div className={`relative z-20 shrink-0 pt-5 pb-[14px] ${GUTTER}`}>
         {settings ?? (
           <>
-            <h1 className="font-display text-title text-ink">{title}</h1>
+            <h1 className="font-display text-[26px] leading-[1.1] tracking-[-0.01em] text-ink">
+              {title}
+            </h1>
             {range === null ? null : (
               <p className="mt-1 text-meta text-ink-muted">{range}</p>
             )}
+            <div className="mt-[14px]">
+              <DayTabs
+                days={days.map((day) => day.plan)}
+                today={today}
+                selectedIndex={selectedIndex}
+                onSelect={onSelect}
+                onAddDay={onAddDay}
+              />
+            </div>
           </>
         )}
-      </div>
-
-      {/* 140px is the height of the map strip on a phone, from DESIGN.md. */}
-      <div
-        className={`sticky top-[140px] z-10 shrink-0 bg-paper lg:static ${GUTTER}`}
-      >
-        <DayTabs
-          days={days.map((day) => day.plan)}
-          today={today}
-          selectedIndex={selectedIndex}
-          onSelect={onSelect}
-          onAddDay={onAddDay}
-        />
       </div>
 
       {selected === undefined ? null : (
@@ -118,7 +121,7 @@ export function DayPlanner({
            * hold the stop underneath it in place. Off, the list stays exactly
            * where it was and the panel opens downwards, where it was clicked.
            */
-          className={`scroll-quiet min-h-0 flex-1 overflow-x-hidden overflow-y-auto pt-2 pb-8 [overflow-anchor:none] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${GUTTER}`}
+          className={`scroll-quiet min-h-0 flex-1 overflow-x-hidden overflow-y-auto pt-[6px] pb-[26px] [overflow-anchor:none] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${GUTTER}`}
         >
           <DayItinerary
             day={selected.plan}
@@ -131,6 +134,35 @@ export function DayPlanner({
             actions={actions}
           />
         </section>
+      )}
+
+      {/* The foot of the panel, and the one thing here that leaves the screen.
+          It prints rather than building a file: the browser's own print already
+          writes a PDF, and a second way of making one would be a second thing
+          to keep in step with what the page actually says. */}
+      {selected === undefined ? null : (
+        <div
+          className={`flex flex-none items-center gap-[14px] border-t border-rule py-[14px] print:hidden ${GUTTER}`}
+        >
+          <div className="min-w-0 flex-1">
+            <p className="text-[13.5px] leading-[1.3] font-semibold text-ink">
+              {exportLine(selected, selectedIndex).title}
+            </p>
+            <p className="mt-[2px] text-[11.5px] leading-[1.4] text-ink-faint">
+              {exportLine(selected, selectedIndex).note}
+            </p>
+          </div>
+          <button
+            type="button"
+            disabled={selected.plan.stops.length === 0}
+            onClick={() => {
+              window.print();
+            }}
+            className="flex-none rounded-pill bg-terracotta px-5 py-[11px] font-display text-[14px] leading-none text-paper hover:bg-terracotta-600 active:bg-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+          >
+            Export day as PDF
+          </button>
+        </div>
       )}
     </>
   );

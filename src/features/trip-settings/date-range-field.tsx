@@ -125,6 +125,18 @@ const SIZES = {
     change: "shrink-0 text-micro font-semibold text-terracotta-700",
     stack: "",
   },
+  /**
+   * On the day's own line rather than in a form: no label, no box, just the
+   * range and the word that opens it, set as one quiet sentence at the end of
+   * the row. The panel it opens is the same panel.
+   */
+  inline: {
+    trigger:
+      "w-auto rounded-pill border-transparent bg-transparent px-2 py-[5px] text-[13px] leading-none font-semibold text-ink-muted hover:border-transparent hover:bg-terracotta-100 hover:text-terracotta-700",
+    label: "sr-only",
+    change: "shrink-0 text-[13px] leading-none font-bold text-terracotta-700",
+    stack: "",
+  },
   large: {
     // Room kept clear on the right for the word, which is taken out of the flow
     // so its own padding cannot make this pill taller than the fields beside it.

@@ -40,6 +40,27 @@ function Glyph({
   );
 }
 
+/** Out of a tray and away: what handing a link to somebody else looks like. */
+export function ShareIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" />
+      <path d="M12 15V3" />
+      <path d="M8 7l4-4 4 4" />
+    </Glyph>
+  );
+}
+
+export function TrashIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="M4 7h16" />
+      <path d="M9 7V4h6v3" />
+      <path d="M7 7l1 13h8l1-13" />
+    </Glyph>
+  );
+}
+
 export function ChevronLeftIcon(props: IconProps) {
   return (
     <Glyph {...props}>
@@ -71,6 +92,14 @@ export function PlusIcon(props: IconProps) {
   return (
     <Glyph {...props}>
       <path d="M12 5v14M5 12h14" />
+    </Glyph>
+  );
+}
+
+export function MinusIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="M5 12h14" />
     </Glyph>
   );
 }

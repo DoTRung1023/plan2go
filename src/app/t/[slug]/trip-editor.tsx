@@ -6,9 +6,11 @@ import type { LatLng } from "@/core/model/place";
 import type { PlannedDay } from "@/features/day-planner/compute-trip";
 import { DayPlanner } from "@/features/day-planner/day-planner";
 import { PlaceSearch } from "@/features/place-search/place-search";
+import { DayTabs } from "@/features/day-planner/day-tabs";
+import { dayStatus } from "@/features/day-planner/day-status";
 import { placesOnTheTrip } from "@/features/place-search/places-on-the-trip";
 import { searchBias } from "@/features/place-search/search-bias";
-import { CollapsingActions } from "@/features/trip-settings/collapsing-actions";
+import { TripMenu } from "@/features/trip-settings/trip-menu";
 import { ShareLinks } from "@/features/trip-settings/share-links";
 import { SavedNote } from "@/features/trip-settings/saved-note";
 import { TripActions } from "@/features/trip-settings/trip-actions";
@@ -137,7 +139,7 @@ export function TripEditor({
      * the guarantee: nothing in either pane can scroll the window instead of
      * itself.
      */
-    <main className="planner-shell lg:grid lg:h-dvh lg:grid-cols-[minmax(0,1fr)_clamp(520px,40%,660px)] lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden">
+    <main className="planner-shell lg:grid lg:h-dvh lg:grid-cols-[minmax(0,1fr)_clamp(460px,38%,600px)] lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden">
       <section
         aria-label="Map of this day"
         className={
@@ -281,8 +283,33 @@ export function TripEditor({
                 title={title}
                 startDate={first.plan.date}
                 endDate={last.plan.date}
+                tabs={
+                  <DayTabs
+                    days={days.map((day) => day.plan)}
+                    today={today}
+                    selectedIndex={selectedIndex}
+                    onSelect={setChosenIndex}
+                    onAddDay={
+                      editKey === null
+                        ? null
+                        : () => recording(addDayAction({ slug, editKey }))
+                    }
+                  />
+                }
+                dayLine={
+                  selected === undefined ? null : (
+                    <>
+                      <span className="font-display text-[21px] leading-none text-ink">
+                        Day {selectedIndex + 1}
+                      </span>
+                      <span className="text-[13.5px] leading-[1.3] text-ink-faint">
+                        {dayStatus(selected)}
+                      </span>
+                    </>
+                  )
+                }
                 actions={
-                  <CollapsingActions label="Trip actions">
+                  <TripMenu label="Trip actions">
                     <ShareLinks slug={slug} editKey={editKey} />
                     <TripActions
                       slug={slug}
@@ -290,7 +317,7 @@ export function TripEditor({
                       onDelete={deleteTripAction}
                       startAnotherPath="/"
                     />
-                  </CollapsingActions>
+                  </TripMenu>
                 }
                 onSave={(previous, formData) =>
                   recording(updateTripAction(previous, formData))

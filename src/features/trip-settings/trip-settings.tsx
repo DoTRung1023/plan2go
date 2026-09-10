@@ -26,7 +26,7 @@ const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/;
  * width a trip name still reads at, below which the row wraps instead.
  */
 const NAME_FIELD =
-  "h-[34px] min-w-[200px] flex-1 rounded-pill border border-rule bg-paper-raised px-[14px] py-0 font-display text-place text-ink caret-terracotta hover:border-rule-strong aria-invalid:border-terracotta focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "min-w-0 flex-1 border-0 bg-transparent px-0 py-[2px] font-display text-[26px] leading-[1.1] tracking-[-0.01em] text-ink caret-terracotta outline-none placeholder:text-ink-faint aria-invalid:text-terracotta-700 focus-visible:rounded-[6px] focus-visible:outline-2 focus-visible:outline-offset-[4px] focus-visible:outline-terracotta";
 
 interface TripSettingsProps {
   readonly slug: string;
@@ -42,6 +42,18 @@ interface TripSettingsProps {
    * app's routes or its mutations.
    */
   readonly actions: ReactNode;
+  /**
+   * Which day is open and what it comes to, said on the same line the dates
+   * are changed from. Passed in because the day is the planner's business and
+   * the trip's name is this one's, and they share a row rather than an owner.
+   */
+  readonly dayLine: ReactNode;
+  /**
+   * The strip of days, which belongs between the trip's name and the day's own
+   * line. It is passed through rather than rendered here because choosing a day
+   * is the planner's business; this only owns the row it sits in.
+   */
+  readonly tabs: ReactNode;
   /**
    * Passed in rather than imported, because a feature may not reach into the
    * route that owns the mutation.
@@ -79,6 +91,8 @@ export function TripSettings({
   startDate,
   endDate,
   actions,
+  dayLine,
+  tabs,
   onSave,
 }: TripSettingsProps) {
   const [state, submit, pending] = useActionState(onSave, UNSAVED);
@@ -149,7 +163,7 @@ export function TripSettings({
       <label className="sr-only" htmlFor={`${fieldId}-title`}>
         Trip name
       </label>
-      <div className="relative flex flex-wrap items-center gap-3">
+      <div className="relative flex items-start gap-[10px]">
         {/* Not `required`. requestSubmit runs the browser's own validation, and
             a field marked required stops there and puts up a grey system
             bubble reading "Please fill out this field", in a typeface this
@@ -177,9 +191,7 @@ export function TripSettings({
           }}
           className={NAME_FIELD}
         />
-        {actions === null ? null : (
-          <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>
-        )}
+        {actions}
 
         {/* Hangs off the field, where the browser would have put its own bubble,
             and over what is under it rather than in the column with it. In the
@@ -195,7 +207,13 @@ export function TripSettings({
         ) : null}
       </div>
 
-      <div className="relative mt-[10px]">
+      <div className="mt-[14px]">{tabs}</div>
+
+      {/* The day's own line, and the dates at the end of it: what is open and
+          what it is part of, read together rather than in two places. */}
+      <div className="relative mt-4 flex flex-wrap items-baseline gap-[10px] border-t border-rule pt-[14px]">
+        {dayLine}
+        <span className="flex-1" />
         <DateRangeField
           id={`${fieldId}-dates`}
           startName="startDate"
@@ -209,6 +227,7 @@ export function TripSettings({
           }}
           footer={saveDates}
           onClose={abandonDates}
+          size="inline"
         />
 
         {/* Hung off the dates the way the name's message is hung off the name,

@@ -5,7 +5,7 @@ import { useRef, useState, useTransition } from "react";
 import type { DayPlan } from "@/core/model/day";
 import { PlusIcon } from "@/ui/icons";
 import type { EditOutcome } from "./day-actions";
-import { formatDayDate } from "./format-day-date";
+import { formatDayDate, formatDayTab } from "./format-day-date";
 import "./day-tabs.css";
 
 interface DayTabsProps {
@@ -43,8 +43,13 @@ function stopLine(day: DayPlan): string {
   return day.stops.length === 0 ? "empty" : "passing through";
 }
 
+/**
+ * A handle, not a summary. It carried the day's number, its date and its stop
+ * count stacked three deep, which made the strip taller than the heading under
+ * it and said three times over what the line below now says once.
+ */
 const TAB =
-  "flex shrink-0 flex-col items-center gap-[2px] rounded-pill border px-[15px] pt-[5px] pb-[6px] whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "flex shrink-0 items-center rounded-pill border-0 px-[15px] py-[9px] text-[13.5px] leading-none font-semibold whitespace-nowrap focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta";
 
 export function DayTabs({
   days,
@@ -97,11 +102,11 @@ export function DayTabs({
   };
 
   return (
-    <div className="border-b border-rule">
+    <div>
       {/* The strip scrolls, and the button rides at the end of it, after the
           last day. It is a sibling of the tab list rather than inside it: a
           tab list holds tabs, and a button among them is announced as one. */}
-      <div className="day-tabs flex items-center gap-[6px] pb-[10px]">
+      <div className="day-tabs flex flex-wrap items-center gap-[7px] pb-0">
         <div
           role="tablist"
           aria-label="Days of this trip"
@@ -136,18 +141,23 @@ export function DayTabs({
             }}
             className={`${TAB} ${
               selected
-                ? "border-terracotta-800 bg-terracotta-800 text-paper"
+                ? "bg-terracotta-800 text-paper"
                 : isToday
-                  ? "border-sage-600 bg-sage-100 text-sage-800 hover:border-sage-700"
-                  : "border-rule bg-transparent text-ink-muted hover:border-rule-strong"
+                  ? "bg-sage-100 text-sage-800 hover:bg-sage-200"
+                  : "bg-transparent text-ink-muted hover:bg-neutral-200"
             }`}
           >
-            {isToday ? <span className="sr-only">Today. </span> : null}
-            <span className="text-meta font-semibold">Day {index + 1}</span>
-            <span className="text-tick tabular-nums opacity-80">
-              {formatDayDate(day.date)}
+            {/* The tab no longer draws the date in full or counts the stops.
+                Both are on the day's own line the moment it is opened, and a
+                reader who cannot see the strip still hears all of it here. */}
+            <span className="sr-only">
+              {`Day ${String(index + 1)}, ${formatDayDate(day.date)}, ${stopLine(day)}.${
+                isToday ? " Today." : ""
+              }`}
             </span>
-            <span className="text-tick tabular-nums opacity-65">{stopLine(day)}</span>
+            <span aria-hidden="true" className="tabular-nums">
+              {formatDayTab(day.date)}
+            </span>
           </button>
         );
       })}
@@ -160,7 +170,7 @@ export function DayTabs({
             disabled={adding}
             title="Add a day"
             aria-label="Add a day to the end of this trip"
-            className="grid h-[40px] w-[40px] shrink-0 place-items-center rounded-pill border border-dashed border-rule-strong text-ink-muted hover:border-terracotta hover:text-terracotta disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+            className="ml-[2px] grid h-[34px] w-[34px] shrink-0 place-items-center rounded-pill border-[1.5px] border-dashed border-rule-strong text-ink-faint hover:border-terracotta hover:text-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
           >
             <PlusIcon size={16} strokeWidth={2.75} />
           </button>

@@ -209,14 +209,10 @@ export function LegRow({
   );
 
   return (
-    <div className="ml-[2px] grid grid-cols-[30px_minmax(0,1fr)] gap-x-[14px]">
-      <div className="flex justify-center py-[2px]">
-        <span aria-hidden="true" className="thread" />
-      </div>
-
+    <div className="mt-[9px] ml-[15px] border-l-2 border-dotted border-rule-strong pl-7">
       <div
         ref={row}
-        className="py-[9px]"
+        className=""
         onMouseEnter={() => {
           onHover(leg.index);
         }}
@@ -226,8 +222,8 @@ export function LegRow({
       >
         {onChange === null ? (
           <div
-            className={`flex flex-wrap items-center gap-x-[10px] gap-y-[6px] rounded-row border py-2 pr-[14px] pl-3 ${
-              hovered ? "border-terracotta/55 bg-paper-sunken" : "border-rule"
+            className={`flex flex-wrap items-center gap-x-[11px] gap-y-[6px] rounded-chip px-[10px] py-2 ${
+              hovered ? "bg-paper-sunken" : ""
             }`}
           >
             {summary}
@@ -235,7 +231,7 @@ export function LegRow({
         ) : open ? (
           /* Its own scrollbar on a short window, so a panel too tall to fit
              scrolls inside itself rather than pushing the day down past it. */
-          <div className="scroll-quiet max-h-[50vh] overflow-y-auto rounded-panel border border-rule bg-paper-sunken px-[14px] pt-[13px] pb-[14px]">
+          <div className="scroll-quiet max-h-[50vh] overflow-y-auto rounded-row bg-paper-sunken px-[14px] pt-[13px] pb-[14px]">
             <div className="flex items-baseline gap-2">
               {/* No distance beside the heading: every way of covering the leg
                   is about to say its own, and they are not all the same. */}
@@ -284,14 +280,12 @@ export function LegRow({
               setOpen(true);
               setError(null);
             }}
-            className={`flex w-full flex-wrap items-center gap-x-[10px] gap-y-[6px] rounded-row border py-2 pr-[14px] pl-3 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
-              hovered
-                ? "border-terracotta/55 bg-paper-sunken"
-                : "border-rule hover:border-rule-strong"
+            className={`flex w-full flex-wrap items-center gap-x-[11px] gap-y-[6px] rounded-chip border-0 px-[10px] py-2 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${
+              hovered ? "bg-paper-sunken" : "bg-transparent hover:bg-neutral-200"
             }`}
           >
             {summary}
-            <span className="ml-auto text-micro font-semibold whitespace-nowrap text-terracotta-700">
+            <span className="ml-auto text-[13px] leading-none font-bold whitespace-nowrap text-terracotta-700">
               Change
             </span>
           </button>
