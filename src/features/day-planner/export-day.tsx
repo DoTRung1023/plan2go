@@ -17,9 +17,10 @@ interface ExportDayProps {
  * nothing under it: the choices are the next piece of work, and this is the
  * place they land.
  *
- * It opens upwards, because the button sits at the foot of the panel and the
- * only room is above it. Clicking anywhere else closes it, as does Escape,
- * which hands focus back to the button it came from.
+ * The button floats over the day, so it carries the shadow a floating control
+ * has. The window opens upwards, because the button sits in the bottom corner
+ * and the only room is above it. Clicking anywhere else closes it, as does
+ * Escape, which hands focus back to the button it came from.
  */
 export function ExportDay({ disabled }: ExportDayProps) {
   const [open, setOpen] = useState(false);
@@ -75,7 +76,7 @@ export function ExportDay({ disabled }: ExportDayProps) {
           }
           setOpen(true);
         }}
-        className="rounded-pill bg-terracotta px-5 py-[11px] font-display text-body/none font-semibold text-paper hover:bg-terracotta-600 active:bg-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+        className="rounded-pill bg-terracotta px-5 py-[11px] font-display text-body/none font-semibold text-paper shadow-sm hover:bg-terracotta-600 active:bg-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
       >
         Export day as PDF
       </button>
