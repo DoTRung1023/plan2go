@@ -170,8 +170,8 @@ function PrintedDay({
             <p className={`text-body ${MUTED}`}>{formatDayLong(plan.date)}</p>
           </div>
         </div>
-        {/* The lockup the front door wears, at the height of the day's name. */}
-        <Image src={lockup} alt="plan2go" className="h-7 w-auto shrink-0 pt-[2px]" />
+        {/* The lockup the front door wears, as tall as the two lines beside it. */}
+        <Image src={lockup} alt="plan2go" className="h-10 w-auto shrink-0" />
       </header>
 
       {request.map && !mapFailed ? (
