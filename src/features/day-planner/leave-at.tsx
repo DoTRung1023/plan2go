@@ -32,10 +32,13 @@ interface LeaveAtProps {
  * time of its own to set.
  *
  * The browser's own time field, in a pill on the raised paper an input sits
- * on, with its label above it and both ranged right, as the design file draws
- * it. Nothing is written while the field is being typed into: a time is
- * committed when the field is left or Enter is pressed, so a morning typed a
- * digit at a time is one trip to the server rather than four.
+ * on, with its label on the same line: the line it shares is one line tall,
+ * and a label stacked above the field made the header taller than the day it
+ * names. Both are set at the small step the date beside them uses, so the row
+ * reads as one line of one size. Nothing is written while the field is being
+ * typed into: a time is committed when the field is left or Enter is pressed,
+ * so a morning typed a digit at a time is one trip to the server rather than
+ * four.
  */
 export function LeaveAt({ value, onChoose }: LeaveAtProps) {
   const [error, setError] = useState<string | null>(null);
@@ -53,10 +56,8 @@ export function LeaveAt({ value, onChoose }: LeaveAtProps) {
   };
 
   return (
-    <label className="relative flex flex-none flex-col items-end text-right">
-      <span className="mb-2 text-label font-semibold tracking-[0.02em] whitespace-nowrap text-ink-muted">
-        Leave at
-      </span>
+    <label className="relative flex flex-none items-center gap-2">
+      <span className="text-small whitespace-nowrap text-ink-muted">Leave at</span>
       {/* Keyed on the value, so a time that came back from the server after a
           change is what the field shows, and one that failed to save is left
           as it was typed, under the sentence saying why. */}
@@ -74,7 +75,7 @@ export function LeaveAt({ value, onChoose }: LeaveAtProps) {
             event.currentTarget.blur();
           }
         }}
-        className="rounded-pill border border-rule bg-paper-raised px-[13px] py-[7px] text-center text-body/none font-semibold text-ink caret-terracotta tabular-nums disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+        className="rounded-pill border border-rule bg-paper-raised px-3 py-[6px] text-center text-small/none font-semibold text-ink caret-terracotta tabular-nums disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
       />
 
       {/* Hangs off the field, over what is under it rather than in the row
