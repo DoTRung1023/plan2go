@@ -29,8 +29,12 @@ export default async function MarketingPage() {
      * The columns are auto-fit rather than a breakpoint, so the pair splits when
      * there is room for both and stacks when there is not, without this page
      * having to name the width at which that happens.
+     *
+     * Centred on each other, not on their tops. The words are shorter than the
+     * form beside them, and a short block pinned to the top of a tall one reads
+     * as two things that happen to share a page.
      */
-    <div className="grid items-start gap-14 [grid-template-columns:repeat(auto-fit,minmax(300px,1fr))]">
+    <div className="grid items-center gap-12 [grid-template-columns:repeat(auto-fit,minmax(300px,1fr))]">
       <div className="flex flex-col gap-[26px] pt-[6px]">
         <Image
           src={lockup}
