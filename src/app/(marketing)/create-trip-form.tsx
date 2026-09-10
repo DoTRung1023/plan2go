@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { addDays, daysBetween } from "@/core/time/zoned";
+import { addDays } from "@/core/time/zoned";
 import { DateRangeField } from "@/features/trip-settings/date-range-field";
 import { MAX_TRIP_DAYS } from "@/server/trips/new-trip-input";
 import type { Choice } from "./choice-field";
@@ -38,9 +38,6 @@ export function CreateTripForm({ countries, today }: CreateTripFormProps) {
   const [last, setLast] = useState(addDays(today, OPENING_SPAN_DAYS));
   const [country, setCountry] = useState("");
   const [city, setCity] = useState<ChosenPlace | null>(null);
-
-  /** Both ends counted, so a trip that starts and ends on one day is one day. */
-  const days = daysBetween(first, last) + 1;
 
   return (
     <form
@@ -116,12 +113,6 @@ export function CreateTripForm({ countries, today }: CreateTripFormProps) {
       >
         {pending ? "Making the trip" : "Start planning"}
       </button>
-
-      {/* What the trip will be the moment it opens. It says the shape of the
-          thing rather than congratulating anybody on filling a form in. */}
-      <p className="text-center text-[13px] leading-[1.5] text-ink-faint">
-        {`${String(days)} ${days === 1 ? "day" : "days"}, empty for now. You add places once you are in.`}
-      </p>
     </form>
   );
 }

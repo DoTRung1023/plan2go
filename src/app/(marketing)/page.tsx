@@ -30,11 +30,13 @@ export default async function MarketingPage() {
      * there is room for both and stacks when there is not, without this page
      * having to name the width at which that happens.
      *
-     * Centred on each other, not on their tops. The words are shorter than the
-     * form beside them, and a short block pinned to the top of a tall one reads
-     * as two things that happen to share a page.
+     * Aligned along their tops, as the canvas has them: the lockup sits level
+     * with the top of the card, and the words hang from it. The pair as a whole
+     * is centred in the page by the layout around it, so what is left over
+     * below the shorter column is shared out above and beneath the pair rather
+     * than piled under it.
      */
-    <div className="grid items-center gap-12 [grid-template-columns:repeat(auto-fit,minmax(300px,1fr))]">
+    <div className="grid items-start gap-12 [grid-template-columns:repeat(auto-fit,minmax(300px,1fr))]">
       <div className="flex flex-col gap-[26px] pt-[6px]">
         <Image
           src={lockup}
