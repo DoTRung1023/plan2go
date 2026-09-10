@@ -73,14 +73,24 @@
     0 2px 6px color-mix(in srgb, var(--color-neutral-900) 36%, transparent);
 }
 
-/* Not merely a different colour from a stop marker. A different shape. */
-/* The panel's disc for an end of the day, at the size the map draws a stop. */
+/*
+ * Not merely a different colour from a stop marker. A different shape: the
+ * panel's square with one corner cut, at the size the map draws a stop, so an
+ * end of the day is one shape wherever it is seen.
+ */
 .trip-map-endpoint {
   width: 30px;
   height: 30px;
-  border-radius: var(--radius-pill);
-  background-color: var(--color-sage);
+  border-radius: 13px 13px 13px 4px;
+  background-color: var(--color-sage-600);
   color: var(--color-paper);
+}
+
+/* The ring is the colour of whatever it is, and an end of the day is sage. */
+.trip-map-endpoint.is-hovered {
+  box-shadow:
+    0 0 0 7px color-mix(in srgb, var(--color-sage) 24%, transparent),
+    0 2px 6px color-mix(in srgb, var(--color-neutral-900) 36%, transparent);
 }
 
 /* The full name of the marker, read out but never drawn. */

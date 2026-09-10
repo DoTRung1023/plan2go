@@ -83,6 +83,12 @@ interface TripMapProps {
   readonly hoveredLegIndex: number | null;
   readonly onHoverLeg: (legIndex: number | null) => void;
   /**
+   * The end of the day under the pointer, here or in the panel, by the place
+   * it is at. A day that starts and ends in one place has one marker for both.
+   */
+  readonly hoveredEndpointId: string | null;
+  readonly onHoverEndpoint: (placeId: string | null) => void;
+  /**
    * Asked for rather than done here: what the map grows over belongs to
    * whoever laid the two panes out, and a map that resized itself would be
    * deciding on their behalf.
@@ -252,6 +258,8 @@ export function TripMap({
   onHoverStop,
   hoveredLegIndex,
   onHoverLeg,
+  hoveredEndpointId,
+  onHoverEndpoint,
   start,
   end,
   stops,
@@ -266,6 +274,8 @@ export function TripMap({
    * the whole map each time the pointer crossed a card.
    */
   const markers = useRef(new Map<string, HTMLElement>());
+  /** The ends of the day, the same way, keyed by the place each is at. */
+  const endpointMarkers = useRef(new Map<string, HTMLElement>());
   /**
    * How each leg answers the pointer: its ring on or off, and its own line at
    * the weight that goes with it. Kept as the work to do rather than as the
@@ -281,9 +291,11 @@ export function TripMap({
    */
   const hovering = useRef(onHoverStop);
   const hoveringLeg = useRef(onHoverLeg);
+  const hoveringEndpoint = useRef(onHoverEndpoint);
   useEffect(() => {
     hovering.current = onHoverStop;
     hoveringLeg.current = onHoverLeg;
+    hoveringEndpoint.current = onHoverEndpoint;
   });
   const overlays = useRef<google.maps.OverlayView[]>([]);
   const lines = useRef<google.maps.Polyline[]>([]);
@@ -442,19 +454,21 @@ export function TripMap({
 
     const points: google.maps.LatLngLiteral[] = [];
 
+    endpointMarkers.current.clear();
     const drawEndpoint = (endpoint: DayEndpoint, word: string): void => {
       const point = {
         lat: endpoint.place.position.lat,
         lng: endpoint.place.position.lng,
       };
-      overlays.current.push(
-        placeDomMarker(
-          maps,
-          map,
-          point,
-          endpointMarkerElement(word, endpoint.place.name),
-        ),
-      );
+      const element = endpointMarkerElement(word, endpoint.place.name);
+      element.addEventListener("mouseenter", () => {
+        hoveringEndpoint.current(endpoint.place.id);
+      });
+      element.addEventListener("mouseleave", () => {
+        hoveringEndpoint.current(null);
+      });
+      endpointMarkers.current.set(endpoint.place.id, element);
+      overlays.current.push(placeDomMarker(maps, map, point, element));
       points.push(point);
     };
 
@@ -521,6 +535,12 @@ export function TripMap({
       element.classList.toggle("is-hovered", stopId === hoveredStopId);
     }
   }, [hoveredStopId]);
+
+  useEffect(() => {
+    for (const [placeId, element] of endpointMarkers.current) {
+      element.classList.toggle("is-hovered", placeId === hoveredEndpointId);
+    }
+  }, [hoveredEndpointId]);
 
   useEffect(() => {
     if (state.status !== "ready") {

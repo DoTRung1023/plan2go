@@ -206,10 +206,22 @@ export function LegRow({
   );
 
   return (
-    <div className="mt-[9px] ml-[15px] border-l-2 border-dotted border-rule-strong pl-7">
+    /*
+     * On the stop card's grid. The thread runs down the column the discs are
+     * centred on, and what the leg says starts on the same left edge as the
+     * name of the stop it leads to. The thread is the row's full height less a
+     * hair at each end, so the line reads as one from the disc above to the
+     * disc below, with the cards' own padding as the only breaks in it. The
+     * space above and below the words is the row's own, which is what lets
+     * the thread run through it: a margin would have been a gap in the line.
+     */
+    <div className="grid grid-cols-[30px_minmax(0,1fr)] gap-x-[13px] px-[17px]">
+      <div className="flex justify-center py-[2px]">
+        <span className="thread" aria-hidden="true" />
+      </div>
       <div
         ref={row}
-        className=""
+        className="pt-[9px] pb-[10px]"
         onMouseEnter={() => {
           onHover(leg.index);
         }}

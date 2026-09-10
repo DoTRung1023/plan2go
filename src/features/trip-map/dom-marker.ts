@@ -2,8 +2,8 @@
  * A marker that is our own DOM rather than Google's.
  *
  * DESIGN.md is specific about these: a stop is a numbered disc with a 2px
- * terracotta ring, an endpoint is a different shape in olive, and both carry a
- * name that is read out but never drawn. Google's own markers take an image, so
+ * terracotta ring, an endpoint is a sage square with one corner cut, and both
+ * carry a name that is read out but never drawn. Google's own markers take an image, so
  * an OverlayView is what lets the markup and the tokens stay in this repo.
  *
  * The class is built after the script loads, because OverlayView does not exist

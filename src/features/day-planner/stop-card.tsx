@@ -252,7 +252,7 @@ export function StopCard({
       onMouseLeave={() => {
         onHover(null);
       }}
-      className={`day-stop group mt-[9px] grid grid-cols-[30px_minmax(0,1fr)] gap-x-[13px] rounded-row border bg-paper-raised px-4 py-[15px] ${
+      className={`day-stop group grid grid-cols-[30px_minmax(0,1fr)] gap-x-[13px] rounded-row border bg-paper-raised px-4 py-[15px] ${
         dragging ? "opacity-35" : ""
       } ${
         dragOver && !dragging
@@ -268,11 +268,16 @@ export function StopCard({
             : "border-rule"
       }`}
     >
-      <div className="flex flex-col items-center gap-[7px]">
+      {/* The disc, and the thread running on down behind it to the foot of
+          the card, so the line the day hangs on is seen to pass through the
+          stop rather than stopping at it. Quieter here than on the page,
+          because it is over a raised card and should not compete with it. */}
+      <div className="flex flex-col items-center gap-[7px] [--thread-ink:16%]">
         <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-pill bg-terracotta font-display text-body/none font-semibold text-paper tabular-nums">
           <span aria-hidden="true">{position}</span>
           <span className="sr-only">Stop {position}</span>
         </span>
+        <span className="thread flex-1" aria-hidden="true" />
       </div>
 
       <div className="flex min-w-0 flex-col gap-[11px]">

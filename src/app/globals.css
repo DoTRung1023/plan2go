@@ -184,13 +184,17 @@
  * The dotted thread that runs down the left of the day, joining a stop to the
  * leg under it. Drawn rather than bordered, because a dotted border rounds its
  * dots off at this width and a gradient keeps them square.
+ *
+ * How dark its dots are is read from --thread-ink, so the thread can be a
+ * shade quieter where it runs over a raised card than where it runs over the
+ * page: the same line, not competing with the card it is drawn on.
  */
 @utility thread {
   width: 2px;
   border-radius: var(--radius-pill);
   background-image: repeating-linear-gradient(
     to bottom,
-    color-mix(in srgb, var(--color-ink) 16%, transparent) 0 4px,
+    color-mix(in srgb, var(--color-ink) var(--thread-ink, 22%), transparent) 0 4px,
     transparent 4px 9px
   );
 }

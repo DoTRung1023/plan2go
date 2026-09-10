@@ -18,6 +18,9 @@ interface DayPlannerProps {
   /** The leg under the pointer, here or on the map beside it. */
   readonly hoveredLegIndex: number | null;
   readonly onHoverLeg: (legIndex: number | null) => void;
+  /** The end of the day under the pointer, here or on the map, by its place. */
+  readonly hoveredEndpointId: string | null;
+  readonly onHoverEndpoint: (placeId: string | null) => void;
   readonly selectedIndex: number;
   readonly onSelect: (index: number) => void;
   /**
@@ -76,6 +79,8 @@ export function DayPlanner({
   onHoverStop,
   hoveredLegIndex,
   onHoverLeg,
+  hoveredEndpointId,
+  onHoverEndpoint,
   selectedIndex,
   onSelect,
   settings,
@@ -142,6 +147,8 @@ export function DayPlanner({
             onHoverStop={onHoverStop}
             hoveredLegIndex={hoveredLegIndex}
             onHoverLeg={onHoverLeg}
+            hoveredEndpointId={hoveredEndpointId}
+            onHoverEndpoint={onHoverEndpoint}
             actions={actions}
           />
         </section>

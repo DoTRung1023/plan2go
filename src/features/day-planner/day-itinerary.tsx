@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState, useTransition } from "react";
+import { Fragment, useEffect, useRef, useState, useTransition } from "react";
 import type { Conflict } from "@/core/model/conflict";
 import type { DayEndpoint, DayPlan } from "@/core/model/day";
 import type { LatLng, Place } from "@/core/model/place";
@@ -30,6 +30,13 @@ interface DayItineraryProps {
   /** The leg under the pointer, here or on the map beside it. */
   readonly hoveredLegIndex: number | null;
   readonly onHoverLeg: (legIndex: number | null) => void;
+  /**
+   * The end of the day under the pointer, here or on the map beside it, named
+   * by the place it is at. A day that starts and ends at the same place has
+   * one marker for both, and pointing at either row lights it.
+   */
+  readonly hoveredEndpointId: string | null;
+  readonly onHoverEndpoint: (placeId: string | null) => void;
   /** Null for a reader who holds no edit token. */
   readonly actions: DayActions | null;
 }
@@ -62,8 +69,8 @@ function endpointName(endpoint: DayEndpoint): string {
 
 /**
  * Where the day starts and where it ends. A different shape from a stop, not
- * merely a different colour: a rounded square in sage against the numbered
- * terracotta discs of the stops between them.
+ * merely a different colour: a rounded square in sage with one corner cut,
+ * against the numbered terracotta discs of the stops between them.
  */
 function Anchor({
   endpoint,
@@ -72,6 +79,8 @@ function Anchor({
   controls,
   onChooseTime,
   minutes,
+  hovered,
+  onHover,
 }: {
   readonly endpoint: DayEndpoint;
   /** Said when the place has no address of its own. */
@@ -87,58 +96,75 @@ function Anchor({
   readonly onChooseTime: ((minutes: number) => void) | null;
   /** The time as minutes from midnight, for the picker to open on. */
   readonly minutes: number | null;
+  /** Whether the pointer is on this place, here or on the map beside it. */
+  readonly hovered: boolean;
+  readonly onHover: (placeId: string | null) => void;
 }) {
+  const row = useRef<HTMLDivElement | null>(null);
+
+  /** Brought into view when the map points at it, the way a card is. */
+  useEffect(() => {
+    if (hovered) {
+      row.current?.scrollIntoView({ block: "nearest" });
+    }
+  }, [hovered]);
+
   return (
     /*
-     * On the stop card's grid, to the pixel: the same disc column, the same gap
-     * beside it, the same padding around it, so the name and address here sit
-     * on the same left edge as every stop's, and the disc sits under theirs.
-     * Only the card itself is missing. The ends of a day are where it passes
-     * through, and a raised card gave them the weight of the places it is for.
-     * The disc is sage where a stop's is terracotta and round where a stop's
-     * carries a number, which is the whole difference.
+     * One quiet line rather than a card. The ends of a day are where it passes
+     * through, and a raised card gave them the weight of the places it is for,
+     * so the row has no border and no ground until it is pointed at, and then
+     * the sunken paper, which is how every other row here answers the pointer.
      *
-     * The time leads. Changing and removing sit at the end of the address line
-     * as the same two small round tools a stop card carries, drawn at 55
-     * percent until the pointer is over the row and never hidden, so that what
-     * can be done to this end of the day is never something a reader has to
-     * discover by pointing at it.
+     * The marker sits on the thread's axis, the column the stops' discs are
+     * centred on, so the day reads as one line from end to end. The name is
+     * set in the body face rather than the display one, because the place a
+     * day starts is not a place the day is for, and the time is the display
+     * face on the right, where the eye finds it on every stop card too.
      */
-    <div className="group mt-[9px] grid grid-cols-[30px_minmax(0,1fr)] gap-x-[13px] px-4 py-[15px]">
-      <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-pill bg-sage text-paper">
+    <div
+      ref={row}
+      onMouseEnter={() => {
+        onHover(endpoint.place.id);
+      }}
+      onMouseLeave={() => {
+        onHover(null);
+      }}
+      className={`group flex items-center gap-[13px] rounded-row py-[14px] pr-[10px] pl-[17px] ${
+        hovered ? "bg-paper-sunken" : ""
+      }`}
+    >
+      <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-[13px_13px_13px_4px] bg-sage-600 text-paper">
         <HomeIcon size={15} strokeWidth={2.75} />
       </span>
-      <div className="flex min-w-0 flex-col">
-        <div className="flex items-start gap-[10px]">
-          <span className="min-w-0 flex-1 font-display text-place text-ink">
-            {endpointName(endpoint)}
-          </span>
-          {onChooseTime === null || minutes === null ? (
-            <span className="shrink-0 text-time whitespace-nowrap text-ink tabular-nums">
-              {time ?? "Time not known"}
-            </span>
-          ) : (
-            <TimePicker
-              value={minutes}
-              fixed={true}
-              disabled={false}
-              label={time ?? "Time not known"}
-              placeName={endpointName(endpoint)}
-              onChoose={onChooseTime}
-            />
-          )}
-        </div>
-        <div className="mt-[3px] flex items-center gap-[10px]">
-          <span className="min-w-0 flex-1 truncate text-meta text-ink-faint">
-            {endpoint.place.address ?? fallback}
-          </span>
-          {controls === null ? null : (
-            <span className="-mr-1 flex shrink-0 items-center opacity-55 group-hover:opacity-100 focus-within:opacity-100">
-              {controls}
-            </span>
-          )}
-        </div>
-      </div>
+      <span className="min-w-0 flex-1">
+        <span className="block text-small/[1.3] font-semibold text-ink">
+          {endpointName(endpoint)}
+        </span>
+        <span className="block truncate text-micro text-ink-muted">
+          {endpoint.place.address ?? fallback}
+        </span>
+      </span>
+      {onChooseTime === null || minutes === null ? (
+        <span className="shrink-0 font-display text-place whitespace-nowrap text-ink-muted tabular-nums">
+          {time ?? "Time not known"}
+        </span>
+      ) : (
+        <TimePicker
+          value={minutes}
+          fixed={true}
+          disabled={false}
+          label={time ?? "Time not known"}
+          placeName={endpointName(endpoint)}
+          size="anchor"
+          onChoose={onChooseTime}
+        />
+      )}
+      {controls === null ? null : (
+        <span className="flex shrink-0 items-center opacity-55 group-hover:opacity-100 focus-within:opacity-100">
+          {controls}
+        </span>
+      )}
     </div>
   );
 }
@@ -189,12 +215,16 @@ function EndpointSlot({
   endpoint,
   time,
   actions,
+  hoveredEndpointId,
+  onHoverEndpoint,
 }: {
   readonly which: "start" | "end";
   readonly day: DayPlan;
   readonly endpoint: DayEndpoint | null;
   readonly time: string | null;
   readonly actions: DayActions | null;
+  readonly hoveredEndpointId: string | null;
+  readonly onHoverEndpoint: (placeId: string | null) => void;
 }) {
   const [picking, setPicking] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -263,6 +293,8 @@ function EndpointSlot({
               : null
           }
           minutes={which === "start" ? day.startAtMinutes : null}
+          hovered={hoveredEndpointId === endpoint.place.id}
+          onHover={onHoverEndpoint}
         />
       )}
 
@@ -326,6 +358,8 @@ export function DayItinerary({
   onHoverStop,
   hoveredLegIndex,
   onHoverLeg,
+  hoveredEndpointId,
+  onHoverEndpoint,
   actions,
 }: DayItineraryProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -372,6 +406,8 @@ export function DayItinerary({
         endpoint={day.start}
         time={formatClock(computed.begins.minutesFromMidnight)}
         actions={actions}
+        hoveredEndpointId={hoveredEndpointId}
+        onHoverEndpoint={onHoverEndpoint}
       />
 
       {day.stops.length === 0 ? (
@@ -436,6 +472,8 @@ export function DayItinerary({
           computed.ends === null ? null : formatClock(computed.ends.minutesFromMidnight)
         }
         actions={actions}
+        hoveredEndpointId={hoveredEndpointId}
+        onHoverEndpoint={onHoverEndpoint}
       />
 
       {moveError === null ? null : (

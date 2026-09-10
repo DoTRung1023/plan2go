@@ -101,6 +101,7 @@ export function TripEditor({
    */
   const [hoveredStopId, setHoveredStopId] = useState<string | null>(null);
   const [hoveredLegIndex, setHoveredLegIndex] = useState<number | null>(null);
+  const [hoveredEndpointId, setHoveredEndpointId] = useState<string | null>(null);
 
   const recording = <T extends { readonly error: string | null }>(
     change: Promise<T>,
@@ -163,6 +164,8 @@ export function TripEditor({
               onHoverStop={setHoveredStopId}
               hoveredLegIndex={hoveredLegIndex}
               onHoverLeg={setHoveredLegIndex}
+              hoveredEndpointId={hoveredEndpointId}
+              onHoverEndpoint={setHoveredEndpointId}
               expanded={expanded}
               onToggleExpanded={() => {
                 setExpanded(!expanded);
@@ -229,6 +232,8 @@ export function TripEditor({
           onHoverStop={setHoveredStopId}
           hoveredLegIndex={hoveredLegIndex}
           onHoverLeg={setHoveredLegIndex}
+          hoveredEndpointId={hoveredEndpointId}
+          onHoverEndpoint={setHoveredEndpointId}
           selectedIndex={selectedIndex}
           onSelect={setChosenIndex}
           exporting={<TripExport where="heading" disabled={nothingToExport} />}
