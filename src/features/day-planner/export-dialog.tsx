@@ -268,7 +268,7 @@ export function ExportDialog({
               />
             </div>
 
-            <p className={`mt-[18px] ${HEADING}`}>On each sheet</p>
+            <p className={`mt-[18px] ${HEADING}`}>Include</p>
             <div className="-mx-[6px] mt-[2px]">
               <Switch
                 label="Map"
