@@ -9,8 +9,12 @@ const HOURS = Array.from({ length: 24 }, (_unused, hour) => hour);
 
 const MINUTES = Array.from({ length: 60 }, (_unused, minute) => minute);
 
-/** Seven rows showing, the chosen one in the middle, more either side. */
-const LIST = "leave-at-list h-[196px] w-[58px] overflow-y-auto";
+/**
+ * Seven rows showing, the chosen one in the middle, more either side. As
+ * narrow as two digits in a pill can be: the columns are read, not searched,
+ * and a wide panel over a small field looked like more than it was.
+ */
+const LIST = "leave-at-list h-[196px] w-[44px] overflow-y-auto";
 
 // Two digits every time, so they are centred rather than ranged left against
 // a column no wider than they are.
@@ -205,7 +209,7 @@ export function LeaveAt({ value, onChoose }: LeaveAtProps) {
               trigger.current?.focus();
             }
           }}
-          className="absolute top-full right-0 z-30 mt-2 flex gap-1 rounded-panel border border-rule bg-paper-raised p-2 shadow-md"
+          className="absolute top-full right-0 z-30 mt-2 flex gap-[2px] rounded-panel border border-rule bg-paper-raised p-[6px] shadow-md"
         >
           <div ref={hours} className={LIST}>
             {HOURS.map((one) => (
