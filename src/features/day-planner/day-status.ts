@@ -1,5 +1,5 @@
 import type { PlannedDay } from "./compute-trip";
-import { formatDayLong } from "./format-day-date";
+import { formatDayDate } from "./format-day-date";
 
 /**
  * What the open day amounts to, in one line: which day of the week it is and
@@ -15,7 +15,7 @@ import { formatDayLong } from "./format-day-date";
  * thing under it already says is a heading nobody reads.
  */
 export function dayStatus(day: PlannedDay): string {
-  const when = formatDayLong(day.plan.date);
+  const when = formatDayDate(day.plan.date);
   const stops = day.plan.stops.length;
 
   if (stops === 0) {
