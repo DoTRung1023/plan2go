@@ -8,7 +8,7 @@ import { MoreIcon } from "@/ui/icons";
  * anybody has used is drawn, so nothing here has to be learned.
  */
 export const MENU_ITEM =
-  "flex w-full items-center gap-[10px] rounded-chip border-0 bg-transparent px-3 py-[9px] text-left text-[13.5px] leading-none font-semibold text-ink hover:bg-neutral-200 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta";
+  "flex w-full items-center gap-[10px] rounded-chip border-0 bg-transparent px-3 py-[9px] text-left text-small/none font-semibold text-ink hover:bg-neutral-200 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta";
 
 /** The line between what a trip does and what ends it. */
 export const MENU_RULE = "mx-[10px] my-[5px] h-px bg-rule";

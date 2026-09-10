@@ -625,7 +625,7 @@ export function TripMap({
          * itself. Laid flat it also stops eating the corner of the map, which
          * is the part of the page it was covering.
          */
-        <ul className="pointer-events-none absolute bottom-[14px] left-[14px] z-[2] flex list-none items-center gap-4 rounded-pill border border-rule bg-paper-raised/90 px-[18px] py-[10px] text-[11.5px] leading-none text-ink-muted lg:bottom-[22px] lg:left-[22px]">
+        <ul className="pointer-events-none absolute bottom-[14px] left-[14px] z-[2] flex list-none items-center gap-4 rounded-pill border border-rule bg-paper-raised/90 px-[18px] py-[10px] text-micro/none text-ink-muted lg:bottom-[22px] lg:left-[22px]">
           {ROUTE_STROKES.map((stroke) => (
             <li key={stroke.mode} className="flex items-center gap-[7px]">
               <svg

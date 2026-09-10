@@ -101,7 +101,7 @@ function Anchor({
 }
 
 const ENDPOINT_BUTTON =
-  "inline-flex shrink-0 items-center rounded-pill border-[1.5px] border-dashed border-rule-strong bg-transparent px-4 py-[9px] text-[13px] leading-none font-semibold whitespace-nowrap text-ink-faint hover:border-terracotta hover:text-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "inline-flex shrink-0 items-center rounded-pill border-[1.5px] border-dashed border-rule-strong bg-transparent px-4 py-[9px] text-small/none font-semibold whitespace-nowrap text-ink-faint hover:border-terracotta hover:text-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 /** What each end of the day is called, wherever it has to be said out loud. */
 const ENDS = {

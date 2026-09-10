@@ -299,10 +299,10 @@ export function TripEditor({
                 dayLine={
                   selected === undefined ? null : (
                     <>
-                      <span className="font-display text-[20px] leading-none font-semibold text-ink">
+                      <span className="font-display text-lead/none text-ink">
                         Day {selectedIndex + 1}
                       </span>
-                      <span className="text-[13.5px] leading-[1.3] text-ink-faint">
+                      <span className="text-small/[1.3] text-ink-faint">
                         {dayStatus(selected)}
                       </span>
                     </>

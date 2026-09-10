@@ -89,7 +89,7 @@ export function DayPlanner({
       <div className={`relative z-20 shrink-0 pt-5 pb-[14px] ${GUTTER}`}>
         {settings ?? (
           <>
-            <h1 className="font-display text-[25px] leading-[1.25] font-semibold tracking-[-0.01em] text-ink">
+            <h1 className="font-display text-title tracking-[-0.01em] text-ink">
               {title}
             </h1>
             {range === null ? null : (
@@ -145,10 +145,10 @@ export function DayPlanner({
           className={`flex flex-none items-center gap-[14px] border-t border-rule py-[14px] print:hidden ${GUTTER}`}
         >
           <div className="min-w-0 flex-1">
-            <p className="text-[13.5px] leading-[1.3] font-semibold text-ink">
+            <p className="text-small/[1.3] font-semibold text-ink">
               {exportLine(selected, selectedIndex).title}
             </p>
-            <p className="mt-[2px] text-[11.5px] leading-[1.4] text-ink-faint">
+            <p className="mt-[2px] text-micro text-ink-faint">
               {exportLine(selected, selectedIndex).note}
             </p>
           </div>
@@ -158,7 +158,7 @@ export function DayPlanner({
             onClick={() => {
               window.print();
             }}
-            className="flex-none rounded-pill bg-terracotta px-5 py-[11px] font-display text-[14px] leading-none font-semibold text-paper hover:bg-terracotta-600 active:bg-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+            className="flex-none rounded-pill bg-terracotta px-5 py-[11px] font-display text-body/none font-semibold text-paper hover:bg-terracotta-600 active:bg-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
           >
             Export day as PDF
           </button>

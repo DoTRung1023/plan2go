@@ -41,9 +41,14 @@ typography:
     fontSize: 23px
     lineHeight: 1.25
     fontWeight: 600
+  lead:
+    fontFamily: Baloo 2
+    fontSize: 20px
+    lineHeight: 1.25
+    fontWeight: 600
   place:
     fontFamily: Baloo 2
-    fontSize: 16.5px
+    fontSize: 16px
     lineHeight: 1.25
     fontWeight: 600
   time:
@@ -56,6 +61,11 @@ typography:
     fontFamily: Be Vietnam Pro
     fontSize: 14px
     lineHeight: 1.5
+    fontWeight: 400
+  small:
+    fontFamily: Be Vietnam Pro
+    fontSize: 13px
+    lineHeight: 1.4
     fontWeight: 400
   meta:
     fontFamily: Be Vietnam Pro
@@ -219,7 +229,16 @@ it. Two marks stacked above a letter need the room, and a line box tight enough 
 English clips the upper one.
 
 Display carries times, place names, durations and the day heading. Body carries
-everything else. Every element that renders a time or a duration sets
+everything else.
+
+Ten steps and no others. Every size in the planner is one of them, set with its own
+line height and, where it is a pill, with `text-step/none` rather than a second leading
+utility fighting the first. Lead is the day a panel is open on, the one heading that is
+neither the trip's title nor a place. Small is the tier the interface is mostly made of,
+tab labels, menu rows, the words on a leg, which used to be a scatter of 13px and 13.5px
+chosen one component at a time. A number that is not on the scale is a number that has
+not been thought about, and the marketing page, which the scale does not govern, is the
+one place such a number may appear. Every element that renders a time or a duration sets
 `font-variant-numeric: tabular-nums` so numbers stack in a column.
 
 - **title:** the trip name, and the heading of an empty day.

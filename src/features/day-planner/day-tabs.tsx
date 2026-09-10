@@ -49,7 +49,7 @@ function stopLine(day: DayPlan): string {
  * it and said three times over what the line below now says once.
  */
 const TAB =
-  "flex shrink-0 items-center rounded-pill border-0 px-[15px] py-[9px] text-[13.5px] leading-none font-semibold whitespace-nowrap focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta";
+  "flex shrink-0 items-center rounded-pill border-0 px-[15px] py-[9px] text-small/none font-semibold whitespace-nowrap focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta";
 
 export function DayTabs({
   days,

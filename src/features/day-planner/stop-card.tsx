@@ -264,7 +264,7 @@ export function StopCard({
       }`}
     >
       <div className="flex flex-col items-center gap-[7px]">
-        <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-pill bg-terracotta font-display text-[14px] leading-none font-semibold text-paper tabular-nums">
+        <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-pill bg-terracotta font-display text-body/none font-semibold text-paper tabular-nums">
           <span aria-hidden="true">{position}</span>
           <span className="sr-only">Stop {position}</span>
         </span>
@@ -273,15 +273,15 @@ export function StopCard({
       <div className="flex min-w-0 flex-col gap-[9px]">
         <div className="flex items-start gap-[10px]">
           <div className="min-w-0 flex-1">
-            <h3 className="font-display text-[16px] leading-[1.25] font-semibold text-ink">{stop.placeName}</h3>
+            <h3 className="font-display text-place text-ink">{stop.placeName}</h3>
             {address === null ? null : (
-              <p className="mt-[3px] text-[12.5px] leading-[1.5] text-ink-faint">{address}</p>
+              <p className="mt-[3px] text-meta text-ink-faint">{address}</p>
             )}
           </div>
 
           <div className="flex flex-none flex-col items-end gap-[3px]">
             {actions === null ? (
-              <p className="text-[15px] leading-none font-bold whitespace-nowrap text-ink tabular-nums">
+              <p className="text-time whitespace-nowrap text-ink tabular-nums">
                 {stop.arrival === null ? "Time not known" : formatDayTime(stop.arrival)}
               </p>
             ) : (
@@ -355,11 +355,11 @@ export function StopCard({
               measurement, and two number fields asked for a precision nobody
               planning a morning actually has. */}
           {actions === null ? (
-            <span className="text-[12.5px] leading-none text-ink-muted">
+            <span className="text-meta/none text-ink-muted">
               Stay for {formatDuration(stop.stayMinutes)}
             </span>
           ) : (
-            <span className="flex items-center gap-[7px] text-[12.5px] leading-none text-ink-muted">
+            <span className="flex items-center gap-[7px] text-meta/none text-ink-muted">
               <button
                 type="button"
                 disabled={busy === "stay" || stop.stayMinutes <= STAY_STEP}

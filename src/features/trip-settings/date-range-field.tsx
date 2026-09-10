@@ -136,11 +136,19 @@ const SIZES = {
    */
   inline: {
     trigger:
-      "w-auto rounded-pill border-transparent bg-transparent px-2 py-[5px] text-[13px] leading-none font-semibold text-ink-muted hover:border-transparent hover:bg-terracotta-100 hover:text-terracotta-700",
+      "w-auto rounded-pill border-transparent bg-transparent px-2 py-[5px] text-small/none font-semibold text-ink-muted hover:border-transparent hover:bg-terracotta-100 hover:text-terracotta-700",
     label: "sr-only",
     change: "sr-only",
     stack: "shrink-0",
   },
+  /*
+   * The only size of the three that never appears inside a trip: it is the
+   * Dates field on the front page, sitting in a row with the country, the city
+   * and the starting point. Its numbers are those fields' numbers, taken from
+   * field-styles beside them, rather than the type scale that governs the
+   * planner. DESIGN.md says as much: it owns src/app/t, src/features and
+   * src/ui, and the marketing page answers to the skill instead.
+   */
   large: {
     // Room kept clear on the right for the word, which is taken out of the flow
     // so its own padding cannot make this pill taller than the fields beside it.

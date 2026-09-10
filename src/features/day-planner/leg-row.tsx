@@ -192,15 +192,15 @@ export function LegRow({
       {/* The glyph on its own, uncircled: a disc around it made the leg look
           like another numbered stop in the list it sits between. */}
       <Icon size={17} strokeWidth={2.4} className="shrink-0 text-ink-muted" />
-      <span className="text-[13.5px] leading-none font-semibold whitespace-nowrap text-ink">
+      <span className="text-small/none font-semibold whitespace-nowrap text-ink">
         {MODE_WORDS[leg.mode]}
       </span>
-      <span className="text-[13px] leading-none whitespace-nowrap text-ink-muted tabular-nums">
+      <span className="text-small/none whitespace-nowrap text-ink-muted tabular-nums">
         {covering}
       </span>
     </>
   ) : (
-    <span className="text-[13px] leading-none text-ink-muted">
+    <span className="text-small/none text-ink-muted">
       {anyWay ? "No way chosen to get there yet" : "No way to get there"}
     </span>
   );
@@ -282,7 +282,7 @@ export function LegRow({
             }`}
           >
             {summary}
-            <span className="ml-auto text-[13px] leading-none font-bold whitespace-nowrap text-terracotta-700">
+            <span className="ml-auto text-small/none font-bold whitespace-nowrap text-terracotta-700">
               Change
             </span>
           </button>

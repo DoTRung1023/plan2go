@@ -90,7 +90,15 @@
   --text-title: 23px;
   --text-title--line-height: 1.25;
   --text-title--font-weight: 600;
-  --text-place: 16.5px;
+  /*
+   * Between a heading and a place name, for the one thing that is neither: the
+   * day a panel is open on. Without it that heading was set at a number picked
+   * to sit between the two, which is how a scale stops being a scale.
+   */
+  --text-lead: 20px;
+  --text-lead--line-height: 1.25;
+  --text-lead--font-weight: 600;
+  --text-place: 16px;
   --text-place--line-height: 1.25;
   --text-place--font-weight: 600;
   --text-time: 14.5px;
@@ -98,6 +106,17 @@
   --text-time--font-weight: 600;
   --text-body: 14px;
   --text-body--line-height: 1.5;
+  /*
+   * The tier the interface is mostly made of: tab labels, menu rows, the words
+   * on a leg. It sat between body and meta as a scatter of 13px and 13.5px
+   * picked one component at a time, and is one number now.
+   *
+   * Where it lands in a pill the line height is turned off at the point of use
+   * with text-small/none, which is one declaration rather than a leading
+   * utility arguing with the one the size brought with it.
+   */
+  --text-small: 13px;
+  --text-small--line-height: 1.4;
   --text-meta: 12px;
   --text-meta--line-height: 1.45;
   --text-micro: 11.5px;

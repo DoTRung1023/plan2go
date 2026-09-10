@@ -26,7 +26,7 @@ const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/;
  * width a trip name still reads at, below which the row wraps instead.
  */
 const NAME_FIELD =
-  "min-w-0 flex-1 border-0 bg-transparent px-0 py-[2px] font-display text-[25px] leading-[1.25] font-semibold tracking-[-0.01em] text-ink caret-terracotta outline-none placeholder:text-ink-faint aria-invalid:text-terracotta-700 focus-visible:rounded-[6px] focus-visible:outline-2 focus-visible:outline-offset-[4px] focus-visible:outline-terracotta";
+  "min-w-0 flex-1 border-0 bg-transparent px-0 py-[2px] font-display text-title tracking-[-0.01em] text-ink caret-terracotta outline-none placeholder:text-ink-faint aria-invalid:text-terracotta-700 focus-visible:rounded-[6px] focus-visible:outline-2 focus-visible:outline-offset-[4px] focus-visible:outline-terracotta";
 
 interface TripSettingsProps {
   readonly slug: string;
