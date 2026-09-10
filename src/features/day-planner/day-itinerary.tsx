@@ -151,7 +151,7 @@ function Anchor({
             the same column a stop card keeps at its top right. */}
         <div className="flex flex-none flex-col items-end gap-[3px]">
           {onChooseTime === null || minutes === null ? (
-            <p className="text-time whitespace-nowrap text-ink tabular-nums">
+            <p className="font-display text-time whitespace-nowrap text-ink tabular-nums">
               {time ?? "Time not known"}
             </p>
           ) : (

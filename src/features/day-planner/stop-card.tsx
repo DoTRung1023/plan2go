@@ -291,7 +291,7 @@ export function StopCard({
 
           <div className="flex flex-none flex-col items-end gap-[3px]">
             {actions === null ? (
-              <p className="text-time whitespace-nowrap text-ink tabular-nums">
+              <p className="font-display text-time whitespace-nowrap text-ink tabular-nums">
                 {stop.arrival === null ? "Time not known" : formatDayTime(stop.arrival)}
               </p>
             ) : (
