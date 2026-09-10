@@ -247,7 +247,7 @@ export function StopCard({
       onMouseLeave={() => {
         onHover(null);
       }}
-      className={`day-stop group grid grid-cols-[30px_minmax(0,1fr)] gap-x-[13px] rounded-row border bg-paper-raised px-4 py-[15px] ${
+      className={`day-stop group mt-[9px] grid grid-cols-[30px_minmax(0,1fr)] gap-x-[13px] rounded-row border bg-paper-raised px-4 py-[15px] ${
         dragging ? "opacity-35" : ""
       } ${
         dragOver && !dragging

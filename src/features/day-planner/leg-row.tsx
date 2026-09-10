@@ -24,13 +24,6 @@ const MODE_ICON: Readonly<Record<TravelMode, typeof WalkIcon>> = {
   transit: TrainIcon,
 };
 
-/** The two accents split the modes: what you power yourself, and what you ride. */
-const MODE_TINT: Readonly<Record<TravelMode, string>> = {
-  walk: "bg-terracotta-200 text-terracotta-700",
-  drive: "bg-neutral-200 text-neutral-700",
-  transit: "bg-sage-200 text-sage-700",
-};
-
 interface LegRowProps {
   readonly leg: ComputedLeg;
   /** Every way of covering this leg, and which one the day is using. */
@@ -180,30 +173,34 @@ export function LegRow({
   const shown = planned.options.find((option) => option.mode === leg.mode);
   const crowFlies = covered && shown !== undefined && shown.path === null;
 
+  /**
+   * How long and how far, as one phrase rather than as two facts of different
+   * weights. The duration was set in the display face and the distance beside
+   * it in body text, which made a leg shout a number louder than the stop it
+   * leads to. Between two places the interesting thing is the pair of them.
+   */
+  const covering = [
+    formatDuration(leg.durationMinutes ?? 0),
+    leg.distanceMeters === null ? null : formatDistance(leg.distanceMeters),
+    crowFlies ? "crow flies" : null,
+  ]
+    .filter((part) => part !== null)
+    .join(" · ");
+
   const summary = covered ? (
     <>
-      <span
-        className={`grid h-[26px] w-[26px] shrink-0 place-items-center rounded-pill ${MODE_TINT[leg.mode]}`}
-      >
-        <Icon size={15} strokeWidth={2.4} />
-      </span>
-      <span className="text-meta font-semibold whitespace-nowrap text-ink">
+      {/* The glyph on its own, uncircled: a disc around it made the leg look
+          like another numbered stop in the list it sits between. */}
+      <Icon size={17} strokeWidth={2.4} className="shrink-0 text-ink-muted" />
+      <span className="text-[13.5px] leading-none font-semibold whitespace-nowrap text-ink">
         {MODE_WORDS[leg.mode]}
       </span>
-      <span className="font-display text-body whitespace-nowrap text-ink tabular-nums">
-        {formatDuration(leg.durationMinutes ?? 0)}
+      <span className="text-[13px] leading-none whitespace-nowrap text-ink-muted tabular-nums">
+        {covering}
       </span>
-      {leg.distanceMeters === null ? null : (
-        <span className="text-meta whitespace-nowrap text-ink-muted tabular-nums">
-          {formatDistance(leg.distanceMeters)}
-        </span>
-      )}
-      {crowFlies ? (
-        <span className="text-micro whitespace-nowrap text-ink-faint">Crow flies</span>
-      ) : null}
     </>
   ) : (
-    <span className="text-meta text-ink-muted">
+    <span className="text-[13px] leading-none text-ink-muted">
       {anyWay ? "No way chosen to get there yet" : "No way to get there"}
     </span>
   );
