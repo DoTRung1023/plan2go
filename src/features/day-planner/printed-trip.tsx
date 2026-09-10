@@ -60,11 +60,34 @@ function useOrigin(): string {
   );
 }
 
-/** The dashed thread, in the marker column, joining the row above to the row below. */
-function Thread() {
+/**
+ * The marker column of one row: the dashed thread running the row's full
+ * height, and whatever hangs on it drawn over the top. Every row carries its
+ * own length of thread, and the rows sit flush, so the lengths meet and the
+ * day reads as one line from the ring it leaves on to the dot it ends on,
+ * passing behind each numbered disc rather than stopping at it. The first
+ * row's thread starts at the ring's centre and the last row's ends at the
+ * dot's, so the line never runs on past either end of the day.
+ */
+function MarkColumn({
+  thread,
+  children,
+}: {
+  readonly thread: "from-centre" | "through" | "to-centre";
+  readonly children?: React.ReactNode;
+}) {
+  const extent = {
+    "from-centre": "top-[14px] bottom-0",
+    through: "top-0 bottom-0",
+    "to-centre": "top-0 h-[14px]",
+  }[thread];
   return (
-    <div className="flex justify-center py-[2px]">
-      <span aria-hidden="true" className={`h-full border-l-[1.5px] border-dashed ${RULE}`} />
+    <div className="relative flex w-[33px] justify-center self-stretch">
+      <span
+        aria-hidden="true"
+        className={`absolute left-1/2 w-0 -translate-x-1/2 border-l-[1.5px] border-dashed ${RULE} ${extent}`}
+      />
+      {children === undefined ? null : <span className="relative z-[1]">{children}</span>}
     </div>
   );
 }
@@ -92,7 +115,7 @@ function LegLine({
 
   return (
     <div className="grid grid-cols-[34px_minmax(0,1fr)] gap-x-4">
-      <Thread />
+      <MarkColumn thread="through" />
       <div className={`py-[9px] text-small ${MUTED}`}>
         {leg.durationMinutes === null ? (
           <p>No way to get there could be worked out.</p>
@@ -195,11 +218,13 @@ function PrintedDay({
 
       <section className="mt-6">
         {plan.start === null ? null : (
-          <div className={`${ROW} pb-[15px]`}>
-            <div className="grid w-[33px] place-items-center py-[7px]">
-              <span className="block h-[15px] w-[15px] rounded-pill border-[1.5px] border-ink" />
-            </div>
-            <p className="text-body font-semibold text-ink">Leave {endpointName(plan.start)}</p>
+          <div className={ROW}>
+            <MarkColumn thread="from-centre">
+              <span className="mt-[7px] block h-[15px] w-[15px] rounded-pill border-[1.5px] border-ink bg-(--sheet)" />
+            </MarkColumn>
+            <p className="pb-[15px] text-body font-semibold text-ink">
+              Leave {endpointName(plan.start)}
+            </p>
             <p className="font-display text-place whitespace-nowrap text-ink tabular-nums">
               {formatDayTime(computed.begins)}
             </p>
@@ -217,14 +242,14 @@ function PrintedDay({
               {legIndex < 0 ? null : (
                 <LegLine day={day} legIndex={legIndex} legDetails={request.legDetails} />
               )}
-              <div className={`printed-stop ${ROW} pb-4`}>
-                <div className="grid w-[33px] place-items-center">
+              <div className={`printed-stop ${ROW}`}>
+                <MarkColumn thread="through">
                   <span className="grid h-[30px] w-[30px] place-items-center rounded-pill bg-ink font-display text-time text-paper tabular-nums">
                     <span aria-hidden="true">{index + 1}</span>
                     <span className="sr-only">Stop {index + 1}</span>
                   </span>
-                </div>
-                <div className="min-w-0">
+                </MarkColumn>
+                <div className="min-w-0 pb-4">
                   <h2 className="font-display text-place text-ink">{stop.placeName}</h2>
                   {detail.length === 0 ? null : (
                     <p className={`mt-[2px] text-small ${MUTED}`}>{detail.join(" · ")}</p>
@@ -258,9 +283,9 @@ function PrintedDay({
           <>
             <LegLine day={day} legIndex={legToEnd.index} legDetails={request.legDetails} />
             <div className={ROW}>
-              <div className="grid w-[33px] place-items-center py-[7px]">
-                <span className="block h-[15px] w-[15px] rounded-pill bg-ink" />
-              </div>
+              <MarkColumn thread="to-centre">
+                <span className="mt-[7px] block h-[15px] w-[15px] rounded-pill bg-ink" />
+              </MarkColumn>
               <p className="text-body font-semibold text-ink">
                 {sameEnds ? "Back at" : "Finish at"} {endpointName(plan.end)}
               </p>

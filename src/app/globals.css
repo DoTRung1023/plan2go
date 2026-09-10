@@ -279,6 +279,12 @@
  * already has, and the times keep the display face so they stay the loudest
  * thing on the sheet.
  */
+/* What a sheet is drawn on, for anything on it that has to hide the thread
+   behind it: the raised paper on screen, and white paper when printed. */
+.printed-trip {
+  --sheet: var(--color-paper-raised);
+}
+
 @media print {
   @page {
     size: A4;
@@ -329,5 +335,10 @@
   .printed-trip * {
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
+  }
+
+  /* The sheet is white paper here, not the raised paper it is drawn on. */
+  .printed-trip {
+    --sheet: #fff;
   }
 }
