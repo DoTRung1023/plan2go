@@ -8,12 +8,9 @@
  */
 
 /* A sheet as the printer will see it: A4 at screen resolution, with the
-   margins the page rule gives it, on the raised paper a page is made of.
-   With each day on its own sheet, each day is one; with the days running on,
-   the whole trip is one long sheet, since where the printer will cut it is
-   not knowable here. */
-.export-sheets .is-separate .printed-day,
-.export-sheets .is-flow {
+   margins the page rule gives it, on the raised paper a page is made of. Each
+   day is one. */
+.export-sheets .printed-day {
   box-sizing: border-box;
   width: 794px;
   min-height: 1123px;
@@ -23,12 +20,8 @@
   box-shadow: var(--shadow-md);
 }
 
-.export-sheets .is-separate .printed-day + .printed-day {
+.export-sheets .printed-day + .printed-day {
   margin-top: 24px;
-}
-
-.export-sheets .is-flow .printed-day + .printed-day {
-  margin-top: 40px;
 }
 
 @media print {
@@ -71,26 +64,17 @@
     margin: 0 !important;
   }
 
-  .export-sheets .is-separate .printed-day,
-  .export-sheets .is-flow {
+  /* The page's height, not the screen sheet's, so the foot stays at the foot. */
+  .export-sheets .printed-day {
     width: auto;
+    min-height: 264mm;
     padding: 0;
     border-radius: 0;
     background: transparent;
     box-shadow: none;
   }
 
-  /* A day on its own sheet keeps the page's height, so its foot stays at the
-     foot of the page; the run-on layout has no sheet of its own to fill. */
-  .export-sheets .is-separate .printed-day {
-    min-height: 264mm;
-  }
-
-  .export-sheets .is-flow {
-    min-height: 0;
-  }
-
-  .export-sheets .is-separate .printed-day + .printed-day {
+  .export-sheets .printed-day + .printed-day {
     margin-top: 0;
   }
 }

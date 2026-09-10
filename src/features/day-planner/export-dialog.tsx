@@ -103,7 +103,6 @@ export function ExportDialog({
   const closeButton = useRef<HTMLButtonElement | null>(null);
   const preview = useRef<HTMLDivElement | null>(null);
   const [chosen, setChosen] = useState<ReadonlySet<string>>(() => new Set([selectedDayId]));
-  const [separateSheets, setSeparateSheets] = useState(true);
   const [map, setMap] = useState(true);
   const [notes, setNotes] = useState(true);
   const [legDetails, setLegDetails] = useState(true);
@@ -120,7 +119,6 @@ export function ExportDialog({
 
   const request: ExportRequest = {
     dayIds: picked.map((day) => day.plan.id),
-    separateSheets,
     map,
     notes,
     legDetails,
@@ -256,16 +254,6 @@ export function ExportDialog({
                   </button>
                 );
               })}
-            </div>
-
-            <div className="-mx-[6px] mt-[10px]">
-              <Switch
-                label="Each day on a new sheet"
-                on={separateSheets}
-                onToggle={() => {
-                  setSeparateSheets(!separateSheets);
-                }}
-              />
             </div>
 
             <p className={`mt-[18px] ${HEADING}`}>Include</p>

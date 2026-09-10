@@ -286,39 +286,9 @@
 }
 
 @media print {
-  /*
-   * The page number, set by the printer in the bottom margin, for the layout
-   * where the days run on and only the printer knows where the sheets break.
-   * A day on a sheet of its own numbers itself in its footer instead, and
-   * those sheets are named so the margin says nothing under them. The margin
-   * box inherits from the root element, which is why the body face and the
-   * muted ink are put on html here rather than on body, where the page
-   * context cannot see them.
-   */
   @page {
     size: A4;
     margin: 16mm;
-
-    @bottom-right {
-      content: "Page " counter(page) " of " counter(pages);
-      font-size: 11.5px;
-      line-height: 1;
-    }
-  }
-
-  @page own-sheet {
-    @bottom-right {
-      content: none;
-    }
-  }
-
-  .printed-trip.is-separate .printed-day {
-    page: own-sheet;
-  }
-
-  html {
-    font-family: var(--font-body);
-    color: var(--color-ink-muted);
   }
 
   html,
@@ -340,21 +310,16 @@
     overflow: visible !important;
   }
 
-  /* Every day after the first starts a sheet of its own, unless the days
-     were asked to run on, in which case only a breath separates them. A day
-     on its own sheet is as tall as the sheet, a hair under A4 less its
-     margins so that rounding never spills a blank page, which is what puts
-     the day's foot at the foot of the page. */
-  .printed-trip.is-separate .printed-day + .printed-day {
+  /* Every day after the first starts a sheet of its own, and each is as tall
+     as the sheet, a hair under A4 less its margins so that rounding never
+     spills a blank page, which is what puts the day's foot at the foot of the
+     page. */
+  .printed-day + .printed-day {
     break-before: page;
   }
 
-  .printed-trip.is-separate .printed-day {
+  .printed-day {
     min-height: 264mm;
-  }
-
-  .printed-trip.is-flow .printed-day + .printed-day {
-    margin-top: 40px;
   }
 
   /* A stop is never split across two sheets, and a day's name is never

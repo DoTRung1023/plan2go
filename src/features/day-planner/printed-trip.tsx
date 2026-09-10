@@ -147,12 +147,8 @@ interface PrintedDayProps {
   readonly request: ExportRequest;
   /** The share link, on the first sheet only. Null on every other. */
   readonly link: string | null;
-  /**
-   * Which sheet this is of those shown, where each day is a sheet of its own,
-   * for the corner of the footer. Null where the days run on, since then
-   * only the printer knows where the sheets fall and it numbers them itself.
-   */
-  readonly sheet: { readonly at: number; readonly of: number } | null;
+  /** Which sheet this is of those shown, for the corner of the footer. */
+  readonly sheet: { readonly at: number; readonly of: number };
   /** Said once the map has arrived, or failed to. */
   readonly onMapSettled: () => void;
 }
@@ -310,8 +306,7 @@ function PrintedDay({
       </section>
 
       {/* The foot of the sheet: what the day adds up to, the link on the first
-          sheet, and on a sheet of its own the sheet's number, in the corner
-          every sheet keeps for it. */}
+          sheet, and the sheet's number in the corner every sheet keeps for it. */}
       <footer className={`mt-5 flex shrink-0 items-end gap-5 border-t pt-4 ${RULE}`}>
         <div className="min-w-0 flex-1">
           <p className="text-body text-ink">
@@ -328,11 +323,9 @@ function PrintedDay({
             <p className={`mt-[3px] text-small ${MUTED}`}>Planned with plan2go · {link}</p>
           )}
         </div>
-        {sheet === null ? null : (
-          <p className={`shrink-0 text-small whitespace-nowrap ${MUTED}`}>
-            Page {sheet.at} of {sheet.of}
-          </p>
-        )}
+        <p className={`shrink-0 text-small whitespace-nowrap ${MUTED}`}>
+          Page {sheet.at} of {sheet.of}
+        </p>
       </footer>
     </article>
   );
@@ -386,11 +379,7 @@ export function PrintedTrip({
   }, [settled, awaited, onReady]);
 
   return (
-    <div
-      className={`printed-trip ${request.separateSheets ? "is-separate" : "is-flow"} ${
-        visible ? "" : "hidden print:block"
-      }`}
-    >
+    <div className={`printed-trip ${visible ? "" : "hidden print:block"}`}>
       {chosen.map((day, index) => (
         <PrintedDay
           key={day.plan.id}
@@ -402,7 +391,7 @@ export function PrintedTrip({
           slug={slug}
           request={request}
           link={index === 0 ? `${origin}/t/${slug}` : null}
-          sheet={request.separateSheets ? { at: index + 1, of: chosen.length } : null}
+          sheet={{ at: index + 1, of: chosen.length }}
           onMapSettled={() => {
             setSettled((count) => count + 1);
           }}
