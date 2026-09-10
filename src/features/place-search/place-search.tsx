@@ -123,8 +123,11 @@ export function PlaceSearch({
   const [addError, setAddError] = useState<string | null>(null);
   const [landed, setLanded] = useState<string | null>(null);
   const [adding, setAdding] = useState<string | null>(null);
-  /** What the city is known for, for the field nobody has typed in yet. */
-  const [popular, setPopular] = useState<readonly Suggestion[]>([]);
+  /**
+   * What the city is known for, for the field nobody has typed in yet. Null
+   * until the city has answered, so the panel can say it is being asked.
+   */
+  const [popular, setPopular] = useState<readonly Suggestion[] | null>(null);
   const [pending, startTransition] = useTransition();
 
   const fieldId = useId();
@@ -210,15 +213,18 @@ export function PlaceSearch({
     });
 
     const run = async (): Promise<void> => {
-      const response = await fetch(`/api/places/nearby?${parameters.toString()}`);
-      const body: unknown = await response.json();
-      if (!response.ok) {
+      try {
+        const response = await fetch(`/api/places/nearby?${parameters.toString()}`);
+        const body: unknown = await response.json();
+        const parsed = response.ok ? searchResponseSchema.safeParse(body) : null;
+        setPopular(parsed?.success ? parsed.data.suggestions : []);
+      } catch {
         // Nobody asked for this out loud, so nothing is said about its not
         // being there. The field still works and two letters still search.
-        return;
+        // Settled to empty rather than left null, or the line saying the city
+        // is being asked about would never come down.
+        setPopular([]);
       }
-      const parsed = searchResponseSchema.safeParse(body);
-      setPopular(parsed.success ? parsed.data.suggestions : []);
     };
 
     void run();
@@ -292,7 +298,7 @@ export function PlaceSearch({
    * part of that question. It also means a place recommended a moment ago
    * leaves the list the instant it lands on a day, without asking again.
    */
-  const recommended = popular
+  const recommended = (popular ?? [])
     .filter((one) => !onTheTrip.has(one.providerPlaceId))
     .slice(0, RECOMMENDED_SHOWN);
 
@@ -313,6 +319,15 @@ export function PlaceSearch({
    * underneath actually is.
    */
   const popularIn = cityName === null ? "Popular in this city" : `Popular in ${cityName}`;
+
+  /**
+   * True from the moment the empty field opens until the city has answered.
+   * Derived, like `searching`, so nothing has to remember to turn it off: the
+   * effect above sets `popular` on every way out.
+   */
+  const askingCity = open && !searched && city !== null && popular === null;
+
+  const askingLine = `Finding what is popular in ${cityName ?? "this city"}.`;
 
   /**
    * Clamped, because the list under the field is swapped for a shorter one the
@@ -348,11 +363,13 @@ export function PlaceSearch({
   /**
    * Two letters in, the panel always has something to say: the matches, the
    * line saying they are being looked for, or the sentence saying there were
-   * none. Before that it opens only once the city has answered, so a field on
-   * a trip with no city stays a field and nothing more. It stays open while a
-   * place is being added, to say which one.
+   * none. Before that it opens while the city is being asked about and stays
+   * open if the city had something to offer, so a field on a trip with no
+   * city stays a field and nothing more. It stays open while a place is being
+   * added, to say which one.
    */
-  const panel = adding !== null || (open && (searched || recommended.length > 0));
+  const panel =
+    adding !== null || (open && (searched || askingCity || recommended.length > 0));
 
   return (
     <div className="relative" ref={container}>
@@ -456,6 +473,8 @@ export function PlaceSearch({
               </ul>
             </>
           ) : null}
+
+          {adding === null && askingCity ? <p className={PANEL_LINE}>{askingLine}</p> : null}
 
           {adding === null && searched && searchMessage !== null ? (
             <p className={PANEL_LINE}>{searchMessage}</p>
