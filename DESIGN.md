@@ -138,13 +138,20 @@ When one changes the other changes in the same commit.
 
 ## Colors
 
-The map keeps three hues of its own, at `orchid-700`, `forest-700` and `gold-700`,
-drawn by the driving, public transport and walking routes and by nothing else. Three
-ways of getting somewhere need three lines that can be told apart, only walking is
-patterned, and none of them may be terracotta: a route in the product's own colour reads
-as the route the product is recommending. They are not accents and nothing outside the
-map may reach for them. There was a fourth, a cobalt for cycling; it went when the mode
-did.
+The map keeps no hues of its own. Driving is `terracotta-700`, walking `terracotta-600`,
+and public transport `sage-700`: two steps of the accent and the second voice, all three
+already in the ramps above.
+
+It kept three of its own for a while, spread as far apart on the wheel as three colours
+could be, on the argument that a route in the product's own colour reads as the route
+the product is recommending. That argument does not survive the drawing. What a route is
+is settled by its pattern and by the key beside it, and a map whose ground, markers and
+lines all come from one family reads as one thing rather than as a chart laid over a
+map. Driving and walking are deliberately close, because the pattern is what separates
+them and a line of separated marks says "on foot" without being read; transport is the
+one line that is not a shade of the accent, and is therefore the one told apart at a
+glance. There was a fourth mode once, cycling, with a cobalt of its own; it went when
+the mode did.
 
 There are two accents and they are not interchangeable. Terracotta is the product: the
 stop numbers, the active day, the primary action, the route lines. Sage is the second
@@ -295,9 +302,9 @@ mode is carried by the stroke pattern as well as by the colour, so colour is nev
 only thing distinguishing them:
 
 ```
-drive      4.6px  solid                orchid-700
-transit    4.6px  solid                forest-700
-walk       5px    dash 0.5 8, round    gold-700
+drive      4.6px  solid                terracotta-700
+transit    4.6px  solid                sage-700
+walk       5px    dash 0.5 8, round    terracotta-600
 ```
 
 One table in `src/features/trip-map/route-style.ts` holds those three rows, and both the

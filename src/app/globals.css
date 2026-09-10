@@ -47,33 +47,22 @@
   --color-sage-900: #272e1b;
 
   /*
-   * The map's own hues, and nothing outside the map may spend them.
+   * The map has no hues of its own any more.
    *
-   * Three ways of getting somewhere need three lines that can be told apart at
-   * a glance. Only walking is patterned, so colour does nearly all of that
-   * work, and it has to do it without terracotta: terracotta is what the
-   * product itself is drawn in, and a route wearing it reads as the route the
-   * product is recommending rather than as the one you happen to be driving.
+   * It kept three, spread as far apart on the wheel as three colours could be,
+   * on the argument that a route wearing the product's own colour reads as the
+   * route the product is recommending. The design canvas draws them on the
+   * accent instead, and it is right: what a route is is settled by its pattern
+   * and by the key beside it, and a map whose ground, markers and lines all
+   * come from one family reads as one thing rather than as a chart laid over a
+   * map. Driving takes the accent at its pressed weight, walking one step up
+   * from it, and public transport takes sage, which is the one line on the map
+   * that is not a shade of the accent and is therefore the one told apart
+   * without reading anything.
    *
-   * All three are mixed to the warmth and the weight of the ramps above, so
-   * they sit in this palette rather than arriving from somewhere else, and they
-   * are spread as far apart on the wheel as three colours can be with the
-   * orange quarter of it spoken for. Crowded into one quarter, as an olive, a
-   * teal and a blue once were, they read as one dark colour drawn three times.
-   *
-   * There was a fourth, a cobalt, for cycling. It went with the mode: the
-   * Routes API does not answer for cycling across much of the world, so the
-   * product stopped offering a way to travel it could not actually cost.
-   *
-   * Driving carries the most chroma of the three. It is the line drawn most
-   * often, and the darker plum this replaces sat well below the others in
-   * weight, so the route a trip is mostly made of was also the one that receded
-   * furthest into the cream. At this value it reads at the strength the forest
-   * and the gold do, which is what matching them was for.
+   * Nothing is declared here for it. The three steps it spends are steps of the
+   * ramps above, which is what a ramp is for.
    */
-  --color-orchid-700: #b4418c;
-  --color-forest-700: #2f7a52;
-  --color-gold-700: #8a6a1f;
 
   --font-display: var(--font-caprasimo), Georgia, "Times New Roman", serif;
   --font-body: var(--font-figtree), "Segoe UI", system-ui, sans-serif;
