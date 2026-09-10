@@ -126,15 +126,19 @@ const SIZES = {
     stack: "",
   },
   /**
-   * On the day's own line rather than in a form: no label, no box, just the
-   * range and the word that opens it, set as one quiet sentence at the end of
-   * the row. The panel it opens is the same panel.
+   * On the trip's own row rather than in a form: no label, no box, and not even
+   * the word that opens it. The dates sit beside the trip's name as a fact
+   * about it, and a row that reads "Hanoi, five days 10-15 Sept Change" spends
+   * its last word on the mechanism rather than on the trip.
+   *
+   * The word is still there for anybody who cannot see the pill light up under
+   * the pointer, which is the only thing left saying this can be pressed.
    */
   inline: {
     trigger:
       "w-auto rounded-pill border-transparent bg-transparent px-2 py-[5px] text-[13px] leading-none font-semibold text-ink-muted hover:border-transparent hover:bg-terracotta-100 hover:text-terracotta-700",
     label: "sr-only",
-    change: "shrink-0 text-[13px] leading-none font-bold text-terracotta-700",
+    change: "sr-only",
     stack: "shrink-0",
   },
   large: {
