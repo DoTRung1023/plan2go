@@ -170,9 +170,12 @@ export function DayTabs({
             disabled={adding}
             title="Add a day"
             aria-label="Add a day to the end of this trip"
-            className="ml-[2px] grid h-[34px] w-[34px] shrink-0 place-items-center rounded-pill border-[1.5px] border-dashed border-rule-strong text-ink-faint hover:border-terracotta hover:text-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+            // As tall as a tab, 13px of text with 9px above and below it, so
+            // the row of days ends in a shape of the same height rather than
+            // one standing proud of it.
+            className="ml-[2px] grid h-[31px] w-[31px] shrink-0 place-items-center rounded-pill border-[1.5px] border-dashed border-rule-strong text-ink-faint hover:border-terracotta hover:text-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
           >
-            <PlusIcon size={16} strokeWidth={2.75} />
+            <PlusIcon size={15} strokeWidth={2.75} />
           </button>
         )}
       </div>
