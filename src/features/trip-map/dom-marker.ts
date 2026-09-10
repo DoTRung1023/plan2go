@@ -66,14 +66,28 @@ export function endpointMarkerElement(word: string, name: string): HTMLElement {
   const marker = document.createElement("span");
   marker.className = "trip-map-marker trip-map-endpoint";
 
-  const shown = document.createElement("span");
-  shown.setAttribute("aria-hidden", "true");
-  shown.textContent = word;
+  // The same house the panel draws, so a place is one shape wherever it is.
+  const glyph = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  glyph.setAttribute("aria-hidden", "true");
+  glyph.setAttribute("viewBox", "0 0 24 24");
+  glyph.setAttribute("width", "15");
+  glyph.setAttribute("height", "15");
+  glyph.setAttribute("fill", "none");
+  glyph.setAttribute("stroke", "currentColor");
+  glyph.setAttribute("stroke-width", "2.75");
+  glyph.setAttribute("stroke-linecap", "round");
+  glyph.setAttribute("stroke-linejoin", "round");
+
+  const roof = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  roof.setAttribute("d", "m3 10 9-7 9 7v10a1.6 1.6 0 0 1-1.6 1.6H4.6A1.6 1.6 0 0 1 3 20Z");
+  const door = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  door.setAttribute("d", "M9.5 21.5v-7h5v7");
+  glyph.append(roof, door);
 
   const spoken = document.createElement("span");
   spoken.className = "trip-map-name";
   spoken.textContent = `${word} of the day, ${name}`;
 
-  marker.append(shown, spoken);
+  marker.append(glyph, spoken);
   return marker;
 }

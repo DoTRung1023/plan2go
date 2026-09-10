@@ -79,19 +79,17 @@ function Anchor({
 }) {
   return (
     /*
-     * The same card a stop gets, so the ends of a day sit in the same list as
-     * the stops between them rather than beside it. The disc is sage where a
-     * stop's is terracotta and round where a stop's carries a number, which is
-     * the whole difference: somewhere the day passes through, not somewhere it
-     * is for.
+     * Laid out like a stop's card but drawn on the panel's own ground, with no
+     * card of its own: the ends of a day are where it passes through, and a
+     * raised card gave them the same weight as the places it is for. The disc
+     * is sage where a stop's is terracotta and round where a stop's carries a
+     * number, which is the whole difference.
      *
-     * The time leads and the actions retreat. Change and Remove are on the
-     * address line, and they are only drawn while the pointer or the focus is
-     * on the card: a row that is read far more often than it is edited should
-     * not carry two buttons at all times for the once it is. Where there is no
-     * pointer to hover with, they are simply there.
+     * The time leads. Change and Remove sit at the end of the address line as
+     * two quiet words, there at all times, so that what can be done to this end
+     * of the day is never something a reader has to discover by pointing at it.
      */
-    <div className="group flex items-start gap-[14px] rounded-panel border border-rule bg-paper-raised px-[18px] py-4">
+    <div className="flex items-start gap-[14px] px-[2px] py-[14px]">
       <span className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-pill bg-sage text-paper">
         <HomeIcon size={18} strokeWidth={2.75} />
       </span>
@@ -109,9 +107,7 @@ function Anchor({
             {endpoint.place.address ?? fallback}
           </span>
           {controls === null ? null : (
-            <span className="flex shrink-0 items-center gap-[2px] opacity-0 transition-opacity duration-150 group-focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100 motion-reduce:transition-none">
-              {controls}
-            </span>
+            <span className="flex shrink-0 items-center gap-[2px]">{controls}</span>
           )}
         </div>
       </div>
@@ -120,14 +116,12 @@ function Anchor({
 }
 
 /**
- * A word with nothing around it until it is wanted. What the canvas draws for
- * the actions on an anchor: no border, no ground, a pill only on hover.
+ * A word with nothing around it. No border and no ground at rest or under the
+ * pointer; reaching for it turns the word itself to the accent, which is how
+ * every other quiet action in the panel answers a pointer.
  */
 const QUIET =
-  "rounded-pill border-0 bg-transparent px-[11px] py-[7px] text-small/none font-semibold text-ink-muted hover:bg-neutral-200 hover:text-ink disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
-
-/** The one that takes something away goes to the accent when reached for. */
-const QUIET_REMOVE = `${QUIET} hover:bg-terracotta-100 hover:text-terracotta-700`;
+  "rounded-pill border-0 bg-transparent px-[11px] py-[7px] text-small/none font-semibold text-ink-muted hover:text-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 const ENDPOINT_BUTTON =
   "inline-flex shrink-0 items-center rounded-pill border-[1.5px] border-dashed border-rule-strong bg-transparent px-4 py-[9px] text-small/none font-semibold whitespace-nowrap text-ink-faint hover:border-terracotta hover:text-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
@@ -213,7 +207,7 @@ function EndpointSlot({
           onClick={() => {
             write(null);
           }}
-          className={QUIET_REMOVE}
+          className={QUIET}
         >
           Remove
         </button>

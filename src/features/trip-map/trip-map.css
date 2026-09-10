@@ -74,18 +74,13 @@
 }
 
 /* Not merely a different colour from a stop marker. A different shape. */
+/* The panel's disc for an end of the day, at the size the map draws a stop. */
 .trip-map-endpoint {
-  min-width: 46px;
-  height: 26px;
-  padding: 0 9px;
-  white-space: nowrap;
-  border-radius: 13px 13px 13px 4px;
-  background-color: var(--color-sage-600);
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-sage);
   color: var(--color-paper);
-  font-family: var(--font-body);
-  font-size: var(--text-label);
-  font-weight: 600;
-  letter-spacing: 0.02em;
 }
 
 /* The full name of the marker, read out but never drawn. */
