@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Conflict } from "@/core/model/conflict";
 import type { StopId } from "@/core/model/stop";
 import { formatDuration } from "@/core/time/minutes";
@@ -44,20 +44,6 @@ function rangeOf(days: readonly PlannedDay[]): string {
     return formatDayDate(first.plan.date);
   }
   return `${formatDayDate(first.plan.date)} to ${formatDayDate(last.plan.date)}`;
-}
-
-/**
- * Where the page is served from, which is only knowable in the browser. Read
- * as an outside value with nothing to subscribe to: it never changes while
- * the page is open, and the server, which has no address to offer, gives an
- * empty one that the browser fills in on arrival.
- */
-function useOrigin(): string {
-  return useSyncExternalStore(
-    () => () => {},
-    () => window.location.origin,
-    () => "",
-  );
 }
 
 /**
@@ -145,8 +131,6 @@ interface PrintedDayProps {
   readonly range: string;
   readonly slug: string;
   readonly request: ExportRequest;
-  /** The share link, on the first sheet only. Null on every other. */
-  readonly link: string | null;
   /** Which sheet this is of those shown, for the corner of the footer. */
   readonly sheet: { readonly at: number; readonly of: number };
   /** Said once the map has arrived, or failed to. */
@@ -169,7 +153,6 @@ function PrintedDay({
   range,
   slug,
   request,
-  link,
   sheet,
   onMapSettled,
 }: PrintedDayProps) {
@@ -305,24 +288,19 @@ function PrintedDay({
         )}
       </section>
 
-      {/* The foot of the sheet: what the day adds up to, the link on the first
-          sheet, and the sheet's number in the corner every sheet keeps for it. */}
+      {/* The foot of the sheet: what the day adds up to, and the sheet's
+          number in the corner every sheet keeps for it. */}
       <footer className={`mt-5 flex shrink-0 items-end gap-5 border-t pt-4 ${RULE}`}>
-        <div className="min-w-0 flex-1">
-          <p className="text-body text-ink">
-            {totals.timeOutMinutes === null || totals.travelMinutes === null ? (
-              "Not every time on this day could be worked out."
-            ) : (
-              <>
-                <span className="font-semibold">{formatDuration(totals.timeOutMinutes)} out</span>
-                {` · ${formatDuration(totals.travelMinutes)} of it travelling · ${String(plan.stops.length)} ${plan.stops.length === 1 ? "stop" : "stops"}`}
-              </>
-            )}
-          </p>
-          {link === null ? null : (
-            <p className={`mt-[3px] text-small ${MUTED}`}>Planned with plan2go · {link}</p>
+        <p className="min-w-0 flex-1 text-body text-ink">
+          {totals.timeOutMinutes === null || totals.travelMinutes === null ? (
+            "Not every time on this day could be worked out."
+          ) : (
+            <>
+              <span className="font-semibold">{formatDuration(totals.timeOutMinutes)} out</span>
+              {` · ${formatDuration(totals.travelMinutes)} of it travelling · ${String(plan.stops.length)} ${plan.stops.length === 1 ? "stop" : "stops"}`}
+            </>
           )}
-        </div>
+        </p>
         <p className={`shrink-0 text-small whitespace-nowrap ${MUTED}`}>
           Page {sheet.at} of {sheet.of}
         </p>
@@ -369,8 +347,6 @@ export function PrintedTrip({
   const [settled, setSettled] = useState(0);
   const announced = useRef(false);
 
-  const origin = useOrigin();
-
   useEffect(() => {
     if (settled >= awaited && !announced.current) {
       announced.current = true;
@@ -390,7 +366,6 @@ export function PrintedTrip({
           range={range}
           slug={slug}
           request={request}
-          link={index === 0 ? `${origin}/t/${slug}` : null}
           sheet={{ at: index + 1, of: chosen.length }}
           onMapSettled={() => {
             setSettled((count) => count + 1);
