@@ -1,0 +1,70 @@
+/*
+ * The export dialog's sheets, on screen and on paper. Styled here rather than
+ * with utility classes because the same sheets are drawn twice over: as
+ * pages laid out on the dialog's ground while the export is being chosen, and
+ * as the pages themselves once the print window opens, when everything but
+ * the sheets has to fall away. Nothing in this file introduces a value that
+ * is not already a token, except the size of an A4 sheet.
+ */
+
+/* A sheet as the printer will see it: A4 at screen resolution, with the
+   margins the page rule gives it, on the raised paper a page is made of. */
+.export-sheets .printed-day {
+  box-sizing: border-box;
+  width: 794px;
+  min-height: 1123px;
+  padding: 60px;
+  border-radius: 2px;
+  background-color: var(--color-paper-raised);
+  box-shadow: var(--shadow-md);
+}
+
+.export-sheets .printed-day + .printed-day {
+  margin-top: 24px;
+}
+
+@media print {
+  /* The dialog stops floating and becomes the document. */
+  .export-dialog {
+    position: static !important;
+    display: block !important;
+    padding: 0 !important;
+  }
+
+  .export-scrim,
+  .export-chrome {
+    display: none !important;
+  }
+
+  .export-frame,
+  .export-body,
+  .export-preview {
+    position: static !important;
+    display: block !important;
+    height: auto !important;
+    max-width: none !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  /* Full size again, and the page rule's margins rather than the sheet's own. */
+  .export-sheets {
+    zoom: 1 !important;
+  }
+
+  .export-sheets .printed-day {
+    width: auto;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+}

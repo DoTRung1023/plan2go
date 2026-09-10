@@ -295,6 +295,12 @@ interface PrintedTripProps {
   readonly days: readonly PlannedDay[];
   readonly request: ExportRequest;
   /**
+   * Shown on screen, as the export dialog's preview, or kept for the printer
+   * alone, which is how the page carries the open day for the browser's own
+   * print command.
+   */
+  readonly visible: boolean;
+  /**
    * Said once every picture on the sheets has arrived or failed, which is the
    * moment the print window can open on finished pages rather than blank ones.
    */
@@ -303,11 +309,17 @@ interface PrintedTripProps {
 
 /**
  * The trip on paper: the days that were asked for, one after another, each
- * starting on a sheet of its own. Never seen on screen. It is in the page for
- * the printer to find, so the browser's own print command and the export
- * window both come out the same.
+ * starting on a sheet of its own.
  */
-export function PrintedTrip({ title, slug, cityName, days, request, onReady }: PrintedTripProps) {
+export function PrintedTrip({
+  title,
+  slug,
+  cityName,
+  days,
+  request,
+  visible,
+  onReady,
+}: PrintedTripProps) {
   const chosen = days.filter((day) => request.dayIds.includes(day.plan.id));
   const range = rangeOf(days);
   const awaited = request.map ? chosen.length : 0;
@@ -324,7 +336,7 @@ export function PrintedTrip({ title, slug, cityName, days, request, onReady }: P
   }, [settled, awaited, onReady]);
 
   return (
-    <div className="printed-trip hidden print:block">
+    <div className={`printed-trip ${visible ? "" : "hidden print:block"}`}>
       {chosen.map((day, index) => (
         <PrintedDay
           key={day.plan.id}

@@ -1,15 +1,14 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { LatLng } from "@/core/model/place";
 import type { PlannedDay } from "@/features/day-planner/compute-trip";
 import { DayPlanner } from "@/features/day-planner/day-planner";
 import { PlaceSearch } from "@/features/place-search/place-search";
 import { DayTabs } from "@/features/day-planner/day-tabs";
 import { dayStatus } from "@/features/day-planner/day-status";
-import type { ExportRequest } from "@/features/day-planner/export-request";
-import { exportRequestKey } from "@/features/day-planner/export-request";
+import { ExportDialog } from "@/features/day-planner/export-dialog";
 import { LeaveAt } from "@/features/day-planner/leave-at";
 import { PrintedTrip } from "@/features/day-planner/printed-trip";
 import { placesOnTheTrip } from "@/features/place-search/places-on-the-trip";
@@ -106,21 +105,11 @@ export function TripEditor({
   const [hoveredLegIndex, setHoveredLegIndex] = useState<number | null>(null);
   const [hoveredEndpointId, setHoveredEndpointId] = useState<string | null>(null);
   /**
-   * What is being taken away on paper, while it is. Set by the export window,
-   * which readies the sheets; cleared when the print window closes, whichever
-   * way it closed. While nothing is being exported the sheets still carry the
-   * open day, so the browser's own print command comes out the same way.
+   * Whether the export dialog is open. While it is, its preview is what the
+   * printer gets; while it is not, the page keeps the open day as a sheet for
+   * the browser's own print command, so the two come out the same way.
    */
-  const [exporting, setExporting] = useState<ExportRequest | null>(null);
-  useEffect(() => {
-    const done = (): void => {
-      setExporting(null);
-    };
-    window.addEventListener("afterprint", done);
-    return () => {
-      window.removeEventListener("afterprint", done);
-    };
-  }, []);
+  const [exportOpen, setExportOpen] = useState(false);
 
   const recording = <T extends { readonly error: string | null }>(
     change: Promise<T>,
@@ -139,27 +128,16 @@ export function TripEditor({
   const first = days[0];
   const last = days[days.length - 1];
 
-  const printing: ExportRequest = exporting ?? {
-    dayIds: selected === undefined ? [] : [selected.plan.id],
-    map: false,
-    notes: true,
-    legDetails: true,
-  };
-  const exportable = days.map((day) => ({
-    id: day.plan.id,
-    date: day.plan.date,
-    stops: day.plan.stops.length,
-  }));
-  const exportControl = (where: "menu" | "heading") =>
-    selected === undefined ? null : (
-      <TripExport
-        where={where}
-        days={exportable}
-        selectedDayId={selected.plan.id}
-        busy={exporting !== null}
-        onExport={setExporting}
-      />
-    );
+  const nothingToExport = days.every((day) => day.plan.stops.length === 0);
+  const exportControl = (where: "menu" | "heading") => (
+    <TripExport
+      where={where}
+      disabled={nothingToExport}
+      onOpen={() => {
+        setExportOpen(true);
+      }}
+    />
+  );
 
   /**
    * The shape of each leg the day travels, in the same order the map builds
@@ -392,22 +370,34 @@ export function TripEditor({
         />
       </section>
 
-      {/* Keyed on the request, so each export is a fresh set of sheets that
-          says when its pictures have arrived, and only an export asked for in
-          the window opens the print window when they have. */}
-      <PrintedTrip
-        key={exportRequestKey(printing)}
-        title={title}
-        slug={slug}
-        cityName={cityName}
-        days={days}
-        request={printing}
-        onReady={() => {
-          if (exporting !== null) {
-            window.print();
-          }
-        }}
-      />
+      {exportOpen && selected !== undefined ? (
+        <ExportDialog
+          title={title}
+          slug={slug}
+          cityName={cityName}
+          days={days}
+          selectedDayId={selected.plan.id}
+          onClose={() => {
+            setExportOpen(false);
+          }}
+        />
+      ) : (
+        <PrintedTrip
+          key={selected?.plan.id}
+          title={title}
+          slug={slug}
+          cityName={cityName}
+          days={days}
+          request={{
+            dayIds: selected === undefined ? [] : [selected.plan.id],
+            map: false,
+            notes: true,
+            legDetails: true,
+          }}
+          visible={false}
+          onReady={() => {}}
+        />
+      )}
     </main>
   );
 }
