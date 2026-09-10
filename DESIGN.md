@@ -37,40 +37,43 @@ colors:
     900: "#2E2B25"
 typography:
   title:
-    fontFamily: Caprasimo
-    fontSize: 24px
-    lineHeight: 1.14
+    fontFamily: Baloo 2
+    fontSize: 23px
+    lineHeight: 1.25
+    fontWeight: 600
   place:
-    fontFamily: Caprasimo
-    fontSize: 17.5px
-    lineHeight: 1.2
+    fontFamily: Baloo 2
+    fontSize: 16.5px
+    lineHeight: 1.25
+    fontWeight: 600
   time:
-    fontFamily: Caprasimo
-    fontSize: 15px
+    fontFamily: Baloo 2
+    fontSize: 14.5px
     lineHeight: 1.1
+    fontWeight: 600
     fontVariantNumeric: tabular-nums
   body:
-    fontFamily: Figtree
+    fontFamily: Be Vietnam Pro
     fontSize: 14px
     lineHeight: 1.5
     fontWeight: 400
   meta:
-    fontFamily: Figtree
+    fontFamily: Be Vietnam Pro
     fontSize: 12px
     lineHeight: 1.45
     fontWeight: 400
   micro:
-    fontFamily: Figtree
+    fontFamily: Be Vietnam Pro
     fontSize: 11.5px
     lineHeight: 1.4
     fontWeight: 400
   label:
-    fontFamily: Figtree
+    fontFamily: Be Vietnam Pro
     fontSize: 10.5px
     lineHeight: 1
     fontWeight: 600
   tick:
-    fontFamily: Figtree
+    fontFamily: Be Vietnam Pro
     fontSize: 9.5px
     lineHeight: 1
     fontVariantNumeric: tabular-nums
@@ -195,11 +198,25 @@ for paragraphs, so accent coloured text at body size uses `terracotta-700`.
 
 ## Typography
 
-Two families, no more. Caprasimo for display, falling back to Georgia, "Times New
-Roman", serif. Figtree for body, falling back to "Segoe UI", system-ui, sans-serif.
+Two families, no more, and both of them carry Vietnamese. Baloo 2 for display, falling
+back to Be Vietnam Pro, system-ui, sans-serif. Be Vietnam Pro for body, falling back to
+system-ui, -apple-system, "Segoe UI", sans-serif. Both are loaded with the latin,
+latin-ext and vietnamese subsets named explicitly.
 
-Caprasimo has one weight and it is already heavy. Headings never ask for bold on top of
-it, because a browser with only the one weight will synthesise the rest.
+That is a requirement and not a preference. This product is read in cities whose place
+names it cannot spell without it: a face carrying latin only drops out of the typeface
+part way through "Nhà hát Lớn Hà Nội" and hands the rest to whatever the system has, and
+the stacked marks Vietnamese depends on, a tone over a circumflex in ế or ộ, come back
+undersized and out of position. A face considered for this product is checked for
+vietnamese before it is checked for anything else.
+
+Baloo 2 is variable from 400 to 800, where the display face before it had one weight
+that was already heavy. Headings ask for 600, which is what 400 used to give. They still
+never ask the browser to synthesise a weight the face does not have.
+
+Nothing in the display face is set under 1.25 line height where a place name can reach
+it. Two marks stacked above a letter need the room, and a line box tight enough for
+English clips the upper one.
 
 Display carries times, place names, durations and the day heading. Body carries
 everything else. Every element that renders a time or a duration sets

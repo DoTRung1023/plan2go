@@ -264,7 +264,7 @@ export function StopCard({
       }`}
     >
       <div className="flex flex-col items-center gap-[7px]">
-        <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-pill bg-terracotta font-display text-[14px] leading-none text-paper tabular-nums">
+        <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-pill bg-terracotta font-display text-[14px] leading-none font-semibold text-paper tabular-nums">
           <span aria-hidden="true">{position}</span>
           <span className="sr-only">Stop {position}</span>
         </span>
@@ -273,7 +273,7 @@ export function StopCard({
       <div className="flex min-w-0 flex-col gap-[9px]">
         <div className="flex items-start gap-[10px]">
           <div className="min-w-0 flex-1">
-            <h3 className="font-display text-[17px] leading-[1.2] text-ink">{stop.placeName}</h3>
+            <h3 className="font-display text-[16px] leading-[1.25] font-semibold text-ink">{stop.placeName}</h3>
             {address === null ? null : (
               <p className="mt-[3px] text-[12.5px] leading-[1.5] text-ink-faint">{address}</p>
             )}

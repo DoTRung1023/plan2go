@@ -64,15 +64,38 @@
    * ramps above, which is what a ramp is for.
    */
 
-  --font-display: var(--font-caprasimo), Georgia, "Times New Roman", serif;
-  --font-body: var(--font-figtree), "Segoe UI", system-ui, sans-serif;
+  /*
+   * Both faces carry Vietnamese. The display falls back to the body face rather
+   * than to a serif: Baloo 2 is a rounded sans, and Georgia standing in for it
+   * would change the voice of a heading rather than merely the shape of it.
+   */
+  --font-display: var(--font-baloo-2), var(--font-be-vietnam-pro), system-ui, sans-serif;
+  --font-body: var(--font-be-vietnam-pro), system-ui, -apple-system, "Segoe UI", sans-serif;
 
-  --text-title: 24px;
-  --text-title--line-height: 1.14;
-  --text-place: 17.5px;
-  --text-place--line-height: 1.2;
-  --text-time: 15px;
+  /*
+   * Every size in the display face came down about five percent with the change
+   * of face. Baloo 2 has a taller x-height and shorter ascenders than the face
+   * before it, so the same number set larger, and headings that used to end
+   * their line began to run past it.
+   *
+   * The leading went the other way. A tone mark over a circumflex, the ế in
+   * "Miếu" or the ộ in "Một", stacks two marks above the letter, and a line box
+   * tight enough for English clips the upper one. Nothing that can hold a place
+   * name is set under 1.25 now.
+   *
+   * The weights are stated because 400 in a variable face this wide is not the
+   * 400 of a face that only had one: headings ask for 600 to read as solidly as
+   * they did.
+   */
+  --text-title: 23px;
+  --text-title--line-height: 1.25;
+  --text-title--font-weight: 600;
+  --text-place: 16.5px;
+  --text-place--line-height: 1.25;
+  --text-place--font-weight: 600;
+  --text-time: 14.5px;
   --text-time--line-height: 1.1;
+  --text-time--font-weight: 600;
   --text-body: 14px;
   --text-body--line-height: 1.5;
   --text-meta: 12px;

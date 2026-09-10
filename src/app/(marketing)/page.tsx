@@ -45,7 +45,7 @@ export default async function MarketingPage() {
           className="h-auto w-[min(300px,80%)]"
         />
 
-        <h1 className="font-display text-[clamp(30px,3.4vw,44px)] leading-[1.06] tracking-[-0.01em] text-pretty text-ink">
+        <h1 className="font-display text-[clamp(28px,3.2vw,42px)] leading-[1.14] font-semibold tracking-[-0.01em] text-pretty text-ink">
           Plan one day at a time.
         </h1>
 
