@@ -7,6 +7,7 @@ import type {
   CreatedTrip,
   DayEndpointSet,
   DayEndpointUpdate,
+  DayStartSet,
   LegModeSet,
   SettingsUpdated,
   StopAdded,
@@ -75,6 +76,7 @@ function repositoryFor(
       findBySlug: () => Promise.resolve(trip),
       findEditKeyHash: () => Promise.resolve<string | null>(null),
       findPlaceByProviderId: () => Promise.resolve(options.stored ?? null),
+      setDayStart: () => Promise.reject<DayStartSet>(new Error(NOT_STUBBED)),
       setDayEndpoint: (update) => {
         written.push(update);
         return Promise.resolve<DayEndpointSet>(

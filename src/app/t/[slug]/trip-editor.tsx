@@ -26,6 +26,7 @@ import {
   setStopStayAction,
 } from "./edit-stop-actions";
 import { setDayEndpointAction } from "./set-day-endpoint-action";
+import { setDayStartAction } from "./set-day-start-action";
 import { setLegModeAction } from "./set-leg-mode-action";
 import { updateTripAction } from "./update-trip-action";
 
@@ -262,6 +263,15 @@ export function TripEditor({
                         providerPlaceId,
                         label: null,
                         session: null,
+                      }),
+                    ),
+                  setDayStartAt: ({ startAtMinutes }) =>
+                    recording(
+                      setDayStartAction({
+                        slug,
+                        editKey,
+                        dayId: selected.plan.id,
+                        startAtMinutes,
                       }),
                     ),
                   setNote: ({ stopId, note }) =>

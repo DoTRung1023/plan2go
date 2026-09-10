@@ -17,6 +17,7 @@ import { formatDayDate } from "./format-day-date";
 import { formatOpeningHours } from "./format-opening-hours";
 import { LegRow } from "./leg-row";
 import { StopCard } from "./stop-card";
+import { TimePicker } from "./time-picker";
 
 interface DayItineraryProps {
   readonly day: DayPlan;
@@ -69,6 +70,8 @@ function Anchor({
   fallback,
   time,
   controls,
+  onChooseTime,
+  minutes,
 }: {
   readonly endpoint: DayEndpoint;
   /** Said when the place has no address of its own. */
@@ -76,6 +79,14 @@ function Anchor({
   readonly time: string | null;
   /** What can be done to this end of the day, for a reader who may change it. */
   readonly controls: React.ReactNode;
+  /**
+   * How to change the time, where the time can be changed. The start of a day
+   * can: every time on it follows from when it begins. The end cannot, because
+   * that is where the day arrives, worked out from everything before it.
+   */
+  readonly onChooseTime: ((minutes: number) => void) | null;
+  /** The time as minutes from midnight, for the picker to open on. */
+  readonly minutes: number | null;
 }) {
   return (
     /*
@@ -100,9 +111,20 @@ function Anchor({
           <span className="min-w-0 flex-1 font-display text-place text-ink">
             {endpointName(endpoint)}
           </span>
-          <span className="shrink-0 text-time whitespace-nowrap text-ink tabular-nums">
-            {time ?? "Time not known"}
-          </span>
+          {onChooseTime === null || minutes === null ? (
+            <span className="shrink-0 text-time whitespace-nowrap text-ink tabular-nums">
+              {time ?? "Time not known"}
+            </span>
+          ) : (
+            <TimePicker
+              value={minutes}
+              fixed={true}
+              disabled={false}
+              label={time ?? "Time not known"}
+              placeName={endpointName(endpoint)}
+              onChoose={onChooseTime}
+            />
+          )}
         </div>
         <div className="mt-[3px] flex items-center gap-[10px]">
           <span className="min-w-0 flex-1 truncate text-meta text-ink-faint">
@@ -224,6 +246,17 @@ function EndpointSlot({
           fallback={words.label}
           time={time}
           controls={picking ? null : controls}
+          onChooseTime={
+            which === "start" && actions !== null
+              ? (minutes) => {
+                  const change = actions.setDayStartAt;
+                  startSaving(async () => {
+                    setError((await change({ startAtMinutes: minutes })).error);
+                  });
+                }
+              : null
+          }
+          minutes={which === "start" ? day.startAtMinutes : null}
         />
       )}
 

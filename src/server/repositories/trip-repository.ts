@@ -76,6 +76,18 @@ export type DayEndpointSet =
   | { readonly status: "set" }
   | { readonly status: "refused" };
 
+/** When a day begins, as minutes from local midnight. */
+export interface DayStartUpdate {
+  readonly slug: string;
+  readonly editKeyHash: EditKeyHash;
+  readonly dayId: DayId;
+  readonly startAtMinutes: number;
+}
+
+export type DayStartSet =
+  | { readonly status: "set" }
+  | { readonly status: "refused" };
+
 /** Which stop to take off its day. */
 export interface StopRemoval {
   readonly slug: string;
@@ -191,6 +203,12 @@ export interface TripRepository {
    * passes through, taking none of its time.
    */
   setDayEndpoint(update: DayEndpointUpdate): Promise<DayEndpointSet>;
+
+  /**
+   * Sets the time a day begins. Every time on the day follows from it, so this
+   * is the one clock the day's own start point can be set to.
+   */
+  setDayStart(update: DayStartUpdate): Promise<DayStartSet>;
 
   /** Changes how one leg of a day is travelled. */
   setLegMode(update: LegModeUpdate): Promise<LegModeSet>;

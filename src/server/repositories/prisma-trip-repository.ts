@@ -19,6 +19,8 @@ import type {
   CreatedTrip,
   DayEndpointSet,
   DayEndpointUpdate,
+  DayStartSet,
+  DayStartUpdate,
   LegModeSet,
   LegModeUpdate,
   NewStop,
@@ -276,6 +278,27 @@ export const prismaTripRepository: TripRepository = {
         update.which === "start"
           ? { startPlaceId: placeId, startLabel: update.label }
           : { endPlaceId: placeId, endLabel: update.label },
+    });
+    return { status: "set" };
+  },
+
+  async setDayStart(update: DayStartUpdate): Promise<DayStartSet> {
+    // Scoped to the tokens the browser holds, so finding the day is also the
+    // check that this trip may be changed.
+    const day = await db.day.findFirst({
+      where: {
+        id: update.dayId,
+        trip: { slug: update.slug, editKeyHash: update.editKeyHash },
+      },
+      select: { id: true },
+    });
+    if (day === null) {
+      return { status: "refused" };
+    }
+
+    await db.day.update({
+      where: { id: day.id },
+      data: { startAtMinutes: update.startAtMinutes },
     });
     return { status: "set" };
   },

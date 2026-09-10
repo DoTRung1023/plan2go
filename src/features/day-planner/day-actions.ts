@@ -46,6 +46,12 @@ export interface DayActions {
     readonly providerPlaceId: string | null;
   }) => Promise<EditOutcome>;
 
+  /**
+   * When the day begins, as minutes from local midnight. Every time on the day
+   * follows from it, so this is the one clock its start point can be set to.
+   */
+  readonly setDayStartAt: (input: { readonly startAtMinutes: number }) => Promise<EditOutcome>;
+
   readonly setNote: (input: {
     readonly stopId: string;
     readonly note: string | null;
