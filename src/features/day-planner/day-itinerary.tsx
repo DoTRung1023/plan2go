@@ -144,7 +144,7 @@ function Anchor({
         {/* The time, and under it what can be done to this end of the day:
             the same column a stop card keeps at its top right. */}
         <div className="flex flex-none flex-col items-end gap-[3px]">
-          <p className="font-display text-time whitespace-nowrap text-ink tabular-nums">
+          <p className="font-display text-time whitespace-nowrap text-terracotta-700 tabular-nums">
             {time ?? "Time not known"}
           </p>
           {controls === null ? null : (
