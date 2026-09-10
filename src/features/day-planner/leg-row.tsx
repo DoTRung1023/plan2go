@@ -207,15 +207,21 @@ export function LegRow({
 
   return (
     /*
-     * On the stop card's grid. The thread runs down the column the discs are
-     * centred on, and what the leg says starts on the same left edge as the
-     * name of the stop it leads to. The thread is the row's full height less a
-     * hair at each end, so the line reads as one from the disc above to the
-     * disc below, with the cards' own padding as the only breaks in it. The
-     * space above and below the words is the row's own, which is what lets
-     * the thread run through it: a margin would have been a gap in the line.
+     * The stop card's grid, set a step to the left of it. A card's thread
+     * hangs from its disc, inside its border and padding; the leg's runs down
+     * the margin outside, thirteen pixels nearer the edge, which is how the
+     * design file draws it and what makes a leg read as the space between two
+     * cards rather than as a third column of them. The words on the leg move
+     * with the line, so the glyph in front of them still lands under the
+     * name of the stop it leads to.
+     *
+     * The thread is the row's full height less a hair at each end, so the
+     * line reads as one from the card above to the card below, with the
+     * cards' own padding as the only breaks in it. The space above and below
+     * the words is the row's own, which is what lets the thread run through
+     * it: a margin would have been a gap in the line.
      */
-    <div className="grid grid-cols-[30px_minmax(0,1fr)] gap-x-[13px] px-[17px]">
+    <div className="grid grid-cols-[30px_minmax(0,1fr)] gap-x-[13px] pr-[17px] pl-1">
       <div className="flex justify-center py-[2px]">
         <span className="thread" aria-hidden="true" />
       </div>
