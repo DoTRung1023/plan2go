@@ -5,6 +5,7 @@ import type { PlannedDay } from "./compute-trip";
 import { DayItinerary } from "./day-itinerary";
 import { DayTabs } from "./day-tabs";
 import { exportLine } from "./day-status";
+import { ExportDay } from "./export-day";
 import type { DayActions, EditOutcome } from "./day-actions";
 import { formatDayDate } from "./format-day-date";
 
@@ -137,13 +138,14 @@ export function DayPlanner({
       )}
 
       {/* The foot of the panel, and the one thing here that leaves the screen.
-          It prints rather than building a file: the browser's own print already
-          writes a PDF, and a second way of making one would be a second thing
-          to keep in step with what the page actually says. */}
+          The button leads and the line beside it says what the page would be,
+          so the action is in the corner a hand reaches for and the description
+          reads on from it. */}
       {selected === undefined ? null : (
         <div
           className={`flex flex-none items-center gap-[14px] border-t border-rule py-[14px] print:hidden ${GUTTER}`}
         >
+          <ExportDay disabled={selected.plan.stops.length === 0} />
           <div className="min-w-0 flex-1">
             <p className="text-small/[1.3] font-semibold text-ink">
               {exportLine(selected, selectedIndex).title}
@@ -152,16 +154,6 @@ export function DayPlanner({
               {exportLine(selected, selectedIndex).note}
             </p>
           </div>
-          <button
-            type="button"
-            disabled={selected.plan.stops.length === 0}
-            onClick={() => {
-              window.print();
-            }}
-            className="flex-none rounded-pill bg-terracotta px-5 py-[11px] font-display text-body/none font-semibold text-paper hover:bg-terracotta-600 active:bg-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
-          >
-            Export day as PDF
-          </button>
         </div>
       )}
     </>
