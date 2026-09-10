@@ -106,11 +106,11 @@ export function DayTabs({
       {/* The strip scrolls, and the button rides at the end of it, after the
           last day. It is a sibling of the tab list rather than inside it: a
           tab list holds tabs, and a button among them is announced as one. */}
-      <div className="day-tabs flex flex-wrap items-center gap-[7px] pb-0">
+      <div className="day-tabs flex items-center gap-[7px] pb-[9px]">
         <div
           role="tablist"
           aria-label="Days of this trip"
-          className="flex shrink-0 items-center gap-[6px]"
+          className="flex shrink-0 items-center gap-[7px]"
         >
       {days.map((day, index) => {
         const selected = index === selectedIndex;
