@@ -86,11 +86,6 @@
   color: var(--color-paper);
 }
 
-/* Where the day finishes: the flag, a shade darker, as the panel draws it. */
-.trip-map-endpoint.is-end {
-  background-color: var(--color-sage-800);
-}
-
 /* The ring is the colour of whatever it is, and an end of the day is sage. */
 .trip-map-endpoint.is-hovered {
   box-shadow:

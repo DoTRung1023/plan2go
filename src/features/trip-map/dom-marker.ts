@@ -86,11 +86,11 @@ const ENDPOINT_MARKS: Readonly<
   },
 };
 
-/** An end of the day. Which end decides the glyph, the shade, and what is read out. */
+/** An end of the day. Which end decides the glyph and what is read out. */
 export function endpointMarkerElement(kind: EndpointKind, name: string): HTMLElement {
   const mark = ENDPOINT_MARKS[kind];
   const marker = document.createElement("span");
-  marker.className = `trip-map-marker trip-map-endpoint${kind === "end" ? " is-end" : ""}`;
+  marker.className = "trip-map-marker trip-map-endpoint";
 
   const glyph = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   glyph.setAttribute("aria-hidden", "true");

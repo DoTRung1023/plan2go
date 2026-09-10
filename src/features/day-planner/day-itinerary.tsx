@@ -67,17 +67,15 @@ function endpointName(endpoint: DayEndpoint): string {
 }
 
 /**
- * How each end of the day is marked. The same shape for both, a square with
- * one corner cut, so they are one kind of thing against the stops' discs; a
- * different glyph and a different step of sage, so they are told apart at a
- * glance and neither the picture nor the colour is the only thing saying
- * which is which. A house is where the day sets out from, which is most often
- * where the traveller is staying. A flag is where it finishes, a shade darker
- * for the later of the two.
+ * How each end of the day is marked. The same shape and the same sage for
+ * both, a square with one corner cut, so they are one kind of thing against
+ * the stops' discs, and a different glyph so they are told apart: a house is
+ * where the day sets out from, which is most often where the traveller is
+ * staying, and a flag is where it finishes.
  */
 const MARKS = {
-  start: { Icon: HomeIcon, fill: "bg-sage-600" },
-  end: { Icon: FlagIcon, fill: "bg-sage-800" },
+  start: HomeIcon,
+  end: FlagIcon,
 } as const;
 
 /**
@@ -111,7 +109,7 @@ function Anchor({
   readonly onHover: (placeId: string | null) => void;
 }) {
   const row = useRef<HTMLDivElement | null>(null);
-  const mark = MARKS[which];
+  const Mark = MARKS[which];
 
   /** Brought into view when the map points at it, the way a card is. */
   useEffect(() => {
@@ -146,10 +144,8 @@ function Anchor({
         hovered ? "bg-paper-sunken" : ""
       }`}
     >
-      <span
-        className={`grid h-[30px] w-[30px] shrink-0 place-items-center self-center rounded-[13px_13px_13px_4px] text-paper ${mark.fill}`}
-      >
-        <mark.Icon size={15} strokeWidth={2.75} />
+      <span className="grid h-[30px] w-[30px] shrink-0 place-items-center self-center rounded-[13px_13px_13px_4px] bg-sage-600 text-paper">
+        <Mark size={15} strokeWidth={2.75} />
       </span>
 
       <div className="flex items-start gap-[10px]">
