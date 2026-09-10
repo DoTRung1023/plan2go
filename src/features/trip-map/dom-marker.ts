@@ -61,12 +61,37 @@ export function stopMarkerElement(order: number, name: string): HTMLElement {
   return marker;
 }
 
-/** Sized by its own padding, since it may say Start, End, or both. */
-export function endpointMarkerElement(word: string, name: string): HTMLElement {
-  const marker = document.createElement("span");
-  marker.className = "trip-map-marker trip-map-endpoint";
+/** Which end of the day a marker stands for, or both where they are one place. */
+export type EndpointKind = "start" | "end" | "both";
 
-  // The same house the panel draws, so a place is one shape wherever it is.
+/**
+ * The same glyphs the panel draws, so a place is one shape wherever it is: a
+ * house where the day sets out from, a flag where it finishes. One place that
+ * is both gets the house, because there and back is what a house says.
+ */
+const ENDPOINT_MARKS: Readonly<
+  Record<EndpointKind, { readonly word: string; readonly paths: readonly string[] }>
+> = {
+  start: {
+    word: "Start",
+    paths: ["m3 10 9-7 9 7v10a1.6 1.6 0 0 1-1.6 1.6H4.6A1.6 1.6 0 0 1 3 20Z", "M9.5 21.5v-7h5v7"],
+  },
+  end: {
+    word: "End",
+    paths: ["M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z", "M4 22v-7"],
+  },
+  both: {
+    word: "Start and end",
+    paths: ["m3 10 9-7 9 7v10a1.6 1.6 0 0 1-1.6 1.6H4.6A1.6 1.6 0 0 1 3 20Z", "M9.5 21.5v-7h5v7"],
+  },
+};
+
+/** An end of the day. Which end decides the glyph, the shade, and what is read out. */
+export function endpointMarkerElement(kind: EndpointKind, name: string): HTMLElement {
+  const mark = ENDPOINT_MARKS[kind];
+  const marker = document.createElement("span");
+  marker.className = `trip-map-marker trip-map-endpoint${kind === "end" ? " is-end" : ""}`;
+
   const glyph = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   glyph.setAttribute("aria-hidden", "true");
   glyph.setAttribute("viewBox", "0 0 24 24");
@@ -77,16 +102,15 @@ export function endpointMarkerElement(word: string, name: string): HTMLElement {
   glyph.setAttribute("stroke-width", "2.75");
   glyph.setAttribute("stroke-linecap", "round");
   glyph.setAttribute("stroke-linejoin", "round");
-
-  const roof = document.createElementNS("http://www.w3.org/2000/svg", "path");
-  roof.setAttribute("d", "m3 10 9-7 9 7v10a1.6 1.6 0 0 1-1.6 1.6H4.6A1.6 1.6 0 0 1 3 20Z");
-  const door = document.createElementNS("http://www.w3.org/2000/svg", "path");
-  door.setAttribute("d", "M9.5 21.5v-7h5v7");
-  glyph.append(roof, door);
+  for (const d of mark.paths) {
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", d);
+    glyph.append(path);
+  }
 
   const spoken = document.createElement("span");
   spoken.className = "trip-map-name";
-  spoken.textContent = `${word} of the day, ${name}`;
+  spoken.textContent = `${mark.word} of the day, ${name}`;
 
   marker.append(glyph, spoken);
   return marker;

@@ -8,7 +8,7 @@ import type { StopId } from "@/core/model/stop";
 import type { ComputedDay } from "@/core/time/compute-day";
 import { formatClock } from "@/core/time/minutes";
 import { weekdayOf } from "@/core/time/zoned";
-import { CloseIcon, HomeIcon, PencilIcon } from "@/ui/icons";
+import { CloseIcon, FlagIcon, HomeIcon, PencilIcon } from "@/ui/icons";
 import type { PlannedDay } from "./compute-trip";
 import type { DayActions } from "./day-actions";
 import { EmptyDay } from "./empty-day";
@@ -67,11 +67,26 @@ function endpointName(endpoint: DayEndpoint): string {
 }
 
 /**
+ * How each end of the day is marked. The same shape for both, a square with
+ * one corner cut, so they are one kind of thing against the stops' discs; a
+ * different glyph and a different step of sage, so they are told apart at a
+ * glance and neither the picture nor the colour is the only thing saying
+ * which is which. A house is where the day sets out from, which is most often
+ * where the traveller is staying. A flag is where it finishes, a shade darker
+ * for the later of the two.
+ */
+const MARKS = {
+  start: { Icon: HomeIcon, fill: "bg-sage-600" },
+  end: { Icon: FlagIcon, fill: "bg-sage-800" },
+} as const;
+
+/**
  * Where the day starts and where it ends. A different shape from a stop, not
  * merely a different colour: a rounded square in sage with one corner cut,
  * against the numbered terracotta discs of the stops between them.
  */
 function Anchor({
+  which,
   endpoint,
   fallback,
   time,
@@ -79,6 +94,7 @@ function Anchor({
   hovered,
   onHover,
 }: {
+  readonly which: keyof typeof MARKS;
   readonly endpoint: DayEndpoint;
   /** Said when the place has no address of its own. */
   readonly fallback: string;
@@ -95,6 +111,7 @@ function Anchor({
   readonly onHover: (placeId: string | null) => void;
 }) {
   const row = useRef<HTMLDivElement | null>(null);
+  const mark = MARKS[which];
 
   /** Brought into view when the map points at it, the way a card is. */
   useEffect(() => {
@@ -129,8 +146,10 @@ function Anchor({
         hovered ? "bg-paper-sunken" : ""
       }`}
     >
-      <span className="grid h-[30px] w-[30px] shrink-0 place-items-center self-center rounded-[13px_13px_13px_4px] bg-sage-600 text-paper">
-        <HomeIcon size={15} strokeWidth={2.75} />
+      <span
+        className={`grid h-[30px] w-[30px] shrink-0 place-items-center self-center rounded-[13px_13px_13px_4px] text-paper ${mark.fill}`}
+      >
+        <mark.Icon size={15} strokeWidth={2.75} />
       </span>
 
       <div className="flex items-start gap-[10px]">
@@ -267,6 +286,7 @@ function EndpointSlot({
     <div>
       {endpoint === null ? null : (
         <Anchor
+          which={which}
           endpoint={endpoint}
           fallback={words.label}
           time={time}

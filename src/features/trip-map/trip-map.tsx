@@ -5,6 +5,7 @@ import type { DayEndpoint } from "@/core/model/day";
 import type { TravelMode } from "@/core/model/leg";
 import type { LatLng } from "@/core/model/place";
 import type { Stop } from "@/core/model/stop";
+import type { EndpointKind } from "./dom-marker";
 import {
   endpointMarkerElement,
   placeDomMarker,
@@ -455,12 +456,12 @@ export function TripMap({
     const points: google.maps.LatLngLiteral[] = [];
 
     endpointMarkers.current.clear();
-    const drawEndpoint = (endpoint: DayEndpoint, word: string): void => {
+    const drawEndpoint = (endpoint: DayEndpoint, kind: EndpointKind): void => {
       const point = {
         lat: endpoint.place.position.lat,
         lng: endpoint.place.position.lng,
       };
-      const element = endpointMarkerElement(word, endpoint.place.name);
+      const element = endpointMarkerElement(kind, endpoint.place.name);
       element.addEventListener("mouseenter", () => {
         hoveringEndpoint.current(endpoint.place.id);
       });
@@ -475,13 +476,13 @@ export function TripMap({
     // A day that starts and ends in the same place gets one marker, not two on
     // top of each other.
     if (start !== null && end !== null && start.place.id === end.place.id) {
-      drawEndpoint(start, "Start and end");
+      drawEndpoint(start, "both");
     } else {
       if (start !== null) {
-        drawEndpoint(start, "Start");
+        drawEndpoint(start, "start");
       }
       if (end !== null) {
-        drawEndpoint(end, "End");
+        drawEndpoint(end, "end");
       }
     }
 
