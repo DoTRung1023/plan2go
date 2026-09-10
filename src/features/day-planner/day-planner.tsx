@@ -26,6 +26,12 @@ interface DayPlannerProps {
    */
   readonly settings: ReactNode;
   /**
+   * What sits at the end of a reader's name row, in the place an editor's menu
+   * takes: the one thing a reader can do to the trip, which is take it away
+   * on paper. Ignored when there are settings, which carry their own row.
+   */
+  readonly exporting: ReactNode;
+  /**
    * Puts one more empty day on the end of the trip. Kept apart from the day's
    * own actions, which are about what is on a day rather than how many there
    * are. Null for a reader who holds no edit link.
@@ -73,6 +79,7 @@ export function DayPlanner({
   selectedIndex,
   onSelect,
   settings,
+  exporting,
   onAddDay,
   actions,
 }: DayPlannerProps) {
@@ -88,12 +95,17 @@ export function DayPlanner({
       <div className={`relative z-20 shrink-0 pt-5 pb-[14px] ${GUTTER}`}>
         {settings ?? (
           <>
-            <h1 className="font-display text-title tracking-[-0.01em] text-ink">
-              {title}
-            </h1>
-            {range === null ? null : (
-              <p className="mt-1 text-meta text-ink-muted">{range}</p>
-            )}
+            <div className="flex items-center gap-[10px]">
+              <div className="min-w-0 flex-1">
+                <h1 className="font-display text-title tracking-[-0.01em] text-ink">
+                  {title}
+                </h1>
+                {range === null ? null : (
+                  <p className="mt-1 text-meta text-ink-muted">{range}</p>
+                )}
+              </div>
+              {exporting}
+            </div>
             <div className="mt-[14px]">
               <DayTabs
                 days={days.map((day) => day.plan)}

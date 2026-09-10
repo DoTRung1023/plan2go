@@ -11,7 +11,7 @@ import { dayStatus } from "@/features/day-planner/day-status";
 import { placesOnTheTrip } from "@/features/place-search/places-on-the-trip";
 import { searchBias } from "@/features/place-search/search-bias";
 import { TripMenu } from "@/features/trip-settings/trip-menu";
-import { ExportDay } from "@/features/trip-settings/export-day";
+import { TripExport } from "@/features/trip-settings/trip-export";
 import { ShareLinks } from "@/features/trip-settings/share-links";
 import { SavedNote } from "@/features/trip-settings/saved-note";
 import { TripActions } from "@/features/trip-settings/trip-actions";
@@ -118,6 +118,9 @@ export function TripEditor({
   const selected = days[selectedIndex] ?? days[0];
   const first = days[0];
   const last = days[days.length - 1];
+  /* Whether the day or the whole trip is chosen in the export window, so the
+     way in is only closed when there is nothing anywhere to take away. */
+  const nothingToExport = days.every((day) => day.plan.stops.length === 0);
 
   /**
    * The shape of each leg the day travels, in the same order the map builds
@@ -228,6 +231,7 @@ export function TripEditor({
           onHoverLeg={setHoveredLegIndex}
           selectedIndex={selectedIndex}
           onSelect={setChosenIndex}
+          exporting={<TripExport where="heading" disabled={nothingToExport} />}
           onAddDay={
             editKey === null
               ? null
@@ -322,11 +326,7 @@ export function TripEditor({
                 actions={
                   <TripMenu label="Trip actions">
                     <ShareLinks slug={slug} editKey={editKey} />
-                    <ExportDay
-                      disabled={
-                        selected === undefined || selected.plan.stops.length === 0
-                      }
-                    />
+                    <TripExport where="menu" disabled={nothingToExport} />
                     <TripActions
                       slug={slug}
                       editKey={editKey}

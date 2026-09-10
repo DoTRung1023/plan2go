@@ -119,7 +119,7 @@ export function TripMenu({ label, children }: TripMenuProps) {
         <div
           role="menu"
           aria-label={label}
-          className="absolute top-[42px] right-0 z-40 w-[196px] rounded-panel border border-rule bg-paper-raised p-[6px] shadow-lg"
+          className="absolute top-[42px] right-0 z-40 w-[172px] rounded-panel border border-rule bg-paper-raised p-[6px] shadow-lg"
         >
           {children}
         </div>

@@ -6,28 +6,46 @@ import { MENU_ITEM } from "./trip-menu";
 
 const TITLE = "Export settings";
 
-interface ExportDayProps {
-  /** A day with nothing on it has nothing to export, and the row says so. */
+/**
+ * The two places the trigger is drawn. An editor finds it as a row in the
+ * trip's menu, beside Share. A reader has no menu, because exporting is the
+ * one thing they can do to the trip, so for them it is a button with its name
+ * on it, in the spot on the name row where an editor's menu sits.
+ */
+const TRIGGERS = {
+  menu: {
+    rest: MENU_ITEM,
+    open: MENU_ITEM,
+  },
+  heading: {
+    rest: "inline-flex h-9 shrink-0 items-center gap-[7px] rounded-pill border border-rule bg-transparent px-[14px] text-small/none font-semibold text-ink-muted hover:bg-neutral-200 hover:text-ink disabled:hover:bg-transparent disabled:hover:text-ink-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta",
+    open: "inline-flex h-9 shrink-0 items-center gap-[7px] rounded-pill border border-terracotta-800 bg-terracotta-800 px-[14px] text-small/none font-semibold text-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta",
+  },
+} as const;
+
+interface TripExportProps {
+  readonly where: keyof typeof TRIGGERS;
+  /** A trip with nothing on any day has nothing to export, and says so. */
   readonly disabled: boolean;
 }
 
 /**
- * The row in the trip's menu that exports the open day, and the window it
- * opens.
+ * The way the trip leaves the screen, and the window it opens first.
  *
- * It sits beside Share because the two are the same kind of thing: both hand
- * the plan to somebody who is not looking at this screen. Choosing it opens
- * the window where how the page comes out will be chosen, and for now that
- * window carries its name and nothing under it: the choices are the next piece
- * of work, and this is the place they land.
+ * The trigger says only "Export". Which format, and whether it is the open day
+ * or the whole trip, are choices, and choices are made in the window rather
+ * than baked into the name of the thing that opens it. For now that window
+ * carries its name and nothing under it: the choices are the next piece of
+ * work, and this is the place they land.
  *
  * Clicking anywhere else closes the window, as does Escape, which hands focus
- * back to the row it came from.
+ * back to whatever opened it.
  */
-export function ExportDay({ disabled }: ExportDayProps) {
+export function TripExport({ where, disabled }: TripExportProps) {
   const [open, setOpen] = useState(false);
   const container = useRef<HTMLDivElement | null>(null);
   const trigger = useRef<HTMLButtonElement | null>(null);
+  const look = TRIGGERS[where];
 
   useEffect(() => {
     if (!open) {
@@ -57,7 +75,7 @@ export function ExportDay({ disabled }: ExportDayProps) {
   return (
     <div
       ref={container}
-      className="relative"
+      className="relative flex-none"
       onKeyDown={(event) => {
         if (open && event.key === "Escape") {
           event.preventDefault();
@@ -78,10 +96,10 @@ export function ExportDay({ disabled }: ExportDayProps) {
           }
           setOpen(true);
         }}
-        className={`${MENU_ITEM} disabled:opacity-45`}
+        className={`${open ? look.open : look.rest} disabled:opacity-45`}
       >
         <DownloadIcon size={15} strokeWidth={2.75} className="shrink-0" />
-        Export day as PDF
+        Export
       </button>
 
       {open ? (
