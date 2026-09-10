@@ -23,7 +23,6 @@ function stop(name: string, providerPlaceId: string | null): Stop {
     id: `stop-${name}`,
     place: place(name, providerPlaceId),
     stayMinutes: 60,
-    startAtMinutes: null,
     travelMode: "walk",
     note: null,
   };

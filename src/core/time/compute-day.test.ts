@@ -32,7 +32,6 @@ function stop(
     id: `stop-${name}`,
     place: place(name, openingHours),
     stayMinutes,
-    startAtMinutes: null,
     travelMode: "walk",
     note: null,
   };
@@ -375,110 +374,5 @@ describe("computeDay, days that do not start or end anywhere in particular", () 
 
     expect(result.legs[0]?.fromName).toBe("Hotel");
     expect(result.legs[1]?.toName).toBe("Ibis Adelaide");
-  });
-});
-
-describe("computeDay, stops fixed to a time", () => {
-  /** Same helper as above, with the stop pinned to a reading off the clock. */
-  function fixedStop(name: string, stayMinutes: number, startAtMinutes: number): Stop {
-    return { ...stop(name, stayMinutes), startAtMinutes };
-  }
-
-  it("begins the day at its first stop when that stop is fixed", () => {
-    const plan = day({
-      start: null,
-      end: null,
-      startAtMinutes: 9 * 60,
-      stops: [fixedStop("Lake", 60, 8 * 60)],
-    });
-    const result = computeDay({ day: plan, legs: [] });
-
-    // Earlier than the day was set to begin, and not a conflict: there is
-    // nothing before the first stop to have been late from.
-    expect(result.begins.minutesFromMidnight).toBe(8 * 60);
-    expect(result.stops[0]?.arrival?.minutesFromMidnight).toBe(8 * 60);
-    expect(result.stops[0]?.waitMinutes).toBe(0);
-    expect(result.conflicts).toEqual([]);
-  });
-
-  it("keeps a fixed time even where the day cannot travel to it", () => {
-    const plan = day({
-      end: null,
-      startAtMinutes: 9 * 60,
-      stops: [fixedStop("Lake", 60, 8 * 60)],
-    });
-    const result = computeDay({ day: plan, legs: [leg(10)] });
-
-    // The day leaves its start point at nine and the stop is still at eight:
-    // the traveller's answer stands, and rearranging it is theirs to do.
-    expect(result.begins.minutesFromMidnight).toBe(9 * 60);
-    expect(result.stops[0]?.arrival?.minutesFromMidnight).toBe(8 * 60);
-    expect(result.conflicts).toEqual([]);
-  });
-
-  it("waits for a time the day reaches early, and counts the wait", () => {
-    const plan = day({
-      end: null,
-      startAtMinutes: 9 * 60,
-      stops: [fixedStop("Tour", 60, 11 * 60)],
-    });
-    const result = computeDay({ day: plan, legs: [leg(10)] });
-
-    // Out of the hotel at nine, there by ten past, waiting until eleven.
-    expect(result.stops[0]?.arrival?.minutesFromMidnight).toBe(11 * 60);
-    expect(result.stops[0]?.waitMinutes).toBe(110);
-    expect(result.stops[0]?.overlapMinutes).toBe(0);
-    expect(result.stops[0]?.departure?.minutesFromMidnight).toBe(12 * 60);
-    expect(result.totals.waitingMinutes).toBe(110);
-    expect(result.conflicts).toEqual([]);
-  });
-
-  it("holds everything after a fixed time to it, not to what came before", () => {
-    const plan = day({
-      start: null,
-      end: null,
-      startAtMinutes: 9 * 60,
-      stops: [stop("Market", 30), fixedStop("Tour", 60, 14 * 60), stop("Park", 30)],
-    });
-    const result = computeDay({ day: plan, legs: [leg(10), leg(10)] });
-
-    expect(result.stops[1]?.arrival?.minutesFromMidnight).toBe(14 * 60);
-    // 2pm, an hour there, ten minutes on.
-    expect(result.stops[2]?.arrival?.minutesFromMidnight).toBe(15 * 60 + 10);
-  });
-
-  it("counts no waiting for a fixed time the day passes before reaching", () => {
-    const plan = day({
-      start: null,
-      end: null,
-      startAtMinutes: 9 * 60,
-      stops: [stop("Market", 180), fixedStop("Tour", 60, 10 * 60)],
-    });
-    const result = computeDay({ day: plan, legs: [leg(30)] });
-
-    // The market runs to half past twelve and the tour is still at ten. Nobody
-    // stood about waiting for it, so nothing is counted as waiting.
-    expect(result.stops[1]?.arrival?.minutesFromMidnight).toBe(10 * 60);
-    expect(result.stops[1]?.waitMinutes).toBe(0);
-    expect(result.totals.waitingMinutes).toBe(0);
-    expect(result.conflicts).toEqual([]);
-    // Half past twelve against a stop set for ten.
-    expect(result.stops[1]?.overlapMinutes).toBe(150);
-  });
-
-  it("times a stop again after a leg nobody could answer", () => {
-    const plan = day({
-      start: null,
-      end: null,
-      startAtMinutes: 9 * 60,
-      stops: [stop("Market", 30), fixedStop("Tour", 60, 14 * 60)],
-    });
-    const result = computeDay({ day: plan, legs: [unresolved] });
-
-    expect(result.stops[0]?.arrival?.minutesFromMidnight).toBe(9 * 60);
-    expect(result.stops[1]?.arrival?.minutesFromMidnight).toBe(14 * 60);
-    // The gap itself is still unmeasured, so the totals stay partial.
-    expect(result.totals.complete).toBe(false);
-    expect(result.totals.travelMinutes).toBeNull();
   });
 });

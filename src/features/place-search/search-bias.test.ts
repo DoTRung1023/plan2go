@@ -24,7 +24,6 @@ function stop(name: string, position: LatLng): Stop {
     id: `stop-${name}`,
     place: place(name, position),
     stayMinutes: 60,
-    startAtMinutes: null,
     travelMode: "walk",
     note: null,
   };
