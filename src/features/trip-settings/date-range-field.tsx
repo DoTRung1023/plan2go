@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import type { IsoDate } from "@/core/model/day";
 import { addDays, parseIsoDate, weekdayOf } from "@/core/time/zoned";
-import { ChevronLeftIcon, ChevronRightIcon } from "@/ui/icons";
+import { ArrowLeftIcon, ArrowRightIcon } from "@/ui/icons";
 
 const DAYS_IN_WEEK = 7;
 
@@ -15,10 +15,10 @@ const WEEKS_SHOWN = 6;
 const MONTHS_SHOWN = 2;
 
 /** Matches the panel's own width class, for the edge test when it opens. */
-const PANEL_WIDTH = 544;
+const PANEL_WIDTH = 720;
 
-/** Room to keep between the panel and the edge of the window. */
-const EDGE_GAP = 8;
+/** Room to keep between the panel and the edge of the window. Matches the 2rem in its width class. */
+const EDGE_GAP = 16;
 
 /** Monday first, because that is how a week reads here. */
 const WEEKDAYS = [
@@ -111,57 +111,47 @@ export function formatDateRange(start: IsoDate, end: IsoDate): string {
 }
 
 const TRIGGER =
-  "flex w-full items-center justify-between gap-2 rounded-pill border border-rule bg-paper-raised text-left text-ink hover:border-rule-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "flex w-full items-center rounded-pill border border-rule bg-paper-raised text-left text-ink hover:border-rule-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 /**
- * Two heights, because this field has two homes. On the trip's own name row it
- * is one control among several on a 34px line and has to match them. On the
- * starter page it is one of four stacked questions and has to match those.
+ * Two homes, two shapes of the same control.
+ *
+ * On the starter page it is one of the stacked questions, and it answers with
+ * both ends of the trip written out in full, each under its own name with an
+ * arrow between them, because a person opening a trip is being asked two
+ * things and should see both answers. On the trip's own name row it is one
+ * control among several on a 34px line: no label, no box, and not even the
+ * word that opens it. The dates sit beside the trip's name as a fact about it,
+ * and a row that reads "Hanoi, five days 10-15 Sept Change" spends its last
+ * word on the mechanism rather than on the trip. The word is still there for
+ * anybody who cannot see the pill light up under the pointer.
+ *
+ * The starter page's numbers are those of the fields beside it, from
+ * field-styles, rather than the type scale that governs the planner. DESIGN.md
+ * says as much: it owns src/app/t, src/features and src/ui, and the marketing
+ * page answers to the skill instead.
  */
 const SIZES = {
-  compact: {
-    trigger: "mt-1 h-[34px] px-[14px] py-0 text-meta",
-    label: "text-label font-semibold text-ink-muted",
-    change: "shrink-0 text-micro font-semibold text-terracotta-700",
-    stack: "",
-  },
-  /**
-   * On the trip's own row rather than in a form: no label, no box, and not even
-   * the word that opens it. The dates sit beside the trip's name as a fact
-   * about it, and a row that reads "Hanoi, five days 10-15 Sept Change" spends
-   * its last word on the mechanism rather than on the trip.
-   *
-   * The word is still there for anybody who cannot see the pill light up under
-   * the pointer, which is the only thing left saying this can be pressed.
-   */
   inline: {
     trigger:
       "w-auto rounded-pill border-transparent bg-transparent px-2 py-[5px] text-small/none font-semibold text-ink-muted hover:border-transparent hover:bg-terracotta-100 hover:text-terracotta-700",
-    label: "sr-only",
     change: "sr-only",
     stack: "shrink-0",
   },
-  /*
-   * The only size of the three that never appears inside a trip: it is the
-   * Dates field on the front page, sitting in a column with the country and
-   * the city. Its numbers are those fields' numbers, taken from
-   * field-styles beside them, rather than the type scale that governs the
-   * planner. DESIGN.md says as much: it owns src/app/t, src/features and
-   * src/ui, and the marketing page answers to the skill instead.
-   */
   large: {
     // Room kept clear on the right for the word, which is taken out of the flow
-    // so its own padding cannot make this pill taller than the fields beside it.
-    trigger: "relative py-[17px] pr-24 pl-5 text-[16px] leading-[1.2]",
-    label: "text-[14px] leading-none font-semibold text-ink-muted",
+    // so its own padding cannot make this pill taller than it needs to be.
+    trigger: "relative gap-2 py-[14px] pr-[88px] pl-5",
     change:
       "absolute top-1/2 right-3 -translate-y-1/2 rounded-pill px-2 py-[6px] text-[14px] leading-none font-bold text-terracotta-700",
-    stack: "flex flex-col gap-2",
+    // The container the day's format is measured against. Not the pill itself:
+    // a button cannot be a size container, and the wrapper is exactly as wide.
+    stack: "@container flex flex-col",
   },
 } as const;
 
 const STEP =
-  "grid h-[28px] w-[28px] shrink-0 place-items-center rounded-pill text-ink-muted hover:bg-terracotta-100 hover:text-terracotta-700 disabled:opacity-35 disabled:hover:bg-transparent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "grid h-[34px] w-[34px] shrink-0 place-items-center rounded-pill text-terracotta-700 hover:bg-terracotta-100 hover:text-terracotta-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 interface DateRangeFieldProps {
   readonly id: string;
@@ -188,6 +178,33 @@ interface DateRangeFieldProps {
 }
 
 /**
+ * One end of the trip as the starter page's field writes it: its name over the
+ * day.
+ *
+ * The day is written as fully as the pill has room for, which is a question
+ * about the pill and not about the window: the card it sits in is a column of
+ * a grid that folds, so a wide window can still hand it a narrow card. The
+ * weekday goes first, then the year, and the pill measures itself to decide.
+ */
+function End({ name, date }: { readonly name: string; readonly date: IsoDate }) {
+  const day = asUtc(date);
+  return (
+    <span className="flex min-w-0 flex-1 flex-col gap-[5px]">
+      <span className="text-[13px] leading-none font-semibold text-ink-muted">{name}</span>
+      <span className="truncate text-[14px] leading-[1.2] tabular-nums">
+        {/* The steps are where each longer form stops fitting the widest day
+            it can be asked to show, measured rather than guessed. */}
+        <span className="hidden @min-[404px]:inline">{READABLE.format(day)}</span>
+        <span className="hidden @min-[328px]:inline @min-[404px]:hidden">
+          {DAY_MONTH_YEAR.format(day)}
+        </span>
+        <span className="@min-[328px]:hidden">{DAY_MONTH.format(day)}</span>
+      </span>
+    </span>
+  );
+}
+
+/**
  * Both ends of a trip, chosen from one calendar.
  *
  * Two months at once, and the two ends picked in one gesture: the first click
@@ -198,13 +215,18 @@ interface DateRangeFieldProps {
  * before the day already chosen simply starts again there, which is what
  * somebody who has changed their mind is doing anyway.
  *
+ * The line over the months says which of the two clicks comes next, and the
+ * field above follows the calendar as it is drawn on, so the first click is
+ * seen to land before the second is asked for.
+ *
  * The browser's own date picker is drawn by the browser and cannot be reached
  * with CSS, so on a page meant to read like a printed guide it arrives as a
  * blue system panel. This is the same control in the palette from DESIGN.md.
  *
- * The months are stepped by arrows rather than by buttons naming the month they
- * go to, which is what a calendar of two months has room for. Each carries the
- * month it moves to as its label, so nothing here is an icon on its own.
+ * The months are stepped by the arrows at either end of that line rather than
+ * by buttons naming the month they go to, which is what a calendar of two
+ * months has room for. Each carries the month it moves to as its label, so
+ * nothing here is an icon on its own.
  */
 export function DateRangeField({
   id,
@@ -218,7 +240,7 @@ export function DateRangeField({
   onChange,
   footer,
   onClose,
-  size = "compact",
+  size = "inline",
 }: DateRangeFieldProps) {
   const dressed = SIZES[size];
   const [open, setOpen] = useState(false);
@@ -232,8 +254,14 @@ export function DateRangeField({
   /** What the pointer is over, so the days between fill in before the click. */
   const [previewing, setPreviewing] = useState<IsoDate | null>(null);
   const [focused, setFocused] = useState<IsoDate>(start);
-  /** A field on the right of a row would open off the side of the window. */
-  const [alignEnd, setAlignEnd] = useState(false);
+  /**
+   * Where the panel's left edge goes, in pixels from the field's own. Zero
+   * lines the two up, which is where a panel belongs. A field on the right of
+   * a row would open off the side of the window, so the panel is walked back
+   * until it fits, and on a window narrower than the panel that means the
+   * window's own margin rather than either edge of the field.
+   */
+  const [shift, setShift] = useState(0);
 
   const container = useRef<HTMLDivElement | null>(null);
   const trigger = useRef<HTMLButtonElement | null>(null);
@@ -282,9 +310,9 @@ export function DateRangeField({
   const afterShown = shiftMonths(leftMonth, MONTHS_SHOWN);
 
   /**
-   * What the grid paints. While a range is being drawn that is the day it began
-   * on and wherever the pointer has reached; otherwise it is the trip as it
-   * stands.
+   * What the grid paints, and what the field above reads while it is open.
+   * While a range is being drawn that is the day it began on and wherever the
+   * pointer has reached; otherwise it is the trip as it stands.
    */
   const shownStart = drawingFrom ?? start;
   const shownEnd =
@@ -355,9 +383,14 @@ export function DateRangeField({
     }
   };
 
+  const before = shiftMonths(leftMonth, -1);
+  const after = shiftMonths(leftMonth, MONTHS_SHOWN);
+
   return (
     <div className={`relative ${dressed.stack}`} ref={container}>
-      <label className={dressed.label}>{label}</label>
+      <label className="sr-only" htmlFor={id}>
+        {label}
+      </label>
       <input type="hidden" name={startName} value={start} />
       <input type="hidden" name={endName} value={end} />
 
@@ -374,7 +407,9 @@ export function DateRangeField({
           }
           const box = trigger.current?.getBoundingClientRect();
           if (box !== undefined) {
-            setAlignEnd(box.left + PANEL_WIDTH > window.innerWidth - EDGE_GAP);
+            const width = Math.min(PANEL_WIDTH, window.innerWidth - 2 * EDGE_GAP);
+            const furthestLeft = window.innerWidth - EDGE_GAP - width;
+            setShift(Math.min(0, furthestLeft - box.left) + Math.max(0, EDGE_GAP - box.left));
           }
           setLeftMonth(firstOfMonth(start));
           setFocused(start);
@@ -383,7 +418,15 @@ export function DateRangeField({
         }}
         className={`${TRIGGER} ${dressed.trigger}`}
       >
-        <span className="truncate tabular-nums">{formatDateRange(start, end)}</span>
+        {size === "large" ? (
+          <>
+            <End name="First day" date={open ? shownStart : start} />
+            <ArrowRightIcon size={18} strokeWidth={1.75} className="shrink-0 text-ink-faint" />
+            <End name="Last day" date={open ? shownEnd : end} />
+          </>
+        ) : (
+          <span className="truncate tabular-nums">{formatDateRange(start, end)}</span>
+        )}
         <span className={dressed.change}>{open ? "Close" : "Change"}</span>
       </button>
 
@@ -391,14 +434,43 @@ export function DateRangeField({
         <div
           role="dialog"
           aria-label={`Choose the ${label.toLowerCase()}`}
-          className={`absolute top-full z-30 mt-2 w-[min(544px,calc(100vw-2rem))] rounded-panel border border-rule bg-paper-raised p-[14px] shadow-md ${
-            alignEnd ? "right-0" : "left-0"
-          }`}
+          style={{ left: shift }}
+          className="absolute top-full z-30 mt-3 w-[min(720px,calc(100vw-2rem))] rounded-card border border-rule bg-paper-raised px-6 pt-5 pb-6 shadow-md"
         >
+          {/* The line over the months: which click comes next, and a step of
+              one month at either end of it. */}
+          <div className="flex items-center justify-between gap-3">
+            <button
+              type="button"
+              aria-label={`Go to ${MONTH_AND_YEAR.format(asUtc(before))}`}
+              onClick={() => {
+                setLeftMonth(before);
+              }}
+              className={STEP}
+            >
+              <ArrowLeftIcon size={26} strokeWidth={1.75} />
+            </button>
+            <p aria-live="polite" className="text-[17px] leading-none font-medium text-ink-muted">
+              {drawingFrom === null ? "Choose the first day" : "Now choose the last day"}
+            </p>
+            <button
+              type="button"
+              aria-label={`Go to ${MONTH_AND_YEAR.format(asUtc(after))}`}
+              onClick={() => {
+                setLeftMonth(shiftMonths(leftMonth, 1));
+              }}
+              className={STEP}
+            >
+              <ArrowRightIcon size={26} strokeWidth={1.75} />
+            </button>
+          </div>
+
+          {/* The heading above says which click is next and not which day was
+              clicked, so the day itself is read out here. */}
           <p aria-live="polite" className="sr-only">
             {drawingFrom === null
               ? `${READABLE.format(asUtc(start))} to ${READABLE.format(asUtc(end))}`
-              : `${READABLE.format(asUtc(drawingFrom))} chosen. Now choose the last day.`}
+              : `${READABLE.format(asUtc(drawingFrom))} chosen.`}
           </p>
 
           <div
@@ -407,9 +479,9 @@ export function DateRangeField({
             onMouseLeave={() => {
               setPreviewing(null);
             }}
-            className="grid gap-x-5 gap-y-4 sm:grid-cols-2"
+            className="mt-5 grid gap-x-8 gap-y-6 sm:grid-cols-2"
           >
-            {months.map((month, at) => {
+            {months.map((month) => {
               const cells = Array.from(
                 { length: WEEKS_SHOWN * DAYS_IN_WEEK },
                 (_unused, index) => addDays(gridStart(month), index),
@@ -418,51 +490,17 @@ export function DateRangeField({
 
               return (
                 <div key={month}>
-                  <div className="flex items-center justify-between">
-                    {/* The arrow on the far side of each month, so the pair
-                        reads as one calendar with a step at either end. */}
-                    {at === 0 ? (
-                      <button
-                        type="button"
-                        aria-label={`Go to ${MONTH_AND_YEAR.format(asUtc(shiftMonths(leftMonth, -1)))}`}
-                        onClick={() => {
-                          setLeftMonth(shiftMonths(leftMonth, -1));
-                        }}
-                        className={STEP}
-                      >
-                        <ChevronLeftIcon size={15} strokeWidth={2.75} />
-                      </button>
-                    ) : (
-                      <span className="h-[28px] w-[28px]" />
-                    )}
+                  <p className="text-center font-display text-[21px] leading-none font-bold text-ink">
+                    {MONTH_AND_YEAR.format(asUtc(month))}
+                  </p>
 
-                    <p className="font-display text-body text-ink">
-                      {MONTH_AND_YEAR.format(asUtc(month))}
-                    </p>
-
-                    {at === MONTHS_SHOWN - 1 ? (
-                      <button
-                        type="button"
-                        aria-label={`Go to ${MONTH_AND_YEAR.format(asUtc(shiftMonths(leftMonth, MONTHS_SHOWN)))}`}
-                        onClick={() => {
-                          setLeftMonth(shiftMonths(leftMonth, 1));
-                        }}
-                        className={STEP}
-                      >
-                        <ChevronRightIcon size={15} strokeWidth={2.75} />
-                      </button>
-                    ) : (
-                      <span className="h-[28px] w-[28px]" />
-                    )}
-                  </div>
-
-                  <div role="grid" aria-label={MONTH_AND_YEAR.format(asUtc(month))} className="mt-2">
+                  <div role="grid" aria-label={MONTH_AND_YEAR.format(asUtc(month))} className="mt-4">
                     <div role="row" className="grid grid-cols-7">
                       {WEEKDAYS.map((weekday, index) => (
                         <span
                           key={index}
                           role="columnheader"
-                          className="pb-[3px] text-center text-tick font-semibold text-ink-muted"
+                          className="pb-2 text-center text-[13px] leading-none text-ink-muted"
                         >
                           <span aria-hidden="true">{weekday.short}</span>
                           <span className="sr-only">{weekday.full}</span>
@@ -502,8 +540,8 @@ export function DateRangeField({
                                 key={date}
                                 aria-selected={isStart || isEnd}
                                 className={[
-                                  "py-px",
-                                  banded ? "bg-terracotta-200" : "",
+                                  "grid h-[46px] place-items-center",
+                                  banded ? "bg-terracotta-200/70" : "",
                                   banded && date === shownStart ? "rounded-l-pill" : "",
                                   banded && date === shownEnd ? "rounded-r-pill" : "",
                                 ].join(" ")}
@@ -521,14 +559,12 @@ export function DateRangeField({
                                     setPreviewing(date);
                                   }}
                                   className={[
-                                    "flex h-[30px] w-full items-center justify-center rounded-pill border font-display text-micro tabular-nums focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta",
+                                    "grid h-[42px] w-[42px] place-items-center rounded-pill border font-display text-[17px] leading-none font-bold tabular-nums focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta",
                                     isStart || isEnd
-                                      ? "border-terracotta bg-terracotta text-paper"
-                                      : banded
-                                        ? "border-transparent text-terracotta-900"
-                                        : date === today
-                                          ? "border-terracotta text-ink"
-                                          : "border-transparent hover:bg-neutral-200",
+                                      ? "border-terracotta bg-terracotta text-terracotta-900"
+                                      : date === today
+                                        ? "border-terracotta text-ink"
+                                        : "border-transparent text-ink hover:bg-terracotta-200",
                                     !thisMonth
                                       ? "invisible"
                                       : tooEarly || tooFar
@@ -554,7 +590,7 @@ export function DateRangeField({
           </div>
 
           {footer === undefined || footer === null ? null : (
-            <div className="mt-3 border-t border-rule pt-3">{footer}</div>
+            <div className="mt-4 border-t border-rule pt-4">{footer}</div>
           )}
         </div>
       ) : null}

@@ -78,3 +78,14 @@ for a screenshot.
   Google Maps" link. Rows cached before rides were asked for show only the link until
   the hourly transit expiry; `legCache.deleteMany({ mode: "TRANSIT" })` forces a fresh
   ask (one Routes call per transit leg viewed).
+
+## The dates field
+
+- The pill is `button[aria-haspopup="dialog"]`; its calendar is
+  `[role="dialog"][aria-label="Choose the dates"]`. Name the dialog: in dev the Next
+  error overlay for the map key is a dialog too, and a bare `[role="dialog"]` hits both.
+- Days are `button[data-date="YYYY-MM-DD"]`. The heading `p[aria-live]` reads "Choose
+  the first day" or "Now choose the last day". The first click sets the start and the
+  field's Last day follows the pointer; the second click commits.
+- In the trip header the Save dates footer only appears once the range differs from
+  the saved one, and saving leaves the panel open.

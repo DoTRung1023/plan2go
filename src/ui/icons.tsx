@@ -88,6 +88,25 @@ export function ChevronRightIcon(props: IconProps) {
   );
 }
 
+/** A whole arrow, shaft and head, for stepping through something in order. */
+export function ArrowLeftIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="M19 12H5" />
+      <path d="M12 19l-7-7 7-7" />
+    </Glyph>
+  );
+}
+
+export function ArrowRightIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="M5 12h14" />
+      <path d="M12 5l7 7-7 7" />
+    </Glyph>
+  );
+}
+
 /** Three dots: the conventional shape for "there are more actions here". */
 export function MoreIcon(props: IconProps) {
   return (
