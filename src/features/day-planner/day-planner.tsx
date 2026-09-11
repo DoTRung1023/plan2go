@@ -109,7 +109,7 @@ export function DayPlanner({
           starts scrolling under it. Without one the day's line and the first
           row of the day sat either side of a stretch of bare paper that read
           as a gap rather than as two things: the heading, then its list. */}
-      <div className={`relative z-20 shrink-0 border-b border-rule pt-5 pb-[14px] ${GUTTER}`}>
+      <div className={`relative z-20 shrink-0 border-b border-rule pt-4 pb-[14px] ${GUTTER}`}>
         {settings ?? (
           <>
             <div className="flex items-center gap-[10px]">

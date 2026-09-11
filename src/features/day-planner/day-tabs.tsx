@@ -106,7 +106,12 @@ export function DayTabs({
       {/* The strip scrolls, and the button rides at the end of it, after the
           last day. It is a sibling of the tab list rather than inside it: a
           tab list holds tabs, and a button among them is announced as one. */}
-      <div className="day-tabs flex items-center gap-[7px] pb-[9px]">
+      {/* The room under the pills is the strip's own padding over the track
+          the scrollbar is always given, so the hairline it draws when a trip
+          is long enough sits just under the pills as their edge, and the
+          line naming the day is close under the strip whether or not the
+          hairline is there. */}
+      <div className="day-tabs flex items-center gap-[7px] pb-[4px]">
         <div
           role="tablist"
           aria-label="Days of this trip"

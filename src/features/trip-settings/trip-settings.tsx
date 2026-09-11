@@ -251,7 +251,7 @@ export function TripSettings({
           strip and with no rule between them, because the line names the tab
           that is chosen and belongs with it; the rule that closes the block
           is under this line, where the day itself begins. */}
-      <div className="mt-[10px] flex items-center gap-[22px]">
+      <div className="mt-2 flex items-center gap-[22px]">
         <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-[10px]">
           {dayLine}
         </div>
