@@ -222,6 +222,19 @@ export function TripEditor({
               hoveredStopId={hoveredStopId}
               onHoverStop={setHoveredStopId}
               onOpenStop={openStop}
+              onOpenEndpoint={(which) => {
+                // The map says which end was pressed; which day, and what stands
+                // there, is known here.
+                const at = selected.plan[which];
+                if (at !== null) {
+                  setOpened({
+                    kind: "endpoint",
+                    dayId: selected.plan.id,
+                    which,
+                    placeId: at.place.id,
+                  });
+                }
+              }}
               hoveredLegIndex={hoveredLegIndex}
               onHoverLeg={setHoveredLegIndex}
               hoveredEndpointId={hoveredEndpointId}

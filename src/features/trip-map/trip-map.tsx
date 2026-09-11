@@ -82,6 +82,11 @@ interface TripMapProps {
   readonly onHoverStop: (stopId: string | null) => void;
   /** A marker pressed, which opens the place it stands for beside the map. */
   readonly onOpenStop: (stopId: string) => void;
+  /**
+   * An end of the day pressed, the same way. A day that starts and ends in one
+   * place has one marker, which answers as the start: it is the same place.
+   */
+  readonly onOpenEndpoint: (which: "start" | "end") => void;
   /** The leg under the pointer, here or in the panel beside the map. */
   readonly hoveredLegIndex: number | null;
   readonly onHoverLeg: (legIndex: number | null) => void;
@@ -260,6 +265,7 @@ export function TripMap({
   hoveredStopId,
   onHoverStop,
   onOpenStop,
+  onOpenEndpoint,
   hoveredLegIndex,
   onHoverLeg,
   hoveredEndpointId,
@@ -297,11 +303,13 @@ export function TripMap({
   const opening = useRef(onOpenStop);
   const hoveringLeg = useRef(onHoverLeg);
   const hoveringEndpoint = useRef(onHoverEndpoint);
+  const openingEndpoint = useRef(onOpenEndpoint);
   useEffect(() => {
     hovering.current = onHoverStop;
     opening.current = onOpenStop;
     hoveringLeg.current = onHoverLeg;
     hoveringEndpoint.current = onHoverEndpoint;
+    openingEndpoint.current = onOpenEndpoint;
   });
   const overlays = useRef<google.maps.OverlayView[]>([]);
   const lines = useRef<google.maps.Polyline[]>([]);
@@ -472,6 +480,9 @@ export function TripMap({
       });
       element.addEventListener("mouseleave", () => {
         hoveringEndpoint.current(null);
+      });
+      element.addEventListener("click", () => {
+        openingEndpoint.current(kind === "end" ? "end" : "start");
       });
       endpointMarkers.current.set(endpoint.place.id, element);
       overlays.current.push(placeDomMarker(maps, map, point, element));

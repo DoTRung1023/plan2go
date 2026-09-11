@@ -29,6 +29,7 @@
 
 .trip-map-stop,
 .trip-map-endpoint {
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -45,7 +46,6 @@
  * are the warm thing on the map and the lines between them are the cool ones.
  */
 .trip-map-stop {
-  cursor: pointer;
   width: 30px;
   height: 30px;
   border-radius: var(--radius-pill);
