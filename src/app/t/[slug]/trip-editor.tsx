@@ -16,6 +16,7 @@ import { searchBias } from "@/features/place-search/search-bias";
 import { TripMenu } from "@/features/trip-settings/trip-menu";
 import { TripExport } from "@/features/trip-settings/trip-export";
 import { ShareLinks } from "@/features/trip-settings/share-links";
+import { PlaceSheet } from "@/features/place-details/place-sheet";
 import { SavedNote } from "@/features/trip-settings/saved-note";
 import { TripActions } from "@/features/trip-settings/trip-actions";
 import { TripSettings } from "@/features/trip-settings/trip-settings";
@@ -105,6 +106,13 @@ export function TripEditor({
   const [hoveredLegIndex, setHoveredLegIndex] = useState<number | null>(null);
   const [hoveredEndpointId, setHoveredEndpointId] = useState<string | null>(null);
   /**
+   * The stop opened to see what its place is like, from its card or from its
+   * marker. By the stop rather than the place, because the same place can be
+   * on two days and the sheet closes itself when the stop it was opened from
+   * leaves the trip.
+   */
+  const [openedStopId, setOpenedStopId] = useState<string | null>(null);
+  /**
    * Whether the export dialog is open. While it is, its preview is what the
    * printer gets; while it is not, the page keeps the open day as a sheet for
    * the browser's own print command, so the two come out the same way.
@@ -144,6 +152,10 @@ export function TripEditor({
    * them. Held still between renders, or the map would redraw every marker each
    * time anything on the page changed.
    */
+  const openedPlace =
+    days.flatMap((day) => day.plan.stops).find((stop) => stop.id === openedStopId)?.place ??
+    null;
+
   const legPaths = useMemo(
     () =>
       (selected?.legs ?? []).map(
@@ -178,6 +190,7 @@ export function TripEditor({
             <TripMap
               hoveredStopId={hoveredStopId}
               onHoverStop={setHoveredStopId}
+              onOpenStop={setOpenedStopId}
               hoveredLegIndex={hoveredLegIndex}
               onHoverLeg={setHoveredLegIndex}
               hoveredEndpointId={hoveredEndpointId}
@@ -226,6 +239,16 @@ export function TripEditor({
               {expanded ? "Collapse map" : "Expand map"}
             </button>
           </div>
+          {openedPlace === null ? null : (
+            <PlaceSheet
+              key={openedStopId}
+              slug={slug}
+              place={openedPlace}
+              onClose={() => {
+                setOpenedStopId(null);
+              }}
+            />
+          )}
         </div>
       </section>
 
@@ -246,6 +269,7 @@ export function TripEditor({
           today={today}
           hoveredStopId={hoveredStopId}
           onHoverStop={setHoveredStopId}
+          onOpenStop={setOpenedStopId}
           hoveredLegIndex={hoveredLegIndex}
           onHoverLeg={setHoveredLegIndex}
           hoveredEndpointId={hoveredEndpointId}

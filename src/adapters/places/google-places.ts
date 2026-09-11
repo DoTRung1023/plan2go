@@ -1,8 +1,14 @@
 import { z } from "zod";
-import type { OpeningWindow, Weekday, WeeklyOpeningHours } from "@/core/model/place";
+import type {
+  OpeningWindow,
+  PlaceCard,
+  Weekday,
+  WeeklyOpeningHours,
+} from "@/core/model/place";
 import type {
   NearbyPlacesRequest,
   PlaceDetails,
+  PlaceImage,
   PlaceSearchRequest,
   PlaceSuggestion,
   PlacesProvider,
@@ -19,7 +25,8 @@ const NEARBY_URL = "https://places.googleapis.com/v1/places:searchNearby";
  * the map beside it, which is labelled in the same language.
  */
 const PLACE_LANGUAGE = "en";
-const DETAILS_URL = "https://places.googleapis.com/v1/places";
+const PLACES_API = "https://places.googleapis.com/v1";
+const DETAILS_URL = `${PLACES_API}/places`;
 
 /** Everything the engine needs about a place, and nothing we are not going to use. */
 /**
@@ -29,6 +36,25 @@ const DETAILS_URL = "https://places.googleapis.com/v1/places";
  */
 const DETAILS_FIELDS =
   "id,displayName,formattedAddress,location,regularOpeningHours,timeZone";
+
+/**
+ * The card: the dearest fields the API has, which is why they are a separate
+ * call made only when a place is opened rather than part of every stop added.
+ */
+const CARD_FIELDS =
+  "rating,userRatingCount,priceLevel,editorialSummary,websiteUri,nationalPhoneNumber,googleMapsUri,primaryTypeDisplayName,photos,reviews";
+
+/** Enough pictures for a strip, and no more paid for than can be shown. */
+const CARD_PHOTOS = 6;
+
+/** Google's price grades, in order, so the index is the level. */
+const PRICE_LEVELS = [
+  "PRICE_LEVEL_FREE",
+  "PRICE_LEVEL_INEXPENSIVE",
+  "PRICE_LEVEL_MODERATE",
+  "PRICE_LEVEL_EXPENSIVE",
+  "PRICE_LEVEL_VERY_EXPENSIVE",
+];
 
 /** How wide a bias circle is drawn around the point we were given, in metres. */
 const BIAS_RADIUS_METERS = 20_000;
@@ -108,6 +134,70 @@ const detailsSchema = z.object({
 });
 
 type OpeningPeriod = z.infer<typeof detailsSchema>["regularOpeningHours"];
+
+const attributionSchema = z.object({
+  displayName: z.string().optional(),
+  uri: z.string().optional(),
+});
+
+const cardSchema = z.object({
+  rating: z.number().optional(),
+  userRatingCount: z.number().int().optional(),
+  priceLevel: z.string().optional(),
+  editorialSummary: z.object({ text: z.string() }).optional(),
+  websiteUri: z.string().optional(),
+  nationalPhoneNumber: z.string().optional(),
+  googleMapsUri: z.string().optional(),
+  primaryTypeDisplayName: z.object({ text: z.string() }).optional(),
+  photos: z
+    .array(
+      z.object({
+        name: z.string(),
+        widthPx: z.number().int(),
+        heightPx: z.number().int(),
+        authorAttributions: z.array(attributionSchema).optional(),
+      }),
+    )
+    .optional(),
+  reviews: z
+    .array(
+      z.object({
+        rating: z.number().int(),
+        relativePublishTimeDescription: z.string(),
+        text: z.object({ text: z.string() }).optional(),
+        authorAttribution: attributionSchema.optional(),
+      }),
+    )
+    .optional(),
+});
+
+function toCard(parsed: z.infer<typeof cardSchema>): PlaceCard {
+  const level = parsed.priceLevel === undefined ? -1 : PRICE_LEVELS.indexOf(parsed.priceLevel);
+  return {
+    rating: parsed.rating ?? null,
+    ratingCount: parsed.userRatingCount ?? null,
+    priceLevel: level === -1 ? null : level,
+    summary: parsed.editorialSummary?.text ?? null,
+    kind: parsed.primaryTypeDisplayName?.text ?? null,
+    website: parsed.websiteUri ?? null,
+    phone: parsed.nationalPhoneNumber ?? null,
+    mapsUrl: parsed.googleMapsUri ?? null,
+    photos: (parsed.photos ?? []).slice(0, CARD_PHOTOS).map((photo) => ({
+      name: photo.name,
+      width: photo.widthPx,
+      height: photo.heightPx,
+      by: photo.authorAttributions?.[0]?.displayName ?? null,
+      byUrl: photo.authorAttributions?.[0]?.uri ?? null,
+    })),
+    reviews: (parsed.reviews ?? []).map((review) => ({
+      author: review.authorAttribution?.displayName ?? "A visitor",
+      authorUrl: review.authorAttribution?.uri ?? null,
+      rating: review.rating,
+      when: review.relativePublishTimeDescription,
+      text: review.text?.text ?? null,
+    })),
+  };
+}
 
 function asWeekday(value: number): Weekday | null {
   return WEEKDAYS.find((day) => day === value) ?? null;
@@ -310,6 +400,41 @@ export function createGooglePlacesProvider(options: GooglePlacesOptions): Places
         position: { lat: parsed.location.latitude, lng: parsed.location.longitude },
         openingHours: toWeeklyOpeningHours(parsed.regularOpeningHours),
         timeZone: parsed.timeZone?.id ?? null,
+      };
+    },
+
+    async card(providerPlaceId: string): Promise<PlaceCard | null> {
+      const url = new URL(`${DETAILS_URL}/${encodeURIComponent(providerPlaceId)}`);
+      url.searchParams.set("languageCode", PLACE_LANGUAGE);
+
+      const response = await fetch(url, {
+        method: "GET",
+        headers: { ...headers, "X-Goog-FieldMask": CARD_FIELDS },
+      });
+      if (response.status === 404) {
+        return null;
+      }
+      return toCard(cardSchema.parse(await readJson(response, "a place's card")));
+    },
+
+    async photo(name: string, maxWidthPx: number): Promise<PlaceImage | null> {
+      // The name is the provider's own path under the API, so it is not encoded.
+      const url = new URL(`${PLACES_API}/${name}/media`);
+      url.searchParams.set("maxWidthPx", String(maxWidthPx));
+
+      const response = await fetch(url, { method: "GET", headers });
+      if (response.status === 404) {
+        return null;
+      }
+      if (!response.ok) {
+        const reason = await response.text().catch(() => "");
+        throw new Error(
+          `Google Places answered ${String(response.status)} for a picture. ${reason.slice(0, REASON_LENGTH)}`.trim(),
+        );
+      }
+      return {
+        bytes: new Uint8Array(await response.arrayBuffer()),
+        contentType: response.headers.get("content-type") ?? "image/jpeg",
       };
     },
   };

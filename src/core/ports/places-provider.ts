@@ -1,4 +1,4 @@
-import type { LatLng, Place } from "../model/place";
+import type { LatLng, Place, PlaceCard } from "../model/place";
 
 export interface PlaceSearchRequest {
   readonly query: string;
@@ -68,4 +68,20 @@ export interface PlacesProvider {
    */
   nearby(request: NearbyPlacesRequest): Promise<readonly PlaceSuggestion[]>;
   details(providerPlaceId: string, session: string | null): Promise<PlaceDetails | null>;
+  /**
+   * What a place is like: its rating, its pictures and what people say. The
+   * dearest question here, and asked only when somebody opens the place.
+   */
+  card(providerPlaceId: string): Promise<PlaceCard | null>;
+  /**
+   * One of a card's pictures, no wider than asked, as the bytes to serve and
+   * what they are. Null when the provider no longer has it.
+   */
+  photo(name: string, maxWidthPx: number): Promise<PlaceImage | null>;
+}
+
+/** A picture as it is served: the bytes and what they are. */
+export interface PlaceImage {
+  readonly bytes: Uint8Array<ArrayBuffer>;
+  readonly contentType: string;
 }

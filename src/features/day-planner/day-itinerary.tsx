@@ -26,6 +26,8 @@ interface DayItineraryProps {
   /** The stop under the pointer, here or on the map beside it. */
   readonly hoveredStopId: string | null;
   readonly onHoverStop: (stopId: string | null) => void;
+  /** A stop opened to see what the place is like. */
+  readonly onOpenStop: (stopId: string) => void;
   /** The leg under the pointer, here or on the map beside it. */
   readonly hoveredLegIndex: number | null;
   readonly onHoverLeg: (legIndex: number | null) => void;
@@ -361,6 +363,7 @@ export function DayItinerary({
   legs,
   hoveredStopId,
   onHoverStop,
+  onOpenStop,
   hoveredLegIndex,
   onHoverLeg,
   hoveredEndpointId,
@@ -451,6 +454,9 @@ export function DayItinerary({
                 position={index + 1}
                 hovered={hoveredStopId === stop.stopId}
                 onHover={onHoverStop}
+                onOpen={() => {
+                  onOpenStop(stop.stopId);
+                }}
                 index={index}
                 stop={stop}
                 address={place?.address ?? null}

@@ -172,6 +172,35 @@ model LegCache {
   @@index([expiresAt])
 }
 
+/// What a place is like, kept so a place opened twice in a day is asked about
+/// once. Other people's opinions date, so it is kept a day and no longer.
+model PlaceCardCache {
+  providerPlaceId String @id
+
+  /// PlaceCard as stored. Parsed with zod on the way out.
+  card Json
+
+  fetchedAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([expiresAt])
+}
+
+/// One picture of a place at one width, kept so the same picture is never
+/// paid for twice. Keyed by the place, which of its pictures, and the width,
+/// because that is what decides the bytes.
+model PlacePhotoCache {
+  /// "<providerPlaceId>/<index>/<width>".
+  key         String @id
+  image       Bytes
+  contentType String
+
+  fetchedAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([expiresAt])
+}
+
 /// What a place is, kept so a city opened twice is looked up once. Only the
 /// front door reads this: a stop being added arrives with a search session that
 /// has to end in the provider's own details call.

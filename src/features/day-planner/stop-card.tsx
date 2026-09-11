@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import type { Conflict } from "@/core/model/conflict";
 import type { ComputedStop } from "@/core/time/compute-day";
 import { formatDuration } from "@/core/time/minutes";
-import { ClockIcon, CloseIcon, GripIcon, MinusIcon, PlusIcon } from "@/ui/icons";
+import { ClockIcon, CloseIcon, GripIcon, MinusIcon, PhotosIcon, PlusIcon } from "@/ui/icons";
 import type { DayActions } from "./day-actions";
 import { ConflictNotice } from "./conflict-notice";
 import { formatDayTime } from "./format-day-time";
@@ -37,6 +37,8 @@ interface StopCardProps {
   /** Whether the pointer is on this place, here or on the map beside it. */
   readonly hovered: boolean;
   readonly onHover: (stopId: string | null) => void;
+  /** Opens what the place is like: its pictures, its rating, what people say. */
+  readonly onOpen: () => void;
   /** Where the stop sits in its day, counted from zero, which is what a move needs. */
   readonly index: number;
   readonly stop: ComputedStop;
@@ -69,6 +71,7 @@ export function StopCard({
   position,
   hovered,
   onHover,
+  onOpen,
   index,
   stop,
   address,
@@ -359,6 +362,16 @@ export function StopCard({
               {openingHours}
             </span>
           )}
+          {/* For anyone reading, not only whoever can edit: what a place is
+              like is the question the people travelling ask too. */}
+          <button
+            type="button"
+            onClick={onOpen}
+            className="flex items-center gap-[5px] text-micro font-semibold text-ink-muted hover:text-terracotta-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+          >
+            <PhotosIcon size={12} strokeWidth={2.5} className="shrink-0" />
+            About this place
+          </button>
         </div>
         {conflicts.map((conflict, at) => (
           <ConflictNotice key={`${conflict.kind}-${String(at)}`} conflict={conflict} />

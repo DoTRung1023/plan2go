@@ -125,6 +125,8 @@ function providerFor(known: Place | null): {
         asked.push(providerPlaceId);
         return Promise.resolve(known === null ? null : { ...known, timeZone: null });
       },
+      card: () => Promise.reject(new Error(NOT_STUBBED)),
+      photo: () => Promise.reject(new Error(NOT_STUBBED)),
     },
   };
 }

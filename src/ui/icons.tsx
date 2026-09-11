@@ -244,6 +244,51 @@ export function ClockIcon(props: IconProps) {
   );
 }
 
+/** A star, filled: the shape every rating out of five is drawn in. */
+export function StarIcon({ size, className }: Omit<IconProps, "strokeWidth">) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill="currentColor"
+      className={className}
+    >
+      <path d="M12 2.6l2.9 6.1 6.7.8-4.9 4.6 1.3 6.6L12 17.4l-6 3.3 1.3-6.6L2.4 9.5l6.7-.8z" />
+    </svg>
+  );
+}
+
+/** A picture: the sign that there are photographs of something. */
+export function PhotosIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <rect x="3" y="4" width="18" height="16" rx="3" />
+      <circle cx="9" cy="10" r="1.6" />
+      <path d="M21 16l-5-5-8 8" />
+    </Glyph>
+  );
+}
+
+export function GlobeIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18" />
+      <path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18" />
+    </Glyph>
+  );
+}
+
+export function PhoneIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="M5 4h3.5l1.7 4.2-2.1 1.4a11 11 0 0 0 6.3 6.3l1.4-2.1L20 15.5V19a1.8 1.8 0 0 1-1.9 1.8A15 15 0 0 1 3.2 5.9 1.8 1.8 0 0 1 5 4z" />
+    </Glyph>
+  );
+}
+
 export function CarIcon(props: IconProps) {
   return (
     <Glyph {...props}>

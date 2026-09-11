@@ -3,19 +3,16 @@
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import type { IsoDate } from "@/core/model/day";
-import { addDays, parseIsoDate, weekdayOf } from "@/core/time/zoned";
+import { addDays, daysBetween, parseIsoDate, weekdayOf } from "@/core/time/zoned";
 import { ArrowLeftIcon, ArrowRightIcon } from "@/ui/icons";
 
 const DAYS_IN_WEEK = 7;
-
-/** Six rows always, so a month does not change height as it is stepped. */
-const WEEKS_SHOWN = 6;
 
 /** Two at once, so a trip that crosses the end of a month is one gesture. */
 const MONTHS_SHOWN = 2;
 
 /** Matches the panel's own width class, for the edge test when it opens. */
-const PANEL_WIDTH = 720;
+const PANEL_WIDTH = 600;
 
 /** Room to keep between the panel and the edge of the window. Matches the 2rem in its width class. */
 const EDGE_GAP = 16;
@@ -89,6 +86,12 @@ function gridStart(first: IsoDate): IsoDate {
   return addDays(first, -((weekdayOf(first) + 6) % DAYS_IN_WEEK));
 }
 
+/** How many rows of seven it takes to show every day of the month. */
+function weeksIn(first: IsoDate): number {
+  const days = daysBetween(gridStart(first), shiftMonths(first, 1));
+  return Math.ceil(days / DAYS_IN_WEEK);
+}
+
 /**
  * The two ends said as shortly as they can be without becoming ambiguous. The
  * month is written once when both ends share it, and the year only appears when
@@ -151,7 +154,7 @@ const SIZES = {
 } as const;
 
 const STEP =
-  "grid h-[34px] w-[34px] shrink-0 place-items-center rounded-pill text-terracotta-700 hover:bg-terracotta-100 hover:text-terracotta-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "grid h-[30px] w-[30px] shrink-0 place-items-center rounded-pill text-terracotta-700 hover:bg-terracotta-100 hover:text-terracotta-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 interface DateRangeFieldProps {
   readonly id: string;
@@ -308,6 +311,12 @@ export function DateRangeField({
     shiftMonths(leftMonth, at),
   );
   const afterShown = shiftMonths(leftMonth, MONTHS_SHOWN);
+  /**
+   * As many rows as the taller of the two months needs. Both are drawn to the
+   * same count so their weeks line up, and no more, so nothing hangs empty
+   * under a pair that fits in five.
+   */
+  const weeksShown = Math.max(...months.map(weeksIn));
 
   /**
    * What the grid paints, and what the field above reads while it is open.
@@ -435,7 +444,7 @@ export function DateRangeField({
           role="dialog"
           aria-label={`Choose the ${label.toLowerCase()}`}
           style={{ left: shift }}
-          className="absolute top-full z-30 mt-3 w-[min(720px,calc(100vw-2rem))] rounded-card border border-rule bg-paper-raised px-6 pt-5 pb-6 shadow-md"
+          className="absolute top-full z-30 mt-3 w-[min(600px,calc(100vw-2rem))] rounded-card border border-rule bg-paper-raised px-5 pt-4 pb-5 shadow-md"
         >
           {/* The line over the months: which click comes next, and a step of
               one month at either end of it. */}
@@ -448,9 +457,9 @@ export function DateRangeField({
               }}
               className={STEP}
             >
-              <ArrowLeftIcon size={26} strokeWidth={1.75} />
+              <ArrowLeftIcon size={20} strokeWidth={1.75} />
             </button>
-            <p aria-live="polite" className="text-[17px] leading-none font-medium text-ink-muted">
+            <p aria-live="polite" className="text-body/none font-medium text-ink-muted">
               {drawingFrom === null ? "Choose the first day" : "Now choose the last day"}
             </p>
             <button
@@ -461,7 +470,7 @@ export function DateRangeField({
               }}
               className={STEP}
             >
-              <ArrowRightIcon size={26} strokeWidth={1.75} />
+              <ArrowRightIcon size={20} strokeWidth={1.75} />
             </button>
           </div>
 
@@ -479,28 +488,28 @@ export function DateRangeField({
             onMouseLeave={() => {
               setPreviewing(null);
             }}
-            className="mt-5 grid gap-x-8 gap-y-6 sm:grid-cols-2"
+            className="mt-4 grid gap-x-6 gap-y-5 sm:grid-cols-2"
           >
             {months.map((month) => {
               const cells = Array.from(
-                { length: WEEKS_SHOWN * DAYS_IN_WEEK },
+                { length: weeksShown * DAYS_IN_WEEK },
                 (_unused, index) => addDays(gridStart(month), index),
               );
               const shownMonth = parseIsoDate(month).month;
 
               return (
                 <div key={month}>
-                  <p className="text-center font-display text-[21px] leading-none font-bold text-ink">
+                  <p className="text-center font-display text-place/none font-bold text-ink">
                     {MONTH_AND_YEAR.format(asUtc(month))}
                   </p>
 
-                  <div role="grid" aria-label={MONTH_AND_YEAR.format(asUtc(month))} className="mt-4">
+                  <div role="grid" aria-label={MONTH_AND_YEAR.format(asUtc(month))} className="mt-3">
                     <div role="row" className="grid grid-cols-7">
                       {WEEKDAYS.map((weekday, index) => (
                         <span
                           key={index}
                           role="columnheader"
-                          className="pb-2 text-center text-[13px] leading-none text-ink-muted"
+                          className="pb-1.5 text-center text-meta/none text-ink-muted"
                         >
                           <span aria-hidden="true">{weekday.short}</span>
                           <span className="sr-only">{weekday.full}</span>
@@ -508,7 +517,7 @@ export function DateRangeField({
                       ))}
                     </div>
 
-                    {Array.from({ length: WEEKS_SHOWN }, (_unused, week) => (
+                    {Array.from({ length: weeksShown }, (_unused, week) => (
                       <div role="row" key={week} className="grid grid-cols-7">
                         {cells
                           .slice(week * DAYS_IN_WEEK, week * DAYS_IN_WEEK + DAYS_IN_WEEK)
@@ -540,7 +549,7 @@ export function DateRangeField({
                                 key={date}
                                 aria-selected={isStart || isEnd}
                                 className={[
-                                  "grid h-[46px] place-items-center",
+                                  "grid h-[36px] place-items-center",
                                   banded ? "bg-terracotta-200/70" : "",
                                   banded && date === shownStart ? "rounded-l-pill" : "",
                                   banded && date === shownEnd ? "rounded-r-pill" : "",
@@ -559,7 +568,7 @@ export function DateRangeField({
                                     setPreviewing(date);
                                   }}
                                   className={[
-                                    "grid h-[42px] w-[42px] place-items-center rounded-pill border font-display text-[17px] leading-none font-bold tabular-nums focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta",
+                                    "grid h-[32px] w-[32px] place-items-center rounded-pill border font-display text-body/none font-bold tabular-nums focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta",
                                     isStart || isEnd
                                       ? "border-terracotta bg-terracotta text-terracotta-900"
                                       : date === today
@@ -590,7 +599,7 @@ export function DateRangeField({
           </div>
 
           {footer === undefined || footer === null ? null : (
-            <div className="mt-4 border-t border-rule pt-4">{footer}</div>
+            <div className="mt-3 border-t border-rule pt-3">{footer}</div>
           )}
         </div>
       ) : null}

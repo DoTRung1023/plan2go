@@ -80,6 +80,8 @@ interface TripMapProps {
   /** The stop under the pointer, here or in the panel beside the map. */
   readonly hoveredStopId: string | null;
   readonly onHoverStop: (stopId: string | null) => void;
+  /** A marker pressed, which opens the place it stands for beside the map. */
+  readonly onOpenStop: (stopId: string) => void;
   /** The leg under the pointer, here or in the panel beside the map. */
   readonly hoveredLegIndex: number | null;
   readonly onHoverLeg: (legIndex: number | null) => void;
@@ -257,6 +259,7 @@ export function TripMap({
   onToggleExpanded,
   hoveredStopId,
   onHoverStop,
+  onOpenStop,
   hoveredLegIndex,
   onHoverLeg,
   hoveredEndpointId,
@@ -291,10 +294,12 @@ export function TripMap({
    * a new function.
    */
   const hovering = useRef(onHoverStop);
+  const opening = useRef(onOpenStop);
   const hoveringLeg = useRef(onHoverLeg);
   const hoveringEndpoint = useRef(onHoverEndpoint);
   useEffect(() => {
     hovering.current = onHoverStop;
+    opening.current = onOpenStop;
     hoveringLeg.current = onHoverLeg;
     hoveringEndpoint.current = onHoverEndpoint;
   });
@@ -500,6 +505,9 @@ export function TripMap({
       });
       element.addEventListener("mouseleave", () => {
         hovering.current(null);
+      });
+      element.addEventListener("click", () => {
+        opening.current(stop.id);
       });
       markers.current.set(stop.id, element);
       overlays.current.push(placeDomMarker(maps, map, point, element));
