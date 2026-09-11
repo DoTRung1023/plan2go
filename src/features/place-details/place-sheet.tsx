@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import type { Place, PlaceCard, PlaceReview } from "@/core/model/place";
-import { CloseIcon, GlobeIcon, PhoneIcon, PinIcon, StarIcon } from "@/ui/icons";
+import { ChevronLeftIcon, CloseIcon, GlobeIcon, PhoneIcon, PinIcon, StarIcon } from "@/ui/icons";
 import { PhotoViewer } from "./photo-viewer";
 
 const cardSchema = z.object({
@@ -174,7 +174,6 @@ export function PlaceSheet({ slug, place, onClose }: PlaceSheetProps) {
   const [pictured, setPictured] = useState(false);
   /** Which picture is open across the window, counted from zero, or none. */
   const [viewing, setViewing] = useState<number | null>(null);
-  const closeButton = useRef<HTMLButtonElement | null>(null);
   const sheet = useRef<HTMLElement | null>(null);
   /** The last picture that was open, so closing it puts focus back where it was pressed. */
   const lastViewed = useRef<number | null>(null);
@@ -183,11 +182,13 @@ export function PlaceSheet({ slug, place, onClose }: PlaceSheetProps) {
     asked.status === "refused" ||
     (asked.status === "answered" && (asked.card.photos.length === 0 || pictured));
 
-  // Focused when the sheet opens, and again when it is drawn in full, because
-  // the button in the corner of the finished sheet is a different element from
-  // the one beside the line that said it was looking.
+  // The sheet itself takes focus when it opens, and again when it is drawn in
+  // full: the way out of it is a different button on a phone and on a desk,
+  // and the one on a phone is a different element before and after the
+  // sheet fills in. The dialog is the one thing there throughout, and from
+  // it Escape closes and Tab reaches whichever button is showing.
   useEffect(() => {
-    closeButton.current?.focus();
+    sheet.current?.focus();
   }, [ready]);
 
   // Closing the viewer puts focus back on the picture it was opened from,
@@ -294,13 +295,16 @@ export function PlaceSheet({ slug, place, onClose }: PlaceSheetProps) {
   const id = place.providerPlaceId ?? "";
   const photoCount = card?.photos.length ?? 0;
 
+  /**
+   * The way out on a phone, where the sheet is the whole window and has no
+   * edge to hang anything on: the corner, over the picture or over the name.
+   */
   const close = (
     <button
-      ref={closeButton}
       type="button"
       onClick={onClose}
       aria-label="Close"
-      className="absolute top-3 right-3 grid h-9 w-9 place-items-center rounded-pill bg-paper-raised/90 text-ink shadow-sm hover:bg-paper-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+      className="absolute top-3 right-3 grid h-9 w-9 place-items-center rounded-pill bg-paper-raised/90 text-ink shadow-sm hover:bg-paper-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:hidden"
     >
       <CloseIcon size={15} strokeWidth={2.75} />
     </button>
@@ -315,6 +319,7 @@ export function PlaceSheet({ slug, place, onClose }: PlaceSheetProps) {
        */}
       <section
         ref={sheet}
+        tabIndex={-1}
         role="dialog"
         aria-label={place.name}
         onKeyDown={(event) => {
@@ -323,8 +328,29 @@ export function PlaceSheet({ slug, place, onClose }: PlaceSheetProps) {
           }
         }}
         aria-busy={!ready}
-        className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-paper-raised lg:absolute lg:inset-auto lg:top-[22px] lg:bottom-[22px] lg:left-[22px] lg:z-30 lg:w-[400px] lg:rounded-panel lg:border lg:border-rule lg:shadow-md"
+        /*
+         * Clipped on a phone, where it is the window and nothing may scroll
+         * but the sheet. Not on a desk, where the tab on its edge sits
+         * outside its box; there the scroller under it does the clipping,
+         * to the same corners.
+         */
+        className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-paper-raised outline-none lg:absolute lg:inset-auto lg:top-[22px] lg:bottom-[22px] lg:left-[22px] lg:z-30 lg:w-[400px] lg:overflow-visible lg:rounded-panel lg:border lg:border-rule lg:shadow-md"
       >
+        {/* The way out on a desk: a tab on the sheet's free edge, halfway
+            down, pointing the way the sheet goes. It is drawn in the sheet's
+            own paper with the sheet's own rule around it and none between
+            them, so it is part of the sheet rather than a button near it,
+            and it is there whatever the sheet is showing. */}
+        <button
+          type="button"
+          onClick={onClose}
+          title="Close"
+          aria-label="Close"
+          className="absolute top-1/2 left-full hidden h-[52px] w-[22px] -translate-y-1/2 place-items-center rounded-r-pill border border-l-0 border-rule bg-paper-raised text-ink-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:grid"
+        >
+          <ChevronLeftIcon size={14} strokeWidth={2.75} />
+        </button>
+
         {!ready ? (
           <div className="relative flex flex-1 items-center justify-center px-5">
             <p aria-live="polite" className="text-meta text-ink-muted">
@@ -333,7 +359,7 @@ export function PlaceSheet({ slug, place, onClose }: PlaceSheetProps) {
             {close}
           </div>
         ) : (
-        <div className="scroll-quiet min-h-0 flex-1 overflow-y-auto">
+        <div className="scroll-quiet min-h-0 flex-1 overflow-y-auto lg:rounded-panel">
           {/* The close sits over the picture when there is one, and over the
               name when there is not, so it is in the same corner either way. */}
           <div className="relative">
