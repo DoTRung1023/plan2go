@@ -333,16 +333,20 @@ happening, which is what this product does instead of a skeleton.
 
 ## A place, opened
 
-A stop can be opened to see what its place is like, from **About this place** on its
-card or by pressing its marker on the map. What opens is a sheet over the left edge of
-the map, 400px wide with the map still in sight beside it, and the whole window on a
-phone. The picture comes first because it answers fastest, with the close button over
-its corner; then the name, the kind of place and its rating out of five with a filled
+A stop, or an end of a day, can be opened to see what its place is like, from **About
+this place** on its row or by pressing its marker on the map. What opens is a sheet over
+the left edge of the map, 400px wide with the map still in sight beside it, and the
+whole window on a phone. It slides in from the left and slides back out when closed:
+on a desk by a tab on its free edge, halfway down, pointing the way it goes, and on a
+phone by a close button in the corner. The picture comes first because it answers
+fastest; then the name, the kind of place and its rating out of five with a filled
 terracotta star; then the sentence the provider has for it, a strip of more pictures, the
 address and the ways to reach it, and what people say, each with their stars and how
-long ago. Nothing in the sheet changes the trip. It is asked for when opened and never
-before, because it is the dearest question the place provider answers, and every
-picture and rating in it is credited to where it came from.
+long ago. Any picture opens as large as the window allows, with the next and the last a
+press or an arrow key away. Nothing in the sheet changes the trip. It is asked for when
+opened and never before, because it is the dearest question the place provider answers,
+and it is shown whole once its words and pictures are all here rather than as they
+arrive. Every picture and rating in it is credited to where it came from.
 
 ## The map
 
@@ -383,7 +387,8 @@ and it is the product's own.
 
 ## Motion
 
-Two things animate: reordering a stop, and the trip's actions unfolding.
+Three things animate: reordering a stop, the trip's actions unfolding, and a place's
+sheet arriving and leaving.
 
 Reordering: `transform` over 160ms `ease-out` on the card being moved and on the cards
 displacing around it. Nothing else, no opacity, no scale.
@@ -394,13 +399,19 @@ It is the one hover transition in the product, and it earns the exception becaus
 movement is the affordance: a group that simply appeared would read as the row
 rearranging itself rather than as something folded away that has opened.
 
-Nothing else. No transitions on focus, tab switching, panel opening, or map interaction,
-and no other transition on hover. Those changes are instant.
+A place's sheet: `transform` from wholly off the left edge of the window to its place,
+200ms `ease-out` on opening, and back out the same way, 160ms `ease-in` on closing.
+Nothing else moves, no opacity. It is laid over the map, and a sheet that appeared in
+one frame read as the map being replaced rather than covered; sliding out is how it
+says where it went. The picture viewer it opens is the whole window and appears at once.
+
+Nothing else. No transitions on focus, tab switching, any other panel opening, or map
+interaction, and no other transition on hover. Those changes are instant.
 
 Focus is a 2px `terracotta` ring at 2px offset, visible immediately, on every
 interactive element.
 
-Under `prefers-reduced-motion: reduce`, reordering is instant too.
+Under `prefers-reduced-motion: reduce`, reordering and the sheet are instant too.
 
 ## Print
 

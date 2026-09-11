@@ -1,0 +1,50 @@
+/*
+ * The sheet comes in from the left and goes back out the same way.
+ *
+ * One of the three things that move in this product, and the only panel
+ * that does: a sheet that appeared over the map in one frame read as the
+ * map being replaced, where one that slides in over it reads as something
+ * laid on top, which is what it is, and sliding out is how it says where it
+ * went. Transform only, no opacity, at the timing DESIGN.md gives the other
+ * two: the arrival at 200ms easing out, the leaving quicker, at 160ms
+ * easing in, because a thing going away does not need to be watched go.
+ *
+ * The distance is the sheet's own width and the gap beside it, so it starts
+ * and ends wholly off the window whatever width it has been given.
+ */
+@keyframes place-sheet-in {
+  from {
+    transform: translateX(calc(-100% - 22px));
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes place-sheet-out {
+  from {
+    transform: none;
+  }
+  to {
+    transform: translateX(calc(-100% - 22px));
+  }
+}
+
+.place-sheet-arriving {
+  animation: place-sheet-in 200ms ease-out both;
+}
+
+.place-sheet-leaving {
+  animation: place-sheet-out 160ms ease-in both;
+}
+
+/*
+ * Near enough to at once. Not none: the sheet is taken down when the leaving
+ * animation ends, and an animation that never ran never ends.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .place-sheet-arriving,
+  .place-sheet-leaving {
+    animation-duration: 0.01ms;
+  }
+}
