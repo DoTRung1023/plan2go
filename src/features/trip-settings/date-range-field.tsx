@@ -266,11 +266,13 @@ export function DateRangeField({
   const [previewing, setPreviewing] = useState<IsoDate | null>(null);
   const [focused, setFocused] = useState<IsoDate>(start);
   /**
-   * Where the panel's left edge goes, in pixels from the field's own. Zero
-   * lines the two up, which is where a panel belongs. A field on the right of
-   * a row would open off the side of the window, so the panel is walked back
-   * until it fits, and on a window narrower than the panel that means the
-   * window's own margin rather than either edge of the field.
+   * Where the panel's left edge goes, in pixels from the field's own. The
+   * panel is centred on the field, which it is wider than on the starter page
+   * and much wider than in the planner, so its middle rather than either edge
+   * is what it shares with the thing that opened it. Centred like that it can
+   * open off the side of the window, so it is walked back until it fits, and
+   * on a window narrower than the panel that means the window's own margin
+   * rather than anything about the field.
    */
   const [shift, setShift] = useState(0);
 
@@ -424,8 +426,9 @@ export function DateRangeField({
           const box = trigger.current?.getBoundingClientRect();
           if (box !== undefined) {
             const width = Math.min(PANEL_WIDTH, window.innerWidth - 2 * EDGE_GAP);
+            const centred = box.left + box.width / 2 - width / 2;
             const furthestLeft = window.innerWidth - EDGE_GAP - width;
-            setShift(Math.min(0, furthestLeft - box.left) + Math.max(0, EDGE_GAP - box.left));
+            setShift(Math.max(EDGE_GAP, Math.min(centred, furthestLeft)) - box.left);
           }
           setLeftMonth(firstOfMonth(start));
           setFocused(start);
