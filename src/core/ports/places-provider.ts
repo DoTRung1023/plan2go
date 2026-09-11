@@ -49,6 +49,16 @@ export interface PlaceSuggestion {
   readonly address: string | null;
 }
 
+/**
+ * A place with the clock it keeps. Only the details call can say which zone a
+ * place is in, and only a trip being opened needs to know, so it rides on the
+ * answer rather than on Place, which a stored row or a search hit can also be.
+ */
+export interface PlaceDetails extends Place {
+  /** The IANA zone the place keeps time in, or null when the provider does not say. */
+  readonly timeZone: string | null;
+}
+
 export interface PlacesProvider {
   readonly name: string;
   search(request: PlaceSearchRequest): Promise<readonly PlaceSuggestion[]>;
@@ -57,5 +67,5 @@ export interface PlacesProvider {
    * than by how close they sit to the point given. Answers the empty field.
    */
   nearby(request: NearbyPlacesRequest): Promise<readonly PlaceSuggestion[]>;
-  details(providerPlaceId: string, session: string | null): Promise<Place | null>;
+  details(providerPlaceId: string, session: string | null): Promise<PlaceDetails | null>;
 }

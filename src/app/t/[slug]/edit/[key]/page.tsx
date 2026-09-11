@@ -17,14 +17,16 @@ export default async function TripEditPage({
 }) {
   const { slug, key } = await params;
 
-  const access = await checkEditAccess({
-    slug,
-    presentedKey: key,
-    repository: prismaTripRepository,
-  });
-  if (access.status !== "granted") {
+  // The check and the read are two round trips to the same database, and the
+  // read is of a trip anyone holding the plain link may read anyway, so the
+  // two go out together rather than one behind the other.
+  const [access, trip] = await Promise.all([
+    checkEditAccess({ slug, presentedKey: key, repository: prismaTripRepository }),
+    prismaTripRepository.findBySlug(slug),
+  ]);
+  if (access.status !== "granted" || trip === null) {
     notFound();
   }
 
-  return <TripPage slug={slug} editKey={key} />;
+  return <TripPage trip={trip} editKey={key} />;
 }

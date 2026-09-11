@@ -112,13 +112,18 @@ export async function refreshLegModes(
   repository: TripRepository,
   travel: TravelProvider,
 ): Promise<void> {
-  for (const leg of legsWithNewEnds(request.before, request.after)) {
-    await repository.setLegMode({
-      slug: request.slug,
-      editKeyHash: request.editKeyHash,
-      dayId: request.after.id,
-      stopId: leg.target,
-      mode: await fastestTravelMode(leg.from.position, leg.to.position, travel),
-    });
-  }
+  // All at once: each leg is its own row and its own wait on the provider, and
+  // a reorder touches two or three of them, so one behind the other is the
+  // slowest part of a drag for no reason.
+  await Promise.all(
+    legsWithNewEnds(request.before, request.after).map(async (leg) =>
+      repository.setLegMode({
+        slug: request.slug,
+        editKeyHash: request.editKeyHash,
+        dayId: request.after.id,
+        stopId: leg.target,
+        mode: await fastestTravelMode(leg.from.position, leg.to.position, travel),
+      }),
+    ),
+  );
 }

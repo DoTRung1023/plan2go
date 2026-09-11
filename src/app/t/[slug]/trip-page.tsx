@@ -1,12 +1,12 @@
-import { notFound } from "next/navigation";
+import type { Trip } from "@/core/model/trip";
 import { computeTrip } from "@/features/day-planner/compute-trip";
-import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
 import { todayIn } from "@/server/trips/time-zones";
 import { TripEditor } from "./trip-editor";
 import { travelProvider } from "./travel";
 
 interface TripPageProps {
-  readonly slug: string;
+  /** Already read, by whichever link is rendering it. */
+  readonly trip: Trip;
   /**
    * The key out of the edit link, or null for the plain link. It is the only
    * difference between the two pages: the same trip, read by anyone holding the
@@ -22,12 +22,7 @@ interface TripPageProps {
  * lands. The engine is given resolved legs either way, so nothing here changes
  * when the real one arrives.
  */
-export async function TripPage({ slug, editKey }: TripPageProps) {
-  const trip = await prismaTripRepository.findBySlug(slug);
-  if (trip === null) {
-    notFound();
-  }
-
+export async function TripPage({ trip, editKey }: TripPageProps) {
   const days = await computeTrip(trip, travelProvider());
 
   return (

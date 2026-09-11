@@ -1,3 +1,5 @@
+import { notFound } from "next/navigation";
+import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
 import { TripPage } from "./trip-page";
 
 /**
@@ -13,5 +15,9 @@ export default async function TripReadPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  return <TripPage slug={slug} editKey={null} />;
+  const trip = await prismaTripRepository.findBySlug(slug);
+  if (trip === null) {
+    notFound();
+  }
+  return <TripPage trip={trip} editKey={null} />;
 }

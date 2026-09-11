@@ -1,7 +1,8 @@
 import { z } from "zod";
-import type { OpeningWindow, Place, Weekday, WeeklyOpeningHours } from "@/core/model/place";
+import type { OpeningWindow, Weekday, WeeklyOpeningHours } from "@/core/model/place";
 import type {
   NearbyPlacesRequest,
+  PlaceDetails,
   PlaceSearchRequest,
   PlaceSuggestion,
   PlacesProvider,
@@ -21,7 +22,13 @@ const PLACE_LANGUAGE = "en";
 const DETAILS_URL = "https://places.googleapis.com/v1/places";
 
 /** Everything the engine needs about a place, and nothing we are not going to use. */
-const DETAILS_FIELDS = "id,displayName,formattedAddress,location,regularOpeningHours";
+/**
+ * The zone rides on the same call. It is a cheaper field than the opening
+ * hours already asked for, so it costs nothing more, and it spares the trip
+ * being opened a second round trip to a slower service to learn it.
+ */
+const DETAILS_FIELDS =
+  "id,displayName,formattedAddress,location,regularOpeningHours,timeZone";
 
 /** How wide a bias circle is drawn around the point we were given, in metres. */
 const BIAS_RADIUS_METERS = 20_000;
@@ -97,6 +104,7 @@ const detailsSchema = z.object({
       ),
     })
     .optional(),
+  timeZone: z.object({ id: z.string() }).optional(),
 });
 
 type OpeningPeriod = z.infer<typeof detailsSchema>["regularOpeningHours"];
@@ -275,7 +283,10 @@ export function createGooglePlacesProvider(options: GooglePlacesOptions): Places
       return suggestions.slice(0, request.limit);
     },
 
-    async details(providerPlaceId: string, session: string | null): Promise<Place | null> {
+    async details(
+      providerPlaceId: string,
+      session: string | null,
+    ): Promise<PlaceDetails | null> {
       const url = new URL(`${DETAILS_URL}/${encodeURIComponent(providerPlaceId)}`);
       url.searchParams.set("languageCode", PLACE_LANGUAGE);
       if (session !== null) {
@@ -298,6 +309,7 @@ export function createGooglePlacesProvider(options: GooglePlacesOptions): Places
         address: parsed.formattedAddress ?? null,
         position: { lat: parsed.location.latitude, lng: parsed.location.longitude },
         openingHours: toWeeklyOpeningHours(parsed.regularOpeningHours),
+        timeZone: parsed.timeZone?.id ?? null,
       };
     },
   };

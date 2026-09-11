@@ -303,32 +303,21 @@ export const prismaTripRepository: TripRepository = {
   },
 
   async setLegMode(update: LegModeUpdate): Promise<LegModeSet> {
-    // Scoped to the tokens the browser holds, so finding the day is also the
-    // check that this trip may be changed.
-    const day = await db.day.findFirst({
-      where: {
-        id: update.dayId,
-        trip: { slug: update.slug, editKeyHash: update.editKeyHash },
-      },
-      select: { id: true },
-    });
-    if (day === null) {
-      return { status: "refused" };
-    }
-
+    // Scoped to the tokens the browser holds and to the day, so the write is
+    // also the check that this trip may be changed, and a stop id from another
+    // trip updates nothing rather than being taken on trust.
+    const trip = { slug: update.slug, editKeyHash: update.editKeyHash };
     const mode = TRAVEL_MODE_TO_DB[update.mode];
-
-    if (update.stopId === null) {
-      await db.day.update({ where: { id: day.id }, data: { endTravelMode: mode } });
-      return { status: "set" };
-    }
-
-    // Scoped to the day as well as the stop, so a stop id from another trip
-    // updates nothing rather than being taken on trust.
-    const changed = await db.stop.updateMany({
-      where: { id: update.stopId, dayId: day.id },
-      data: { travelMode: mode },
-    });
+    const changed =
+      update.stopId === null
+        ? await db.day.updateMany({
+            where: { id: update.dayId, trip },
+            data: { endTravelMode: mode },
+          })
+        : await db.stop.updateMany({
+            where: { id: update.stopId, dayId: update.dayId, day: { trip } },
+            data: { travelMode: mode },
+          });
     return changed.count === 0 ? { status: "refused" } : { status: "set" };
   },
 
@@ -364,32 +353,30 @@ export const prismaTripRepository: TripRepository = {
       return { status: "refused" };
     }
 
-    const order = await db.stop.findMany({
-      where: { dayId: stop.dayId },
-      orderBy: { position: "asc" },
-      select: { id: true },
-    });
-
-    const after = order.filter((row) => row.id !== stop.id).slice(stop.position);
-
     // The stops after it close the gap in the same transaction, so a day is
     // never briefly missing a position and the next stop added lands at the end
-    // rather than on top of an existing one. In order, because each one moves
-    // down into the place the one before it has just left.
+    // rather than on top of an existing one. Parked out of the way first and
+    // then moved down as one, because a day's positions are unique and a row
+    // on its way down must not land on one that has not moved yet. Three
+    // statements however long the day is.
     await db.$transaction([
       db.stop.delete({ where: { id: stop.id } }),
-      ...after.map((row, offset) => {
-        const position = stop.position + offset;
-        return db.stop.update({
-          where: { id: row.id },
-          data: { position },
-        });
+      db.stop.updateMany({
+        where: { dayId: stop.dayId, position: { gt: stop.position } },
+        data: { position: { increment: PARKING_OFFSET } },
+      }),
+      db.stop.updateMany({
+        where: { dayId: stop.dayId, position: { gt: stop.position + PARKING_OFFSET } },
+        data: { position: { decrement: PARKING_OFFSET + 1 } },
       }),
     ]);
     return { status: "changed" };
   },
 
   async moveStop(move: StopMove): Promise<StopChanged> {
+    // Scoped to the tokens the browser holds, so finding the stop is also the
+    // check that this trip may be changed. The day's length comes back on the
+    // same read, which is all the clamp needs.
     const stop = await db.stop.findFirst({
       where: {
         id: move.stopId,
@@ -397,48 +384,47 @@ export const prismaTripRepository: TripRepository = {
           trip: { slug: move.slug, editKeyHash: move.editKeyHash },
         },
       },
-      select: { id: true, dayId: true, position: true },
+      select: {
+        id: true,
+        dayId: true,
+        position: true,
+        day: { select: { _count: { select: { stops: true } } } },
+      },
     });
     if (stop === null) {
       return { status: "refused" };
     }
 
-    const order = await db.stop.findMany({
-      where: { dayId: stop.dayId },
-      orderBy: { position: "asc" },
-      select: { id: true },
-    });
-
-    const from = order.findIndex((row) => row.id === stop.id);
-    const to = Math.max(0, Math.min(move.toPosition, order.length - 1));
-    if (from === -1 || from === to) {
+    const from = stop.position;
+    const to = Math.max(0, Math.min(move.toPosition, stop.day._count.stops - 1));
+    if (from === to) {
       return { status: "changed" };
     }
 
-    const moved = order.slice();
-    const [taken] = moved.splice(from, 1);
-    if (taken === undefined) {
-      return { status: "changed" };
-    }
-    moved.splice(to, 0, taken);
-
-    // Two passes, because a day's positions are unique: everything is parked
-    // out of the way first, so no row on its way to its new place lands on one
-    // that has not moved yet.
-    const parked = moved.map((row, index) =>
-      db.stop.update({
-        where: { id: row.id },
-        data: { position: index + PARKING_OFFSET },
+    // Only the stops between the two places move, and each by one step: down
+    // when the stop is dragged past them, up when it is dragged back over
+    // them. Three statements however long the day is, because a day's
+    // positions are unique and a row on its way to its new place must not
+    // land on one that has not moved yet: the block is parked out of the way,
+    // closed up by a step, and the stop dropped into the gap that leaves.
+    const low = Math.min(from, to);
+    const high = Math.max(from, to);
+    const step = from < to ? -1 : 1;
+    await db.$transaction([
+      db.stop.updateMany({
+        where: { dayId: stop.dayId, position: { gte: low, lte: high } },
+        data: { position: { increment: PARKING_OFFSET } },
       }),
-    );
-    const settled = moved.map((row, index) =>
-      db.stop.update({
-        where: { id: row.id },
-        data: { position: index },
+      db.stop.updateMany({
+        where: {
+          dayId: stop.dayId,
+          id: { not: stop.id },
+          position: { gte: low + PARKING_OFFSET, lte: high + PARKING_OFFSET },
+        },
+        data: { position: { decrement: PARKING_OFFSET - step } },
       }),
-    );
-    await db.$transaction([...parked, ...settled]);
-
+      db.stop.update({ where: { id: stop.id }, data: { position: to } }),
+    ]);
     return { status: "changed" };
   },
 

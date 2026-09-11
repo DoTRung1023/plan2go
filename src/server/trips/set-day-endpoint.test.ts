@@ -123,7 +123,7 @@ function providerFor(known: Place | null): {
       nearby: () => Promise.reject(new Error(NOT_STUBBED)),
       details: (providerPlaceId) => {
         asked.push(providerPlaceId);
-        return Promise.resolve(known);
+        return Promise.resolve(known === null ? null : { ...known, timeZone: null });
       },
     },
   };
