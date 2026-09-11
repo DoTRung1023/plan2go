@@ -7,8 +7,8 @@ import { consumeRateLimit } from "@/server/rate-limit/ip-rate-limit";
 import type { RateLimitPolicy } from "@/server/rate-limit/window";
 import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
 
-/** A sheet draws six pictures, and a person opens a handful of places in a sitting. */
-const POLICY: RateLimitPolicy = { windowSeconds: 60, maxRequests: 180 };
+/** A sheet draws ten pictures, and a person opens a handful of places in a sitting. */
+const POLICY: RateLimitPolicy = { windowSeconds: 60, maxRequests: 300 };
 
 const ROUTE = "places-photo";
 

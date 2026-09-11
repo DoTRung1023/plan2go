@@ -44,8 +44,8 @@ const DETAILS_FIELDS =
 const CARD_FIELDS =
   "rating,userRatingCount,priceLevel,editorialSummary,websiteUri,nationalPhoneNumber,googleMapsUri,primaryTypeDisplayName,photos,reviews";
 
-/** Enough pictures for a strip, and no more paid for than can be shown. */
-const CARD_PHOTOS = 6;
+/** As many as the provider hands over, which is every one the sheet can show. */
+const CARD_PHOTOS = 10;
 
 /** Google's price grades, in order, so the index is the level. */
 const PRICE_LEVELS = [
