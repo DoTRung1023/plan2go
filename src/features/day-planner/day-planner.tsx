@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import type { PlannedDay } from "./compute-trip";
+import type { EndpointRef } from "./day-itinerary";
 import { DayItinerary } from "./day-itinerary";
 import { DayTabs } from "./day-tabs";
 import type { DayActions, EditOutcome } from "./day-actions";
@@ -17,6 +18,8 @@ interface DayPlannerProps {
   readonly onHoverStop: (stopId: string | null) => void;
   /** A stop opened to see what the place is like. */
   readonly onOpenStop: (stopId: string) => void;
+  /** One end of a day opened the same way. */
+  readonly onOpenEndpoint: (endpoint: EndpointRef) => void;
   /** The leg under the pointer, here or on the map beside it. */
   readonly hoveredLegIndex: number | null;
   readonly onHoverLeg: (legIndex: number | null) => void;
@@ -80,6 +83,7 @@ export function DayPlanner({
   hoveredStopId,
   onHoverStop,
   onOpenStop,
+  onOpenEndpoint,
   hoveredLegIndex,
   onHoverLeg,
   hoveredEndpointId,
@@ -154,6 +158,7 @@ export function DayPlanner({
             hoveredStopId={hoveredStopId}
             onHoverStop={onHoverStop}
             onOpenStop={onOpenStop}
+            onOpenEndpoint={onOpenEndpoint}
             hoveredLegIndex={hoveredLegIndex}
             onHoverLeg={onHoverLeg}
             hoveredEndpointId={hoveredEndpointId}

@@ -2,13 +2,13 @@
 
 import { Fragment, useEffect, useOptimistic, useRef, useState, useTransition } from "react";
 import type { Conflict } from "@/core/model/conflict";
-import type { DayEndpoint, DayPlan } from "@/core/model/day";
-import type { LatLng, Place } from "@/core/model/place";
+import type { DayEndpoint, DayId, DayPlan } from "@/core/model/day";
+import type { LatLng, Place, PlaceId } from "@/core/model/place";
 import type { StopId } from "@/core/model/stop";
 import type { ComputedDay, ComputedStop } from "@/core/time/compute-day";
 import { formatClock } from "@/core/time/minutes";
 import { weekdayOf } from "@/core/time/zoned";
-import { CloseIcon, FlagIcon, HomeIcon, PencilIcon } from "@/ui/icons";
+import { CloseIcon, FlagIcon, HomeIcon, PencilIcon, PhotosIcon } from "@/ui/icons";
 import type { PlannedDay } from "./compute-trip";
 import type { DayActions } from "./day-actions";
 import { EmptyDay } from "./empty-day";
@@ -16,7 +16,19 @@ import { EndpointPicker } from "./endpoint-picker";
 import { formatDayDate } from "./format-day-date";
 import { formatOpeningHours } from "./format-opening-hours";
 import { LegRow } from "./leg-row";
-import { StopCard, TOOL } from "./stop-card";
+import { ABOUT_PLACE, StopCard, TOOL } from "./stop-card";
+
+/**
+ * One end of one day, said well enough to be found again after the trip has
+ * been re-read. The place is part of it: an end that has been moved to another
+ * place is not the end that was opened, any more than a stop taken off the
+ * day is, and whatever was opened on it should know to close.
+ */
+export interface EndpointRef {
+  readonly dayId: DayId;
+  readonly which: "start" | "end";
+  readonly placeId: PlaceId;
+}
 
 interface DayItineraryProps {
   readonly day: DayPlan;
@@ -28,6 +40,8 @@ interface DayItineraryProps {
   readonly onHoverStop: (stopId: string | null) => void;
   /** A stop opened to see what the place is like. */
   readonly onOpenStop: (stopId: string) => void;
+  /** One end of the day opened the same way. */
+  readonly onOpenEndpoint: (endpoint: EndpointRef) => void;
   /** The leg under the pointer, here or on the map beside it. */
   readonly hoveredLegIndex: number | null;
   readonly onHoverLeg: (legIndex: number | null) => void;
@@ -104,6 +118,7 @@ function Anchor({
   controls,
   hovered,
   onHover,
+  onOpen,
 }: {
   readonly which: keyof typeof MARKS;
   readonly endpoint: DayEndpoint;
@@ -120,6 +135,8 @@ function Anchor({
   /** Whether the pointer is on this place, here or on the map beside it. */
   readonly hovered: boolean;
   readonly onHover: (placeId: string | null) => void;
+  /** Opens what the place is like: its pictures, its rating, what people say. */
+  readonly onOpen: () => void;
 }) {
   const row = useRef<HTMLDivElement | null>(null);
   const Mark = MARKS[which];
@@ -167,6 +184,12 @@ function Anchor({
           <p className="mt-[3px] text-meta text-ink-faint">
             {endpoint.place.address ?? fallback}
           </p>
+          {/* The same question a stop card asks, in the same words: where the
+              day starts is somewhere the traveller is going too. */}
+          <button type="button" onClick={onOpen} className={`mt-[7px] ${ABOUT_PLACE}`}>
+            <PhotosIcon size={12} strokeWidth={2.5} className="shrink-0" />
+            About this place
+          </button>
         </div>
 
         {/* The time, and under it what can be done to this end of the day:
@@ -234,6 +257,7 @@ function EndpointSlot({
   actions,
   hoveredEndpointId,
   onHoverEndpoint,
+  onOpen,
 }: {
   readonly which: "start" | "end";
   readonly day: DayPlan;
@@ -242,6 +266,7 @@ function EndpointSlot({
   readonly actions: DayActions | null;
   readonly hoveredEndpointId: string | null;
   readonly onHoverEndpoint: (placeId: string | null) => void;
+  readonly onOpen: (endpoint: EndpointRef) => void;
 }) {
   const [picking, setPicking] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -302,6 +327,9 @@ function EndpointSlot({
           controls={picking ? null : controls}
           hovered={hoveredEndpointId === endpoint.place.id}
           onHover={onHoverEndpoint}
+          onOpen={() => {
+            onOpen({ dayId: day.id, which, placeId: endpoint.place.id });
+          }}
         />
       )}
 
@@ -364,6 +392,7 @@ export function DayItinerary({
   hoveredStopId,
   onHoverStop,
   onOpenStop,
+  onOpenEndpoint,
   hoveredLegIndex,
   onHoverLeg,
   hoveredEndpointId,
@@ -427,6 +456,7 @@ export function DayItinerary({
         actions={actions}
         hoveredEndpointId={hoveredEndpointId}
         onHoverEndpoint={onHoverEndpoint}
+        onOpen={onOpenEndpoint}
       />
 
       {day.stops.length === 0 ? (
@@ -501,6 +531,7 @@ export function DayItinerary({
         actions={actions}
         hoveredEndpointId={hoveredEndpointId}
         onHoverEndpoint={onHoverEndpoint}
+        onOpen={onOpenEndpoint}
       />
 
       {moveError === null ? null : (

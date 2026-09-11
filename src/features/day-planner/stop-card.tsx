@@ -24,6 +24,13 @@ type Busy = "stay" | "note" | "remove" | null;
 export const TOOL =
   "grid h-[22px] w-[22px] place-items-center rounded-pill text-ink-muted hover:bg-neutral-200 hover:text-ink disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
+/**
+ * The words that open what a place is like. Shared with the ends of a day for
+ * the same reason TOOL is: the question is the same wherever it is asked.
+ */
+export const ABOUT_PLACE =
+  "flex items-center gap-[5px] text-micro font-semibold text-ink-muted hover:text-terracotta-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+
 /** A quarter of an hour: the smallest amount of time worth naming on a day. */
 const STAY_STEP = 15;
 
@@ -364,11 +371,7 @@ export function StopCard({
           )}
           {/* For anyone reading, not only whoever can edit: what a place is
               like is the question the people travelling ask too. */}
-          <button
-            type="button"
-            onClick={onOpen}
-            className="flex items-center gap-[5px] text-micro font-semibold text-ink-muted hover:text-terracotta-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
-          >
+          <button type="button" onClick={onOpen} className={ABOUT_PLACE}>
             <PhotosIcon size={12} strokeWidth={2.5} className="shrink-0" />
             About this place
           </button>

@@ -2,8 +2,9 @@
 
 import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
-import type { LatLng } from "@/core/model/place";
+import type { LatLng, Place } from "@/core/model/place";
 import type { PlannedDay } from "@/features/day-planner/compute-trip";
+import type { EndpointRef } from "@/features/day-planner/day-itinerary";
 import { DayPlanner } from "@/features/day-planner/day-planner";
 import { PlaceSearch } from "@/features/place-search/place-search";
 import { DayTabs } from "@/features/day-planner/day-tabs";
@@ -49,6 +50,35 @@ const TripMap = dynamic(
     ),
   },
 );
+
+/**
+ * What the place sheet can be opened on. A stop is named by its id and an end
+ * of a day by the day, the end and the place standing there, each of which is
+ * enough to find the place again after the trip has been re-read, and to find
+ * nothing once it has gone.
+ */
+type Opened =
+  | { readonly kind: "stop"; readonly stopId: string }
+  | ({ readonly kind: "endpoint" } & EndpointRef);
+
+/** The place the sheet is open on, or null once what it was opened from has left. */
+function placeOpened(days: readonly PlannedDay[], opened: Opened): Place | null {
+  if (opened.kind === "stop") {
+    return (
+      days.flatMap((day) => day.plan.stops).find((stop) => stop.id === opened.stopId)?.place ??
+      null
+    );
+  }
+  const end = days.find((day) => day.plan.id === opened.dayId)?.plan[opened.which] ?? null;
+  return end !== null && end.place.id === opened.placeId ? end.place : null;
+}
+
+/** One sheet per thing opened, so opening another starts it afresh. */
+function keyOf(opened: Opened): string {
+  return opened.kind === "stop"
+    ? `stop:${opened.stopId}`
+    : `${opened.which}:${opened.dayId}:${opened.placeId}`;
+}
 
 interface TripEditorProps {
   readonly title: string;
@@ -106,12 +136,12 @@ export function TripEditor({
   const [hoveredLegIndex, setHoveredLegIndex] = useState<number | null>(null);
   const [hoveredEndpointId, setHoveredEndpointId] = useState<string | null>(null);
   /**
-   * The stop opened to see what its place is like, from its card or from its
-   * marker. By the stop rather than the place, because the same place can be
-   * on two days and the sheet closes itself when the stop it was opened from
-   * leaves the trip.
+   * What the sheet is open on, to see what its place is like: a stop, from its
+   * card or from its marker, or one end of a day, from its row. By the stop or
+   * the end rather than the place, because the same place can be on two days
+   * and the sheet closes itself when what it was opened from leaves the trip.
    */
-  const [openedStopId, setOpenedStopId] = useState<string | null>(null);
+  const [opened, setOpened] = useState<Opened | null>(null);
   /**
    * Whether the export dialog is open. While it is, its preview is what the
    * printer gets; while it is not, the page keeps the open day as a sheet for
@@ -152,9 +182,10 @@ export function TripEditor({
    * them. Held still between renders, or the map would redraw every marker each
    * time anything on the page changed.
    */
-  const openedPlace =
-    days.flatMap((day) => day.plan.stops).find((stop) => stop.id === openedStopId)?.place ??
-    null;
+  const openedPlace = opened === null ? null : placeOpened(days, opened);
+  const openStop = (stopId: string): void => {
+    setOpened({ kind: "stop", stopId });
+  };
 
   const legPaths = useMemo(
     () =>
@@ -190,7 +221,7 @@ export function TripEditor({
             <TripMap
               hoveredStopId={hoveredStopId}
               onHoverStop={setHoveredStopId}
-              onOpenStop={setOpenedStopId}
+              onOpenStop={openStop}
               hoveredLegIndex={hoveredLegIndex}
               onHoverLeg={setHoveredLegIndex}
               hoveredEndpointId={hoveredEndpointId}
@@ -259,7 +290,10 @@ export function TripEditor({
           today={today}
           hoveredStopId={hoveredStopId}
           onHoverStop={setHoveredStopId}
-          onOpenStop={setOpenedStopId}
+          onOpenStop={openStop}
+          onOpenEndpoint={(endpoint) => {
+            setOpened({ kind: "endpoint", ...endpoint });
+          }}
           hoveredLegIndex={hoveredLegIndex}
           onHoverLeg={setHoveredLegIndex}
           hoveredEndpointId={hoveredEndpointId}
@@ -418,13 +452,13 @@ export function TripEditor({
           it stacks over the planner's own header and not under it. On a wide
           window it is placed over the map pane all the same, which is the
           left of this grid. */}
-      {openedPlace === null ? null : (
+      {opened === null || openedPlace === null ? null : (
         <PlaceSheet
-          key={openedStopId}
+          key={keyOf(opened)}
           slug={slug}
           place={openedPlace}
           onClose={() => {
-            setOpenedStopId(null);
+            setOpened(null);
           }}
         />
       )}
