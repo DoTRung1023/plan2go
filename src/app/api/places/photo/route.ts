@@ -12,8 +12,11 @@ const POLICY: RateLimitPolicy = { windowSeconds: 60, maxRequests: 300 };
 
 const ROUTE = "places-photo";
 
-/** The two widths the sheet draws: the picture across the top, and the strip under it. */
-const WIDTHS = [800, 320] as const;
+/**
+ * The widths the sheet draws: the picture across the top, the strip under
+ * it, and one opened to fill the window, which is asked for only when it is.
+ */
+const WIDTHS = [1600, 800, 320] as const;
 
 /** As many as a card holds. */
 const MOST_PHOTOS = 10;

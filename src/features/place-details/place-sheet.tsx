@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import type { Place, PlaceCard, PlaceReview } from "@/core/model/place";
 import { CloseIcon, GlobeIcon, PhoneIcon, PinIcon, StarIcon } from "@/ui/icons";
+import { PhotoViewer } from "./photo-viewer";
 
 const cardSchema = z.object({
   card: z.object({
@@ -41,6 +42,12 @@ const refusalSchema = z.object({ error: z.string(), action: z.string().optional(
 /** The picture across the top and the strip under it, in the widths the photo route serves. */
 const HERO_WIDTH = 800;
 const STRIP_WIDTH = 320;
+/** A picture opened to fill the window. Fetched only then, never with the sheet. */
+const VIEW_WIDTH = 1600;
+
+/** A picture on the sheet, which opens the viewer on it. */
+const OPENS =
+  "block cursor-zoom-in focus-visible:outline-2 focus-visible:outline-terracotta";
 
 /**
  * The longest the sheet waits on its pictures before showing what it has. A
@@ -165,7 +172,12 @@ export function PlaceSheet({ slug, place, onClose }: PlaceSheetProps) {
   );
   /** Whether every picture the card names has answered, one way or the other. */
   const [pictured, setPictured] = useState(false);
+  /** Which picture is open across the window, counted from zero, or none. */
+  const [viewing, setViewing] = useState<number | null>(null);
   const closeButton = useRef<HTMLButtonElement | null>(null);
+  const sheet = useRef<HTMLElement | null>(null);
+  /** The last picture that was open, so closing it puts focus back where it was pressed. */
+  const lastViewed = useRef<number | null>(null);
 
   const ready =
     asked.status === "refused" ||
@@ -177,6 +189,22 @@ export function PlaceSheet({ slug, place, onClose }: PlaceSheetProps) {
   useEffect(() => {
     closeButton.current?.focus();
   }, [ready]);
+
+  // Closing the viewer puts focus back on the picture it was opened from,
+  // which is where the person was before it took the whole window.
+  useEffect(() => {
+    if (viewing !== null) {
+      lastViewed.current = viewing;
+      return;
+    }
+    if (lastViewed.current === null) {
+      return;
+    }
+    sheet.current
+      ?.querySelector<HTMLElement>(`[data-photo="${String(lastViewed.current)}"]`)
+      ?.focus();
+    lastViewed.current = null;
+  }, [viewing]);
 
   useEffect(() => {
     if (place.providerPlaceId === null) {
@@ -264,6 +292,7 @@ export function PlaceSheet({ slug, place, onClose }: PlaceSheetProps) {
   const card = asked.status === "answered" ? asked.card : null;
   const hero = card?.photos[0];
   const id = place.providerPlaceId ?? "";
+  const photoCount = card?.photos.length ?? 0;
 
   const close = (
     <button
@@ -278,173 +307,213 @@ export function PlaceSheet({ slug, place, onClose }: PlaceSheetProps) {
   );
 
   return (
-    /*
-     * Over the map on a wide window, the whole window on a narrow one. The
-     * map is where the place is, and a sheet at its edge keeps the two in
-     * sight together; a phone has no room for both, and gets the sheet.
-     */
-    <section
-      role="dialog"
-      aria-label={place.name}
-      onKeyDown={(event) => {
-        if (event.key === "Escape") {
-          onClose();
-        }
-      }}
-      aria-busy={!ready}
-      className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-paper-raised lg:absolute lg:inset-auto lg:top-[22px] lg:bottom-[22px] lg:left-[22px] lg:z-30 lg:w-[400px] lg:rounded-panel lg:border lg:border-rule lg:shadow-md"
-    >
-      {!ready ? (
-        <div className="relative flex flex-1 items-center justify-center px-5">
-          <p aria-live="polite" className="text-meta text-ink-muted">
-            {`Looking up ${place.name}.`}
-          </p>
-          {close}
-        </div>
-      ) : (
-      <div className="scroll-quiet min-h-0 flex-1 overflow-y-auto">
-        {/* The close sits over the picture when there is one, and over the
-            name when there is not, so it is in the same corner either way. */}
-        <div className="relative">
-          {/* Plain img rather than the framework's: the picture is ours,
-              served from our own table at the width it is drawn, and the
-              framework would only fetch it again to make it smaller. */}
-          {hero === undefined ? (
-            <div className="h-[56px]" />
-          ) : (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={photoUrl(slug, id, 0, HERO_WIDTH)}
-              alt={`${place.name}${hero.by === null ? "" : `, photographed by ${hero.by}`}`}
-              width={hero.width}
-              height={hero.height}
-              className="aspect-[16/10] w-full object-cover"
-            />
-          )}
-          {close}
-        </div>
-
-        <div className="flex flex-col gap-4 px-5 pt-4 pb-6">
-          <div className="flex flex-col gap-[6px]">
-            <h2 className="font-display text-lead text-ink">{place.name}</h2>
-            {card === null ? null : (
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-meta text-ink-muted">
-                {card.kind === null ? null : <span>{card.kind}</span>}
-                {card.rating === null ? null : (
-                  <span className="flex items-center gap-[5px]">
-                    <StarIcon size={13} className="text-terracotta" />
-                    <span className="font-semibold text-ink tabular-nums">
-                      {card.rating.toFixed(1)}
-                    </span>
-                    {card.ratingCount === null
-                      ? null
-                      : `${COUNT.format(card.ratingCount)} ratings`}
-                  </span>
-                )}
-                {card.priceLevel === null || card.priceLevel === 0 ? null : (
-                  <span aria-label={`Price level ${String(card.priceLevel)} of 4`}>
-                    {"$".repeat(card.priceLevel)}
-                  </span>
-                )}
-              </div>
+    <>
+      {/*
+       * Over the map on a wide window, the whole window on a narrow one. The
+       * map is where the place is, and a sheet at its edge keeps the two in
+       * sight together; a phone has no room for both, and gets the sheet.
+       */}
+      <section
+        ref={sheet}
+        role="dialog"
+        aria-label={place.name}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            onClose();
+          }
+        }}
+        aria-busy={!ready}
+        className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-paper-raised lg:absolute lg:inset-auto lg:top-[22px] lg:bottom-[22px] lg:left-[22px] lg:z-30 lg:w-[400px] lg:rounded-panel lg:border lg:border-rule lg:shadow-md"
+      >
+        {!ready ? (
+          <div className="relative flex flex-1 items-center justify-center px-5">
+            <p aria-live="polite" className="text-meta text-ink-muted">
+              {`Looking up ${place.name}.`}
+            </p>
+            {close}
+          </div>
+        ) : (
+        <div className="scroll-quiet min-h-0 flex-1 overflow-y-auto">
+          {/* The close sits over the picture when there is one, and over the
+              name when there is not, so it is in the same corner either way. */}
+          <div className="relative">
+            {/* Plain img rather than the framework's: the picture is ours,
+                served from our own table at the width it is drawn, and the
+                framework would only fetch it again to make it smaller. */}
+            {hero === undefined ? (
+              <div className="h-[56px]" />
+            ) : (
+              <button
+                type="button"
+                data-photo={0}
+                aria-label={`Open photo 1 of ${String(photoCount)}`}
+                onClick={() => {
+                  setViewing(0);
+                }}
+                // The ring is drawn inside, because this is the top edge of
+                // the sheet and there is nothing outside it to draw on.
+                className={`${OPENS} w-full focus-visible:-outline-offset-2`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={photoUrl(slug, id, 0, HERO_WIDTH)}
+                  alt={`${place.name}${hero.by === null ? "" : `, photographed by ${hero.by}`}`}
+                  width={hero.width}
+                  height={hero.height}
+                  className="aspect-[16/10] w-full object-cover"
+                />
+              </button>
             )}
-            {hero === undefined || hero.by === null ? null : (
-              <p className="text-micro text-ink-faint">
-                Photo by{" "}
-                {hero.byUrl === null ? (
-                  hero.by
-                ) : (
-                  <a href={hero.byUrl} target="_blank" rel="noopener noreferrer" className="underline">
-                    {hero.by}
-                  </a>
-                )}
-              </p>
-            )}
+            {close}
           </div>
 
-          {asked.status === "refused" ? (
-            <p className="text-meta text-ink-muted">{asked.sentence}</p>
-          ) : null}
+          <div className="flex flex-col gap-4 px-5 pt-4 pb-6">
+            <div className="flex flex-col gap-[6px]">
+              <h2 className="font-display text-lead text-ink">{place.name}</h2>
+              {card === null ? null : (
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-meta text-ink-muted">
+                  {card.kind === null ? null : <span>{card.kind}</span>}
+                  {card.rating === null ? null : (
+                    <span className="flex items-center gap-[5px]">
+                      <StarIcon size={13} className="text-terracotta" />
+                      <span className="font-semibold text-ink tabular-nums">
+                        {card.rating.toFixed(1)}
+                      </span>
+                      {card.ratingCount === null
+                        ? null
+                        : `${COUNT.format(card.ratingCount)} ratings`}
+                    </span>
+                  )}
+                  {card.priceLevel === null || card.priceLevel === 0 ? null : (
+                    <span aria-label={`Price level ${String(card.priceLevel)} of 4`}>
+                      {"$".repeat(card.priceLevel)}
+                    </span>
+                  )}
+                </div>
+              )}
+              {hero === undefined || hero.by === null ? null : (
+                <p className="text-micro text-ink-faint">
+                  Photo by{" "}
+                  {hero.byUrl === null ? (
+                    hero.by
+                  ) : (
+                    <a href={hero.byUrl} target="_blank" rel="noopener noreferrer" className="underline">
+                      {hero.by}
+                    </a>
+                  )}
+                </p>
+              )}
+            </div>
 
-          {card?.summary === null || card === null ? null : (
-            <p className="text-body text-ink">{card.summary}</p>
-          )}
+            {asked.status === "refused" ? (
+              <p className="text-meta text-ink-muted">{asked.sentence}</p>
+            ) : null}
 
-          {card === null || card.photos.length <= 1 ? null : (
-            <ul className="scroll-quiet -mx-5 flex gap-2 overflow-x-auto px-5">
-              {card.photos.slice(1).map((photo, index) => (
-                <li key={photo.name} className="shrink-0">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={photoUrl(slug, id, index + 1, STRIP_WIDTH)}
-                    alt={photo.by === null ? "" : `Photographed by ${photo.by}`}
-                    title={photo.by === null ? undefined : `Photo by ${photo.by}`}
-                    width={photo.width}
-                    height={photo.height}
-                    className="h-[88px] w-[132px] rounded-chip object-cover"
-                  />
-                </li>
-              ))}
-            </ul>
-          )}
+            {card?.summary === null || card === null ? null : (
+              <p className="text-body text-ink">{card.summary}</p>
+            )}
 
-          <ul className="flex flex-col gap-[9px]">
-            {place.address === null ? null : (
-              <li className="flex items-start gap-2 text-meta text-ink-muted">
-                <PinIcon size={14} className="mt-[2px] shrink-0 text-terracotta" />
-                {place.address}
-              </li>
-            )}
-            {card?.website === null || card === null ? null : (
-              <li>
-                <a href={card.website} target="_blank" rel="noopener noreferrer" className={LINK}>
-                  <GlobeIcon size={14} className="shrink-0 text-terracotta" />
-                  <span className="truncate">{new URL(card.website).hostname.replace(/^www\./, "")}</span>
-                </a>
-              </li>
-            )}
-            {card?.phone === null || card === null ? null : (
-              <li>
-                <a href={`tel:${card.phone.replace(/\s+/g, "")}`} className={LINK}>
-                  <PhoneIcon size={14} className="shrink-0 text-terracotta" />
-                  {card.phone}
-                </a>
-              </li>
-            )}
-            {card?.mapsUrl === null || card === null ? null : (
-              <li>
-                <a
-                  href={card.mapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-meta font-semibold text-terracotta-700 hover:text-terracotta-900"
-                >
-                  Open in Google Maps
-                </a>
-              </li>
-            )}
-          </ul>
-
-          {card === null || card.reviews.length === 0 ? null : (
-            <div className="flex flex-col gap-3">
-              {/* A heading over a list, not a label over a value: one step
-                  above the names under it, in the body face, so the sheet
-                  runs name, heading, byline, words, each a step down. */}
-              <h3 className="text-place text-ink">What people say</h3>
-              <ul className="flex flex-col gap-3">
-                {card.reviews.map((review, index) => (
-                  <Review key={`${review.author}-${String(index)}`} review={review} />
+            {card === null || card.photos.length <= 1 ? null : (
+              <ul className="scroll-quiet -mx-5 flex gap-2 overflow-x-auto px-5">
+                {card.photos.slice(1).map((photo, index) => (
+                  <li key={photo.name} className="shrink-0">
+                    <button
+                      type="button"
+                      data-photo={index + 1}
+                      aria-label={`Open photo ${String(index + 2)} of ${String(photoCount)}`}
+                      title={photo.by === null ? undefined : `Photo by ${photo.by}`}
+                      onClick={() => {
+                        setViewing(index + 1);
+                      }}
+                      className={`${OPENS} rounded-chip focus-visible:outline-offset-2`}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={photoUrl(slug, id, index + 1, STRIP_WIDTH)}
+                        alt={photo.by === null ? "" : `Photographed by ${photo.by}`}
+                        width={photo.width}
+                        height={photo.height}
+                        className="h-[88px] w-[132px] rounded-chip object-cover"
+                      />
+                    </button>
+                  </li>
                 ))}
               </ul>
-            </div>
-          )}
+            )}
 
-          {card === null ? null : (
-            <p className="text-micro text-ink-faint">Ratings, photos and reviews from Google.</p>
-          )}
+            <ul className="flex flex-col gap-[9px]">
+              {place.address === null ? null : (
+                <li className="flex items-start gap-2 text-meta text-ink-muted">
+                  <PinIcon size={14} className="mt-[2px] shrink-0 text-terracotta" />
+                  {place.address}
+                </li>
+              )}
+              {card?.website === null || card === null ? null : (
+                <li>
+                  <a href={card.website} target="_blank" rel="noopener noreferrer" className={LINK}>
+                    <GlobeIcon size={14} className="shrink-0 text-terracotta" />
+                    <span className="truncate">{new URL(card.website).hostname.replace(/^www\./, "")}</span>
+                  </a>
+                </li>
+              )}
+              {card?.phone === null || card === null ? null : (
+                <li>
+                  <a href={`tel:${card.phone.replace(/\s+/g, "")}`} className={LINK}>
+                    <PhoneIcon size={14} className="shrink-0 text-terracotta" />
+                    {card.phone}
+                  </a>
+                </li>
+              )}
+              {card?.mapsUrl === null || card === null ? null : (
+                <li>
+                  <a
+                    href={card.mapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-meta font-semibold text-terracotta-700 hover:text-terracotta-900"
+                  >
+                    Open in Google Maps
+                  </a>
+                </li>
+              )}
+            </ul>
+
+            {card === null || card.reviews.length === 0 ? null : (
+              <div className="flex flex-col gap-3">
+                {/* A heading over a list, not a label over a value: one step
+                    above the names under it, in the body face, so the sheet
+                    runs name, heading, byline, words, each a step down. */}
+                <h3 className="text-place text-ink">What people say</h3>
+                <ul className="flex flex-col gap-3">
+                  {card.reviews.map((review, index) => (
+                    <Review key={`${review.author}-${String(index)}`} review={review} />
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {card === null ? null : (
+              <p className="text-micro text-ink-faint">Ratings, photos and reviews from Google.</p>
+            )}
+          </div>
         </div>
-      </div>
+        )}
+      </section>
+
+      {/* Beside the sheet rather than inside it, so the keys it answers to,
+          Escape among them, are not also answered by the sheet under it. */}
+      {viewing === null || card === null ? null : (
+        <PhotoViewer
+          placeName={place.name}
+          photos={card.photos}
+          at={viewing}
+          urlFor={(at) => photoUrl(slug, id, at, VIEW_WIDTH)}
+          onStep={setViewing}
+          onClose={() => {
+            setViewing(null);
+          }}
+        />
       )}
-    </section>
+    </>
   );
 }
