@@ -98,30 +98,36 @@ function Stars({ rating, size }: { readonly rating: number; readonly size: numbe
   );
 }
 
+/**
+ * One review: who, their stars and how long ago on one line, and what they
+ * wrote under it. The words are running text and set as body, the same as
+ * the provider's own sentence about the place further up; the name is the
+ * same size in bold, so a byline is not smaller than the paragraph it heads.
+ */
 function Review({ review }: { readonly review: PlaceReview }) {
   return (
     <li className="flex flex-col gap-[6px] border-t border-rule pt-3">
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
         {review.authorUrl === null ? (
-          <span className="text-small font-semibold text-ink">{review.author}</span>
+          <span className="text-body font-semibold text-ink">{review.author}</span>
         ) : (
           <a
             href={review.authorUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-small font-semibold text-ink hover:text-terracotta-700"
+            className="text-body font-semibold text-ink hover:text-terracotta-700"
           >
             {review.author}
           </a>
         )}
-        <span className="flex items-center gap-[6px] text-micro text-ink-muted">
-          <Stars rating={review.rating} size={11} />
+        <span className="flex items-center gap-[6px] text-meta text-ink-muted">
+          <Stars rating={review.rating} size={12} />
           <span className="sr-only">{`${String(review.rating)} out of 5,`}</span>
           {review.when}
         </span>
       </div>
       {review.text === null ? null : (
-        <p className="text-meta whitespace-pre-line text-ink">{review.text}</p>
+        <p className="text-body whitespace-pre-line text-ink">{review.text}</p>
       )}
     </li>
   );
@@ -421,10 +427,10 @@ export function PlaceSheet({ slug, place, onClose }: PlaceSheetProps) {
 
           {card === null || card.reviews.length === 0 ? null : (
             <div className="flex flex-col gap-3">
-              {/* A heading over a list, not a label over a value, so it is a
-                  step above the names under it rather than the smallest
-                  thing on the sheet. */}
-              <h3 className="text-body font-semibold text-ink">What people say</h3>
+              {/* A heading over a list, not a label over a value: one step
+                  above the names under it, in the body face, so the sheet
+                  runs name, heading, byline, words, each a step down. */}
+              <h3 className="text-place text-ink">What people say</h3>
               <ul className="flex flex-col gap-3">
                 {card.reviews.map((review, index) => (
                   <Review key={`${review.author}-${String(index)}`} review={review} />

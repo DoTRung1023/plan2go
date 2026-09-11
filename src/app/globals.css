@@ -154,9 +154,12 @@
   scrollbar-width: thin;
   scrollbar-color: var(--color-rule-strong) transparent;
 
-  /* The rest is Chrome and Safari, which ignore the two above. */
+  /* The rest is Chrome and Safari, which ignore the two above. Both axes
+     stated, or a strip that scrolls sideways gets the browser's own bar at
+     the browser's own height under it. */
   &::-webkit-scrollbar {
     width: 10px;
+    height: 10px;
   }
 
   &::-webkit-scrollbar-track {
