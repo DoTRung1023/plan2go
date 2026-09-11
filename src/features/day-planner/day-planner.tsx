@@ -123,7 +123,9 @@ export function DayPlanner({
               </div>
               {exporting}
             </div>
-            <div className="mt-[14px]">
+            {/* Four less than the pills sit from the range: the strip carries
+                those four itself, as room for a focus ring. */}
+            <div className="mt-[10px]">
               <DayTabs
                 days={days.map((day) => day.plan)}
                 today={today}

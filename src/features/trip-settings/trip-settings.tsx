@@ -244,7 +244,9 @@ export function TripSettings({
         ) : null}
       </div>
 
-      <div className="mt-[14px]">{tabs}</div>
+      {/* Four less than the pills are meant to sit from the name row: the
+          strip carries those four itself, as room for a focus ring. */}
+      <div className="mt-[10px]">{tabs}</div>
 
       {/* Nothing but which day is open now: the dates that used to end this
           line have gone up to the row that names the trip. Close under the
