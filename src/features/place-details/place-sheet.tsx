@@ -369,7 +369,7 @@ export function PlaceSheet({ slug, place, askedFor, onClose }: PlaceSheetProps) 
          * outside its box; there the scroller under it does the clipping,
          * to the same corners.
          */
-        className={`fixed inset-0 z-50 flex flex-col overflow-hidden bg-paper-raised outline-none lg:absolute lg:inset-auto lg:top-[22px] lg:bottom-[22px] lg:left-[22px] lg:z-30 lg:w-[400px] lg:overflow-visible lg:rounded-panel lg:border lg:border-rule lg:shadow-md ${
+        className={`fixed inset-0 z-50 flex flex-col overflow-hidden bg-paper-raised outline-none lg:absolute lg:inset-auto lg:top-[22px] lg:bottom-[22px] lg:left-3 lg:z-30 lg:w-[400px] lg:overflow-visible lg:rounded-panel lg:border lg:border-rule lg:shadow-md ${
           leaving ? "place-sheet-leaving" : "place-sheet-arriving"
         }`}
       >
