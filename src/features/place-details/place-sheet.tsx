@@ -421,7 +421,10 @@ export function PlaceSheet({ slug, place, onClose }: PlaceSheetProps) {
 
           {card === null || card.reviews.length === 0 ? null : (
             <div className="flex flex-col gap-3">
-              <h3 className="text-label font-semibold text-ink-muted">What people say</h3>
+              {/* A heading over a list, not a label over a value, so it is a
+                  step above the names under it rather than the smallest
+                  thing on the sheet. */}
+              <h3 className="text-body font-semibold text-ink">What people say</h3>
               <ul className="flex flex-col gap-3">
                 {card.reviews.map((review, index) => (
                   <Review key={`${review.author}-${String(index)}`} review={review} />
