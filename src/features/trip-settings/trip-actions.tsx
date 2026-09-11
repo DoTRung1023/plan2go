@@ -152,13 +152,14 @@ export function TripActions({
               close();
             }
           }}
-          className="absolute top-full right-0 z-50 mt-2 w-[268px] rounded-panel border border-rule bg-paper-raised p-[13px] text-left shadow-lg"
+          className="absolute top-full right-0 z-50 mt-2 w-[300px] rounded-panel border border-rule bg-paper-raised p-4 text-left shadow-lg"
         >
-          <p className="font-display text-body text-ink">Delete this trip?</p>
-          <p className="mt-[5px] text-meta text-ink-muted">
-            This trip and everything on it is deleted.
-          </p>
-          <div className="mt-3 flex gap-2">
+          {/* The question as a heading, at the step for a heading that is
+              neither the trip's name nor a place, and under it the one thing
+              worth saying before the answer: that there is no taking it back. */}
+          <p className="font-display text-lead text-ink">Delete this trip?</p>
+          <p className="mt-[6px] text-body text-ink-muted">This cannot be undone.</p>
+          <div className="mt-4 flex gap-2">
             <button type="button" ref={cancel} onClick={close} className={CANCEL}>
               Cancel
             </button>
