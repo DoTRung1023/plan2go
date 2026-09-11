@@ -331,6 +331,19 @@ mean opening it again. Collapse is what closes it. While the new times are being
 out the tiles stay on screen at reduced opacity under a line of text saying what is
 happening, which is what this product does instead of a skeleton.
 
+## A place, opened
+
+A stop can be opened to see what its place is like, from **About this place** on its
+card or by pressing its marker on the map. What opens is a sheet over the left edge of
+the map, 400px wide with the map still in sight beside it, and the whole window on a
+phone. The picture comes first because it answers fastest, with the close button over
+its corner; then the name, the kind of place and its rating out of five with a filled
+terracotta star; then the sentence the provider has for it, a strip of more pictures, the
+address and the ways to reach it, and what people say, each with their stars and how
+long ago. Nothing in the sheet changes the trip. It is asked for when opened and never
+before, because it is the dearest question the place provider answers, and every
+picture and rating in it is credited to where it came from.
+
 ## The map
 
 A line is drawn between each pair of points in travel order, under the markers. The

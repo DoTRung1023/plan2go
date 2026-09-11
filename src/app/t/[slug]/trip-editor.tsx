@@ -173,7 +173,7 @@ export function TripEditor({
      * the guarantee: nothing in either pane can scroll the window instead of
      * itself.
      */
-    <main className="planner-shell lg:grid lg:h-dvh lg:grid-cols-[minmax(0,1fr)_clamp(460px,38%,600px)] lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden">
+    <main className="planner-shell relative lg:grid lg:h-dvh lg:grid-cols-[minmax(0,1fr)_clamp(460px,38%,600px)] lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden">
       <section
         aria-label="Map of this day"
         className={
@@ -239,16 +239,6 @@ export function TripEditor({
               {expanded ? "Collapse map" : "Expand map"}
             </button>
           </div>
-          {openedPlace === null ? null : (
-            <PlaceSheet
-              key={openedStopId}
-              slug={slug}
-              place={openedPlace}
-              onClose={() => {
-                setOpenedStopId(null);
-              }}
-            />
-          )}
         </div>
       </section>
 
@@ -330,6 +320,7 @@ export function TripEditor({
                 title={title}
                 startDate={first.plan.date}
                 endDate={last.plan.date}
+                today={today}
                 tabs={
                   <DayTabs
                     days={days.map((day) => day.plan)}
@@ -420,6 +411,21 @@ export function TripEditor({
           }}
           visible={false}
           onReady={() => {}}
+        />
+      )}
+
+      {/* Last in the page rather than inside the map pane, so that on a phone
+          it stacks over the planner's own header and not under it. On a wide
+          window it is placed over the map pane all the same, which is the
+          left of this grid. */}
+      {openedPlace === null ? null : (
+        <PlaceSheet
+          key={openedStopId}
+          slug={slug}
+          place={openedPlace}
+          onClose={() => {
+            setOpenedStopId(null);
+          }}
         />
       )}
     </main>

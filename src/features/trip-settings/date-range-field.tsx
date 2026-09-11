@@ -164,6 +164,14 @@ interface DateRangeFieldProps {
   readonly label: string;
   readonly start: IsoDate;
   readonly end: IsoDate;
+  /**
+   * The day that gets the ring. Decided by the caller, because which day is
+   * today depends on whose clock is asked: the trip's, on its own page, and
+   * the reader's on the page that starts one. Read off the browser's clock in
+   * UTC, as it once was, this was yesterday every morning in Adelaide, and
+   * agreed with neither the day tabs nor the earliest day the form offers.
+   */
+  readonly today: IsoDate;
   /** Earliest day that may be chosen. Days before it are shown but not offered. */
   readonly min?: IsoDate;
   /** The longest a trip may run, counting both ends. */
@@ -238,6 +246,7 @@ export function DateRangeField({
   label,
   start,
   end,
+  today,
   min,
   maxSpanDays,
   onChange,
@@ -306,7 +315,6 @@ export function DateRangeField({
     };
   }, [open]);
 
-  const today = new Date().toISOString().slice(0, 10);
   const months = Array.from({ length: MONTHS_SHOWN }, (_unused, at) =>
     shiftMonths(leftMonth, at),
   );

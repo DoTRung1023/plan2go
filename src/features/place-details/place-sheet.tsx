@@ -204,7 +204,7 @@ export function PlaceSheet({ slug, place, onClose }: PlaceSheetProps) {
           onClose();
         }
       }}
-      className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-paper-raised lg:absolute lg:inset-auto lg:top-[22px] lg:bottom-[22px] lg:left-[22px] lg:z-[4] lg:w-[400px] lg:rounded-panel lg:border lg:border-rule lg:shadow-md"
+      className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-paper-raised lg:absolute lg:inset-auto lg:top-[22px] lg:bottom-[22px] lg:left-[22px] lg:z-30 lg:w-[400px] lg:rounded-panel lg:border lg:border-rule lg:shadow-md"
     >
       <div className="scroll-quiet min-h-0 flex-1 overflow-y-auto">
         {/* The close sits over the picture when there is one, and over the

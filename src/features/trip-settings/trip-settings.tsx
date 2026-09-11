@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useActionState, useId, useRef, useState } from "react";
+import type { IsoDate } from "@/core/model/day";
 import { daysBetween } from "@/core/time/zoned";
 import { DateRangeField } from "./date-range-field";
 
@@ -35,6 +36,8 @@ interface TripSettingsProps {
   readonly title: string;
   readonly startDate: string;
   readonly endDate: string;
+  /** Today where the trip is, for the calendar's ring. The same day the tabs mark. */
+  readonly today: IsoDate;
   /**
    * What can be done to the trip as a whole. It sits on the name's row, at the
    * top of the panel, because that row is the trip itself rather than a day in
@@ -96,6 +99,7 @@ export function TripSettings({
   title,
   startDate,
   endDate,
+  today,
   actions,
   dayLine,
   leaveAt,
@@ -205,6 +209,7 @@ export function TripSettings({
           label="Dates"
           start={first}
           end={last}
+          today={today}
           onChange={(range) => {
             setFirst(range.start);
             setLast(range.end);

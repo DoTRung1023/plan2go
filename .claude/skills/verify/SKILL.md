@@ -89,3 +89,13 @@ for a screenshot.
   field's Last day follows the pointer; the second click commits.
 - In the trip header the Save dates footer only appears once the range differs from
   the saved one, and saving leaves the panel open.
+
+## A place, opened
+
+- `button:has-text("About this place")` on a card, or `.trip-map-stop` on the map, opens
+  `section[role="dialog"][aria-label="<place name>"]`. It reads "Looking up X." until
+  `/api/places/card` answers; pictures come from `/api/places/photo`.
+- A second dev server cannot start while one is running for this project. Drive the
+  running one, or `pnpm build && npx next start -p <port>` for a production copy.
+- After `pnpm db:push` a dev server started earlier still holds the old Prisma client
+  and answers 502 on anything using a new table. Restart it.

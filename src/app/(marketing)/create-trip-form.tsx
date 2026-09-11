@@ -87,6 +87,7 @@ export function CreateTripForm({ countries, today }: CreateTripFormProps) {
           label="Dates"
           start={first}
           end={last}
+          today={today}
           min={today}
           maxSpanDays={MAX_TRIP_DAYS}
           size="large"
