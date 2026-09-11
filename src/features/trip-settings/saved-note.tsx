@@ -8,7 +8,7 @@ const SHOWN_MS = 2200;
 
 interface SavedNoteProps {
   /**
-   * When the last change landed, as a count that only goes up. A time rather
+   * How many changes have landed, or zero before any has. A count rather
    * than a flag, because two saves in a row have to be two showings: a flag
    * already true says nothing the second time.
    */

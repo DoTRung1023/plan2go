@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { LatLng, Place } from "@/core/model/place";
 import type { PlannedDay } from "@/features/day-planner/compute-trip";
 import type { EndpointRef } from "@/features/day-planner/day-itinerary";
@@ -120,12 +120,35 @@ export function TripEditor({
   const [chosenIndex, setChosenIndex] = useState(0);
   const [expanded, setExpanded] = useState(false);
   /**
-   * When the last change landed. Every way of changing this trip reports here,
-   * so the one notice in the corner speaks for all of them: a note written, a
-   * stop dragged, a day added and the name itself are all the same fact to
-   * whoever is watching for it, which is that it is written down.
+   * How many changes have landed. Every way of changing this trip reports
+   * here, so the one notice in the corner speaks for all of them: a note
+   * written, a stop dragged, a day added and the name itself are all the same
+   * fact to whoever is watching for it, which is that it is written down.
    */
   const [savedAt, setSavedAt] = useState(0);
+  /**
+   * The days as they were on screen when a change was written down, kept
+   * until the page drawn from that change has replaced them.
+   *
+   * An action answers before the page it asked the server to redraw has
+   * arrived, and the notice, shown as it answered, came a moment ahead of
+   * the thing it was about: "Saved", and then the times changing. So it is
+   * held back until the new page is on screen, which is when the days handed
+   * down from the server are no longer the ones this was set to.
+   */
+  const [awaiting, setAwaiting] = useState<readonly PlannedDay[] | null>(null);
+  /** What is on screen now, for an answer that arrives between renders. */
+  const shown = useRef(days);
+  useEffect(() => {
+    shown.current = days;
+  });
+
+  // Adjusted during the render that carries the new page rather than in an
+  // effect, because an effect would paint the page first and say so after.
+  if (awaiting !== null && days !== awaiting) {
+    setAwaiting(null);
+    setSavedAt((count) => count + 1);
+  }
   /**
    * The stop under the pointer, wherever the pointer is. Held here because
    * both panes answer to it and neither may reach into the other: a card and
@@ -154,7 +177,7 @@ export function TripEditor({
   ): Promise<T> =>
     change.then((outcome) => {
       if (outcome.error === null) {
-        setSavedAt(Date.now());
+        setAwaiting(shown.current);
       }
       return outcome;
     });
