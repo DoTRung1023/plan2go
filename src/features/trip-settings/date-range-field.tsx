@@ -123,10 +123,12 @@ const TRIGGER =
  * both ends of the trip written out in full, each under its own name with an
  * arrow between them, because a person opening a trip is being asked two
  * things and should see both answers. On the trip's own name row it is one
- * control among several on a 34px line: no label, no box, and not even the
- * word that opens it. The dates sit beside the trip's name as a fact about it,
- * and a row that reads "Hanoi, five days 10-15 Sept Change" spends its last
- * word on the mechanism rather than on the trip. The word is still there for
+ * control among several on a 34px line: no label and no box. The dates sit
+ * beside the trip's name as a fact about it, and a row that reads "Hanoi, five
+ * days 10-15 Sept Change" spends its last word on the mechanism rather than
+ * on the trip.
+ *
+ * Neither home shows the word that opens it. The word is still there for
  * anybody who cannot see the pill light up under the pointer.
  *
  * The starter page's numbers are those of the fields beside it, from
@@ -142,11 +144,8 @@ const SIZES = {
     stack: "shrink-0",
   },
   large: {
-    // Room kept clear on the right for the word, which is taken out of the flow
-    // so its own padding cannot make this pill taller than it needs to be.
-    trigger: "relative gap-2 py-[14px] pr-[88px] pl-5",
-    change:
-      "absolute top-1/2 right-3 -translate-y-1/2 rounded-pill px-2 py-[6px] text-[14px] leading-none font-bold text-terracotta-700",
+    trigger: "gap-2 px-5 py-[14px]",
+    change: "sr-only",
     // The container the day's format is measured against. Not the pill itself:
     // a button cannot be a size container, and the wrapper is exactly as wide.
     stack: "@container flex flex-col",
@@ -205,11 +204,11 @@ function End({ name, date }: { readonly name: string; readonly date: IsoDate }) 
       <span className="truncate text-[14px] leading-[1.2] tabular-nums">
         {/* The steps are where each longer form stops fitting the widest day
             it can be asked to show, measured rather than guessed. */}
-        <span className="hidden @min-[404px]:inline">{READABLE.format(day)}</span>
-        <span className="hidden @min-[328px]:inline @min-[404px]:hidden">
+        <span className="hidden @min-[336px]:inline">{READABLE.format(day)}</span>
+        <span className="hidden @min-[260px]:inline @min-[336px]:hidden">
           {DAY_MONTH_YEAR.format(day)}
         </span>
-        <span className="@min-[328px]:hidden">{DAY_MONTH.format(day)}</span>
+        <span className="@min-[260px]:hidden">{DAY_MONTH.format(day)}</span>
       </span>
     </span>
   );
