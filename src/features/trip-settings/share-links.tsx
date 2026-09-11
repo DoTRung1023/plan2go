@@ -1,22 +1,26 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ShareIcon } from "@/ui/icons";
+import { CloseIcon, ShareIcon } from "@/ui/icons";
 import { MENU_ITEM } from "./trip-menu";
 
+/** The word at the end of the pill, in the accent, with the pill's own ground under the pointer. */
 const COPY =
-  "shrink-0 rounded-pill px-[10px] py-[5px] text-micro font-semibold text-terracotta-700 hover:bg-terracotta-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "shrink-0 rounded-pill px-3 py-[6px] text-body/none font-semibold text-terracotta-700 hover:bg-terracotta-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 /**
- * The link is readable and selectable rather than hidden behind the button, so
- * a browser with no clipboard to write to still hands it over.
+ * The link and the word that copies it share one sunken pill, so the two read
+ * as one thing: this link, and the way to take it. The link is readable and
+ * selectable rather than hidden behind the button, so a browser with no
+ * clipboard to write to still hands it over.
  */
+const LINK_PILL = "mt-2 flex items-center gap-1 rounded-pill bg-paper-sunken py-1 pr-1 pl-4";
+
 const LINK_FIELD =
-  "min-w-0 flex-1 truncate rounded-pill border border-rule bg-paper px-[11px] py-[5px] text-micro text-ink-muted";
+  "min-w-0 flex-1 truncate bg-transparent py-[6px] text-body text-ink-muted outline-none focus-visible:rounded-[4px] focus-visible:outline-2 focus-visible:outline-offset-[6px] focus-visible:outline-terracotta";
 
-const HEADING = "text-label font-semibold text-ink-muted";
-
-const EXPLAINER = "mt-[3px] text-micro text-ink-muted";
+/** Which link, over its pill. Bold body, as a label over a value in a dialog rather than on a card. */
+const LABEL = "mt-5 text-body font-semibold text-ink";
 
 /** Long enough to read, short enough that the panel is not left saying it. */
 const COPIED_MS = 2000;
@@ -36,8 +40,8 @@ interface ShareLinksProps {
  * There is no cookie behind editing any more: the key in the edit link is the
  * whole of it. That makes handing out the right link the only thing standing
  * between a travelling companion who reads the plan and one who rewrites it,
- * which is why both are shown here with a sentence each rather than one being
- * quietly copied.
+ * which is why both are shown here, each under its own name, rather than one
+ * being quietly copied.
  */
 export function ShareLinks({ slug, editKey }: ShareLinksProps) {
   const [open, setOpen] = useState(false);
@@ -109,7 +113,7 @@ export function ShareLinks({ slug, editKey }: ShareLinksProps) {
   };
 
   const link = (which: Which, label: string, url: string) => (
-    <div className="mt-[6px] flex items-center gap-2">
+    <div className={LINK_PILL}>
       <input
         readOnly
         value={url}
@@ -160,18 +164,31 @@ export function ShareLinks({ slug, editKey }: ShareLinksProps) {
               close();
             }
           }}
-          className="absolute top-full right-0 z-50 mt-2 w-[300px] rounded-panel border border-rule bg-paper-raised p-[13px] text-left shadow-lg"
+          className="absolute top-full right-0 z-50 mt-2 w-[min(400px,calc(100vw-2rem))] rounded-panel border border-rule bg-paper-raised p-6 text-left shadow-lg"
         >
-          <p className={HEADING}>Read only</p>
-          <p className={EXPLAINER}>Anyone with it can read the trip.</p>
+          {/* Named the way the dialog that deletes the trip is named, at the
+              size the trip's own name is set in, with the way out across
+              from it. */}
+          <div className="flex items-start justify-between gap-3">
+            <p className="font-display text-title text-ink">Share this trip</p>
+            <button
+              type="button"
+              onClick={close}
+              aria-label="Close"
+              className="-mt-1 -mr-2 grid h-9 w-9 shrink-0 place-items-center rounded-pill text-ink-muted hover:bg-neutral-200 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+            >
+              <CloseIcon size={16} strokeWidth={2.5} />
+            </button>
+          </div>
+
+          <p className={LABEL}>Read only</p>
           {link("view", "Read only link", viewUrl)}
 
-          <p className={`mt-[14px] ${HEADING}`}>Editing</p>
-          <p className={EXPLAINER}>Anyone with it can change or delete the trip.</p>
+          <p className={LABEL}>Editing</p>
           {link("edit", "Editing link", editUrl)}
 
           {failed ? (
-            <p className="mt-[10px] text-micro text-ink-muted">
+            <p className="mt-3 text-meta text-ink-muted">
               Copying was blocked. Select the link instead.
             </p>
           ) : null}
