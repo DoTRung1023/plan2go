@@ -88,6 +88,30 @@ const FIELD =
 const PANEL_LINE = "px-[11px] py-[10px] text-meta text-ink-muted";
 
 /**
+ * What the city is known for, or nothing. Every refusal is a plain one: nobody
+ * asked for this out loud, so the field says nothing about a list it never
+ * requested, and two letters still search.
+ */
+async function askAboutCity(city: LatLng): Promise<readonly Suggestion[]> {
+  const parameters = new URLSearchParams({
+    lat: city.lat.toFixed(BIAS_DECIMALS),
+    lng: city.lng.toFixed(BIAS_DECIMALS),
+    limit: String(RECOMMENDED_ASKED),
+  });
+  try {
+    const response = await fetch(`/api/places/nearby?${parameters.toString()}`);
+    if (!response.ok) {
+      return [];
+    }
+    const body: unknown = await response.json();
+    const parsed = searchResponseSchema.safeParse(body);
+    return parsed.success ? parsed.data.suggestions : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Search for a place and put it on the day that is open.
  *
  * The field sits in the top left corner of the map, where a map search belongs,
@@ -125,7 +149,7 @@ export function PlaceSearch({
   const [adding, setAdding] = useState<string | null>(null);
   /**
    * What the city is known for, for the field nobody has typed in yet. Null
-   * until the city has answered, so the panel can say it is being asked.
+   * until the city has answered.
    */
   const [popular, setPopular] = useState<readonly Suggestion[] | null>(null);
   const [pending, startTransition] = useTransition();
@@ -138,7 +162,11 @@ export function PlaceSearch({
   const session = useRef<string | null>(null);
   /** Answers can arrive out of order, so only the newest is allowed to land. */
   const newest = useRef(0);
-  /** The city is asked about once, however often the panel is opened. */
+  /**
+   * The city is asked about once, however often the panel is opened. A ref
+   * rather than state, because the effect that asks may not set state on the
+   * way in, only in the answer.
+   */
   const askedAboutCity = useRef(false);
 
   const trimmed = query.trim();
@@ -205,29 +233,7 @@ export function PlaceSearch({
       return;
     }
     askedAboutCity.current = true;
-
-    const parameters = new URLSearchParams({
-      lat: city.lat.toFixed(BIAS_DECIMALS),
-      lng: city.lng.toFixed(BIAS_DECIMALS),
-      limit: String(RECOMMENDED_ASKED),
-    });
-
-    const run = async (): Promise<void> => {
-      try {
-        const response = await fetch(`/api/places/nearby?${parameters.toString()}`);
-        const body: unknown = await response.json();
-        const parsed = response.ok ? searchResponseSchema.safeParse(body) : null;
-        setPopular(parsed?.success ? parsed.data.suggestions : []);
-      } catch {
-        // Nobody asked for this out loud, so nothing is said about its not
-        // being there. The field still works and two letters still search.
-        // Settled to empty rather than left null, or the line saying the city
-        // is being asked about would never come down.
-        setPopular([]);
-      }
-    };
-
-    void run();
+    void askAboutCity(city).then(setPopular);
   }, [open, searched, city]);
 
   useEffect(() => {
@@ -318,16 +324,15 @@ export function PlaceSearch({
    * somewhere the reader has never been it is the line that says what the list
    * underneath actually is.
    */
-  const popularIn = cityName === null ? "Popular in this city" : `Popular in ${cityName}`;
+  const cityLabel = cityName ?? "this city";
+  const popularIn = `Popular in ${cityLabel}`;
 
   /**
-   * True from the moment the empty field opens until the city has answered.
-   * Derived, like `searching`, so nothing has to remember to turn it off: the
-   * effect above sets `popular` on every way out.
+   * True until the city has answered. Only read once the empty field is open,
+   * which is the moment the effect above asks, so unanswered is the same as
+   * being asked about. Derived, like `searching`.
    */
-  const askingCity = open && !searched && city !== null && popular === null;
-
-  const askingLine = `Finding what is popular in ${cityName ?? "this city"}.`;
+  const askingCity = city !== null && popular === null;
 
   /**
    * Clamped, because the list under the field is swapped for a shorter one the
@@ -359,17 +364,36 @@ export function PlaceSearch({
     }
   };
 
-  const listed = open && visible.length > 0 && adding === null;
   /**
-   * Two letters in, the panel always has something to say: the matches, the
-   * line saying they are being looked for, or the sentence saying there were
-   * none. Before that it opens while the city is being asked about and stays
-   * open if the city had something to offer, so a field on a trip with no
-   * city stays a field and nothing more. It stays open while a place is being
-   * added, to say which one.
+   * The one sentence the panel has when it is not showing a list: the place
+   * being added, the city being asked about, a refusal, the search being run,
+   * or nothing having matched. Null when the list is doing the talking, and
+   * null on a field nobody has typed in whose city had nothing to offer, so a
+   * trip with no city has a field and nothing more.
    */
-  const panel =
-    adding !== null || (open && (searched || askingCity || recommended.length > 0));
+  const line = ((): string | null => {
+    if (adding !== null) {
+      return `Adding ${adding} to ${dayName}.`;
+    }
+    if (!open) {
+      return null;
+    }
+    if (!searched) {
+      return askingCity ? `Looking for places in ${cityLabel}.` : null;
+    }
+    if (searchMessage !== null) {
+      return searchMessage;
+    }
+    if (visible.length > 0) {
+      return null;
+    }
+    return searching
+      ? "Looking for places."
+      : "Nothing matched. Try the name of the place, or the street it is on.";
+  })();
+
+  const listed = open && visible.length > 0 && adding === null;
+  const panel = listed || line !== null;
 
   return (
     <div className="relative" ref={container}>
@@ -417,9 +441,7 @@ export function PlaceSearch({
 
       {panel ? (
         <div className="scroll-quiet absolute top-full right-0 left-0 z-30 mt-2 max-h-[330px] overflow-x-hidden overflow-y-auto rounded-panel border border-rule bg-paper-raised p-[7px] shadow-md">
-          {adding === null ? null : (
-            <p className={PANEL_LINE}>{`Adding ${adding} to ${dayName}.`}</p>
-          )}
+          {line === null ? null : <p className={PANEL_LINE}>{line}</p>}
 
           {listed ? (
             <>
@@ -472,20 +494,6 @@ export function PlaceSearch({
                 ))}
               </ul>
             </>
-          ) : null}
-
-          {adding === null && askingCity ? <p className={PANEL_LINE}>{askingLine}</p> : null}
-
-          {adding === null && searched && searchMessage !== null ? (
-            <p className={PANEL_LINE}>{searchMessage}</p>
-          ) : null}
-
-          {adding === null && searched && searchMessage === null && visible.length === 0 ? (
-            <p className={PANEL_LINE}>
-              {searching
-                ? "Looking for places."
-                : "Nothing matched. Try the name of the place, or the street it is on."}
-            </p>
           ) : null}
         </div>
       ) : null}
