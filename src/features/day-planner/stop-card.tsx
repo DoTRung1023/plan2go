@@ -25,11 +25,30 @@ export const TOOL =
   "grid h-[22px] w-[22px] place-items-center rounded-pill text-ink-muted hover:bg-neutral-200 hover:text-ink disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 /**
- * The words that open what a place is like. Shared with the ends of a day for
+ * The glyph that opens what a place is like: its pictures, its rating, what
+ * people say. First in the row of tools, before the ones that change the day,
+ * because it is the one a reader gets too. Shared with the ends of a day for
  * the same reason TOOL is: the question is the same wherever it is asked.
  */
-export const ABOUT_PLACE =
-  "flex items-center gap-[5px] text-micro font-semibold text-ink-muted hover:text-terracotta-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+export function AboutPlaceButton({
+  name,
+  onOpen,
+}: {
+  readonly name: string;
+  readonly onOpen: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      title="About this place"
+      aria-label={`About ${name}`}
+      className={TOOL}
+    >
+      <PhotosIcon size={13} strokeWidth={2.5} />
+    </button>
+  );
+}
 
 /** A quarter of an hour: the smallest amount of time worth naming on a day. */
 const STAY_STEP = 15;
@@ -67,12 +86,12 @@ interface StopCardProps {
 /**
  * One stop, and everything about it that can be changed where it is read.
  *
- * The arrival time is the loudest thing in the card, and the two controls that
- * act on the whole stop, moving it and taking it off the day, sit directly
- * under it: they are about the row rather than about anything inside it. They
- * are drawn at reduced weight until the pointer is over the card, and they stay
- * visible either way, because half the people using this are on a phone and
- * have no pointer to hover with.
+ * The arrival time is the loudest thing in the card, and the controls that
+ * act on the whole stop, opening its place, moving it and taking it off the
+ * day, sit directly under it: they are about the row rather than about
+ * anything inside it. They are drawn at reduced weight until the pointer is
+ * over the card, and they stay visible either way, because half the people
+ * using this are on a phone and have no pointer to hover with.
  */
 export function StopCard({
   position,
@@ -292,35 +311,40 @@ export function StopCard({
               </p>
             )}
 
-            {actions === null ? null : (
-              <div
-                className={`-mr-1 flex items-center group-hover:opacity-100 focus-within:opacity-100 ${
-                  hovered ? "opacity-100" : "opacity-55"
-                }`}
-              >
-                {/* A handle, not a shortcut. The arrow keys are left to the
-                    page, so a card under the pointer still scrolls. */}
-                <button
-                  type="button"
-                  title="Drag to reorder"
-                  aria-label={`Move ${stop.placeName} by dragging it`}
-                  className={`${TOOL} cursor-grab active:cursor-grabbing`}
-                >
-                  <GripIcon size={13} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    run("remove", () => actions.removeStop({ stopId: stop.stopId }));
-                  }}
-                  disabled={busy === "remove"}
-                  aria-label={`Remove ${stop.placeName} from this day`}
-                  className={TOOL}
-                >
-                  <CloseIcon size={13} strokeWidth={2.75} />
-                </button>
-              </div>
-            )}
+            <div
+              className={`-mr-1 flex items-center group-hover:opacity-100 focus-within:opacity-100 ${
+                hovered ? "opacity-100" : "opacity-55"
+              }`}
+            >
+              {/* For anyone reading, not only whoever can edit: what a place
+                  is like is the question the people travelling ask too. */}
+              <AboutPlaceButton name={stop.placeName} onOpen={onOpen} />
+              {actions === null ? null : (
+                <>
+                  {/* A handle, not a shortcut. The arrow keys are left to the
+                      page, so a card under the pointer still scrolls. */}
+                  <button
+                    type="button"
+                    title="Drag to reorder"
+                    aria-label={`Move ${stop.placeName} by dragging it`}
+                    className={`${TOOL} cursor-grab active:cursor-grabbing`}
+                  >
+                    <GripIcon size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      run("remove", () => actions.removeStop({ stopId: stop.stopId }));
+                    }}
+                    disabled={busy === "remove"}
+                    aria-label={`Remove ${stop.placeName} from this day`}
+                    className={TOOL}
+                  >
+                    <CloseIcon size={13} strokeWidth={2.75} />
+                  </button>
+                </>
+              )}
+            </div>
 
           </div>
         </div>
@@ -369,12 +393,6 @@ export function StopCard({
               {openingHours}
             </span>
           )}
-          {/* For anyone reading, not only whoever can edit: what a place is
-              like is the question the people travelling ask too. */}
-          <button type="button" onClick={onOpen} className={ABOUT_PLACE}>
-            <PhotosIcon size={12} strokeWidth={2.5} className="shrink-0" />
-            About this place
-          </button>
         </div>
         {conflicts.map((conflict, at) => (
           <ConflictNotice key={`${conflict.kind}-${String(at)}`} conflict={conflict} />

@@ -42,6 +42,28 @@ const refusalSchema = z.object({ error: z.string(), action: z.string().optional(
 const HERO_WIDTH = 800;
 const STRIP_WIDTH = 320;
 
+/**
+ * The longest the sheet waits on its pictures before showing what it has. A
+ * picture that never answers would otherwise hold the words hostage, and the
+ * words are worth having on their own.
+ */
+const PICTURES_WAIT_MS = 8_000;
+
+/** One of the place's photos at one width, from our own photo route. */
+function photoUrl(slug: string, providerPlaceId: string, at: number, width: number): string {
+  return `/api/places/photo?${new URLSearchParams({
+    slug,
+    id: providerPlaceId,
+    at: String(at),
+    width: String(width),
+  }).toString()}`;
+}
+
+/** The picture the sheet draws at that position: the first is the hero, the rest the strip. */
+function widthAt(at: number): number {
+  return at === 0 ? HERO_WIDTH : STRIP_WIDTH;
+}
+
 const STARS = [1, 2, 3, 4, 5] as const;
 
 const COUNT = new Intl.NumberFormat("en-AU");
@@ -116,6 +138,13 @@ function Review({ review }: { readonly review: PlaceReview }) {
  *
  * Asked for when opened, never before. It is the dearest question the place
  * provider answers, and most stops are never opened.
+ *
+ * Shown whole or not yet. The words arrive before the pictures, and drawn as
+ * they came the sheet was a name, then a paragraph, then a photograph pushing
+ * the paragraph down, then the strip filling in one square at a time. So the
+ * pictures are fetched before any of it is drawn, and until they have all
+ * answered the sheet says only that it is looking. The route keeps them for a
+ * day, so the fetch that waited is the fetch the picture is then drawn from.
  */
 export function PlaceSheet({ slug, place, onClose }: PlaceSheetProps) {
   /**
@@ -128,11 +157,20 @@ export function PlaceSheet({ slug, place, onClose }: PlaceSheetProps) {
       ? { status: "refused", sentence: "Nothing more is known about this place." }
       : { status: "asking" },
   );
+  /** Whether every picture the card names has answered, one way or the other. */
+  const [pictured, setPictured] = useState(false);
   const closeButton = useRef<HTMLButtonElement | null>(null);
 
+  const ready =
+    asked.status === "refused" ||
+    (asked.status === "answered" && (asked.card.photos.length === 0 || pictured));
+
+  // Focused when the sheet opens, and again when it is drawn in full, because
+  // the button in the corner of the finished sheet is a different element from
+  // the one beside the line that said it was looking.
   useEffect(() => {
     closeButton.current?.focus();
-  }, []);
+  }, [ready]);
 
   useEffect(() => {
     if (place.providerPlaceId === null) {
@@ -179,16 +217,59 @@ export function PlaceSheet({ slug, place, onClose }: PlaceSheetProps) {
     };
   }, [slug, place.providerPlaceId]);
 
-  const photoUrl = (at: number, width: number): string =>
-    `/api/places/photo?${new URLSearchParams({
-      slug,
-      id: place.providerPlaceId ?? "",
-      at: String(at),
-      width: String(width),
-    }).toString()}`;
+  useEffect(() => {
+    if (asked.status !== "answered" || place.providerPlaceId === null) {
+      return;
+    }
+    const id = place.providerPlaceId;
+    const urls = asked.card.photos.map((_photo, at) => photoUrl(slug, id, at, widthAt(at)));
+    if (urls.length === 0) {
+      return;
+    }
+    let stale = false;
+    const settle = (): void => {
+      if (!stale) {
+        setPictured(true);
+      }
+    };
+    // A picture that fails is as settled as one that loads: the sheet has
+    // nothing more to wait for either way, and the img draws its alt text.
+    const answered = urls.map(
+      (url) =>
+        new Promise<void>((resolve) => {
+          const picture = new Image();
+          picture.onload = () => {
+            resolve();
+          };
+          picture.onerror = () => {
+            resolve();
+          };
+          picture.src = url;
+        }),
+    );
+    void Promise.all(answered).then(settle);
+    const ceiling = setTimeout(settle, PICTURES_WAIT_MS);
+    return () => {
+      stale = true;
+      clearTimeout(ceiling);
+    };
+  }, [asked, slug, place.providerPlaceId]);
 
   const card = asked.status === "answered" ? asked.card : null;
   const hero = card?.photos[0];
+  const id = place.providerPlaceId ?? "";
+
+  const close = (
+    <button
+      ref={closeButton}
+      type="button"
+      onClick={onClose}
+      aria-label="Close"
+      className="absolute top-3 right-3 grid h-9 w-9 place-items-center rounded-pill bg-paper-raised/90 text-ink shadow-sm hover:bg-paper-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+    >
+      <CloseIcon size={15} strokeWidth={2.75} />
+    </button>
+  );
 
   return (
     /*
@@ -204,8 +285,17 @@ export function PlaceSheet({ slug, place, onClose }: PlaceSheetProps) {
           onClose();
         }
       }}
+      aria-busy={!ready}
       className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-paper-raised lg:absolute lg:inset-auto lg:top-[22px] lg:bottom-[22px] lg:left-[22px] lg:z-30 lg:w-[400px] lg:rounded-panel lg:border lg:border-rule lg:shadow-md"
     >
+      {!ready ? (
+        <div className="relative flex flex-1 items-center justify-center px-5">
+          <p aria-live="polite" className="text-meta text-ink-muted">
+            {`Looking up ${place.name}.`}
+          </p>
+          {close}
+        </div>
+      ) : (
       <div className="scroll-quiet min-h-0 flex-1 overflow-y-auto">
         {/* The close sits over the picture when there is one, and over the
             name when there is not, so it is in the same corner either way. */}
@@ -218,22 +308,14 @@ export function PlaceSheet({ slug, place, onClose }: PlaceSheetProps) {
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={photoUrl(0, HERO_WIDTH)}
+              src={photoUrl(slug, id, 0, HERO_WIDTH)}
               alt={`${place.name}${hero.by === null ? "" : `, photographed by ${hero.by}`}`}
               width={hero.width}
               height={hero.height}
               className="aspect-[16/10] w-full object-cover"
             />
           )}
-          <button
-            ref={closeButton}
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            className="absolute top-3 right-3 grid h-9 w-9 place-items-center rounded-pill bg-paper-raised/90 text-ink shadow-sm hover:bg-paper-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
-          >
-            <CloseIcon size={15} strokeWidth={2.75} />
-          </button>
+          {close}
         </div>
 
         <div className="flex flex-col gap-4 px-5 pt-4 pb-6">
@@ -274,9 +356,6 @@ export function PlaceSheet({ slug, place, onClose }: PlaceSheetProps) {
             )}
           </div>
 
-          {asked.status === "asking" ? (
-            <p className="text-meta text-ink-muted">{`Looking up ${place.name}.`}</p>
-          ) : null}
           {asked.status === "refused" ? (
             <p className="text-meta text-ink-muted">{asked.sentence}</p>
           ) : null}
@@ -291,12 +370,11 @@ export function PlaceSheet({ slug, place, onClose }: PlaceSheetProps) {
                 <li key={photo.name} className="shrink-0">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={photoUrl(index + 1, STRIP_WIDTH)}
+                    src={photoUrl(slug, id, index + 1, STRIP_WIDTH)}
                     alt={photo.by === null ? "" : `Photographed by ${photo.by}`}
                     title={photo.by === null ? undefined : `Photo by ${photo.by}`}
                     width={photo.width}
                     height={photo.height}
-                    loading="lazy"
                     className="h-[88px] w-[132px] rounded-chip object-cover"
                   />
                 </li>
@@ -357,6 +435,7 @@ export function PlaceSheet({ slug, place, onClose }: PlaceSheetProps) {
           )}
         </div>
       </div>
+      )}
     </section>
   );
 }

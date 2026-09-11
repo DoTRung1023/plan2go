@@ -8,7 +8,7 @@ import type { StopId } from "@/core/model/stop";
 import type { ComputedDay, ComputedStop } from "@/core/time/compute-day";
 import { formatClock } from "@/core/time/minutes";
 import { weekdayOf } from "@/core/time/zoned";
-import { CloseIcon, FlagIcon, HomeIcon, PencilIcon, PhotosIcon } from "@/ui/icons";
+import { CloseIcon, FlagIcon, HomeIcon, PencilIcon } from "@/ui/icons";
 import type { PlannedDay } from "./compute-trip";
 import type { DayActions } from "./day-actions";
 import { EmptyDay } from "./empty-day";
@@ -16,7 +16,7 @@ import { EndpointPicker } from "./endpoint-picker";
 import { formatDayDate } from "./format-day-date";
 import { formatOpeningHours } from "./format-opening-hours";
 import { LegRow } from "./leg-row";
-import { ABOUT_PLACE, StopCard, TOOL } from "./stop-card";
+import { AboutPlaceButton, StopCard, TOOL } from "./stop-card";
 
 /**
  * One end of one day, said well enough to be found again after the trip has
@@ -184,25 +184,20 @@ function Anchor({
           <p className="mt-[3px] text-meta text-ink-faint">
             {endpoint.place.address ?? fallback}
           </p>
-          {/* The same question a stop card asks, in the same words: where the
-              day starts is somewhere the traveller is going too. */}
-          <button type="button" onClick={onOpen} className={`mt-[7px] ${ABOUT_PLACE}`}>
-            <PhotosIcon size={12} strokeWidth={2.5} className="shrink-0" />
-            About this place
-          </button>
         </div>
 
         {/* The time, and under it what can be done to this end of the day:
-            the same column a stop card keeps at its top right. */}
+            the same column a stop card keeps at its top right, with the same
+            glyph first. Where the day starts is somewhere the traveller is
+            going too, so anyone reading can open it. */}
         <div className="flex flex-none flex-col items-end gap-[3px]">
           <p className="font-display text-time whitespace-nowrap text-terracotta-700 tabular-nums">
             {time ?? "Time not known"}
           </p>
-          {controls === null ? null : (
-            <span className="-mr-1 flex items-center opacity-55 group-hover:opacity-100 focus-within:opacity-100">
-              {controls}
-            </span>
-          )}
+          <span className="-mr-1 flex items-center opacity-55 group-hover:opacity-100 focus-within:opacity-100">
+            <AboutPlaceButton name={endpoint.place.name} onOpen={onOpen} />
+            {controls}
+          </span>
         </div>
       </div>
     </div>
