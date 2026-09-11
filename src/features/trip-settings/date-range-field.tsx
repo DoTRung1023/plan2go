@@ -444,7 +444,7 @@ export function DateRangeField({
           role="dialog"
           aria-label={`Choose the ${label.toLowerCase()}`}
           style={{ left: shift }}
-          className="absolute top-full z-30 mt-3 w-[min(600px,calc(100vw-2rem))] rounded-card border border-rule bg-paper-raised px-5 pt-4 pb-5 shadow-md"
+          className="absolute top-full z-30 mt-3 w-[min(600px,calc(100vw-2rem))] rounded-card border border-rule bg-paper-raised px-5 pt-4 pb-2 shadow-md"
         >
           {/* The line over the months: which click comes next, and a step of
               one month at either end of it. */}
@@ -598,8 +598,11 @@ export function DateRangeField({
             })}
           </div>
 
+          {/* The panel's own bottom padding is slight, because the last row of
+              days already carries room under its numerals. A button does not,
+              so the footer brings its own. */}
           {footer === undefined || footer === null ? null : (
-            <div className="mt-3 border-t border-rule pt-3">{footer}</div>
+            <div className="mt-3 border-t border-rule pt-3 pb-3">{footer}</div>
           )}
         </div>
       ) : null}
