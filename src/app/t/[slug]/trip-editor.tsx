@@ -166,6 +166,16 @@ export function TripEditor({
    */
   const [opened, setOpened] = useState<Opened | null>(null);
   /**
+   * How many times something has been opened, counting a second ask for the
+   * same thing. The sheet is one instance for as long as it is on one thing,
+   * and it can be put aside; asked for again, it has to know to come back.
+   */
+  const [openings, setOpenings] = useState(0);
+  const open = (what: Opened): void => {
+    setOpened(what);
+    setOpenings((count) => count + 1);
+  };
+  /**
    * Whether the export dialog is open. While it is, its preview is what the
    * printer gets; while it is not, the page keeps the open day as a sheet for
    * the browser's own print command, so the two come out the same way.
@@ -207,7 +217,7 @@ export function TripEditor({
    */
   const openedPlace = opened === null ? null : placeOpened(days, opened);
   const openStop = (stopId: string): void => {
-    setOpened({ kind: "stop", stopId });
+    open({ kind: "stop", stopId });
   };
 
   const legPaths = useMemo(
@@ -250,7 +260,7 @@ export function TripEditor({
                 // there, is known here.
                 const at = selected.plan[which];
                 if (at !== null) {
-                  setOpened({
+                  open({
                     kind: "endpoint",
                     dayId: selected.plan.id,
                     which,
@@ -328,7 +338,7 @@ export function TripEditor({
           onHoverStop={setHoveredStopId}
           onOpenStop={openStop}
           onOpenEndpoint={(endpoint) => {
-            setOpened({ kind: "endpoint", ...endpoint });
+            open({ kind: "endpoint", ...endpoint });
           }}
           hoveredLegIndex={hoveredLegIndex}
           onHoverLeg={setHoveredLegIndex}
@@ -493,6 +503,7 @@ export function TripEditor({
           key={keyOf(opened)}
           slug={slug}
           place={openedPlace}
+          askedFor={openings}
           onClose={() => {
             setOpened(null);
           }}

@@ -3,7 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import type { Place, PlaceCard, PlaceReview } from "@/core/model/place";
-import { ChevronLeftIcon, CloseIcon, GlobeIcon, PhoneIcon, PinIcon, StarIcon } from "@/ui/icons";
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  CloseIcon,
+  GlobeIcon,
+  PhoneIcon,
+  PinIcon,
+  StarIcon,
+} from "@/ui/icons";
 import { PhotoViewer } from "./photo-viewer";
 
 const cardSchema = z.object({
@@ -84,6 +92,12 @@ type Asked =
 interface PlaceSheetProps {
   readonly slug: string;
   readonly place: Place;
+  /**
+   * Goes up each time this place is asked for, a second time included. A
+   * sheet put aside and asked for again comes back, and this is how it hears
+   * the ask: the thing it is open on has not changed, so nothing else does.
+   */
+  readonly askedFor: number;
   readonly onClose: () => void;
 }
 
@@ -159,7 +173,7 @@ function Review({ review }: { readonly review: PlaceReview }) {
  * answered the sheet says only that it is looking. The route keeps them for a
  * day, so the fetch that waited is the fetch the picture is then drawn from.
  */
-export function PlaceSheet({ slug, place, onClose }: PlaceSheetProps) {
+export function PlaceSheet({ slug, place, askedFor, onClose }: PlaceSheetProps) {
   /**
    * Settled at mount for a place the provider never knew, which is a pin
    * somebody dropped. The sheet is keyed by the stop it opened from, so a
@@ -174,7 +188,24 @@ export function PlaceSheet({ slug, place, onClose }: PlaceSheetProps) {
   const [pictured, setPictured] = useState(false);
   /** Which picture is open across the window, counted from zero, or none. */
   const [viewing, setViewing] = useState<number | null>(null);
+  /**
+   * Tucked away to the left, with a tab on the edge of the window to bring
+   * it back. Not closed: the map underneath is the reason to put the sheet
+   * aside, and the sheet is still what it was when it comes back, scrolled
+   * to where it was and with every picture already here.
+   */
+  const [collapsed, setCollapsed] = useState(false);
+  /** The ask this sheet last answered, so a new one is told from a re-render. */
+  const [answeredAsk, setAnsweredAsk] = useState(askedFor);
   const sheet = useRef<HTMLElement | null>(null);
+  const expandTab = useRef<HTMLButtonElement | null>(null);
+
+  // Adjusted during the render that carries the new ask rather than in an
+  // effect, so the sheet is back in the same paint rather than one later.
+  if (answeredAsk !== askedFor) {
+    setAnsweredAsk(askedFor);
+    setCollapsed(false);
+  }
   /** The last picture that was open, so closing it puts focus back where it was pressed. */
   const lastViewed = useRef<number | null>(null);
 
@@ -186,10 +217,11 @@ export function PlaceSheet({ slug, place, onClose }: PlaceSheetProps) {
   // full: the way out of it is a different button on a phone and on a desk,
   // and the one on a phone is a different element before and after the
   // sheet fills in. The dialog is the one thing there throughout, and from
-  // it Escape closes and Tab reaches whichever button is showing.
+  // it Escape closes and Tab reaches whichever button is showing. Put aside,
+  // the tab that brings it back is what is left to stand on.
   useEffect(() => {
-    sheet.current?.focus();
-  }, [ready]);
+    (collapsed ? expandTab.current : sheet.current)?.focus();
+  }, [ready, collapsed]);
 
   // Closing the viewer puts focus back on the picture it was opened from,
   // which is where the person was before it took the whole window.
@@ -334,18 +366,29 @@ export function PlaceSheet({ slug, place, onClose }: PlaceSheetProps) {
          * outside its box; there the scroller under it does the clipping,
          * to the same corners.
          */
-        className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-paper-raised outline-none lg:absolute lg:inset-auto lg:top-[22px] lg:bottom-[22px] lg:left-[22px] lg:z-30 lg:w-[400px] lg:overflow-visible lg:rounded-panel lg:border lg:border-rule lg:shadow-md"
+        className={`fixed inset-0 z-50 flex flex-col overflow-hidden bg-paper-raised outline-none lg:absolute lg:inset-auto lg:top-[22px] lg:bottom-[22px] lg:left-[22px] lg:z-30 lg:w-[400px] lg:overflow-visible lg:rounded-panel lg:border lg:border-rule lg:shadow-md ${
+          /*
+           * Unseen rather than unmounted while it is put aside: hidden this
+           * way it keeps its place in the page, its scroll and its pictures,
+           * and is out of the way of focus and of a screen reader, where
+           * display none would let the scroll go and a re-render fetch the
+           * pictures again.
+           */
+          collapsed ? "invisible" : ""
+        }`}
       >
-        {/* The way out on a desk: a tab on the sheet's free edge, halfway
-            down, pointing the way the sheet goes. It is drawn in the sheet's
-            own paper with the sheet's own rule around it and none between
-            them, so it is part of the sheet rather than a button near it,
-            and it is there whatever the sheet is showing. */}
+        {/* On a desk the sheet is put aside rather than closed: a tab on its
+            free edge, halfway down, pointing the way it goes. It is drawn in
+            the sheet's own paper with the sheet's own rule around it and
+            none between them, so it is part of the sheet rather than a
+            button near it, and it is there whatever the sheet is showing. */}
         <button
           type="button"
-          onClick={onClose}
-          title="Close"
-          aria-label="Close"
+          onClick={() => {
+            setCollapsed(true);
+          }}
+          title="Put aside"
+          aria-label={`Put ${place.name} aside`}
           className="absolute top-1/2 left-full hidden h-[52px] w-[22px] -translate-y-1/2 place-items-center rounded-r-pill border border-l-0 border-rule bg-paper-raised text-ink-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:grid"
         >
           <ChevronLeftIcon size={14} strokeWidth={2.75} />
@@ -525,6 +568,28 @@ export function PlaceSheet({ slug, place, onClose }: PlaceSheetProps) {
         </div>
         )}
       </section>
+
+      {/* What is left when the sheet is put aside: the place's name on a tab
+          at the edge of the window, pointing the way the sheet comes back.
+          The name and not a glyph, because a chevron on its own is not one
+          of the three things this product lets stand alone, and because the
+          name says what is waiting there. Level with the tab that put it
+          aside, on the sheet's own paper, with the sheet's own shadow, since
+          it floats over the map as the sheet did. */}
+      {!collapsed ? null : (
+        <button
+          ref={expandTab}
+          type="button"
+          onClick={() => {
+            setCollapsed(false);
+          }}
+          aria-label={`Bring back ${place.name}`}
+          className="fixed top-1/2 left-0 z-50 flex max-w-[min(280px,70vw)] -translate-y-1/2 items-center gap-2 rounded-r-pill border border-l-0 border-rule bg-paper-raised py-[10px] pr-3 pl-4 text-small/none font-semibold text-ink shadow-md hover:text-terracotta-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:absolute lg:z-30"
+        >
+          <span className="truncate">{place.name}</span>
+          <ChevronRightIcon size={14} strokeWidth={2.75} className="shrink-0 text-ink-muted" />
+        </button>
+      )}
 
       {/* Beside the sheet rather than inside it, so the keys it answers to,
           Escape among them, are not also answered by the sheet under it. */}
