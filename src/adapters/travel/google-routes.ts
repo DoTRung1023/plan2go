@@ -24,8 +24,7 @@ const ROUTE_FIELDS =
  * the vehicles ridden are described. Nothing in them moves the request to a
  * dearer tier, and a walk or a drive has no vehicle to describe.
  */
-const TRANSIT_FIELDS =
-  "routes.legs.steps.travelMode,routes.legs.steps.staticDuration,routes.legs.steps.transitDetails";
+const TRANSIT_FIELDS = "routes.legs.steps.staticDuration,routes.legs.steps.transitDetails";
 
 const SECONDS_PER_MINUTE = 60;
 

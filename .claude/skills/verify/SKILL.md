@@ -43,6 +43,9 @@ It lands on `/t/<slug>/edit/<key>`. The key in the URL is the whole of the edit
 authority, there is no cookie. `/t/<slug>` on its own is the read only share view and
 has no search field.
 
+Every trip opened this way is a row in the shared database. Delete them when done with
+`db.trip.deleteMany({ where: { slug: { in: [...] } } })`, which cascades.
+
 ## The search field
 
 `input[role="combobox"][placeholder^="Add a place"]`. Its panel is `div.top-full`
@@ -75,5 +78,3 @@ for a screenshot.
   Google Maps" link. Rows cached before rides were asked for show only the link until
   the hourly transit expiry; `legCache.deleteMany({ mode: "TRANSIT" })` forces a fresh
   ask (one Routes call per transit leg viewed).
-- Test trips go in the shared Neon database. Delete them when done with
-  `db.trip.deleteMany({ where: { slug: { in: [...] } } })`, which cascades.

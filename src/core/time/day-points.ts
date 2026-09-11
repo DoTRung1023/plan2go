@@ -31,6 +31,33 @@ export function dayPoints(day: DayPlan): readonly DayPoint[] {
   return points;
 }
 
+/** A leg as the two points it runs between. */
+export interface LegPoints {
+  readonly from: DayPoint;
+  readonly to: DayPoint;
+}
+
+/**
+ * The legs of a day, one between each pair of consecutive points, in travel
+ * order. Everything that lists legs reads off this, so the order is decided
+ * once and a leg on screen, the request that answered it and the row that
+ * stores its mode all count the same way.
+ */
+export function legPoints(day: DayPlan): readonly LegPoints[] {
+  const points = dayPoints(day);
+  const legs: LegPoints[] = [];
+
+  for (let index = 1; index < points.length; index += 1) {
+    const from = points[index - 1];
+    const to = points[index];
+    if (from !== undefined && to !== undefined) {
+      legs.push({ from, to });
+    }
+  }
+
+  return legs;
+}
+
 /**
  * What a leg's mode is stored on. A stop owns the mode of the leg that arrives
  * at it, and the day owns the mode of the leg out to where it ends.
@@ -40,27 +67,13 @@ export type LegTarget =
   | { readonly kind: "day-end" };
 
 /**
- * One target per leg, in the same order as legRequestsFor and computeDay read
- * them, so a leg on screen can be traced back to the row that decides how it is
- * travelled without anyone counting points again.
+ * One target per leg, so a leg on screen can be traced back to the row that
+ * decides how it is travelled.
  */
 export function legTargets(day: DayPlan): readonly LegTarget[] {
-  const points = dayPoints(day);
-  const targets: LegTarget[] = [];
-
-  for (let index = 1; index < points.length; index += 1) {
-    const arrivedAt = points[index];
-    if (arrivedAt === undefined) {
-      continue;
-    }
-    targets.push(
-      arrivedAt.kind === "stop"
-        ? { kind: "stop", stopId: arrivedAt.stop.id }
-        : { kind: "day-end" },
-    );
-  }
-
-  return targets;
+  return legPoints(day).map(({ to }) =>
+    to.kind === "stop" ? { kind: "stop", stopId: to.stop.id } : { kind: "day-end" },
+  );
 }
 
 /** The two places a leg runs between. */
@@ -69,23 +82,9 @@ export interface LegEnds {
   readonly to: Place;
 }
 
-/**
- * The ends of every leg, in the same order as legTargets and legRequestsFor,
- * for anything that needs the places themselves rather than their positions.
- */
+/** One pair of places per leg, for anything that needs the places rather than their positions. */
 export function legEnds(day: DayPlan): readonly LegEnds[] {
-  const points = dayPoints(day);
-  const ends: LegEnds[] = [];
-
-  for (let index = 1; index < points.length; index += 1) {
-    const from = points[index - 1];
-    const to = points[index];
-    if (from !== undefined && to !== undefined) {
-      ends.push({ from: pointPlace(from), to: pointPlace(to) });
-    }
-  }
-
-  return ends;
+  return legPoints(day).map(({ from, to }) => ({ from: pointPlace(from), to: pointPlace(to) }));
 }
 
 /** What the traveller calls this point. Their own label wins over the place name. */

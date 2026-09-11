@@ -431,54 +431,54 @@ export function DayItinerary({
       ) : null}
 
       <div className={moving ? "opacity-55" : ""} aria-busy={moving}>
-      {shownStops.map((stop, index) => {
-        const leg = computed.legs[index + legOffset];
-        const planned = leg === undefined ? undefined : legs[leg.index];
-        const place = places.get(stop.stopId);
-        return (
-          <Fragment key={stop.stopId}>
-            {leg === undefined || planned === undefined ? null : (
-              <LegRow
-                leg={leg}
-                planned={planned}
-                conflicts={conflictsOnLeg(computed.conflicts, leg.index)}
-                hovered={hoveredLegIndex === leg.index}
-                onHover={onHoverLeg}
-                onChange={actions === null ? null : actions.changeLegMode}
+        {shownStops.map((stop, index) => {
+          const leg = computed.legs[index + legOffset];
+          const planned = leg === undefined ? undefined : legs[leg.index];
+          const place = places.get(stop.stopId);
+          return (
+            <Fragment key={stop.stopId}>
+              {leg === undefined || planned === undefined ? null : (
+                <LegRow
+                  leg={leg}
+                  planned={planned}
+                  conflicts={conflictsOnLeg(computed.conflicts, leg.index)}
+                  hovered={hoveredLegIndex === leg.index}
+                  onHover={onHoverLeg}
+                  onChange={actions === null ? null : actions.changeLegMode}
+                />
+              )}
+              <StopCard
+                position={index + 1}
+                hovered={hoveredStopId === stop.stopId}
+                onHover={onHoverStop}
+                index={index}
+                stop={stop}
+                address={place?.address ?? null}
+                note={notes.get(stop.stopId) ?? null}
+                openingHours={place === undefined ? null : hoursOn(place, day)}
+                conflicts={conflictsAtStop(computed.conflicts, stop.stopId)}
+                actions={actions}
+                dragging={dragIndex === index}
+                dragOver={overIndex === index}
+                onDragStart={setDragIndex}
+                onDragOver={setOverIndex}
+                onDrop={drop}
+                onDragEnd={clearDrag}
               />
-            )}
-            <StopCard
-              position={index + 1}
-              hovered={hoveredStopId === stop.stopId}
-              onHover={onHoverStop}
-              index={index}
-              stop={stop}
-              address={place?.address ?? null}
-              note={notes.get(stop.stopId) ?? null}
-              openingHours={place === undefined ? null : hoursOn(place, day)}
-              conflicts={conflictsAtStop(computed.conflicts, stop.stopId)}
-              actions={actions}
-              dragging={dragIndex === index}
-              dragOver={overIndex === index}
-              onDragStart={setDragIndex}
-              onDragOver={setOverIndex}
-              onDrop={drop}
-              onDragEnd={clearDrag}
-            />
-          </Fragment>
-        );
-      })}
+            </Fragment>
+          );
+        })}
 
-      {legToEnd === undefined || plannedToEnd === undefined ? null : (
-        <LegRow
-          leg={legToEnd}
-          planned={plannedToEnd}
-          conflicts={conflictsOnLeg(computed.conflicts, legToEnd.index)}
-          hovered={hoveredLegIndex === legToEnd.index}
-          onHover={onHoverLeg}
-          onChange={actions === null ? null : actions.changeLegMode}
-        />
-      )}
+        {legToEnd === undefined || plannedToEnd === undefined ? null : (
+          <LegRow
+            leg={legToEnd}
+            planned={plannedToEnd}
+            conflicts={conflictsOnLeg(computed.conflicts, legToEnd.index)}
+            hovered={hoveredLegIndex === legToEnd.index}
+            onHover={onHoverLeg}
+            onChange={actions === null ? null : actions.changeLegMode}
+          />
+        )}
       </div>
 
       {moving ? (

@@ -4,6 +4,9 @@ import { createEditKey, hashEditKey } from "../ownership/edit-key";
 import type { TripRepository } from "../repositories/trip-repository";
 import { DEFAULT_START_AT_MINUTES } from "./day-start";
 
+/** What a trip is called until the traveller names it. */
+export const UNTITLED = "Untitled trip";
+
 export interface NewTripRequest {
   /** What the traveller calls the trip. A trip is not one city. */
   readonly title: string;

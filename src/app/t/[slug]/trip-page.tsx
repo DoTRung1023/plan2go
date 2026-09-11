@@ -17,10 +17,8 @@ interface TripPageProps {
 
 /**
  * The trip itself, shared by both links so neither can drift from the other.
- *
- * Times come from the straight line provider until the Google Routes adapter
- * lands. The engine is given resolved legs either way, so nothing here changes
- * when the real one arrives.
+ * Whichever link it is, the trip was read by the page that owns the link, and
+ * this is where its legs are answered and its times worked out.
  */
 export async function TripPage({ trip, editKey }: TripPageProps) {
   const days = await computeTrip(trip, travelProvider());

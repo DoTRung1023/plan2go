@@ -13,7 +13,9 @@ describe("rideSentence", () => {
         stops: 21,
         durationMinutes: 38,
       }),
-    ).toBe("Tram GLNELG towards Glenelg · Rundle Mall to Stop 17 Moseley Square · 21 stops · 38 min");
+    ).toBe(
+      "Tram GLNELG towards Glenelg · Rundle Mall to Stop 17 Moseley Square · 21 stops · 38 min",
+    );
   });
 
   it("leaves out what the provider did not say rather than leaving a gap", () => {

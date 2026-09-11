@@ -83,7 +83,9 @@ function storedRides(value: unknown): readonly TransitRide[] | null {
  * Into the Json column. A null is written as one rather than left alone, so a
  * row refreshed with an answer that has no vehicles does not keep the old ones.
  */
-function ridesToJson(rides: readonly TransitRide[] | null): Prisma.InputJsonValue | typeof Prisma.DbNull {
+function ridesToJson(
+  rides: readonly TransitRide[] | null,
+): Prisma.InputJsonValue | typeof Prisma.DbNull {
   if (rides === null) {
     return Prisma.DbNull;
   }
