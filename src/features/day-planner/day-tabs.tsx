@@ -181,12 +181,14 @@ export function DayTabs({
             disabled={adding}
             title="Add a day"
             aria-label="Add a day to the end of this trip"
-            // As tall as a tab, 13px of text with 9px above and below it, so
-            // the row of days ends in a shape of the same height rather than
-            // one standing proud of it.
-            className="ml-[2px] grid h-[31px] w-[31px] shrink-0 place-items-center rounded-pill border-[1.5px] border-dashed border-rule-strong text-ink-faint hover:border-terracotta hover:text-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+            // Shorter than a tab and centred on the row. As tall as the pills
+            // it read as heavier than any of them: a circle fills its height
+            // where a word in a pill does not, and a dashed ring is louder
+            // than a filled one. Smaller, it is what it is, the way to one
+            // more day rather than a day.
+            className="ml-[2px] grid h-[26px] w-[26px] shrink-0 place-items-center rounded-pill border-[1.5px] border-dashed border-rule-strong text-ink-faint hover:border-terracotta hover:text-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
           >
-            <PlusIcon size={15} strokeWidth={2.75} />
+            <PlusIcon size={13} strokeWidth={2.75} />
           </button>
         )}
       </div>
