@@ -142,6 +142,7 @@ function travelFor(minutes: Readonly<Record<TravelMode, number>>): TravelProvide
           distanceMeters: 1000,
           source: "haversine",
           path: null,
+          rides: null,
         },
       }),
   };

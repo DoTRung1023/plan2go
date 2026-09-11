@@ -73,6 +73,7 @@ export function createHaversineTravelProvider(
           distanceMeters,
           source: "haversine",
           path: null,
+          rides: null,
         },
       });
     },

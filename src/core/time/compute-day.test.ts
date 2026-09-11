@@ -65,6 +65,7 @@ function leg(durationMinutes: number, mode: TravelMode = "walk"): LegResolution 
       distanceMeters: durationMinutes * 80,
       source: "haversine",
       path: null,
+      rides: null,
     },
   };
 }

@@ -61,3 +61,19 @@ for a screenshot.
   panel does not reopen. Blur first (click the map) before refocusing in a script.
 - Choosing a place hides the panel for about a second while it lands, then the panel
   closes. Refocus to see the list again.
+
+## Legs and drag
+
+- Playwright's `dragTo` does not fire the HTML5 drop here. Dispatch `dragstart` on the
+  card, `dragover` and `drop` on the target, `dragend` on the card, all with one
+  `DataTransfer` handle from `page.evaluateHandle(() => new DataTransfer())`.
+- A drop reorders on screen at once (`useOptimistic`) and shows "Working out the new
+  times." with `aria-busy` until the server answers; wait for that line to go before
+  reading times.
+- `button:has-text("Change")` index 0 is not a leg. Legs start at index 1.
+- A public transport leg lists its rides in `ol li` under the row and a "Live times in
+  Google Maps" link. Rows cached before rides were asked for show only the link until
+  the hourly transit expiry; `legCache.deleteMany({ mode: "TRANSIT" })` forces a fresh
+  ask (one Routes call per transit leg viewed).
+- Test trips go in the shared Neon database. Delete them when done with
+  `db.trip.deleteMany({ where: { slug: { in: [...] } } })`, which cascades.

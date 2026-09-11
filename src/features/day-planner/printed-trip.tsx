@@ -13,6 +13,7 @@ import { formatDayDate, formatDayLong } from "./format-day-date";
 import { formatDayTime } from "./format-day-time";
 import { formatDistance } from "./format-distance";
 import { MODE_WORDS } from "./leg-row";
+import { rideSentence } from "./transit-ride";
 import lockup from "../../../logo/logo-text.png";
 
 /** The stop card's grid, at the sheet's scale: a marker column and the rest. */
@@ -98,6 +99,8 @@ function LegLine({
     legDetails && leg.distanceMeters !== null ? formatDistance(leg.distanceMeters) : null,
     legDetails && crowFlies ? "crow flies" : null,
   ].filter((part) => part !== null);
+  /** What to catch, which is the one thing about a leg worth having on paper. */
+  const rides = legDetails && leg.mode === "transit" ? (chosen?.rides ?? []) : [];
 
   return (
     <div className="grid grid-cols-[34px_minmax(0,1fr)] gap-x-4">
@@ -112,6 +115,9 @@ function LegLine({
             {details.length === 0 ? "" : ` · ${details.join(" · ")}`}
           </p>
         )}
+        {rides.map((ride, index) => (
+          <p key={String(index)}>{rideSentence(ride)}</p>
+        ))}
         {conflictsOnLeg(day.computed.conflicts, leg.index).map((conflict, index) => (
           <p key={`${conflict.kind}-${String(index)}`} className="mt-1 text-ink">
             {conflictSentence(conflict)}

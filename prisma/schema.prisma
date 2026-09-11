@@ -160,11 +160,30 @@ model LegCache {
   /// The shape of the route as LatLng[], for drawing it on the map. Null when
   /// the provider does not know it, which is every straight line answer.
   path            Json?
+  /// The vehicles ridden as TransitRide[], for a public transport answer the
+  /// provider broke into them. Null for every other mode and for rows written
+  /// before this was asked for.
+  rides           Json?
 
   fetchedAt DateTime @default(now())
   expiresAt DateTime
 
   @@unique([originKey, destinationKey, mode, timeBucket])
+  @@index([expiresAt])
+}
+
+/// What a place is, kept so a city opened twice is looked up once. Only the
+/// front door reads this: a stop being added arrives with a search session that
+/// has to end in the provider's own details call.
+model PlaceDetailsCache {
+  providerPlaceId String @id
+
+  /// PlaceDetails as stored. Parsed with zod on the way out.
+  details Json
+
+  fetchedAt DateTime @default(now())
+  expiresAt DateTime
+
   @@index([expiresAt])
 }
 

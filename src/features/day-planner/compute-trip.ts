@@ -1,5 +1,5 @@
 import type { DayPlan } from "@/core/model/day";
-import type { LegResolution, TravelMode, TravelRequest } from "@/core/model/leg";
+import type { LegResolution, TransitRide, TravelMode, TravelRequest } from "@/core/model/leg";
 import { TRAVEL_MODES } from "@/core/model/leg";
 import type { LatLng } from "@/core/model/place";
 import type { Trip } from "@/core/model/trip";
@@ -7,8 +7,9 @@ import type { TravelProvider } from "@/core/ports/travel-provider";
 import type { ComputedDay } from "@/core/time/compute-day";
 import { computeDay } from "@/core/time/compute-day";
 import type { LegTarget } from "@/core/time/day-points";
-import { legTargets } from "@/core/time/day-points";
+import { legEnds, legTargets } from "@/core/time/day-points";
 import { legRequestsFor } from "@/core/time/leg-requests";
+import { directionsUrl } from "./directions-url";
 
 /** One way of covering a leg, as it is offered beside the others. */
 export interface LegOption {
@@ -17,6 +18,8 @@ export interface LegOption {
   readonly distanceMeters: number | null;
   /** The shape of the route, for the map. Null when the provider has none. */
   readonly path: readonly LatLng[] | null;
+  /** What is ridden, for public transport the provider broke into vehicles. */
+  readonly rides: readonly TransitRide[] | null;
 }
 
 /** A leg with every way of covering it, and the row that decides which is used. */
@@ -24,6 +27,14 @@ export interface PlannedLeg {
   readonly target: LegTarget;
   readonly chosen: TravelMode;
   readonly options: readonly LegOption[];
+  /**
+   * The same two places and the chosen way between them, handed to Google
+   * Maps. That is where the timetable lives: nothing here is asked for a
+   * departure time, so the live times are a click away rather than a guess.
+   * Null only for a leg whose ends could not be paired, which the day's own
+   * running order rules out.
+   */
+  readonly directions: string | null;
 }
 
 /** A day and its times, kept together so the two can never be paired wrongly. */
@@ -39,13 +50,14 @@ const UNRESOLVED: LegResolution = { status: "unresolved", reason: "not-requested
 
 function toOption(mode: TravelMode, resolution: LegResolution): LegOption {
   if (resolution.status === "unresolved") {
-    return { mode, durationMinutes: null, distanceMeters: null, path: null };
+    return { mode, durationMinutes: null, distanceMeters: null, path: null, rides: null };
   }
   return {
     mode,
     durationMinutes: resolution.estimate.durationMinutes,
     distanceMeters: resolution.estimate.distanceMeters,
     path: resolution.estimate.path,
+    rides: resolution.estimate.rides,
   };
 }
 
@@ -74,16 +86,19 @@ function estimateLeg(
 async function computeOneDay(plan: DayPlan, travel: TravelProvider): Promise<PlannedDay> {
   const requests = legRequestsFor(plan);
   const targets = legTargets(plan);
+  const ends = legEnds(plan);
   const answersPerLeg = await Promise.all(
     requests.map((request) => estimateLeg(request, travel)),
   );
 
   const legs = requests.map((request, index) => {
     const answers = answersPerLeg[index] ?? [];
+    const end = ends[index];
     return {
       target: targets[index] ?? { kind: "day-end" as const },
       chosen: request.mode,
       options: TRAVEL_MODES.map((mode, at) => toOption(mode, answers[at] ?? UNRESOLVED)),
+      directions: end === undefined ? null : directionsUrl(end.from, end.to, request.mode),
     };
   });
 

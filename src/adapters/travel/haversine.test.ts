@@ -109,6 +109,7 @@ describe("createHaversineTravelProvider", () => {
         distanceMeters: 0,
         source: "haversine",
         path: null,
+        rides: null,
       },
     });
   });

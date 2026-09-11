@@ -1,5 +1,11 @@
 import { z } from "zod";
-import type { LegResolution, TravelMode, TravelRequest } from "@/core/model/leg";
+import type {
+  LegResolution,
+  TransitRide,
+  TransitVehicle,
+  TravelMode,
+  TravelRequest,
+} from "@/core/model/leg";
 import type { TravelProvider } from "@/core/ports/travel-provider";
 import { wholeMinutes } from "@/core/time/minutes";
 import { decodePolyline } from "./polyline";
@@ -13,6 +19,14 @@ const COMPUTE_ROUTES_URL = "https://routes.googleapis.com/directions/v2:computeR
 const ROUTE_FIELDS =
   "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline";
 
+/**
+ * Asked for on public transport only: the steps of the route, which is where
+ * the vehicles ridden are described. Nothing in them moves the request to a
+ * dearer tier, and a walk or a drive has no vehicle to describe.
+ */
+const TRANSIT_FIELDS =
+  "routes.legs.steps.travelMode,routes.legs.steps.staticDuration,routes.legs.steps.transitDetails";
+
 const SECONDS_PER_MINUTE = 60;
 
 /** What each of our modes is called over there. */
@@ -25,11 +39,60 @@ const ROUTES_MODE: Readonly<Record<TravelMode, string>> = {
 /** Google returns a duration as seconds with an "s" after them. */
 const durationSchema = z.string().regex(/^\d+(\.\d+)?s$/);
 
+const stepSchema = z.object({
+  staticDuration: durationSchema.optional(),
+  transitDetails: z
+    .object({
+      headsign: z.string().optional(),
+      stopCount: z.number().int().nonnegative().optional(),
+      stopDetails: z
+        .object({
+          departureStop: z.object({ name: z.string().optional() }).optional(),
+          arrivalStop: z.object({ name: z.string().optional() }).optional(),
+        })
+        .optional(),
+      transitLine: z
+        .object({
+          name: z.string().optional(),
+          nameShort: z.string().optional(),
+          vehicle: z.object({ type: z.string().optional() }).optional(),
+        })
+        .optional(),
+    })
+    .optional(),
+});
+
+/** One step of a route as Google describes it. Exported for the mapping's test. */
+export type RouteStep = z.infer<typeof stepSchema>;
+
 const routeSchema = z.object({
   duration: durationSchema,
   distanceMeters: z.number().int().nonnegative().optional(),
   polyline: z.object({ encodedPolyline: z.string() }).optional(),
+  legs: z.array(z.object({ steps: z.array(stepSchema).optional() })).optional(),
 });
+
+/**
+ * Google's vehicle types, folded to the handful the product draws. Anything
+ * not listed is ridden all the same, so it is "other" rather than dropped.
+ */
+const VEHICLE: Readonly<Record<string, TransitVehicle>> = {
+  BUS: "bus",
+  INTERCITY_BUS: "bus",
+  TROLLEYBUS: "bus",
+  SHARE_TAXI: "bus",
+  TRAM: "tram",
+  CABLE_CAR: "tram",
+  COMMUTER_TRAIN: "train",
+  HEAVY_RAIL: "train",
+  HIGH_SPEED_TRAIN: "train",
+  LONG_DISTANCE_TRAIN: "train",
+  METRO_RAIL: "train",
+  MONORAIL: "train",
+  RAIL: "train",
+  SUBWAY: "train",
+  FERRY: "ferry",
+};
 
 /** No route at all comes back as a 200 with nothing in it. */
 const computeRoutesSchema = z.object({ routes: z.array(routeSchema).optional() });
@@ -41,6 +104,33 @@ export interface GoogleRoutesOptions {
 /** "1234s" to whole minutes, which is the only unit the engine has. */
 export function minutesFromDuration(duration: string): number {
   return wholeMinutes(Number.parseFloat(duration) / SECONDS_PER_MINUTE);
+}
+
+/**
+ * The vehicles ridden, out of the steps of a public transport route. The walks
+ * between them are left out: they are the way to the stop, and the total on
+ * the route already counts them.
+ */
+export function ridesFromSteps(steps: readonly RouteStep[]): readonly TransitRide[] {
+  const rides: TransitRide[] = [];
+  for (const step of steps) {
+    const transit = step.transitDetails;
+    if (transit === undefined) {
+      continue;
+    }
+    const line = transit.transitLine;
+    rides.push({
+      vehicle: VEHICLE[line?.vehicle?.type ?? ""] ?? "other",
+      line: line?.nameShort ?? line?.name ?? null,
+      headsign: transit.headsign ?? null,
+      boardAt: transit.stopDetails?.departureStop?.name ?? null,
+      alightAt: transit.stopDetails?.arrivalStop?.name ?? null,
+      stops: transit.stopCount ?? null,
+      durationMinutes:
+        step.staticDuration === undefined ? 0 : minutesFromDuration(step.staticDuration),
+    });
+  }
+  return rides;
 }
 
 /**
@@ -68,17 +158,17 @@ const UNAVAILABLE: LegResolution = {
  * stays true for longer than the minute it was written in.
  */
 export function createGoogleRoutesProvider(options: GoogleRoutesOptions): TravelProvider {
-  const headers = {
-    "Content-Type": "application/json",
-    "X-Goog-Api-Key": options.apiKey,
-    "X-Goog-FieldMask": ROUTE_FIELDS,
-  };
-
   return {
     name: "google-routes",
 
     async estimate(request: TravelRequest): Promise<LegResolution> {
       const travelMode = ROUTES_MODE[request.mode];
+      const transit = request.mode === "transit";
+      const headers = {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": options.apiKey,
+        "X-Goog-FieldMask": transit ? `${ROUTE_FIELDS},${TRANSIT_FIELDS}` : ROUTE_FIELDS,
+      };
 
       const body = {
         origin: {
@@ -134,6 +224,9 @@ export function createGoogleRoutesProvider(options: GoogleRoutesOptions): Travel
             route.polyline === undefined
               ? null
               : decodePolyline(route.polyline.encodedPolyline),
+          rides: transit
+            ? ridesFromSteps(route.legs?.flatMap((leg) => leg.steps ?? []) ?? [])
+            : null,
         },
       };
     },

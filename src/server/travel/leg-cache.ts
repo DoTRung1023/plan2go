@@ -1,5 +1,7 @@
+import { Prisma } from "@prisma/client";
 import { z } from "zod";
-import type { LegResolution, TravelMode, TravelRequest } from "@/core/model/leg";
+import type { LegResolution, TransitRide, TravelMode, TravelRequest } from "@/core/model/leg";
+import { TRANSIT_VEHICLES } from "@/core/model/leg";
 import type { LatLng } from "@/core/model/place";
 import type { TravelProvider } from "@/core/ports/travel-provider";
 import { db } from "../db";
@@ -59,6 +61,35 @@ function pathToJson(
   return path.map((point) => ({ lat: point.lat, lng: point.lng }));
 }
 
+/** The vehicles ridden as they are stored. Parsed on the way out, never trusted. */
+const ridesSchema = z.array(
+  z.object({
+    vehicle: z.enum(TRANSIT_VEHICLES),
+    line: z.string().nullable(),
+    headsign: z.string().nullable(),
+    boardAt: z.string().nullable(),
+    alightAt: z.string().nullable(),
+    stops: z.number().int().nullable(),
+    durationMinutes: z.number().int(),
+  }),
+);
+
+function storedRides(value: unknown): readonly TransitRide[] | null {
+  const parsed = ridesSchema.safeParse(value);
+  return parsed.success ? parsed.data : null;
+}
+
+/**
+ * Into the Json column. A null is written as one rather than left alone, so a
+ * row refreshed with an answer that has no vehicles does not keep the old ones.
+ */
+function ridesToJson(rides: readonly TransitRide[] | null): Prisma.InputJsonValue | typeof Prisma.DbNull {
+  if (rides === null) {
+    return Prisma.DbNull;
+  }
+  return rides.map((ride) => ({ ...ride }));
+}
+
 function keyFor(point: LatLng): string {
   return `${point.lat.toFixed(KEY_DECIMALS)},${point.lng.toFixed(KEY_DECIMALS)}`;
 }
@@ -109,6 +140,7 @@ export function withLegCache(inner: TravelProvider): TravelProvider {
             distanceMeters: cached.distanceMeters,
             source: cached.source === "google-routes" ? "google-routes" : "haversine",
             path: storedPath(cached.path),
+            rides: storedRides(cached.rides),
           },
         };
       }
@@ -128,6 +160,7 @@ export function withLegCache(inner: TravelProvider): TravelProvider {
         distanceMeters: answer.estimate.distanceMeters,
         source: answer.estimate.source,
         path: pathToJson(answer.estimate.path),
+        rides: ridesToJson(answer.estimate.rides),
         expiresAt: new Date(Date.now() + KEEP_FOR[request.mode]),
       };
       await db.legCache.upsert({ where, create: row, update: row });

@@ -1,11 +1,11 @@
 "use client";
 
-import { Fragment, useEffect, useRef, useState, useTransition } from "react";
+import { Fragment, useEffect, useOptimistic, useRef, useState, useTransition } from "react";
 import type { Conflict } from "@/core/model/conflict";
 import type { DayEndpoint, DayPlan } from "@/core/model/day";
 import type { LatLng, Place } from "@/core/model/place";
 import type { StopId } from "@/core/model/stop";
-import type { ComputedDay } from "@/core/time/compute-day";
+import type { ComputedDay, ComputedStop } from "@/core/time/compute-day";
 import { formatClock } from "@/core/time/minutes";
 import { weekdayOf } from "@/core/time/zoned";
 import { CloseIcon, FlagIcon, HomeIcon, PencilIcon } from "@/ui/icons";
@@ -42,6 +42,17 @@ interface DayItineraryProps {
 
 function conflictsAtStop(conflicts: readonly Conflict[], stopId: StopId): readonly Conflict[] {
   return conflicts.filter((conflict) => "stopId" in conflict && conflict.stopId === stopId);
+}
+
+/** The list with one entry carried from one place to another, the rest closing up. */
+function movedWithin<T>(list: readonly T[], from: number, to: number): readonly T[] {
+  const moved = list.slice();
+  const [taken] = moved.splice(from, 1);
+  if (taken === undefined) {
+    return list;
+  }
+  moved.splice(to, 0, taken);
+  return moved;
 }
 
 function conflictsOnLeg(conflicts: readonly Conflict[], legIndex: number): readonly Conflict[] {
@@ -360,6 +371,18 @@ export function DayItinerary({
   const [overIndex, setOverIndex] = useState<number | null>(null);
   const [moveError, setMoveError] = useState<string | null>(null);
   const [moving, startMoving] = useTransition();
+  /**
+   * The order as it was dropped, shown at once, while the server works out
+   * what the new order does to the times. The times on the cards are the old
+   * ones until then, so the whole list is drawn faded under a line saying so,
+   * which is what this product does instead of a skeleton. The real answer
+   * replaces it when it lands, or the old order comes back if it was refused.
+   */
+  const [shownStops, reorderShown] = useOptimistic(
+    computed.stops,
+    (stops: readonly ComputedStop[], move: { readonly from: number; readonly to: number }) =>
+      movedWithin(stops, move.from, move.to),
+  );
 
   const notes = new Map(day.stops.map((stop) => [stop.id, stop.note]));
   const places = new Map(day.stops.map((stop) => [stop.id, stop.place]));
@@ -378,10 +401,11 @@ export function DayItinerary({
     const from = dragIndex;
     clearDrag();
     const dragged = from === null ? undefined : computed.stops[from];
-    if (actions === null || moving || dragged === undefined || from === toIndex) {
+    if (actions === null || moving || from === null || dragged === undefined || from === toIndex) {
       return;
     }
     startMoving(async () => {
+      reorderShown({ from, to: toIndex });
       const outcome = await actions.moveStop({
         stopId: dragged.stopId,
         toPosition: toIndex,
@@ -406,7 +430,8 @@ export function DayItinerary({
         <EmptyDay dayName={formatDayDate(day.date)} />
       ) : null}
 
-      {computed.stops.map((stop, index) => {
+      <div className={moving ? "opacity-55" : ""} aria-busy={moving}>
+      {shownStops.map((stop, index) => {
         const leg = computed.legs[index + legOffset];
         const planned = leg === undefined ? undefined : legs[leg.index];
         const place = places.get(stop.stopId);
@@ -454,6 +479,11 @@ export function DayItinerary({
           onChange={actions === null ? null : actions.changeLegMode}
         />
       )}
+      </div>
+
+      {moving ? (
+        <p className="mt-2 px-[10px] text-micro text-ink-muted">Working out the new times.</p>
+      ) : null}
 
       <EndpointSlot
         which="end"

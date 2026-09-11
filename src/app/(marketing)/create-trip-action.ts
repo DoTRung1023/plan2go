@@ -5,8 +5,10 @@ import { redirect } from "next/navigation";
 import { createGooglePlacesProvider } from "@/adapters/places/google-places";
 import { createGoogleTimeZoneProvider } from "@/adapters/time-zone/google-time-zone";
 import { googleMapsApiKey } from "@/server/places/google-key";
+import { cityDetailsFor } from "@/server/places/place-details";
 import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
 import { UNTITLED } from "@/server/trips/blank-trip";
+import type { NewTripRequest } from "@/server/trips/create-trip";
 import { newTripInputSchema } from "@/server/trips/new-trip-input";
 import { openTrip } from "@/server/trips/open-trip";
 import { isSupportedTimeZone, openingTimeZone } from "@/server/trips/time-zones";
@@ -45,39 +47,45 @@ export async function createTripAction(
     return { error: "Place search is not switched on for this server." };
   }
 
+  const { cityPlaceId, ...rest } = parsed.data;
+  const asked = await headers();
+
   // The city is looked up here rather than trusted from the form, so the map
   // opens where the place actually is and the clock is the one kept there.
   // It does not name the trip: a trip is not one city, and the traveller names
   // it themselves in the planner.
-  const { cityPlaceId, ...rest } = parsed.data;
-  const places = createGooglePlacesProvider({ apiKey });
-  const city = await places.details(cityPlaceId, null);
-  if (city === null) {
-    return { error: "That city could not be found. Choose it from the list again." };
-  }
-
+  //
   // The clock the trip keeps is the city's, not the one the browser is sitting
   // in. The details answer names it, and only when it does not is a second,
   // slower call spent finding out. Where neither can, the request's own guess
   // is a better answer than refusing to open the trip.
-  const asked = await headers();
-  const zone =
-    city.timeZone !== null && isSupportedTimeZone(city.timeZone)
-      ? city.timeZone
-      : await createGoogleTimeZoneProvider({ apiKey }).lookup(city.position);
+  const lookedUp = async (): Promise<NewTripRequest | null> => {
+    const city = await cityDetailsFor(cityPlaceId, createGooglePlacesProvider({ apiKey }));
+    if (city === null) {
+      return null;
+    }
+    const zone =
+      city.timeZone !== null && isSupportedTimeZone(city.timeZone)
+        ? city.timeZone
+        : await createGoogleTimeZoneProvider({ apiKey }).lookup(city.position);
+    return {
+      ...rest,
+      title: UNTITLED,
+      timeZone: zone ?? openingTimeZone(asked),
+      centre: city.position,
+      cityName: city.name,
+    };
+  };
 
-  const opened = await openTrip(asked, prismaTripRepository, {
-    ...rest,
-    title: UNTITLED,
-    timeZone: zone ?? openingTimeZone(asked),
-    centre: city.position,
-    cityName: city.name,
-  });
+  const opened = await openTrip(asked, prismaTripRepository, lookedUp());
 
   if (opened.status === "too-many") {
     return {
       error: `Too many new trips have been started from this connection. Wait ${String(opened.retryAfterSeconds)} seconds and try again.`,
     };
+  }
+  if (opened.status === "nowhere") {
+    return { error: "That city could not be found. Choose it from the list again." };
   }
 
   // Straight to the edit link: this is the one moment the key exists in the

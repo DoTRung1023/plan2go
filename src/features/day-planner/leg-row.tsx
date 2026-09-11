@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import type { Conflict } from "@/core/model/conflict";
-import type { TravelMode } from "@/core/model/leg";
+import type { TransitRide, TravelMode } from "@/core/model/leg";
 import type { ComputedLeg } from "@/core/time/compute-day";
 import { formatDuration } from "@/core/time/minutes";
 import { CarIcon, TrainIcon, WalkIcon } from "@/ui/icons";
@@ -10,6 +10,7 @@ import type { LegOption, PlannedLeg } from "./compute-trip";
 import { ConflictNotice } from "./conflict-notice";
 import type { DayActions } from "./day-actions";
 import { formatDistance } from "./format-distance";
+import { rideSentence } from "./transit-ride";
 
 /** The mode in words, so the map's stroke pattern is never the only source. */
 export const MODE_WORDS: Readonly<Record<TravelMode, string>> = {
@@ -107,6 +108,53 @@ function Option({
 }
 
 /**
+ * What to catch, under a public transport leg, and the way to the timetable.
+ *
+ * One line per vehicle, in the order they are ridden, because "Public
+ * transport · 44 min" says how long and not how: the line to look for on the
+ * front of the tram and the stop to get off at are what a traveller standing
+ * at the stop actually needs. The walks between are not listed, since the
+ * total already counts them and the map draws them.
+ *
+ * No departure times, because none were asked for. The link is where they
+ * live: the same two places and the same way between them, opened in Google
+ * Maps with the timetable for the moment the traveller is actually leaving.
+ * It is there even when the vehicles are not known, which is every answer
+ * cached before they were asked for and every straight line guess.
+ */
+function TransitDetail({
+  rides,
+  directions,
+}: {
+  readonly rides: readonly TransitRide[] | null;
+  readonly directions: string | null;
+}) {
+  return (
+    <div className="mt-[3px] px-[10px]">
+      {rides === null || rides.length === 0 ? null : (
+        <ol className="flex flex-col gap-[3px]">
+          {rides.map((ride, index) => (
+            <li key={String(index)} className="text-micro text-ink-muted">
+              {rideSentence(ride)}
+            </li>
+          ))}
+        </ol>
+      )}
+      {directions === null ? null : (
+        <a
+          href={directions}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-[3px] inline-block rounded-pill text-micro font-semibold text-terracotta-700 hover:text-terracotta-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+        >
+          Live times in Google Maps
+        </a>
+      )}
+    </div>
+  );
+}
+
+/**
  * How you get from one stop to the next, on the thread that joins them.
  *
  * Closed, it is one line: the mode in words and an icon, and the duration,
@@ -172,6 +220,16 @@ export function LegRow({
    */
   const shown = planned.options.find((option) => option.mode === leg.mode);
   const crowFlies = covered && shown !== undefined && shown.path === null;
+
+  /**
+   * Outside the row's button rather than inside it, because the timetable is
+   * a link and a link cannot live in a button. It reads as part of the leg
+   * all the same: the same indent, directly under the one line.
+   */
+  const transit =
+    covered && leg.mode === "transit" ? (
+      <TransitDetail rides={shown?.rides ?? null} directions={planned.directions} />
+    ) : null;
 
   /**
    * How long and how far, as one phrase rather than as two facts of different
@@ -305,6 +363,8 @@ export function LegRow({
             </span>
           </button>
         )}
+
+        {transit}
 
         {conflicts.map((conflict, index) => (
           <div key={`${conflict.kind}-${String(index)}`} className="mt-2">

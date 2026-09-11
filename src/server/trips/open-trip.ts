@@ -1,10 +1,8 @@
 import { consumeRateLimit } from "../rate-limit/ip-rate-limit";
 import type { RateLimitPolicy } from "../rate-limit/window";
 import type { TripRepository } from "../repositories/trip-repository";
-import { blankTrip } from "./blank-trip";
 import type { NewTripRequest } from "./create-trip";
 import { createTrip } from "./create-trip";
-import { openingTimeZone } from "./time-zones";
 
 /**
  * Set against a script opening trips in a loop, not against a household. Only
@@ -23,7 +21,9 @@ export type TripOpened =
       /** For building the edit link. It is never readable from storage again. */
       readonly editKey: string;
     }
-  | { readonly status: "too-many"; readonly retryAfterSeconds: number };
+  | { readonly status: "too-many"; readonly retryAfterSeconds: number }
+  /** The place the trip was to be in could not be found, so there is no trip. */
+  | { readonly status: "nowhere" };
 
 /**
  * Opens a trip and hands back both halves of it: the slug the plain link is
@@ -37,22 +37,24 @@ export async function openTrip(
   headers: Headers,
   repository: TripRepository,
   /**
-   * What the traveller filled in on the way in, or nothing for a trip opened
-   * without asking them anything. Either way it comes through here, so the two
-   * share one budget and one place that hands out the edit key.
+   * What the traveller filled in on the way in, still being looked up: the
+   * city is a round trip to the place provider, and the budget is a round
+   * trip to our own database, and neither has to wait for the other. Null
+   * once it settles means the place could not be found.
    */
-  details: NewTripRequest | null = null,
+  details: Promise<NewTripRequest | null>,
 ): Promise<TripOpened> {
-  const limit = await consumeRateLimit(ROUTE, headers, POLICY);
+  const [limit, resolved] = await Promise.all([
+    consumeRateLimit(ROUTE, headers, POLICY),
+    details,
+  ]);
   if (!limit.allowed) {
     return { status: "too-many", retryAfterSeconds: limit.retryAfterSeconds };
   }
+  if (resolved === null) {
+    return { status: "nowhere" };
+  }
 
-  const timeZone = openingTimeZone(headers);
-  const { slug, editKey } = await createTrip(
-    // Nobody was asked where they were going, so the map opens on the world.
-    details ?? { ...blankTrip(timeZone), timeZone, centre: null, cityName: null },
-    repository,
-  );
+  const { slug, editKey } = await createTrip(resolved, repository);
   return { status: "opened", slug, editKey };
 }

@@ -1,6 +1,6 @@
 import type { DayEndpoint, DayPlan } from "../model/day";
 import type { TravelMode } from "../model/leg";
-import type { LatLng } from "../model/place";
+import type { LatLng, Place } from "../model/place";
 import type { Stop, StopId } from "../model/stop";
 
 /**
@@ -63,6 +63,31 @@ export function legTargets(day: DayPlan): readonly LegTarget[] {
   return targets;
 }
 
+/** The two places a leg runs between. */
+export interface LegEnds {
+  readonly from: Place;
+  readonly to: Place;
+}
+
+/**
+ * The ends of every leg, in the same order as legTargets and legRequestsFor,
+ * for anything that needs the places themselves rather than their positions.
+ */
+export function legEnds(day: DayPlan): readonly LegEnds[] {
+  const points = dayPoints(day);
+  const ends: LegEnds[] = [];
+
+  for (let index = 1; index < points.length; index += 1) {
+    const from = points[index - 1];
+    const to = points[index];
+    if (from !== undefined && to !== undefined) {
+      ends.push({ from: pointPlace(from), to: pointPlace(to) });
+    }
+  }
+
+  return ends;
+}
+
 /** What the traveller calls this point. Their own label wins over the place name. */
 export function pointName(point: DayPoint): string {
   if (point.kind === "stop") {
@@ -71,11 +96,12 @@ export function pointName(point: DayPoint): string {
   return point.endpoint.label ?? point.endpoint.place.name;
 }
 
+export function pointPlace(point: DayPoint): Place {
+  return point.kind === "stop" ? point.stop.place : point.endpoint.place;
+}
+
 export function pointPosition(point: DayPoint): LatLng {
-  if (point.kind === "stop") {
-    return point.stop.place.position;
-  }
-  return point.endpoint.place.position;
+  return pointPlace(point).position;
 }
 
 /**

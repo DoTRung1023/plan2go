@@ -11,6 +11,7 @@ function resolved(mode: TravelMode, durationMinutes: number): LegResolution {
       distanceMeters: 1000,
       source: "haversine",
       path: null,
+      rides: null,
     },
   };
 }

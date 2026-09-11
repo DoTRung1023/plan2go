@@ -25,6 +25,37 @@ export type TravelMode = (typeof TRAVEL_MODES)[number];
 /** Where an estimate came from, so the UI can say how trustworthy it is. */
 export type TravelSource = "haversine" | "google-routes";
 
+/**
+ * What is ridden on a public transport leg, folded to the handful the product
+ * has a word and a glyph for. Read off the list, like the modes, so storage
+ * can check a row against it.
+ */
+export const TRANSIT_VEHICLES = ["bus", "tram", "train", "ferry", "other"] as const;
+
+export type TransitVehicle = (typeof TRANSIT_VEHICLES)[number];
+
+/**
+ * One vehicle ridden on a public transport leg, boarding to alighting.
+ *
+ * The line is what is written on the front of the vehicle and on the stop, and
+ * the headsign is where it says it is going, which between them are how a
+ * traveller standing at a stop tells the right one from the others. No times:
+ * nothing here is asked for a departure time, so an answer is the service
+ * running when it was asked, and a time on it would be a promise nobody made.
+ */
+export interface TransitRide {
+  readonly vehicle: TransitVehicle;
+  /** "GLNELG", "190", "Seaford". Null when the provider names no line. */
+  readonly line: string | null;
+  readonly headsign: string | null;
+  readonly boardAt: string | null;
+  readonly alightAt: string | null;
+  /** Stops ridden through, counting the one alighted at. Null when unknown. */
+  readonly stops: number | null;
+  /** Whole minutes on board. */
+  readonly durationMinutes: number;
+}
+
 export interface TravelEstimate {
   readonly mode: TravelMode;
   /** Whole minutes. Providers round before returning. */
@@ -39,6 +70,12 @@ export interface TravelEstimate {
    * is drawn on a map.
    */
   readonly path: readonly LatLng[] | null;
+  /**
+   * What is ridden, in order, when the mode is public transport and the
+   * provider broke the journey into vehicles. Null for every other mode, and
+   * for a provider that only knows the total.
+   */
+  readonly rides: readonly TransitRide[] | null;
 }
 
 /** Why a leg could not be estimated, kept for the message shown to the user. */
