@@ -16,7 +16,7 @@ import { EndpointPicker } from "./endpoint-picker";
 import { formatDayDate } from "./format-day-date";
 import { formatOpeningHours } from "./format-opening-hours";
 import { LegRow } from "./leg-row";
-import { AboutPlaceButton, StopCard, TOOL } from "./stop-card";
+import { AboutPlaceButton, StopCard, TOOL, TOOL_GLYPH } from "./stop-card";
 
 /**
  * One end of one day, said well enough to be found again after the trip has
@@ -294,7 +294,7 @@ function EndpointSlot({
           aria-label={words.change}
           className={TOOL}
         >
-          <PencilIcon size={13} strokeWidth={2.75} />
+          <PencilIcon size={TOOL_GLYPH.pencil} strokeWidth={TOOL_GLYPH.stroke} />
         </button>
         <button
           type="button"
@@ -306,7 +306,7 @@ function EndpointSlot({
           aria-label={words.remove}
           className={TOOL}
         >
-          <CloseIcon size={13} strokeWidth={2.75} />
+          <CloseIcon size={TOOL_GLYPH.close} strokeWidth={TOOL_GLYPH.stroke} />
         </button>
       </>
     );

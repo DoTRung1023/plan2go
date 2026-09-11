@@ -45,10 +45,25 @@ export function AboutPlaceButton({
       aria-label={`About ${name}`}
       className={TOOL}
     >
-      <PhotosIcon size={13} strokeWidth={2.5} />
+      <PhotosIcon size={TOOL_GLYPH.photos} strokeWidth={TOOL_GLYPH.stroke} />
     </button>
   );
 }
+
+/**
+ * The glyphs on a tools row, each at the edge that brings it to the size of
+ * the others. They are drawn in a box of 24 and fill it differently: the X
+ * runs from 6 to 18, the photograph from 3 to 21, so at one edge the X was
+ * two thirds the size of the photograph beside it. Roughly nine pixels of
+ * glyph each, and one stroke for all of them.
+ */
+export const TOOL_GLYPH = {
+  stroke: 2.75,
+  photos: 12,
+  pencil: 13,
+  grip: 13,
+  close: 16,
+} as const;
 
 /** A quarter of an hour: the smallest amount of time worth naming on a day. */
 const STAY_STEP = 15;
@@ -329,7 +344,7 @@ export function StopCard({
                     aria-label={`Move ${stop.placeName} by dragging it`}
                     className={`${TOOL} cursor-grab active:cursor-grabbing`}
                   >
-                    <GripIcon size={13} />
+                    <GripIcon size={TOOL_GLYPH.grip} />
                   </button>
                   <button
                     type="button"
@@ -340,7 +355,7 @@ export function StopCard({
                     aria-label={`Remove ${stop.placeName} from this day`}
                     className={TOOL}
                   >
-                    <CloseIcon size={13} strokeWidth={2.75} />
+                    <CloseIcon size={TOOL_GLYPH.close} strokeWidth={TOOL_GLYPH.stroke} />
                   </button>
                 </>
               )}
