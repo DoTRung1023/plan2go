@@ -154,7 +154,7 @@ export function TripActions({
               close();
             }
           }}
-          className="absolute top-full right-0 z-50 mt-2 w-[min(340px,calc(100vw-2rem))] rounded-panel border border-rule bg-paper-raised p-4 text-left shadow-lg"
+          className="absolute top-full right-0 z-50 mt-2 w-[min(320px,calc(100vw-2rem))] rounded-panel border border-rule bg-paper-raised p-[14px] text-left shadow-lg"
         >
           {/* The question as a heading, at the step for a heading that is
               neither the trip's name nor a place, and under it the one thing
@@ -168,7 +168,7 @@ export function TripActions({
               different thing again. The same three numbers the dialog that
               shares the trip is built from. */}
           <p className="mt-[6px] text-small/none text-ink-muted">This cannot be undone.</p>
-          <div className="mt-3 flex justify-end gap-2">
+          <div className="mt-[10px] flex justify-end gap-2">
             <button type="button" ref={cancel} onClick={close} className={CANCEL}>
               Cancel
             </button>

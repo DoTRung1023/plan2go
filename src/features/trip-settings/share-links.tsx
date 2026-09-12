@@ -16,15 +16,28 @@ const COPY =
  */
 const LINK_PILL = "mt-[5px] flex items-center gap-1 rounded-pill bg-paper-sunken py-[3px] pr-[3px] pl-3";
 
+/**
+ * The field fills the height of the pill rather than the height of its own
+ * text. Padded to its words it came to twenty-two pixels, and a pointer
+ * target may not be under twenty-four; stretched, it is the twenty-five the
+ * Copy beside it already makes the pill, so the whole pill is the target and
+ * nothing grew to make it one.
+ */
 const LINK_FIELD =
-  "min-w-0 flex-1 truncate bg-transparent py-[3px] text-small/none text-ink-muted outline-none focus-visible:rounded-[4px] focus-visible:outline-2 focus-visible:outline-offset-[5px] focus-visible:outline-terracotta";
+  "min-w-0 flex-1 self-stretch truncate bg-transparent text-small/none text-ink-muted outline-none focus-visible:rounded-[4px] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta";
 
 /**
  * Which link, over its pill: the interface's own tier, in bold, as a label
- * over a value. Five above the pill it names, because the two are one thing;
- * twelve above the label, because the next link is another.
+ * over a value.
+ *
+ * Both dialogs that open off the trip menu are built from three numbers and
+ * no others: five between a label and the control it names, because the two
+ * are one thing; ten between one block and the next; fourteen around the
+ * whole panel. Below that the room around a control starts coming out of the
+ * control, and the Copy beside each link is already within a pixel of the
+ * smallest a pointer target may be.
  */
-const LABEL = "mt-3 text-small/none font-semibold text-ink";
+const LABEL = "mt-[10px] text-small/none font-semibold text-ink";
 
 /** Long enough to read, short enough that the panel is not left saying it. */
 const COPIED_MS = 2000;
@@ -168,7 +181,7 @@ export function ShareLinks({ slug, editKey }: ShareLinksProps) {
               close();
             }
           }}
-          className="absolute top-full right-0 z-50 mt-2 w-[min(340px,calc(100vw-2rem))] rounded-panel border border-rule bg-paper-raised p-4 text-left shadow-lg"
+          className="absolute top-full right-0 z-50 mt-2 w-[min(320px,calc(100vw-2rem))] rounded-panel border border-rule bg-paper-raised p-[14px] text-left shadow-lg"
         >
           {/* Named the way the dialog that deletes the trip is named and set
               in the same panel, heading and tier, with the way out across
