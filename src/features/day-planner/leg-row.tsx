@@ -133,12 +133,6 @@ function Option({
           {formatDistance(option.distanceMeters)}
         </span>
       )}
-      {/* Numbers but no shape to the route: nobody could tell us the way, so
-          this is the line between the two ends at an assumed speed. Said here
-          because the map draws that line the same as any other. */}
-      {unavailable || option.path !== null ? null : (
-        <span className="text-micro/none text-ink-faint">Crow flies</span>
-      )}
     </button>
   );
 }
@@ -249,13 +243,8 @@ export function LegRow({
   const covered = leg.durationMinutes !== null;
   const anyWay = planned.options.some((option) => option.durationMinutes !== null);
 
-  /**
-   * The way being used, as it was answered. Numbers but no shape to the route
-   * means nobody could tell us the way, so the row says so where the numbers
-   * are read rather than only inside the panel nobody has opened.
-   */
+  /** The way being used, as it was answered. */
   const shown = planned.options.find((option) => option.mode === leg.mode);
-  const crowFlies = covered && shown !== undefined && shown.path === null;
 
   /**
    * Outside the row's button rather than inside it, because the timetable is
@@ -266,18 +255,6 @@ export function LegRow({
     covered && leg.mode === "transit" ? (
       <TransitDetail rides={shown?.rides ?? null} directions={planned.directions} />
     ) : null;
-
-  /**
-   * How far, and whether that is a guess, as one quiet phrase after the time.
-   * The time stands apart from it in the display face, because it is what the
-   * day is built out of and the one number worth reading the row for.
-   */
-  const aside = [
-    leg.distanceMeters === null ? null : formatDistance(leg.distanceMeters),
-    crowFlies ? "crow flies" : null,
-  ]
-    .filter((part) => part !== null)
-    .join(" · ");
 
   const summary = covered ? (
     <>
@@ -292,12 +269,15 @@ export function LegRow({
       <span className="text-small/none font-semibold whitespace-nowrap text-ink">
         {MODE_WORDS[leg.mode]}
       </span>
+      {/* The time stands apart in the display face, because it is what the
+          day is built out of and the one number worth reading the row for.
+          How far follows it quietly. */}
       <span className="font-display text-time whitespace-nowrap text-ink tabular-nums">
         {formatDuration(leg.durationMinutes ?? 0)}
       </span>
-      {aside === "" ? null : (
+      {leg.distanceMeters === null ? null : (
         <span className="text-meta/none whitespace-nowrap text-ink-muted tabular-nums">
-          {aside}
+          {formatDistance(leg.distanceMeters)}
         </span>
       )}
     </>

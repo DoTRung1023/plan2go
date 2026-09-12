@@ -94,11 +94,8 @@ function LegLine({
     return null;
   }
   const chosen = planned.options.find((option) => option.mode === planned.chosen);
-  const crowFlies = leg.durationMinutes !== null && chosen !== undefined && chosen.path === null;
-  const details = [
-    legDetails && leg.distanceMeters !== null ? formatDistance(leg.distanceMeters) : null,
-    legDetails && crowFlies ? "crow flies" : null,
-  ].filter((part) => part !== null);
+  const distance =
+    legDetails && leg.distanceMeters !== null ? formatDistance(leg.distanceMeters) : null;
   /** What to catch, which is the one thing about a leg worth having on paper. */
   const rides = legDetails && leg.mode === "transit" ? (chosen?.rides ?? []) : [];
 
@@ -112,7 +109,7 @@ function LegLine({
           <p>
             <span className="font-semibold text-ink">{MODE_WORDS[leg.mode]}</span>
             {` · ${formatDuration(leg.durationMinutes)}`}
-            {details.length === 0 ? "" : ` · ${details.join(" · ")}`}
+            {distance === null ? "" : ` · ${distance}`}
           </p>
         )}
         {rides.map((ride, index) => (

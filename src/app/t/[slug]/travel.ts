@@ -43,7 +43,7 @@ function withStraightLineFallback(
  * Google answers all three ways of getting somewhere, and says so when there is
  * no route: there is no driving to an island and no train where there is no
  * line. Where it says so, the straight line answers instead, carrying its own
- * source and no shape, which is how the list knows to call it a crow flies.
+ * source and no shape, so the map draws it as the line between the two ends.
  *
  * Without a key there is nothing to call, so the straight line provider answers
  * everything and the planner still works. Every paid answer goes through the
