@@ -444,6 +444,11 @@ thing on the page.
 A footer on every page carries the trip title and the date of the day. The share link
 is printed once, in the footer of the first page.
 
+Saving the sheets as a PDF is what the browser's own print window is for, and the name
+it offers comes from the document's title, so the document is renamed for as long as
+that window is open: the trip, and which of its days are in the file. Named back the
+moment it closes, because the tab is not the file.
+
 ## Banned in this product
 
 Skeleton shimmer. While travel times are resolving, show the last known value, or a

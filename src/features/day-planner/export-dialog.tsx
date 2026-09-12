@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { CloseIcon } from "@/ui/icons";
 import type { PlannedDay } from "./compute-trip";
 import type { ExportRequest } from "./export-request";
 import { exportRequestKey } from "./export-request";
 import { formatDayTab } from "./format-day-date";
+import { exportFileName } from "./export-name";
 import { PrintedTrip } from "./printed-trip";
 import "./export-dialog.css";
 
@@ -112,6 +113,8 @@ export function ExportDialog({
   const [readyFor, setReadyFor] = useState<string | null>(null);
   /** Export was asked for and is waiting on the sheets, or on the print window. */
   const [printing, setPrinting] = useState(false);
+  /** The document's own title, held while the print window borrows it. */
+  const wasCalled = useRef<string | null>(null);
 
   const printable = days.filter((day) => day.plan.stops.length > 0);
   const picked = printable.filter((day) => chosen.has(day.plan.id));
@@ -125,6 +128,28 @@ export function ExportDialog({
   };
   const requestKey = exportRequestKey(request);
   const ready = readyFor === requestKey;
+
+  /**
+   * What the print window will offer to save the file as. The days are
+   * numbered from the whole trip rather than from the days that can be
+   * printed, so an empty day between two full ones does not shift the
+   * numbers away from the ones the tabs show.
+   */
+  const fileName = exportFileName({
+    title,
+    cityName,
+    dayNumbers: days
+      .map((day, at) => (chosen.has(day.plan.id) ? at + 1 : null))
+      .filter((at): at is number => at !== null),
+    available: printable.length,
+  });
+
+  const restoreTitle = useCallback((): void => {
+    if (wasCalled.current !== null) {
+      document.title = wasCalled.current;
+      wasCalled.current = null;
+    }
+  }, []);
 
   /** Starts on the way out, so the keyboard lands on the way out too. */
   useEffect(() => {
@@ -149,23 +174,40 @@ export function ExportDialog({
     };
   }, []);
 
-  /** Prints once the sheets asked for are whole, and not before. */
+  /**
+   * Prints once the sheets asked for are whole, and not before.
+   *
+   * The document is renamed for as long as the print window is open, because
+   * that is where the name it offers to save the file under comes from. Every
+   * page here is called plan2go, so a trip saved as a PDF arrived in the
+   * downloads folder under that name and the next one after it as a
+   * duplicate. Put back the moment the window closes: the tab is not the file.
+   */
   useEffect(() => {
-    if (printing && ready) {
-      window.print();
+    if (!printing || !ready) {
+      return;
     }
-  }, [printing, ready]);
+    wasCalled.current = document.title;
+    document.title = fileName;
+    window.print();
+    // Safari and Firefox return from print() with the window already closed,
+    // so afterprint may have been and gone. Named back either way, and the
+    // handler below finds nothing left to do.
+    restoreTitle();
+  }, [printing, ready, fileName, restoreTitle]);
 
   /** However the print window closed, the export is over. */
   useEffect(() => {
     const done = (): void => {
+      restoreTitle();
       setPrinting(false);
     };
     window.addEventListener("afterprint", done);
     return () => {
       window.removeEventListener("afterprint", done);
+      restoreTitle();
     };
-  }, []);
+  }, [restoreTitle]);
 
   const toggleDay = (id: string): void => {
     const next = new Set(chosen);
