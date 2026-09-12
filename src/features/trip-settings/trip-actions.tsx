@@ -162,7 +162,7 @@ export function TripActions({
               The answers sit at the right, the way out first and the deed
               last. The same panel, heading and tier as the dialog that
               shares the trip, so the two read as one kind of thing. */}
-          <p className="font-display text-lead text-ink">Delete this trip?</p>
+          <p className="font-display text-place text-ink">Delete this trip?</p>
           {/* Six under the question, because it finishes the question rather
               than starting anything; twelve over the answers, which are a
               different thing again. The same three numbers the dialog that

@@ -12,6 +12,39 @@ import type { DayActions } from "./day-actions";
 import { formatDistance } from "./format-distance";
 import { rideSentence } from "./transit-ride";
 
+/**
+ * The unit beside a number, set quieter and smaller than it.
+ *
+ * "12 min" and "54 min" are read against each other across three tiles, and
+ * what differs is the number: the unit is the same three letters every time,
+ * taking up as much of the line as the thing actually being compared. Sized
+ * in em rather than pixels, so one rule serves the duration and the distance
+ * under it without either being told the other's size.
+ */
+const UNIT = "text-[0.76em] font-medium text-ink-muted";
+
+/**
+ * A measurement with its units drawn back. Split on the spaces the formatters
+ * put in, so "1 hr 40 min" quietens both of its units, and a value with no
+ * digits in it at all is a word rather than a measurement and is left alone.
+ */
+function Measured({ value }: { readonly value: string }) {
+  if (!/\d/.test(value)) {
+    return value;
+  }
+  return value
+    .split(/(\s+)/)
+    .map((part, at) =>
+      /^\d/.test(part) || part.trim() === "" ? (
+        part
+      ) : (
+        <span key={`${part}-${String(at)}`} className={UNIT}>
+          {part}
+        </span>
+      ),
+    );
+}
+
 /** The mode in words, so the map's stroke pattern is never the only source. */
 export const MODE_WORDS: Readonly<Record<TravelMode, string>> = {
   walk: "Walk",
@@ -103,10 +136,14 @@ function Option({
         {MODE_WORDS[option.mode]}
       </span>
       <span className="font-display text-place/none text-ink tabular-nums [overflow-wrap:anywhere]">
-        {unavailable ? "Unavailable" : formatDuration(option.durationMinutes ?? 0)}
+        <Measured
+          value={unavailable ? "Unavailable" : formatDuration(option.durationMinutes ?? 0)}
+        />
       </span>
       <span className="text-meta/none text-ink-muted tabular-nums">
-        {option.distanceMeters === null ? "" : formatDistance(option.distanceMeters)}
+        {option.distanceMeters === null ? null : (
+          <Measured value={formatDistance(option.distanceMeters)} />
+        )}
       </span>
       {/* Numbers but no shape to the route: nobody could tell us the way, so
           this is the line between the two ends at an assumed speed. Said here

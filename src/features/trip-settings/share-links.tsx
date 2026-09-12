@@ -30,8 +30,11 @@ const LINK_FIELD =
  * Which link, over its pill: the interface's own tier, in bold, as a label
  * over a value.
  *
- * Both dialogs that open off the trip menu are built from three numbers and
- * no others: five between a label and the control it names, because the two
+ * Both dialogs that open off the trip menu are named at place and written at
+ * small, which is one step of the scale apart and the same step the menu row
+ * that opened them is set in. Lead, which they were named at, is what the day
+ * a panel is open on is set in, and a panel that asks one question is not
+ * that. They are built from three numbers and no others: five between a label and the control it names, because the two
  * are one thing; ten between one block and the next; fourteen around the
  * whole panel. Below that the room around a control starts coming out of the
  * control, and the Copy beside each link is already within a pixel of the
@@ -187,12 +190,16 @@ export function ShareLinks({ slug, editKey }: ShareLinksProps) {
               in the same panel, heading and tier, with the way out across
               from the name. */}
           <div className="flex items-start justify-between gap-3">
-            <p className="font-display text-lead text-ink">Share this trip</p>
+            <p className="font-display text-place text-ink">Share this trip</p>
             <button
               type="button"
               onClick={close}
               aria-label="Close"
-              className="-mt-[3px] -mr-1 grid h-7 w-7 shrink-0 place-items-center rounded-pill text-ink-muted hover:bg-neutral-200 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+              // Twenty-four, which is both the smallest a pointer target may
+              // be and about the size of the name beside it. A negative
+              // margin takes it out of the row's height without taking
+              // anything off the button itself, so the target is whole.
+              className="-mt-[2px] -mr-1 grid h-6 w-6 shrink-0 place-items-center rounded-pill text-ink-muted hover:bg-neutral-200 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
             >
               <CloseIcon size={14} strokeWidth={2.5} />
             </button>
