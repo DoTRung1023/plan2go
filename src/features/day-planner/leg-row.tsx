@@ -65,7 +65,15 @@ function Option({
       onClick={onPick}
       disabled={disabled || unavailable}
       aria-pressed={isChosen}
-      className={`flex min-w-0 flex-col items-start gap-[5px] rounded-chip border px-[10px] pt-[11px] pb-3 text-left disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
+      /*
+       * Four things down a tile: what it is, what it is called, how long it
+       * takes and how far it is. They were spaced by a gap alone, over line
+       * boxes each carrying the leading its own step brought with it, so the
+       * space between any two was the gap plus whatever the type either side
+       * happened to add, and no two were the same. The leading is turned off
+       * where a line cannot wrap and the gap is the whole of the spacing.
+       */
+      className={`flex min-w-0 flex-col items-start gap-[3px] rounded-chip border px-[10px] pt-[11px] pb-3 text-left disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
         isChosen
           ? "border-terracotta bg-paper-raised"
           : unavailable
@@ -88,20 +96,23 @@ function Option({
           }`}
         />
       </span>
-      <span className="text-micro font-semibold text-ink-muted [overflow-wrap:anywhere]">
+      {/* The one line here that can run to two, so it keeps a leading, and a
+          tighter one than the scale hands it: two words of a mode name are
+          closer kin than two lines of a paragraph. */}
+      <span className="text-micro/[1.2] font-semibold text-ink-muted [overflow-wrap:anywhere]">
         {MODE_WORDS[option.mode]}
       </span>
-      <span className="font-display text-place text-ink tabular-nums [overflow-wrap:anywhere]">
+      <span className="font-display text-place/none text-ink tabular-nums [overflow-wrap:anywhere]">
         {unavailable ? "Unavailable" : formatDuration(option.durationMinutes ?? 0)}
       </span>
-      <span className="text-meta text-ink-muted tabular-nums">
+      <span className="text-meta/none text-ink-muted tabular-nums">
         {option.distanceMeters === null ? "" : formatDistance(option.distanceMeters)}
       </span>
       {/* Numbers but no shape to the route: nobody could tell us the way, so
           this is the line between the two ends at an assumed speed. Said here
           because the map draws that line the same as any other. */}
       {unavailable || option.path !== null ? null : (
-        <span className="text-micro text-ink-faint">Crow flies</span>
+        <span className="text-micro/none text-ink-faint">Crow flies</span>
       )}
     </button>
   );
