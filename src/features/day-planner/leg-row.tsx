@@ -89,7 +89,15 @@ function Option({
        * hairline, so the chosen tile is the one thing in the panel that looks
        * like a card.
        */
-      className={`flex min-w-0 flex-col items-start gap-[5px] rounded-chip px-[10px] pt-[11px] pb-3 text-left disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
+      /*
+       * The tile's rows are the panel's rows: the glyph, the name, the time
+       * and the distance each sit on a row shared with the tiles either
+       * side, so a name that runs to two lines in one tile makes the row two
+       * lines tall in all of them and the times stay level. Comparing those
+       * is the whole of what the panel is opened for. When no name wraps
+       * the row is one line and nothing is held open for a second.
+       */
+      className={`row-span-4 grid min-w-0 grid-rows-subgrid items-start justify-items-start gap-y-[5px] rounded-chip px-[10px] pt-[11px] pb-3 text-left disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
         isChosen
           ? "border-[1.5px] border-terracotta bg-paper-raised"
           : unavailable
@@ -112,12 +120,7 @@ function Option({
           }`}
         />
       </span>
-      {/* The name is quiet and sits in a box two lines tall whether it takes
-          one or two, so "Public transport" wrapping does not push its time
-          down out of line with the times either side of it. Comparing those
-          is the whole of what the panel is opened for, and they have to sit
-          on one row to be compared. */}
-      <span className="flex h-[28px] min-w-0 items-start text-micro/[1.2] font-semibold text-ink-muted [overflow-wrap:anywhere]">
+      <span className="min-w-0 text-micro/[1.2] font-semibold text-ink-muted [overflow-wrap:anywhere]">
         {MODE_WORDS[option.mode]}
       </span>
       {/* The time on its own line in the display face, the one promoted
