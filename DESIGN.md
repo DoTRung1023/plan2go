@@ -119,8 +119,8 @@ components:
     textColor: "{colors.ink-muted}"
     rounded: "{rounded.pill}"
   conflict-block:
-    backgroundColor: "{colors.sage-ramp.200}"
-    textColor: "{colors.sage-ramp.900}"
+    backgroundColor: "{colors.terracotta-ramp.200}"
+    textColor: "{colors.terracotta-ramp.900}"
     rounded: "{rounded.chip}"
   stop-marker:
     backgroundColor: "{colors.terracotta}"
@@ -167,9 +167,10 @@ glance. There was a fourth mode once, cycling, with a cobalt of its own; it went
 the mode did.
 
 There are two accents and they are not interchangeable. Terracotta is the product: the
-stop numbers, the active day, the primary action, the route lines. Sage is the second
-voice and it carries the ends of a day and anything the plan wants to tell you about
-itself, which in this product means a conflict. Everything else is paper and ink.
+stop numbers, the active day, the primary action, the route lines, and anything the plan
+wants to tell you about itself, which in this product means a conflict. Sage is the
+second voice and it carries the ends of a day and today in the strip. Everything else is
+paper and ink.
 
 - **paper:** the page, and the ground the whole product sits on.
 - **paper-raised:** stop cards, floating controls, inputs, the search panel.
@@ -178,11 +179,11 @@ itself, which in this product means a conflict. Everything else is paper and ink
   over all three surfaces.
 - **rule-strong:** the border of a control under the pointer, and dashed outlines.
 - **ink, ink-muted, ink-faint:** primary text, secondary text, and placeholders.
-- **terracotta:** the accent. 100 and 200 are tinted fills, the base is the accent
-  itself, 600 is hover, 700 is pressed and is the step to use for accent coloured text,
-  800 is the active day tab.
-- **sage:** the second accent. 200 is the conflict block, 600 is the marker for the ends
-  of a day, 700 draws the public transport route line.
+- **terracotta:** the accent. 100 and 200 are tinted fills, 200 being the conflict block
+  and the error block, the base is the accent itself, 600 is hover, 700 is pressed and is
+  the step to use for accent coloured text, 800 is the active day tab.
+- **sage:** the second accent. 100 and 200 mark today in the day strip, 600 is the marker
+  for the ends of a day, 700 draws the public transport route line.
 - **neutral:** the warm greys behind everything, used for the drive tint, the waiting
   band, and the map's own geometry.
 
@@ -199,8 +200,8 @@ Never `#FFFFFF`, never `#000000`, on any surface, border, or text.
 No dark theme. The ground is warm paper, and paper does not invert. Do not add a
 `prefers-color-scheme: dark` block.
 
-No status hues. There is no red, no amber, no green. A conflict is carried by the sage
-block plus the sentence naming it, with the real numbers in the sentence.
+No status hues. There is no red, no amber, no green. A conflict is carried by the
+terracotta block plus the sentence naming it, with the real numbers in the sentence.
 
 Contrast floor: `ink` on `paper` is the body pairing. The accent to ground pair is
 tuned to 3:1, which is enough for icons, large type and interface chrome and not enough
@@ -309,8 +310,12 @@ colour: a sage square with one corner cut, against the terracotta discs. A day m
 start and end in the same place, in which case there is one marker rather than two on
 top of each other.
 
-A conflict is a sage block carrying the sentence that names it, with a clock beside the
-words. The tint alone is never the signal.
+A conflict is a terracotta block carrying the sentence that names it, with a warning
+triangle beside the words. The accent rather than the second voice: sage is what the ends
+of a day are drawn in, and a conflict wearing it shared a colour with the thing it was
+often about. The triangle for the same reason the clock is gone, which is that a clock
+said only that this concerned the time, and every line on a stop card does. The tint
+alone is never the signal.
 
 A stop card carries its own controls and no others. The two that act on the whole
 stop, moving it and taking it off the day, sit under the arrival time at the top right,

@@ -244,6 +244,17 @@ export function ClockIcon(props: IconProps) {
   );
 }
 
+/** A triangle with a mark in it: something about the plan worth reading. */
+export function WarningIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3" />
+      <path d="M12 9.5v4" />
+      <path d="M12 17.2h.01" />
+    </Glyph>
+  );
+}
+
 /** A star, filled: the shape every rating out of five is drawn in. */
 export function StarIcon({ size, className }: Omit<IconProps, "strokeWidth">) {
   return (
