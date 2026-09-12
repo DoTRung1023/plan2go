@@ -14,13 +14,17 @@ const COPY =
  * selectable rather than hidden behind the button, so a browser with no
  * clipboard to write to still hands it over.
  */
-const LINK_PILL = "mt-[6px] flex items-center gap-1 rounded-pill bg-paper-sunken py-[3px] pr-[3px] pl-3";
+const LINK_PILL = "mt-[5px] flex items-center gap-1 rounded-pill bg-paper-sunken py-[3px] pr-[3px] pl-3";
 
 const LINK_FIELD =
-  "min-w-0 flex-1 truncate bg-transparent py-1 text-small text-ink-muted outline-none focus-visible:rounded-[4px] focus-visible:outline-2 focus-visible:outline-offset-[5px] focus-visible:outline-terracotta";
+  "min-w-0 flex-1 truncate bg-transparent py-[3px] text-small/none text-ink-muted outline-none focus-visible:rounded-[4px] focus-visible:outline-2 focus-visible:outline-offset-[5px] focus-visible:outline-terracotta";
 
-/** Which link, over its pill: the interface's own tier, in bold, as a label over a value. */
-const LABEL = "mt-4 text-small font-semibold text-ink";
+/**
+ * Which link, over its pill: the interface's own tier, in bold, as a label
+ * over a value. Five above the pill it names, because the two are one thing;
+ * twelve above the label, because the next link is another.
+ */
+const LABEL = "mt-3 text-small/none font-semibold text-ink";
 
 /** Long enough to read, short enough that the panel is not left saying it. */
 const COPIED_MS = 2000;
@@ -164,7 +168,7 @@ export function ShareLinks({ slug, editKey }: ShareLinksProps) {
               close();
             }
           }}
-          className="absolute top-full right-0 z-50 mt-2 w-[min(340px,calc(100vw-2rem))] rounded-panel border border-rule bg-paper-raised p-5 text-left shadow-lg"
+          className="absolute top-full right-0 z-50 mt-2 w-[min(340px,calc(100vw-2rem))] rounded-panel border border-rule bg-paper-raised p-4 text-left shadow-lg"
         >
           {/* Named the way the dialog that deletes the trip is named and set
               in the same panel, heading and tier, with the way out across
@@ -175,7 +179,7 @@ export function ShareLinks({ slug, editKey }: ShareLinksProps) {
               type="button"
               onClick={close}
               aria-label="Close"
-              className="-mt-1 -mr-1.5 grid h-8 w-8 shrink-0 place-items-center rounded-pill text-ink-muted hover:bg-neutral-200 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+              className="-mt-[3px] -mr-1 grid h-7 w-7 shrink-0 place-items-center rounded-pill text-ink-muted hover:bg-neutral-200 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
             >
               <CloseIcon size={14} strokeWidth={2.5} />
             </button>
@@ -188,7 +192,7 @@ export function ShareLinks({ slug, editKey }: ShareLinksProps) {
           {link("edit", "Editing link", editUrl)}
 
           {failed ? (
-            <p className="mt-3 text-meta text-ink-muted">
+            <p className="mt-3 text-meta/none text-ink-muted">
               Copying was blocked. Select the link instead.
             </p>
           ) : null}

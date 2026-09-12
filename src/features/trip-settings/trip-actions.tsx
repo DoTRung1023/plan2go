@@ -154,7 +154,7 @@ export function TripActions({
               close();
             }
           }}
-          className="absolute top-full right-0 z-50 mt-2 w-[min(340px,calc(100vw-2rem))] rounded-panel border border-rule bg-paper-raised p-5 text-left shadow-lg"
+          className="absolute top-full right-0 z-50 mt-2 w-[min(340px,calc(100vw-2rem))] rounded-panel border border-rule bg-paper-raised p-4 text-left shadow-lg"
         >
           {/* The question as a heading, at the step for a heading that is
               neither the trip's name nor a place, and under it the one thing
@@ -163,8 +163,12 @@ export function TripActions({
               last. The same panel, heading and tier as the dialog that
               shares the trip, so the two read as one kind of thing. */}
           <p className="font-display text-lead text-ink">Delete this trip?</p>
-          <p className="mt-1 text-small text-ink-muted">This cannot be undone.</p>
-          <div className="mt-5 flex justify-end gap-2">
+          {/* Six under the question, because it finishes the question rather
+              than starting anything; twelve over the answers, which are a
+              different thing again. The same three numbers the dialog that
+              shares the trip is built from. */}
+          <p className="mt-[6px] text-small/none text-ink-muted">This cannot be undone.</p>
+          <div className="mt-3 flex justify-end gap-2">
             <button type="button" ref={cancel} onClick={close} className={CANCEL}>
               Cancel
             </button>
