@@ -13,7 +13,7 @@ import type { CreateTripFormState } from "./create-trip-action";
 
 // Lives here, not beside the action: a "use server" file may export only async
 // functions, so the starting state cannot sit next to it.
-const NO_ERROR: CreateTripFormState = { error: null };
+const NO_ERROR: CreateTripFormState = { error: null, field: null };
 
 /**
  * How far the last day sits from the first when the form opens. Four, not five:
@@ -38,6 +38,20 @@ export function CreateTripForm({ countries, today }: CreateTripFormProps) {
   const [last, setLast] = useState(addDays(today, OPENING_SPAN_DAYS));
   const [country, setCountry] = useState("");
   const [city, setCity] = useState<ChosenPlace | null>(null);
+  /**
+   * The answer the city was last changed under. An answer saying the city is
+   * missing is about the form as it was sent, and the moment the city is
+   * touched the form is no longer that one: left up, the sentence stands
+   * beside a chosen city saying there is none. Held as the answer itself
+   * rather than as a flag, so the next answer arrives fresh without an
+   * effect to clear anything.
+   */
+  const [cityChangedUnder, setCityChangedUnder] = useState<CreateTripFormState | null>(null);
+  const changeCity = (place: ChosenPlace | null): void => {
+    setCity(place);
+    setCityChangedUnder(state);
+  };
+  const error = state.field === "city" && cityChangedUnder === state ? null : state.error;
 
   return (
     <form
@@ -60,7 +74,7 @@ export function CreateTripForm({ countries, today }: CreateTripFormProps) {
           onChange={(picked) => {
             setCountry(picked);
             // The city belonged to the country that was chosen before.
-            setCity(null);
+            changeCity(null);
           }}
           noMatch="No country matches that. Check the spelling."
         />
@@ -75,7 +89,7 @@ export function CreateTripForm({ countries, today }: CreateTripFormProps) {
           waitingFor={country === "" ? "Choose a country first" : null}
           placeholder="Type the city"
           chosen={city}
-          onChange={setCity}
+          onChange={changeCity}
         />
       </div>
 
@@ -98,12 +112,12 @@ export function CreateTripForm({ countries, today }: CreateTripFormProps) {
         />
       </div>
 
-      {state.error === null ? null : (
+      {error === null ? null : (
         <p
           role="alert"
           className="rounded-chip bg-terracotta-200 px-3 py-2 text-meta text-terracotta-900"
         >
-          {state.error}
+          {error}
         </p>
       )}
 

@@ -182,6 +182,20 @@ export function PlaceField({
       setOpen(false);
       return;
     }
+    // A city typed and not yet picked is a question, not an answer. Sent as
+    // it stands the form would only be told the city is missing, so Enter
+    // picks from the list when there is one and brings the list back when
+    // it has been put away or is still on its way.
+    if (event.key === "Enter" && chosen === null && searched) {
+      event.preventDefault();
+      const picked = open ? found[active] : undefined;
+      if (picked !== undefined) {
+        pick(picked);
+      } else {
+        setOpen(true);
+      }
+      return;
+    }
     if (found.length === 0 || !open) {
       return;
     }

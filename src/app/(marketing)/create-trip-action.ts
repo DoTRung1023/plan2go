@@ -15,6 +15,8 @@ import { isSupportedTimeZone, openingTimeZone } from "@/server/trips/time-zones"
 
 export interface CreateTripFormState {
   readonly error: string | null;
+  /** Which field the sentence is about, when it is about one. */
+  readonly field: "city" | null;
 }
 
 /**
@@ -39,12 +41,13 @@ export async function createTripAction(
     const first = parsed.error.issues[0];
     return {
       error: first === undefined ? "Check the form and send it again." : first.message,
+      field: first?.path[0] === "cityPlaceId" ? "city" : null,
     };
   }
 
   const apiKey = googleMapsApiKey();
   if (apiKey === null) {
-    return { error: "Place search is not switched on for this server." };
+    return { error: "Place search is not switched on for this server.", field: null };
   }
 
   const { cityPlaceId, ...rest } = parsed.data;
@@ -82,10 +85,11 @@ export async function createTripAction(
   if (opened.status === "too-many") {
     return {
       error: `Too many new trips have been started from this connection. Wait ${String(opened.retryAfterSeconds)} seconds and try again.`,
+      field: null,
     };
   }
   if (opened.status === "nowhere") {
-    return { error: "That city could not be found. Choose it from the list again." };
+    return { error: "That city could not be found. Choose it from the list again.", field: "city" };
   }
 
   // Straight to the edit link: this is the one moment the key exists in the
