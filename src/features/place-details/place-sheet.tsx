@@ -206,6 +206,12 @@ export function PlaceSheet({ slug, place, askedFor, onClose }: PlaceSheetProps) 
   };
   /** The last picture that was open, so closing it puts focus back where it was pressed. */
   const lastViewed = useRef<number | null>(null);
+  /**
+   * Whether the picture that is open was opened from the keyboard. A click
+   * carried out by a key reports no clicks behind it, which is how the two
+   * are told apart.
+   */
+  const openedByKey = useRef(false);
 
   const ready =
     asked.status === "refused" ||
@@ -220,8 +226,17 @@ export function PlaceSheet({ slug, place, askedFor, onClose }: PlaceSheetProps) 
     sheet.current?.focus();
   }, [ready]);
 
-  // Closing the viewer puts focus back on the picture it was opened from,
-  // which is where the person was before it took the whole window.
+  /**
+   * Closing the viewer puts the keyboard back where it was, which is a
+   * different place depending on how the picture was opened.
+   *
+   * Opened with a key, that is the picture itself, ringed, because somebody
+   * working through the strip a Tab at a time has to be able to see where
+   * they are. Opened with a pointer it is the sheet, which draws nothing:
+   * the ring is how the keyboard says where it is, and drawn around a
+   * photograph for somebody holding a mouse it reads as the photograph
+   * having been picked out, which is not a thing this sheet can mean.
+   */
   useEffect(() => {
     if (viewing !== null) {
       lastViewed.current = viewing;
@@ -230,9 +245,14 @@ export function PlaceSheet({ slug, place, askedFor, onClose }: PlaceSheetProps) 
     if (lastViewed.current === null) {
       return;
     }
-    sheet.current
-      ?.querySelector<HTMLElement>(`[data-photo="${String(lastViewed.current)}"]`)
-      ?.focus();
+    const opened = sheet.current?.querySelector<HTMLElement>(
+      `[data-photo="${String(lastViewed.current)}"]`,
+    );
+    if (openedByKey.current && opened !== null && opened !== undefined) {
+      opened.focus();
+    } else {
+      sheet.current?.focus();
+    }
     lastViewed.current = null;
   }, [viewing]);
 
@@ -410,7 +430,8 @@ export function PlaceSheet({ slug, place, askedFor, onClose }: PlaceSheetProps) 
                 type="button"
                 data-photo={0}
                 aria-label={`Open photo 1 of ${String(photoCount)}`}
-                onClick={() => {
+                onClick={(event) => {
+                  openedByKey.current = event.detail === 0;
                   setViewing(0);
                 }}
                 // The ring is drawn inside, because this is the top edge of
@@ -485,7 +506,8 @@ export function PlaceSheet({ slug, place, askedFor, onClose }: PlaceSheetProps) 
                       data-photo={index + 1}
                       aria-label={`Open photo ${String(index + 2)} of ${String(photoCount)}`}
                       title={photo.by === null ? undefined : `Photo by ${photo.by}`}
-                      onClick={() => {
+                      onClick={(event) => {
+                        openedByKey.current = event.detail === 0;
                         setViewing(index + 1);
                       }}
                       className={`${OPENS} rounded-chip focus-visible:outline-offset-2`}
