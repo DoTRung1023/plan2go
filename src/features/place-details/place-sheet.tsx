@@ -453,14 +453,18 @@ export function PlaceSheet({ slug, place, askedFor, onClose }: PlaceSheetProps) 
           </div>
         ) : (
         <div className="scroll-quiet min-h-0 flex-1 overflow-y-auto lg:rounded-panel">
-          {/* The close sits over the picture when there is one, and over the
-              name when there is not, so it is in the same corner either way. */}
+          {/* On a phone the close sits over the picture when there is one and
+              over the name when there is not, so it is in the same corner
+              either way, and the name is held down from the corner it needs.
+              On a desk the close is the tab on the sheet's edge, so a place
+              with no picture starts with its name at the top of the sheet
+              rather than under a space kept for nothing. */}
           <div className="relative">
             {/* Plain img rather than the framework's: the picture is ours,
                 served from our own table at the width it is drawn, and the
                 framework would only fetch it again to make it smaller. */}
             {hero === undefined ? (
-              <div className="h-[56px]" />
+              <div className="h-[56px] lg:hidden" />
             ) : (
               <button
                 type="button"
@@ -487,7 +491,7 @@ export function PlaceSheet({ slug, place, askedFor, onClose }: PlaceSheetProps) 
             {close}
           </div>
 
-          <div className="flex flex-col gap-4 px-5 pt-4 pb-6">
+          <div className={`flex flex-col gap-4 px-5 pb-6 ${hero === undefined ? "pt-4 lg:pt-6" : "pt-4"}`}>
             <div className="flex flex-col gap-[6px]">
               <h2 className="font-display text-lead text-ink">{place.name}</h2>
               {card === null ? null : (
