@@ -388,17 +388,19 @@ export function LegRow({
               setOpen(true);
               setError(null);
             }}
-            className={`${rowShape} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
+            className={`group ${rowShape} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
               hovered
                 ? "border-rule-strong bg-paper-sunken"
                 : "border-rule bg-transparent hover:border-rule-strong hover:bg-neutral-200"
             }`}
           >
             {summary}
-            {/* Accent coloured at the step that reads at this size, with the
-                chevron pointing the way the row is about to go. Small and at
-                the far end, so it is found rather than read first. */}
-            <span className="ml-auto flex items-center gap-[5px] text-micro/none font-semibold whitespace-nowrap text-terracotta-700">
+            {/* Quiet, and the same quiet as the Collapse that takes its place
+                once the row is open: the way to change the leg should not
+                outrank what there is to change. The whole row is the button
+                and darkens under the pointer, and the word darkens with it.
+                The chevron points the way the row is about to go. */}
+            <span className="ml-auto flex items-center gap-[5px] text-micro/none font-semibold whitespace-nowrap text-ink-muted group-hover:text-ink">
               Change
               <ChevronDownIcon size={13} strokeWidth={2.75} />
             </span>
