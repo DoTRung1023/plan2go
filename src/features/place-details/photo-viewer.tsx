@@ -8,13 +8,25 @@ import { CloseIcon } from "@/ui/icons";
 const STEP =
   "rounded-pill bg-paper-raised/90 px-4 py-[9px] text-small/none font-semibold text-ink shadow-sm hover:bg-paper-raised disabled:opacity-45 disabled:hover:bg-paper-raised/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
+/**
+ * How wide the picture may be drawn, in the browser's terms, so it can weigh
+ * the choices in the set against the screen: the window less the padding
+ * either side of the frame below.
+ */
+const SIZES = "calc(100vw - 40px)";
+
 interface PhotoViewerProps {
   readonly placeName: string;
   readonly photos: readonly PlacePhoto[];
   /** Which of them is open, counted from zero. */
   readonly at: number;
-  /** The picture at the width the viewer draws, from the sheet's photo route. */
+  /** The picture at the plainest width the viewer draws, for a browser that cannot choose. */
   readonly urlFor: (at: number) => string;
+  /**
+   * The same picture at every width the viewer offers, as a source set, so
+   * the browser fetches the one its screen can actually show.
+   */
+  readonly srcSetFor: (at: number) => string;
   /**
    * The same picture at the width the sheet drew it, which the browser
    * fetched before the sheet was shown and still holds. Something to look at
@@ -54,6 +66,7 @@ export function PhotoViewer({
   photos,
   at,
   urlFor,
+  srcSetFor,
   sheetUrlFor,
   onStep,
   onClose,
@@ -66,12 +79,14 @@ export function PhotoViewer({
   const shown = loaded === at;
 
   /**
-   * The pictures either side, by their addresses rather than by the function
-   * that builds them: the caller hands over a new one of those every time it
-   * renders, and these are the same two strings until the step changes.
+   * The pictures either side, by their addresses rather than by the functions
+   * that build them: the caller hands over new ones of those every time it
+   * renders, and these are the same strings until the step changes.
    */
-  const before = at > 0 ? urlFor(at - 1) : null;
-  const after = at < count - 1 ? urlFor(at + 1) : null;
+  const beforeSrc = at > 0 ? urlFor(at - 1) : null;
+  const beforeSet = at > 0 ? srcSetFor(at - 1) : null;
+  const afterSrc = at < count - 1 ? urlFor(at + 1) : null;
+  const afterSet = at < count - 1 ? srcSetFor(at + 1) : null;
 
   useEffect(() => {
     closeButton.current?.focus();
@@ -81,19 +96,27 @@ export function PhotoViewer({
     if (!shown) {
       return;
     }
-    for (const url of [before, after]) {
-      if (url === null) {
+    const neighbours: readonly (readonly [string | null, string | null])[] = [
+      [beforeSrc, beforeSet],
+      [afterSrc, afterSet],
+    ];
+    for (const [src, srcSet] of neighbours) {
+      if (src === null || srcSet === null) {
         continue;
       }
       const picture = new Image();
       // Behind the picture on screen and behind anything else the page is
       // waiting on. Nobody is looking at these yet.
       picture.fetchPriority = "low";
-      picture.src = url;
+      // Chosen the way the picture on screen is, so the step finds the width
+      // it will draw already here and not a different one.
+      picture.sizes = SIZES;
+      picture.srcset = srcSet;
+      picture.src = src;
     }
     // Nothing to undo. A fetch left running warms the same cache the step
     // would have asked for, so calling it off would only throw the work away.
-  }, [shown, before, after]);
+  }, [shown, beforeSrc, beforeSet, afterSrc, afterSet]);
 
   if (photo === undefined) {
     return null;
@@ -174,6 +197,8 @@ export function PhotoViewer({
         <img
           key={at}
           src={urlFor(at)}
+          srcSet={srcSetFor(at)}
+          sizes={SIZES}
           alt={described}
           width={photo.width}
           height={photo.height}

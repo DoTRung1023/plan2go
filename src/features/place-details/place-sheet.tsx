@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
-import type { Place, PlaceCard, PlaceReview } from "@/core/model/place";
+import type { Place, PlaceCard, PlacePhoto, PlaceReview } from "@/core/model/place";
 import { ChevronLeftIcon, CloseIcon, GlobeIcon, PhoneIcon, PinIcon, StarIcon } from "@/ui/icons";
 import { PhotoViewer } from "./photo-viewer";
 import "./place-sheet.css";
@@ -43,8 +43,14 @@ const refusalSchema = z.object({ error: z.string(), action: z.string().optional(
 /** The picture across the top and the strip under it, in the widths the photo route serves. */
 const HERO_WIDTH = 800;
 const STRIP_WIDTH = 320;
-/** A picture opened to fill the window. Fetched only then, never with the sheet. */
-const VIEW_WIDTH = 1600;
+/**
+ * A picture opened to fill the window, at the two densities a screen comes
+ * in: the first is enough for a plain screen, the second for one drawing two
+ * device pixels to the CSS pixel, which is most laptops and every phone. The
+ * browser picks, from what it knows about the screen it is on. Fetched only
+ * then, never with the sheet.
+ */
+const VIEW_WIDTHS = [1600, 3200] as const;
 
 /** A picture on the sheet, which opens the viewer on it. */
 const OPENS =
@@ -70,6 +76,24 @@ function photoUrl(slug: string, providerPlaceId: string, at: number, width: numb
 /** The picture the sheet draws at that position: the first is the hero, the rest the strip. */
 function widthAt(at: number): number {
   return at === 0 ? HERO_WIDTH : STRIP_WIDTH;
+}
+
+/**
+ * The viewer's choices for one picture, each labelled with the width it
+ * really comes back at. The provider scales a picture down and never up, so
+ * the list stops at the first width the picture does not reach: past that
+ * would be the same picture under another name, paid for and kept twice.
+ */
+function viewSrcSet(slug: string, providerPlaceId: string, at: number, photo: PlacePhoto): string {
+  const choices: string[] = [];
+  for (const width of VIEW_WIDTHS) {
+    const served = Math.min(width, photo.width);
+    choices.push(`${photoUrl(slug, providerPlaceId, at, width)} ${String(served)}w`);
+    if (width >= photo.width) {
+      break;
+    }
+  }
+  return choices.join(", ");
 }
 
 const STARS = [1, 2, 3, 4, 5] as const;
@@ -592,7 +616,11 @@ export function PlaceSheet({ slug, place, askedFor, onClose }: PlaceSheetProps) 
           placeName={place.name}
           photos={card.photos}
           at={viewing}
-          urlFor={(at) => photoUrl(slug, id, at, VIEW_WIDTH)}
+          urlFor={(at) => photoUrl(slug, id, at, VIEW_WIDTHS[0])}
+          srcSetFor={(at) => {
+            const photo = card.photos[at];
+            return photo === undefined ? "" : viewSrcSet(slug, id, at, photo);
+          }}
           sheetUrlFor={(at) => photoUrl(slug, id, at, widthAt(at))}
           onStep={setViewing}
           onClose={() => {

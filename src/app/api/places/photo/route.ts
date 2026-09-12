@@ -14,9 +14,10 @@ const ROUTE = "places-photo";
 
 /**
  * The widths the sheet draws: the picture across the top, the strip under
- * it, and one opened to fill the window, which is asked for only when it is.
+ * it, and one opened to fill the window, which is asked for only when it is
+ * and at whichever of two densities the screen looking at it has.
  */
-const WIDTHS = [1600, 800, 320] as const;
+const WIDTHS = [3200, 1600, 800, 320] as const;
 
 /** As many as a card holds. */
 const MOST_PHOTOS = 10;
