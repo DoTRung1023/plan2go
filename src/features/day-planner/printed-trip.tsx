@@ -264,9 +264,6 @@ function PrintedDay({
                   <p className={`mt-[3px] text-small ${MUTED}`}>
                     stay {formatDuration(stop.stayMinutes)}
                   </p>
-                  {stop.waitMinutes === 0 ? null : (
-                    <p className={`text-small ${MUTED}`}>waits {formatDuration(stop.waitMinutes)}</p>
-                  )}
                 </div>
               </div>
             </div>

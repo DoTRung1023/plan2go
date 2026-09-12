@@ -85,7 +85,6 @@ describe("computeDay, ordinary days", () => {
       timeOutMinutes: 0,
       timeAtPlacesMinutes: 0,
       travelMinutes: 0,
-      waitingMinutes: 0,
       complete: true,
     });
   });
@@ -107,18 +106,17 @@ describe("computeDay, ordinary days", () => {
       timeOutMinutes: 195,
       timeAtPlacesMinutes: 135,
       travelMinutes: 60,
-      waitingMinutes: 0,
       complete: true,
     });
   });
 
-  it("keeps time out equal to travel plus time at places plus waiting", () => {
+  it("keeps time out equal to travel plus time at places, doors or no doors", () => {
     const gallery = openEveryDay([{ opensAt: 10 * 60, closesAt: 17 * 60 }]);
     const plan = day({ stops: [stop("Gallery", 60, gallery), stop("Park", 30)] });
     const result = computeDay({ day: plan, legs: [leg(20), leg(10), leg(30)] });
-    const { timeOutMinutes, travelMinutes, timeAtPlacesMinutes, waitingMinutes } = result.totals;
+    const { timeOutMinutes, travelMinutes, timeAtPlacesMinutes } = result.totals;
 
-    expect(timeOutMinutes).toBe((travelMinutes ?? 0) + timeAtPlacesMinutes + waitingMinutes);
+    expect(timeOutMinutes).toBe((travelMinutes ?? 0) + timeAtPlacesMinutes);
   });
 });
 
@@ -255,17 +253,24 @@ describe("computeDay, opening hours", () => {
     expect(result.stops[0]?.departure?.minutesFromMidnight).toBe(17 * 60 + 15);
   });
 
-  it("waits for the doors to open and pushes the rest of the day back", () => {
+  it("flags arriving before the doors open and leaves the times as planned", () => {
     const hours = openEveryDay([{ opensAt: 10 * 60, closesAt: 17 * 60 }]);
     const plan = day({ stops: [stop("Gallery", 60, hours)] });
     const result = computeDay({ day: plan, legs: [leg(20), leg(20)] });
 
-    expect(result.stops[0]?.waitMinutes).toBe(40);
-    expect(result.stops[0]?.departure?.minutesFromMidnight).toBe(11 * 60);
-    expect(result.ends?.minutesFromMidnight).toBe(11 * 60 + 20);
-    expect(result.totals.waitingMinutes).toBe(40);
-    // Waiting for the doors is a number on the card, not a conflict.
-    expect(result.conflicts).toEqual([]);
+    // Nine twenty in, ten twenty out: nothing is pushed back to the opening.
+    expect(result.stops[0]?.arrival?.minutesFromMidnight).toBe(9 * 60 + 20);
+    expect(result.stops[0]?.departure?.minutesFromMidnight).toBe(10 * 60 + 20);
+    expect(result.ends?.minutesFromMidnight).toBe(10 * 60 + 40);
+    expect(result.conflicts).toEqual([
+      {
+        kind: "arrives-before-open",
+        stopId: "stop-Gallery",
+        placeName: "Gallery",
+        arrivalMinutes: 9 * 60 + 20,
+        opensAt: 10 * 60,
+      },
+    ]);
   });
 
   it("flags a stay that runs past closing", () => {

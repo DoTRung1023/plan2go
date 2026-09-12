@@ -369,13 +369,6 @@ export function StopCard({
                 </>
               )}
             </p>
-            {stop.waitMinutes === 0 ? null : (
-              /* Waiting is a fact about the morning, not a fault in it, so it
-                 is a number in the quiet colour rather than a notice. */
-              <p className="text-micro whitespace-nowrap text-ink-muted tabular-nums">
-                Waits {formatDuration(stop.waitMinutes)}
-              </p>
-            )}
 
             <div
               className={`-mr-1 flex items-center group-hover:opacity-100 focus-within:opacity-100 ${

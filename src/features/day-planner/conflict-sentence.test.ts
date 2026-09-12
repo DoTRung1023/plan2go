@@ -10,6 +10,14 @@ const ARRIVES_AFTER_CLOSE: Conflict = {
   closesAt: 16 * 60,
 };
 
+const ARRIVES_BEFORE_OPEN: Conflict = {
+  kind: "arrives-before-open",
+  stopId: "stop-2",
+  placeName: "Adelaide Oval",
+  arrivalMinutes: 9 * 60,
+  opensAt: 17 * 60,
+};
+
 const CLOSED_ALL_DAY: Conflict = {
   kind: "closed-all-day",
   stopId: "stop-3",
@@ -34,6 +42,7 @@ const UNRESOLVED_LEG: Conflict = {
 
 const EVERY_KIND: readonly Conflict[] = [
   ARRIVES_AFTER_CLOSE,
+  ARRIVES_BEFORE_OPEN,
   CLOSED_ALL_DAY,
   STAY_OVERRUNS_CLOSE,
   UNRESOLVED_LEG,
@@ -46,6 +55,12 @@ describe("conflictSentence", () => {
   it("gives both times when you arrive after closing", () => {
     expect(conflictSentence(ARRIVES_AFTER_CLOSE)).toBe(
       "Closes at 16:00 and you arrive at 16:30.",
+    );
+  });
+
+  it("gives both times when you arrive before opening", () => {
+    expect(conflictSentence(ARRIVES_BEFORE_OPEN)).toBe(
+      "Opens at 17:00 and you arrive at 09:00.",
     );
   });
 

@@ -12,7 +12,7 @@ describe("checkOpeningWindows", () => {
       stayMinutes: 60,
     });
 
-    expect(result).toEqual({ waitMinutes: 0, conflicts: [] });
+    expect(result).toEqual([]);
   });
 
   it("flags a place with no windows at all as shut for the day", () => {
@@ -23,8 +23,7 @@ describe("checkOpeningWindows", () => {
       stayMinutes: 60,
     });
 
-    expect(result.waitMinutes).toBe(0);
-    expect(result.conflicts).toEqual([
+    expect(result).toEqual([
       { kind: "closed-all-day", stopId: "stop-1", placeName: "Fish Market", weekday: 6 },
     ]);
   });
@@ -37,10 +36,29 @@ describe("checkOpeningWindows", () => {
       stayMinutes: 0,
     });
 
-    expect(result.conflicts[0]?.kind).toBe("arrives-after-close");
+    expect(result[0]?.kind).toBe("arrives-after-close");
   });
 
-  it("skips a window that has already ended and waits for the next one", () => {
+  it("flags arriving before the doors open, with the time they open", () => {
+    const result = checkOpeningWindows({
+      ...BASE,
+      windows: [{ opensAt: 17 * 60, closesAt: 23 * 60 }],
+      arrivalMinutes: 9 * 60,
+      stayMinutes: 60,
+    });
+
+    expect(result).toEqual([
+      {
+        kind: "arrives-before-open",
+        stopId: "stop-1",
+        placeName: "Fish Market",
+        arrivalMinutes: 9 * 60,
+        opensAt: 17 * 60,
+      },
+    ]);
+  });
+
+  it("measures a gap between two windows against the one still to come", () => {
     const result = checkOpeningWindows({
       ...BASE,
       windows: [
@@ -51,12 +69,18 @@ describe("checkOpeningWindows", () => {
       stayMinutes: 60,
     });
 
-    // The wait is measured and reported as a number, not as a problem.
-    expect(result.waitMinutes).toBe(60);
-    expect(result.conflicts).toEqual([]);
+    expect(result).toEqual([
+      {
+        kind: "arrives-before-open",
+        stopId: "stop-1",
+        placeName: "Fish Market",
+        arrivalMinutes: 13 * 60,
+        opensAt: 14 * 60,
+      },
+    ]);
   });
 
-  it("measures the wait and still flags the overrun it leads to", () => {
+  it("does not wait for the doors, so a stay is measured from the arrival", () => {
     const result = checkOpeningWindows({
       ...BASE,
       windows: [{ opensAt: 10 * 60, closesAt: 11 * 60 }],
@@ -64,8 +88,22 @@ describe("checkOpeningWindows", () => {
       stayMinutes: 120,
     });
 
-    expect(result.waitMinutes).toBe(60);
-    expect(result.conflicts.map((entry) => entry.kind)).toEqual(["stay-overruns-close"]);
+    // Two hours from nine is eleven, which is closing and not past it.
+    expect(result.map((entry) => entry.kind)).toEqual(["arrives-before-open"]);
+  });
+
+  it("says both when you arrive early and are still there after closing", () => {
+    const result = checkOpeningWindows({
+      ...BASE,
+      windows: [{ opensAt: 10 * 60, closesAt: 11 * 60 }],
+      arrivalMinutes: 9 * 60,
+      stayMinutes: 180,
+    });
+
+    expect(result.map((entry) => entry.kind)).toEqual([
+      "arrives-before-open",
+      "stay-overruns-close",
+    ]);
   });
 
   it("orders unsorted windows before choosing one", () => {
@@ -79,6 +117,6 @@ describe("checkOpeningWindows", () => {
       stayMinutes: 30,
     });
 
-    expect(result).toEqual({ waitMinutes: 0, conflicts: [] });
+    expect(result).toEqual([]);
   });
 });

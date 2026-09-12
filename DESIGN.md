@@ -184,8 +184,8 @@ paper and ink.
   the step to use for accent coloured text, 800 is the active day tab.
 - **sage:** the second accent. 100 and 200 mark today in the day strip, 600 is the marker
   for the ends of a day, 700 draws the public transport route line.
-- **neutral:** the warm greys behind everything, used for the drive tint, the waiting
-  band, and the map's own geometry.
+- **neutral:** the warm greys behind everything, used for the drive tint and the map's
+  own geometry.
 
 Every ramp is generated in OKLCH on one shared lightness scale, so the same step of any
 ramp carries the same visual weight. Only the steps the product spends are declared, so

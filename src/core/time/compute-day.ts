@@ -40,8 +40,6 @@ export interface ComputedStop {
   readonly arrival: ClockTime | null;
   readonly departure: ClockTime | null;
   readonly stayMinutes: number;
-  /** Minutes spent waiting for the place to open before the stay begins. */
-  readonly waitMinutes: number;
 }
 
 export interface DayTotals {
@@ -49,7 +47,6 @@ export interface DayTotals {
   readonly timeOutMinutes: number | null;
   readonly timeAtPlacesMinutes: number;
   readonly travelMinutes: number | null;
-  readonly waitingMinutes: number;
   /** False when a leg could not be resolved, so the numbers above are partial. */
   readonly complete: boolean;
 }
@@ -123,7 +120,6 @@ export function computeDay({ day, legs }: ComputeDayInput): ComputedDay {
 
   let cursor: number | null = beginEpoch;
   let travelMinutes = 0;
-  let waitingMinutes = 0;
   let timeAtPlacesMinutes = 0;
   let blocked = false;
 
@@ -183,7 +179,6 @@ export function computeDay({ day, legs }: ComputeDayInput): ComputedDay {
         arrival: null,
         departure: null,
         stayMinutes: staying,
-        waitMinutes: 0,
       });
       return;
     }
@@ -191,25 +186,27 @@ export function computeDay({ day, legs }: ComputeDayInput): ComputedDay {
     const at = cursor;
     const arrival = clockAt(at);
     const arrivalWall = epochMinutesToWallClock(at, timeZone);
-    const check = checkOpeningWindows({
-      stopId: stop.id,
-      placeName: stop.place.name,
-      windows: windowsFor(stop.place, arrivalWall.date),
-      weekday: weekdayOf(arrivalWall.date),
-      arrivalMinutes: arrival.minutesFromMidnight,
-      stayMinutes: staying,
-    });
-    conflicts.push(...check.conflicts);
-    waitingMinutes += check.waitMinutes;
+    conflicts.push(
+      ...checkOpeningWindows({
+        stopId: stop.id,
+        placeName: stop.place.name,
+        windows: windowsFor(stop.place, arrivalWall.date),
+        weekday: weekdayOf(arrivalWall.date),
+        arrivalMinutes: arrival.minutesFromMidnight,
+        stayMinutes: staying,
+      }),
+    );
 
-    const departureEpoch = at + check.waitMinutes + staying;
+    // The stay runs from the arrival whatever the doors are doing. A place
+    // not yet open is reported, not waited for: the times stay as planned
+    // and the conflict says what is wrong with them.
+    const departureEpoch = at + staying;
     computedStops.push({
       stopId: stop.id,
       placeName: stop.place.name,
       arrival,
       departure: clockAt(departureEpoch),
       stayMinutes: staying,
-      waitMinutes: check.waitMinutes,
     });
     cursor = departureEpoch;
   };
@@ -242,7 +239,6 @@ export function computeDay({ day, legs }: ComputeDayInput): ComputedDay {
       timeOutMinutes: ends === null ? null : ends.epochMinutes - beginEpoch,
       timeAtPlacesMinutes,
       travelMinutes: blocked ? null : travelMinutes,
-      waitingMinutes,
       complete: !blocked,
     },
     conflicts,

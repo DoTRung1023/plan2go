@@ -28,6 +28,8 @@ export function conflictSentence(conflict: Conflict): string {
   switch (conflict.kind) {
     case "arrives-after-close":
       return `Closes at ${formatClock(conflict.closesAt)} and you arrive at ${formatClock(conflict.arrivalMinutes)}.`;
+    case "arrives-before-open":
+      return `Opens at ${formatClock(conflict.opensAt)} and you arrive at ${formatClock(conflict.arrivalMinutes)}.`;
     case "closed-all-day":
       return `Closed on ${weekdayName(conflict.weekday)}.`;
     case "stay-overruns-close":
