@@ -284,7 +284,7 @@ export function StopCard({
       onMouseLeave={() => {
         onHover(null);
       }}
-      className={`day-stop group grid grid-cols-[30px_minmax(0,1fr)] gap-x-[13px] rounded-row border bg-paper-raised px-4 py-[15px] ${
+      className={`day-stop group grid grid-cols-[30px_minmax(0,1fr)] gap-x-[13px] rounded-row border bg-paper-raised px-4 py-[13px] ${
         dragging ? "opacity-35" : ""
       } ${
         dragOver && !dragging
@@ -312,7 +312,13 @@ export function StopCard({
         <span className="thread flex-1" aria-hidden="true" />
       </div>
 
-      <div className="flex min-w-0 flex-col gap-[11px]">
+      {/* The blocks of the card, spaced once. Each of them carries the
+          leading its own type step brought with it, so a gap wide enough to
+          separate two boxes separates the words inside them by a good deal
+          more, and the card was mostly air. The address keeps its leading
+          whatever else goes: it is where the stacked marks of a Vietnamese
+          street name land, and nothing here is worth clipping one. */}
+      <div className="flex min-w-0 flex-col gap-2">
         <div className="flex items-start gap-[10px]">
           <div className="min-w-0 flex-1">
             <h3 className="font-display text-place text-ink">{stop.placeName}</h3>
@@ -482,7 +488,7 @@ export function StopCard({
             }}
             placeholder="A note for whoever you are travelling with."
             aria-label={`Note about ${stop.placeName}`}
-            className="w-full resize-none overflow-hidden rounded-chip border border-rule bg-paper px-[11px] py-2 text-meta text-ink caret-terracotta outline-none placeholder:text-ink-faint focus-visible:border-terracotta"
+            className="w-full resize-none overflow-hidden rounded-chip border border-rule bg-paper px-[11px] py-[7px] text-meta text-ink caret-terracotta outline-none placeholder:text-ink-faint focus-visible:border-terracotta"
           />
         )}
 
