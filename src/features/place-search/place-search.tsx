@@ -36,6 +36,12 @@ const refusalSchema = z.object({ error: z.string(), action: z.string().optional(
 
 type Suggestion = z.infer<typeof suggestionSchema>;
 
+/** A place chosen and on its way to the day, by the choice rather than the place. */
+interface Landing {
+  readonly id: number;
+  readonly name: string;
+}
+
 export interface AddPlaceOutcome {
   readonly added: string | null;
   readonly error: string | null;
@@ -146,13 +152,21 @@ export function PlaceSearch({
   const [searchMessage, setSearchMessage] = useState<string | null>(null);
   const [addError, setAddError] = useState<string | null>(null);
   const [landed, setLanded] = useState<string | null>(null);
-  const [adding, setAdding] = useState<string | null>(null);
+  /** Chosen and not yet on the day, in the order they were chosen. */
+  const [landing, setLanding] = useState<readonly Landing[]>([]);
+  /**
+   * Places chosen since the trip last came back, so the list stops offering
+   * one the moment it is picked rather than when the server says so. Pruned
+   * below as the trip catches up, which is also what lets a place come back
+   * to the list if the stop is taken off the day again.
+   */
+  const [chosen, setChosen] = useState<ReadonlySet<string>>(new Set());
   /**
    * What the city is known for, for the field nobody has typed in yet. Null
    * until the city has answered.
    */
   const [popular, setPopular] = useState<readonly Suggestion[] | null>(null);
-  const [pending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
 
   const fieldId = useId();
   const listId = `${fieldId}-list`;
@@ -168,6 +182,21 @@ export function PlaceSearch({
    * way in, only in the answer.
    */
   const askedAboutCity = useRef(false);
+  /**
+   * Adds go one at a time, in the order they were chosen. The way to a new
+   * stop is measured from the stop before it, so the server has to see them
+   * in that order: fired together, two places chosen a moment apart would
+   * both be measured from whatever the day ended with before either landed.
+   */
+  const queue = useRef<Promise<void>>(Promise.resolve());
+  /** Names each choice, so two of the same place are still two landings. */
+  const landings = useRef(0);
+
+  // Adjusted during the render that carries the new trip rather than in an
+  // effect, which would paint the place in both lists for a frame first.
+  if ([...chosen].some((one) => onTheTrip.has(one))) {
+    setChosen(new Set([...chosen].filter((one) => !onTheTrip.has(one))));
+  }
 
   const trimmed = query.trim();
   const searched = trimmed.length >= MINIMUM_LETTERS;
@@ -265,33 +294,57 @@ export function PlaceSearch({
     input.current?.focus();
   };
 
+  /**
+   * Put a place on the day, and be ready for the next one at once.
+   *
+   * Somebody planning a day adds four or five places in a row, and each one
+   * used to take the list away, refuse a second choice, and hand the field
+   * back empty only once the server had written the stop and worked out the
+   * times. The field is cleared and the list is back the moment a place is
+   * chosen; the choice itself is still one at a time, behind the ones before
+   * it, but nothing waits on it to be made.
+   */
   const choose = (suggestion: Suggestion): void => {
-    if (pending) {
-      return;
-    }
-    setAdding(suggestion.name);
+    const { providerPlaceId, name } = suggestion;
+    const id = landings.current + 1;
+    landings.current = id;
+    // The session covered the typing that found this place and the detail
+    // lookup that follows it, and ends here. The next search starts a new one.
+    const chosenIn = session.current;
+    session.current = null;
+
+    newest.current += 1;
+    setQuery("");
+    setSuggestions([]);
+    setSearchMessage(null);
     setAddError(null);
-    startTransition(async () => {
-      const outcome = await onAdd({
-        slug,
-        dayId,
-        providerPlaceId: suggestion.providerPlaceId,
-        session: session.current,
-      });
-      setAdding(null);
+    setLanding((waiting) => [...waiting, { id, name }]);
+    setChosen((already) => new Set(already).add(providerPlaceId));
+    input.current?.focus();
+
+    const add = async (): Promise<void> => {
+      const outcome = await onAdd({ slug, dayId, providerPlaceId, session: chosenIn });
+      setLanding((waiting) => waiting.filter((one) => one.id !== id));
 
       if (outcome.error !== null) {
         setAddError(outcome.error);
+        // It never landed, so the list may offer it again.
+        setChosen((already) => {
+          const left = new Set(already);
+          left.delete(providerPlaceId);
+          return left;
+        });
         return;
       }
-      // The session ends with the choice, so the next search starts a new one.
-      session.current = null;
-      newest.current += 1;
-      setQuery("");
-      setSuggestions([]);
-      setSearchMessage(null);
-      setOpen(false);
       setLanded(outcome.added === null ? null : `${outcome.added} is on ${dayName}.`);
+    };
+
+    // Behind whatever is already going, and behind it whether that one
+    // landed or was refused: a refusal is this trip answering, not a reason
+    // to stop measuring the next leg from the right place.
+    queue.current = queue.current.then(add, add);
+    startTransition(async () => {
+      await queue.current;
     });
   };
 
@@ -305,7 +358,7 @@ export function PlaceSearch({
    * leaves the list the instant it lands on a day, without asking again.
    */
   const recommended = (popular ?? [])
-    .filter((one) => !onTheTrip.has(one.providerPlaceId))
+    .filter((one) => !onTheTrip.has(one.providerPlaceId) && !chosen.has(one.providerPlaceId))
     .slice(0, RECOMMENDED_SHOWN);
 
   /**
@@ -372,9 +425,6 @@ export function PlaceSearch({
    * trip with no city has a field and nothing more.
    */
   const line = ((): string | null => {
-    if (adding !== null) {
-      return `Adding ${adding} to ${dayName}.`;
-    }
     if (!open) {
       return null;
     }
@@ -392,8 +442,24 @@ export function PlaceSearch({
       : "Nothing matched. Try the name of the place, or the street it is on.";
   })();
 
-  const listed = open && visible.length > 0 && adding === null;
-  const panel = listed || line !== null;
+  /**
+   * What is still on its way, over the list rather than instead of it: the
+   * next place is chosen from the same list while this one is being written
+   * down, so taking the list away to say so would be taking away the thing
+   * the sentence is asking you to wait for.
+   */
+  const landingLine = ((): string | null => {
+    const [first] = landing;
+    if (first === undefined) {
+      return null;
+    }
+    return landing.length === 1
+      ? `Adding ${first.name} to ${dayName}.`
+      : `Adding ${String(landing.length)} places to ${dayName}.`;
+  })();
+
+  const listed = open && visible.length > 0;
+  const panel = listed || line !== null || landingLine !== null;
 
   return (
     <div className="relative" ref={container}>
@@ -441,6 +507,7 @@ export function PlaceSearch({
 
       {panel ? (
         <div className="scroll-quiet absolute top-full right-0 left-0 z-30 mt-2 max-h-[330px] overflow-x-hidden overflow-y-auto rounded-panel border border-rule bg-paper-raised p-[7px] shadow-md">
+          {landingLine === null ? null : <p className={PANEL_LINE}>{landingLine}</p>}
           {line === null ? null : <p className={PANEL_LINE}>{line}</p>}
 
           {listed ? (
