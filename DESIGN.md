@@ -324,14 +324,13 @@ said only that this concerned the time, and every line on a stop card does. The 
 alone is never the signal.
 
 A stop card carries its own controls and no others. The two that act on the whole
-stop, moving it and taking it off the day, sit at the top right with the two times,
-because they are about the row rather than about anything inside it: beside the times
-where the card is wide enough, under them where it is not. The address runs the full
-width of the card under the name wherever the tools are beside the times, so a street
-and a suburb read on one line instead of breaking early against the times; on a
-narrower card it runs on under the times as far as the tools. The tools are drawn at 55
-percent until the pointer is over the card and never hidden, since half the people
-using this have no pointer to hover with. How long the stop lasts is a stepper in a
+stop, moving it and taking it off the day, sit under the two times at the top right,
+because they are about the row rather than about anything inside it. The address under
+the name runs on beneath the times as far as the tools reach, which are narrower than
+the times, rather than stopping at the name's width: a street and a suburb that broke
+early against the times mostly read on one line. The tools are drawn at 55 percent
+until the pointer is over the card and never hidden, since half the people using this
+have no pointer to hover with. How long the stop lasts is a stepper in a
 pill, the opening hours sit beside it in words, and the note is either a field or the
 one line offering to start one. Removing is immediate: a stop is a search away from
 coming back, and a dialog asking twice would be a modal over something editable in
