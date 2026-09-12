@@ -51,18 +51,22 @@ export function AboutPlaceButton({
 }
 
 /**
- * The glyphs on a tools row, each at the edge that brings it to the size of
- * the others. They are drawn in a box of 24 and fill it differently: the X
- * runs from 6 to 18, the photograph from 3 to 21, so at one edge the X was
- * two thirds the size of the photograph beside it. Roughly nine pixels of
- * glyph each, and one stroke for all of them.
+ * The glyphs on a tools row, each at the edge that brings the ink it puts on
+ * the page to the size of the others.
+ *
+ * They are drawn in a box of 24 and fill it differently, so the edge is not
+ * the size: the X runs 6 to 18, the photograph 3 to 21, the pencil corner to
+ * corner. Measured rather than guessed, painted stroke and all, these land
+ * within a tenth of a pixel of each other at about ten and a half. The grip
+ * is two columns of dots and cannot be as wide as the rest without being
+ * taller than them, so it matches on height and is left narrow.
  */
 export const TOOL_GLYPH = {
   stroke: 2.75,
   photos: 12,
-  pencil: 13,
-  grip: 13,
-  close: 16,
+  pencil: 11,
+  grip: 16,
+  close: 17,
 } as const;
 
 /** A quarter of an hour: the smallest amount of time worth naming on a day. */
