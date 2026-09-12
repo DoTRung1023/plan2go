@@ -12,39 +12,6 @@ import type { DayActions } from "./day-actions";
 import { formatDistance } from "./format-distance";
 import { rideSentence } from "./transit-ride";
 
-/**
- * The unit beside a number, set quieter and smaller than it.
- *
- * "12 min" and "54 min" are read against each other across three tiles, and
- * what differs is the number: the unit is the same three letters every time,
- * taking up as much of the line as the thing actually being compared. Sized
- * in em rather than pixels, so one rule serves the duration and the distance
- * under it without either being told the other's size.
- */
-const UNIT = "text-[0.76em] font-medium text-ink-muted";
-
-/**
- * A measurement with its units drawn back. Split on the spaces the formatters
- * put in, so "1 hr 40 min" quietens both of its units, and a value with no
- * digits in it at all is a word rather than a measurement and is left alone.
- */
-function Measured({ value }: { readonly value: string }) {
-  if (!/\d/.test(value)) {
-    return value;
-  }
-  return value
-    .split(/(\s+)/)
-    .map((part, at) =>
-      /^\d/.test(part) || part.trim() === "" ? (
-        part
-      ) : (
-        <span key={`${part}-${String(at)}`} className={UNIT}>
-          {part}
-        </span>
-      ),
-    );
-}
-
 /** The mode in words, so the map's stroke pattern is never the only source. */
 export const MODE_WORDS: Readonly<Record<TravelMode, string>> = {
   walk: "Walk",
@@ -129,20 +96,41 @@ function Option({
           }`}
         />
       </span>
-      {/* The one line here that can run to two, so it keeps a leading, and a
-          tighter one than the scale hands it: two words of a mode name are
-          closer kin than two lines of a paragraph. */}
-      <span className="text-micro/[1.2] font-semibold text-ink-muted [overflow-wrap:anywhere]">
+      {/* The mode and the distance are written the way the closed row writes
+          them, because the open panel is that row with its workings shown and
+          not a second component: the name in ink at the tier the interface is
+          made of, the distance the same tier in the quiet colour. Only the
+          duration is promoted, and only here, because comparing durations is
+          the whole of what the panel is opened for.
+
+          This one line can run to two, so it keeps a leading where the closed
+          row turns it off: two words of a mode name are closer kin than two
+          lines of a paragraph. */}
+      <span className="text-small/[1.2] font-semibold text-ink [overflow-wrap:anywhere]">
         {MODE_WORDS[option.mode]}
       </span>
-      <span className="font-display text-place/none text-ink tabular-nums [overflow-wrap:anywhere]">
-        <Measured
-          value={unavailable ? "Unavailable" : formatDuration(option.durationMinutes ?? 0)}
-        />
-      </span>
-      <span className="text-meta/none text-ink-muted tabular-nums">
+      {/* How long, and beside it how far. Stacked they read as two facts
+          about the mode rather than as the one answer the tile is for, and
+          each cost the tile a line of its height.
+
+          The time keeps the display face and the larger step it had: it is
+          the number the three tiles are compared on, and a measurement that
+          leads a line should not be the same weight as the one qualifying it.
+          That difference is also what separates the two, where the closed row
+          needs a dot between them because there it is one run of one colour.
+          A dot here would be the first thing on the next line whenever the
+          pair did not fit, and at this width a long enough journey never
+          does.
+
+          Baselines rather than boxes, so two sizes sit on one line. */}
+      <span className="flex flex-wrap items-baseline gap-x-[7px]">
+        <span className="font-display text-place/none text-ink tabular-nums [overflow-wrap:anywhere]">
+          {unavailable ? "Unavailable" : formatDuration(option.durationMinutes ?? 0)}
+        </span>
         {option.distanceMeters === null ? null : (
-          <Measured value={formatDistance(option.distanceMeters)} />
+          <span className="text-small/none text-ink-muted tabular-nums">
+            {formatDistance(option.distanceMeters)}
+          </span>
         )}
       </span>
       {/* Numbers but no shape to the route: nobody could tell us the way, so
