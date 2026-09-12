@@ -244,7 +244,7 @@ one place such a number may appear. Every element that renders a time or a durat
 
 - **title:** the trip name, and the heading of an empty day.
 - **place:** a place name, and the time against an anchor row.
-- **time:** the arrival time on a stop card.
+- **time:** when a stop is arrived at and left, on its card.
 - **body:** running text.
 - **meta:** secondary text, addresses, the words in a leg row.
 - **micro:** the second line of a search result, and the sentence in a conflict.
@@ -308,7 +308,13 @@ of its own, because it is what happens between two stops rather than a thing in 
 The start and end of a day are a different shape from a stop, not merely a different
 colour: a sage square with one corner cut, against the terracotta discs. A day may
 start and end in the same place, in which case there is one marker rather than two on
-top of each other.
+top of each other. Each says when the place it stands at is open, in the same words and
+the same clock a stop card uses: a hotel that locks its doors at eleven is as much use
+to know about as a museum that shuts at five.
+
+A stop says when it is arrived at and when it is left, the pair at the top right with an
+arrow between them. The second is the first plus the stay set underneath, which is
+arithmetic a person should not have to do to find out when they are done somewhere.
 
 A conflict is a terracotta block carrying the sentence that names it, with a warning
 triangle beside the words. The accent rather than the second voice: sage is what the ends
@@ -318,7 +324,7 @@ said only that this concerned the time, and every line on a stop card does. The 
 alone is never the signal.
 
 A stop card carries its own controls and no others. The two that act on the whole
-stop, moving it and taking it off the day, sit under the arrival time at the top right,
+stop, moving it and taking it off the day, sit under the two times at the top right,
 because they are about the row rather than about anything inside it. They are drawn at
 55 percent until the pointer is over the card and never hidden, since half the people
 using this have no pointer to hover with. How long the stop lasts is a stepper in a

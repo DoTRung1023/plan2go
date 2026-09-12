@@ -5,7 +5,15 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import type { Conflict } from "@/core/model/conflict";
 import type { ComputedStop } from "@/core/time/compute-day";
 import { formatDuration } from "@/core/time/minutes";
-import { ClockIcon, CloseIcon, GripIcon, MinusIcon, PhotosIcon, PlusIcon } from "@/ui/icons";
+import {
+  ArrowRightIcon,
+  ClockIcon,
+  CloseIcon,
+  GripIcon,
+  MinusIcon,
+  PhotosIcon,
+  PlusIcon,
+} from "@/ui/icons";
 import type { DayActions } from "./day-actions";
 import { ConflictNotice } from "./conflict-notice";
 import { formatDayTime } from "./format-day-time";
@@ -318,9 +326,33 @@ export function StopCard({
                 clock to change is beside the day's name at the top of the
                 panel. In the accent, a shade down for text at this size: the
                 time is the loudest thing on the card, and it is warm rather
-                than black beside the disc that shares its colour. */}
-            <p className="font-display text-time whitespace-nowrap text-terracotta-700 tabular-nums">
-              {stop.arrival === null ? "Time not known" : formatDayTime(stop.arrival)}
+                than black beside the disc that shares its colour.
+
+                Both ends of the stay rather than only its beginning. When you
+                get somewhere is half of what a stop is; the other half is when
+                you are done with it, and it was only ever readable by adding
+                the stay underneath to the time above it. The arrow is the same
+                one the starter page puts between the two ends of a trip. */}
+            <p className="flex items-center gap-[5px] font-display text-time whitespace-nowrap text-terracotta-700 tabular-nums">
+              {stop.arrival === null ? (
+                "Time not known"
+              ) : (
+                <>
+                  {formatDayTime(stop.arrival)}
+                  {stop.departure === null ? null : (
+                    <>
+                      <ArrowRightIcon
+                        size={13}
+                        strokeWidth={2.5}
+                        aria-hidden="true"
+                        className="shrink-0 text-terracotta-700/65"
+                      />
+                      <span className="sr-only">to</span>
+                      {formatDayTime(stop.departure)}
+                    </>
+                  )}
+                </>
+              )}
             </p>
             {stop.waitMinutes === 0 ? null : (
               /* Waiting is a fact about the morning, not a fault in it, so it

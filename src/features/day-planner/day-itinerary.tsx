@@ -8,7 +8,7 @@ import type { StopId } from "@/core/model/stop";
 import type { ComputedDay, ComputedStop } from "@/core/time/compute-day";
 import { formatClock } from "@/core/time/minutes";
 import { weekdayOf } from "@/core/time/zoned";
-import { CloseIcon, FlagIcon, HomeIcon, PencilIcon } from "@/ui/icons";
+import { ClockIcon, CloseIcon, FlagIcon, HomeIcon, PencilIcon } from "@/ui/icons";
 import type { PlannedDay } from "./compute-trip";
 import type { DayActions } from "./day-actions";
 import { EmptyDay } from "./empty-day";
@@ -115,6 +115,7 @@ function Anchor({
   endpoint,
   fallback,
   time,
+  hours,
   controls,
   hovered,
   onHover,
@@ -130,6 +131,8 @@ function Anchor({
    * everything before it.
    */
   readonly time: string | null;
+  /** When the place is open on this day, or null when we do not know. */
+  readonly hours: string | null;
   /** What can be done to this end of the day, for a reader who may change it. */
   readonly controls: React.ReactNode;
   /** Whether the pointer is on this place, here or on the map beside it. */
@@ -184,6 +187,15 @@ function Anchor({
           <p className="mt-[3px] text-meta text-ink-faint">
             {endpoint.place.address ?? fallback}
           </p>
+          {/* The same line a stop card carries, in the same words and the same
+              clock: a hotel that locks its doors at eleven is as much use to
+              know about as a museum that shuts at five. */}
+          {hours === null ? null : (
+            <p className="mt-[5px] flex items-center gap-[5px] text-micro text-ink-muted tabular-nums">
+              <ClockIcon size={12} className="shrink-0" />
+              {hours}
+            </p>
+          )}
         </div>
 
         {/* The time, and under it what can be done to this end of the day:
@@ -319,6 +331,7 @@ function EndpointSlot({
           endpoint={endpoint}
           fallback={words.label}
           time={time}
+          hours={hoursOn(endpoint.place, day)}
           controls={picking ? null : controls}
           hovered={hoveredEndpointId === endpoint.place.id}
           onHover={onHoverEndpoint}
