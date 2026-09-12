@@ -19,10 +19,14 @@ const RECOMMENDED_SHOWN = 6;
 
 /**
  * Recommendations asked for, which is more than are shown. What the trip
- * already holds comes out of this list, and a traveller half way through
- * planning a city would otherwise be left looking at two.
+ * already holds comes out of this list, and the next in line takes its place,
+ * so the list stays the same length for as long as there is anything left to
+ * fill it from. This is every place the provider will name for one question
+ * and it costs no more than asking for six, so the whole of it is asked for
+ * at once: a traveller who has taken fourteen of a city's best known places
+ * has been offered the lot, and there is no page after this one to turn to.
  */
-const RECOMMENDED_ASKED = 10;
+const RECOMMENDED_ASKED = 20;
 
 const suggestionSchema = z.object({
   providerPlaceId: z.string(),

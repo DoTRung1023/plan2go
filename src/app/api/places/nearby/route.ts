@@ -15,10 +15,13 @@ const POLICY: RateLimitPolicy = { windowSeconds: 60, maxRequests: 10 };
 
 const ROUTE = "places-nearby";
 
+/** As many as the provider will name for one question. */
+const MOST_ASKED = 20;
+
 const querySchema = z.object({
   lat: z.coerce.number().min(-90).max(90),
   lng: z.coerce.number().min(-180).max(180),
-  limit: z.coerce.number().int().min(1).max(10).default(6),
+  limit: z.coerce.number().int().min(1).max(MOST_ASKED).default(6),
 });
 
 /**
