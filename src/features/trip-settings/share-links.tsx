@@ -6,7 +6,7 @@ import { MENU_ITEM } from "./trip-menu";
 
 /** The word at the end of the pill, in the accent, with the pill's own ground under the pointer. */
 const COPY =
-  "shrink-0 rounded-pill px-3 py-[6px] text-body/none font-semibold text-terracotta-700 hover:bg-terracotta-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "shrink-0 rounded-pill px-3 py-[6px] text-small/none font-semibold text-terracotta-700 hover:bg-terracotta-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 /**
  * The link and the word that copies it share one sunken pill, so the two read
@@ -14,13 +14,13 @@ const COPY =
  * selectable rather than hidden behind the button, so a browser with no
  * clipboard to write to still hands it over.
  */
-const LINK_PILL = "mt-2 flex items-center gap-1 rounded-pill bg-paper-sunken py-1 pr-1 pl-4";
+const LINK_PILL = "mt-[6px] flex items-center gap-1 rounded-pill bg-paper-sunken py-[3px] pr-[3px] pl-3";
 
 const LINK_FIELD =
-  "min-w-0 flex-1 truncate bg-transparent py-[6px] text-body text-ink-muted outline-none focus-visible:rounded-[4px] focus-visible:outline-2 focus-visible:outline-offset-[6px] focus-visible:outline-terracotta";
+  "min-w-0 flex-1 truncate bg-transparent py-1 text-small text-ink-muted outline-none focus-visible:rounded-[4px] focus-visible:outline-2 focus-visible:outline-offset-[5px] focus-visible:outline-terracotta";
 
-/** Which link, over its pill. Bold body, as a label over a value in a dialog rather than on a card. */
-const LABEL = "mt-5 text-body font-semibold text-ink";
+/** Which link, over its pill: the interface's own tier, in bold, as a label over a value. */
+const LABEL = "mt-4 text-small font-semibold text-ink";
 
 /** Long enough to read, short enough that the panel is not left saying it. */
 const COPIED_MS = 2000;
@@ -164,20 +164,20 @@ export function ShareLinks({ slug, editKey }: ShareLinksProps) {
               close();
             }
           }}
-          className="absolute top-full right-0 z-50 mt-2 w-[min(400px,calc(100vw-2rem))] rounded-panel border border-rule bg-paper-raised p-6 text-left shadow-lg"
+          className="absolute top-full right-0 z-50 mt-2 w-[min(340px,calc(100vw-2rem))] rounded-panel border border-rule bg-paper-raised p-5 text-left shadow-lg"
         >
-          {/* Named the way the dialog that deletes the trip is named, at the
-              size the trip's own name is set in, with the way out across
-              from it. */}
+          {/* Named the way the dialog that deletes the trip is named and set
+              in the same panel, heading and tier, with the way out across
+              from the name. */}
           <div className="flex items-start justify-between gap-3">
-            <p className="font-display text-title text-ink">Share this trip</p>
+            <p className="font-display text-lead text-ink">Share this trip</p>
             <button
               type="button"
               onClick={close}
               aria-label="Close"
-              className="-mt-1 -mr-2 grid h-9 w-9 shrink-0 place-items-center rounded-pill text-ink-muted hover:bg-neutral-200 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+              className="-mt-1 -mr-1.5 grid h-8 w-8 shrink-0 place-items-center rounded-pill text-ink-muted hover:bg-neutral-200 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
             >
-              <CloseIcon size={16} strokeWidth={2.5} />
+              <CloseIcon size={14} strokeWidth={2.5} />
             </button>
           </div>
 

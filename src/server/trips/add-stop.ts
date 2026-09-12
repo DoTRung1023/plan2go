@@ -44,6 +44,14 @@ function travelsFrom(day: DayPlan | undefined): LatLng | null {
  * The trip's own copy is checked first, so the details call is paid for once
  * per place per trip and never again, which is also what lets a saved trip be
  * rendered years later without touching the provider.
+ *
+ * Everything that does not wait on anything else is asked for at once. Adding
+ * a place is the slowest thing a person does often here, and it used to be
+ * four waits one behind the other: the trip read, then the way in, then the
+ * write, then the way out. The trip read has no bearing on which place this
+ * is, and both legs are measured between points that are known before either
+ * is written, so only the two writes are left in a line, and those have to be:
+ * the first is what says the key is good.
  */
 export async function addStopFromSearch(
   request: AddStopRequest,
@@ -51,7 +59,14 @@ export async function addStopFromSearch(
   provider: PlacesProvider,
   travel: TravelProvider,
 ): Promise<AddStopResult> {
-  const stored = await repository.findPlaceByProviderId(request.slug, request.providerPlaceId);
+  // The trip is read for the point the new leg starts at, which is a
+  // different question from which place this is, so neither waits on the
+  // other. The write below is still what authorises the change, so this tells
+  // an outsider nothing they could not have read from the trip's own page.
+  const [stored, trip] = await Promise.all([
+    repository.findPlaceByProviderId(request.slug, request.providerPlaceId),
+    repository.findBySlug(request.slug),
+  ]);
   const place: Place | null =
     stored ?? (await provider.details(request.providerPlaceId, request.session));
 
@@ -59,11 +74,16 @@ export async function addStopFromSearch(
     return { status: "no-such-place" };
   }
 
-  // Read for the point the new leg starts at. The write below is still what
-  // authorises the change, so this tells an outsider nothing they could not
-  // have read from the trip's own page.
-  const trip = await repository.findBySlug(request.slug);
   const day = trip?.days.find((candidate) => candidate.id === request.dayId);
+  // A new last stop is also where the leg out to the day's end now starts
+  // from, and the way home from somewhere else was an answer to a different
+  // question. Asked again, the way every leg with new ends is. Both legs run
+  // between points already known, so both are measured at once.
+  const end = day?.end ?? null;
+  const [wayIn, wayOut] = await Promise.all([
+    fastestTravelMode(travelsFrom(day), place.position, travel),
+    end === null ? null : fastestTravelMode(place.position, end.place.position, travel),
+  ]);
 
   const added = await repository.addStop({
     slug: request.slug,
@@ -71,23 +91,19 @@ export async function addStopFromSearch(
     dayId: request.dayId,
     place,
     stayMinutes: DEFAULT_STAY_MINUTES,
-    travelMode: await fastestTravelMode(travelsFrom(day), place.position, travel),
+    travelMode: wayIn,
   });
   if (added.status === "refused") {
     return { status: "refused" };
   }
 
-  // A new last stop is also where the leg out to the day's end now starts
-  // from, and the way home from somewhere else was an answer to a different
-  // question. Asked again, the way every leg with new ends is.
-  const end = day?.end;
-  if (end !== null && end !== undefined) {
+  if (wayOut !== null) {
     await repository.setLegMode({
       slug: request.slug,
       editKeyHash: request.editKeyHash,
       dayId: request.dayId,
       stopId: null,
-      mode: await fastestTravelMode(place.position, end.place.position, travel),
+      mode: wayOut,
     });
   }
 

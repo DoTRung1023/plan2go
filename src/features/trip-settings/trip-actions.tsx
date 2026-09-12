@@ -11,7 +11,7 @@ export interface DeleteTripOutcome {
 }
 
 const ANSWER =
-  "inline-flex h-[34px] items-center justify-center rounded-pill px-5 text-body font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "inline-flex h-8 items-center justify-center rounded-pill px-4 text-small/none font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 /** The answer that destroys something is the one that carries the accent, and the only one in a pill. */
 const CONFIRM = `${ANSWER} bg-terracotta text-paper hover:bg-terracotta-600 active:bg-terracotta-700`;
@@ -154,15 +154,17 @@ export function TripActions({
               close();
             }
           }}
-          className="absolute top-full right-0 z-50 mt-2 w-[min(360px,calc(100vw-2rem))] rounded-panel border border-rule bg-paper-raised p-6 text-left shadow-lg"
+          className="absolute top-full right-0 z-50 mt-2 w-[min(340px,calc(100vw-2rem))] rounded-panel border border-rule bg-paper-raised p-5 text-left shadow-lg"
         >
-          {/* The question as a heading, at the size the trip's own name is
-              set in, and under it the one thing worth saying before the
-              answer: that there is no taking it back. The answers sit at the
-              right, the way out first and the deed last. */}
-          <p className="font-display text-title text-ink">Delete this trip?</p>
-          <p className="mt-[6px] text-body text-ink-muted">This cannot be undone.</p>
-          <div className="mt-6 flex justify-end gap-3">
+          {/* The question as a heading, at the step for a heading that is
+              neither the trip's name nor a place, and under it the one thing
+              worth saying before the answer: that there is no taking it back.
+              The answers sit at the right, the way out first and the deed
+              last. The same panel, heading and tier as the dialog that
+              shares the trip, so the two read as one kind of thing. */}
+          <p className="font-display text-lead text-ink">Delete this trip?</p>
+          <p className="mt-1 text-small text-ink-muted">This cannot be undone.</p>
+          <div className="mt-5 flex justify-end gap-2">
             <button type="button" ref={cancel} onClick={close} className={CANCEL}>
               Cancel
             </button>
