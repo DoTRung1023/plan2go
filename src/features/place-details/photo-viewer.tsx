@@ -15,6 +15,12 @@ interface PhotoViewerProps {
   readonly at: number;
   /** The picture at the width the viewer draws, from the sheet's photo route. */
   readonly urlFor: (at: number) => string;
+  /**
+   * The same picture at the width the sheet drew it, which the browser
+   * fetched before the sheet was shown and still holds. Something to look at
+   * while the larger one is on its way.
+   */
+  readonly sheetUrlFor: (at: number) => string;
   readonly onStep: (at: number) => void;
   readonly onClose: () => void;
 }
@@ -29,15 +35,19 @@ interface PhotoViewerProps {
  * strength, not black, and the controls are the paper the sheet is made of,
  * so this is still the same product with the lights down.
  *
- * The picture is fetched at this size when it is first opened, never before,
- * and until it is here the viewer says so in one line rather than drawing
- * the picture in strips.
+ * The picture is fetched at this size when it is first opened, never before.
+ * Until it arrives the sheet's own copy stands in, scaled up from the width
+ * the strip drew it at: the browser has that one already, so the picture is
+ * there in the frame the press lands in and only sharpens afterwards. A
+ * picture soft for a moment is worth more than a line of text saying one is
+ * coming, which is what stood here and what DESIGN.md asks for in its place.
  */
 export function PhotoViewer({
   placeName,
   photos,
   at,
   urlFor,
+  sheetUrlFor,
   onStep,
   onClose,
 }: PhotoViewerProps) {
@@ -55,6 +65,17 @@ export function PhotoViewer({
     return null;
   }
   const shown = loaded === at;
+  /** The same words for either copy: it is the same picture, only sharper. */
+  const described = `${placeName}${photo.by === null ? "" : `, photographed by ${photo.by}`}`;
+  /**
+   * Both copies are drawn at the full picture's own size, brought down to fit
+   * inside the room there is. Stated rather than left to each bitmap: the
+   * smaller copy is a fifth of the width, and asked to size itself it would
+   * stand in at a fifth of the size and be replaced by something five times
+   * bigger. A replaced element given both a size and two limits is scaled to
+   * fit within them and keeps its proportions, so the two agree to the pixel.
+   */
+  const drawn = "max-h-full max-w-full rounded-chip";
 
   return (
     <div
@@ -94,6 +115,7 @@ export function PhotoViewer({
           does not: a press that lands a little wide of it is a press to
           leave, and a press on it is a person looking closer. */}
       <div
+        aria-busy={!shown}
         className="flex min-h-0 flex-1 items-center justify-center px-5 py-4"
         onClick={(event) => {
           if (event.target === event.currentTarget) {
@@ -101,21 +123,34 @@ export function PhotoViewer({
           }
         }}
       >
-        {shown ? null : <p className="text-meta text-paper">Loading the photo.</p>}
+        {/* The copy the sheet already has, standing in until the larger one
+            lands and exactly as big, so what replaces it replaces nothing but
+            the sharpness. Taken down rather than faded out: the two are the
+            same picture, and this product fades nothing. */}
+        {shown ? null : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={sheetUrlFor(at)}
+            alt={described}
+            width={photo.width}
+            height={photo.height}
+            className={drawn}
+          />
+        )}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           key={at}
           src={urlFor(at)}
-          alt={`${placeName}${photo.by === null ? "" : `, photographed by ${photo.by}`}`}
+          alt={described}
           width={photo.width}
           height={photo.height}
+          // Ahead of anything else the page is still fetching: this one is
+          // the whole of what the viewer is for.
+          fetchPriority="high"
           onLoad={() => {
             setLoaded(at);
           }}
-          // Both edges auto under both limits, so the box is the picture's
-          // own shape scaled to fit, and the corners are rounded on the
-          // picture rather than on a wider box around it.
-          className={`h-auto max-h-full w-auto max-w-full rounded-chip ${shown ? "" : "hidden"}`}
+          className={`${drawn} ${shown ? "" : "hidden"}`}
         />
       </div>
 

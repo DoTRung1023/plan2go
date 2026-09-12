@@ -571,6 +571,7 @@ export function PlaceSheet({ slug, place, askedFor, onClose }: PlaceSheetProps) 
           photos={card.photos}
           at={viewing}
           urlFor={(at) => photoUrl(slug, id, at, VIEW_WIDTH)}
+          sheetUrlFor={(at) => photoUrl(slug, id, at, widthAt(at))}
           onStep={setViewing}
           onClose={() => {
             setViewing(null);
