@@ -339,7 +339,7 @@ export function LegRow({
             <div className="mb-[11px] flex items-baseline gap-2">
               {/* No distance beside the heading: every way of covering the leg
                   is about to say its own, and they are not all the same. */}
-              <p className="text-label font-semibold text-ink-muted">How you get there</p>
+              <p className="text-small/none font-semibold text-ink-muted">How you get there</p>
               <button
                 type="button"
                 onClick={() => {
