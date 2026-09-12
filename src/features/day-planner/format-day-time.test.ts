@@ -14,7 +14,7 @@ describe("formatDayTime", () => {
   });
 
   it("says when a time has rolled over midnight", () => {
-    expect(formatDayTime(time(30, 1))).toBe("00:30 the next day");
+    expect(formatDayTime(time(30, 1))).toBe("00:30 next day");
   });
 
   it("counts the days when it is further out than one", () => {
