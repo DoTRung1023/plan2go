@@ -9,11 +9,24 @@ const STEP =
   "rounded-pill bg-paper-raised/90 px-4 py-[9px] text-small/none font-semibold text-ink shadow-sm hover:bg-paper-raised disabled:opacity-45 disabled:hover:bg-paper-raised/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 /**
- * How wide the picture may be drawn, in the browser's terms, so it can weigh
- * the choices in the set against the screen: the window less the padding
- * either side of the frame below.
+ * The window's chrome around the frame the picture is drawn in: the padding
+ * either side, and above and below it the count, the close, the credit and
+ * the two steps. What the picture cannot have.
  */
-const SIZES = "calc(100vw - 40px)";
+const FRAME_SIDES_PX = 40;
+const FRAME_ENDS_PX = 140;
+
+/**
+ * How wide this picture will be drawn, in the browser's terms, so it can
+ * weigh the choices in the set against the screen. A picture fits the frame
+ * on whichever side it reaches first, so a tall one is bounded by the
+ * window's height and not its width, and the width it is actually drawn at
+ * is what decides which copy is worth fetching.
+ */
+function sizesFor(photo: PlacePhoto): string {
+  const ratio = photo.width / photo.height;
+  return `min(calc(100vw - ${String(FRAME_SIDES_PX)}px), calc((100vh - ${String(FRAME_ENDS_PX)}px) * ${String(ratio)}))`;
+}
 
 interface PhotoViewerProps {
   readonly placeName: string;
@@ -83,10 +96,14 @@ export function PhotoViewer({
    * that build them: the caller hands over new ones of those every time it
    * renders, and these are the same strings until the step changes.
    */
-  const beforeSrc = at > 0 ? urlFor(at - 1) : null;
-  const beforeSet = at > 0 ? srcSetFor(at - 1) : null;
-  const afterSrc = at < count - 1 ? urlFor(at + 1) : null;
-  const afterSet = at < count - 1 ? srcSetFor(at + 1) : null;
+  const before = photos[at - 1];
+  const after = photos[at + 1];
+  const beforeSrc = before === undefined ? null : urlFor(at - 1);
+  const beforeSet = before === undefined ? null : srcSetFor(at - 1);
+  const beforeSizes = before === undefined ? null : sizesFor(before);
+  const afterSrc = after === undefined ? null : urlFor(at + 1);
+  const afterSet = after === undefined ? null : srcSetFor(at + 1);
+  const afterSizes = after === undefined ? null : sizesFor(after);
 
   useEffect(() => {
     closeButton.current?.focus();
@@ -96,12 +113,12 @@ export function PhotoViewer({
     if (!shown) {
       return;
     }
-    const neighbours: readonly (readonly [string | null, string | null])[] = [
-      [beforeSrc, beforeSet],
-      [afterSrc, afterSet],
+    const neighbours: readonly (readonly [string | null, string | null, string | null])[] = [
+      [beforeSrc, beforeSet, beforeSizes],
+      [afterSrc, afterSet, afterSizes],
     ];
-    for (const [src, srcSet] of neighbours) {
-      if (src === null || srcSet === null) {
+    for (const [src, srcSet, sizes] of neighbours) {
+      if (src === null || srcSet === null || sizes === null) {
         continue;
       }
       const picture = new Image();
@@ -110,13 +127,13 @@ export function PhotoViewer({
       picture.fetchPriority = "low";
       // Chosen the way the picture on screen is, so the step finds the width
       // it will draw already here and not a different one.
-      picture.sizes = SIZES;
+      picture.sizes = sizes;
       picture.srcset = srcSet;
       picture.src = src;
     }
     // Nothing to undo. A fetch left running warms the same cache the step
     // would have asked for, so calling it off would only throw the work away.
-  }, [shown, beforeSrc, beforeSet, afterSrc, afterSet]);
+  }, [shown, beforeSrc, beforeSet, beforeSizes, afterSrc, afterSet, afterSizes]);
 
   if (photo === undefined) {
     return null;
@@ -124,14 +141,21 @@ export function PhotoViewer({
   /** The same words for either copy: it is the same picture, only sharper. */
   const described = `${placeName}${photo.by === null ? "" : `, photographed by ${photo.by}`}`;
   /**
-   * Both copies are drawn at the full picture's own size, brought down to fit
-   * inside the room there is. Stated rather than left to each bitmap: the
-   * smaller copy is a fifth of the width, and asked to size itself it would
-   * stand in at a fifth of the size and be replaced by something five times
-   * bigger. A replaced element given both a size and two limits is scaled to
-   * fit within them and keeps its proportions, so the two agree to the pixel.
+   * A box in the picture's own proportions, as large as the frame will hold
+   * on whichever side it reaches first, and both copies fill it. The box is
+   * what keeps the shape: the pictures were sized from their own width and
+   * height once, brought down by a limit on each side, and a picture taller
+   * than the frame was brought down in height alone and painted flattened,
+   * which reads as a picture out of focus. The box is also what makes the
+   * two copies the same size, so what replaces the stand-in replaces
+   * nothing but the sharpness.
    */
-  const drawn = "max-h-full max-w-full rounded-chip";
+  const ratio = photo.width / photo.height;
+  const frame = {
+    aspectRatio: `${String(photo.width)} / ${String(photo.height)}`,
+    width: `min(100cqw, calc(100cqh * ${String(ratio)}))`,
+  };
+  const fills = "absolute inset-0 h-full w-full";
 
   return (
     <div
@@ -172,44 +196,39 @@ export function PhotoViewer({
           leave, and a press on it is a person looking closer. */}
       <div
         aria-busy={!shown}
-        className="flex min-h-0 flex-1 items-center justify-center px-5 py-4"
+        // A container, so the box inside can be sized from the room there is
+        // on both sides at once.
+        className="flex min-h-0 flex-1 items-center justify-center px-5 py-4 [container-type:size]"
         onClick={(event) => {
           if (event.target === event.currentTarget) {
             onClose();
           }
         }}
       >
-        {/* The copy the sheet already has, standing in until the larger one
-            lands and exactly as big, so what replaces it replaces nothing but
-            the sharpness. Taken down rather than faded out: the two are the
-            same picture, and this product fades nothing. */}
-        {shown ? null : (
-          // eslint-disable-next-line @next/next/no-img-element
+        <div className="relative max-h-full max-w-full overflow-hidden rounded-chip" style={frame}>
+          {/* The copy the sheet already has, standing in until the larger one
+              lands. Taken down rather than faded out: the two are the same
+              picture, and this product fades nothing. */}
+          {shown ? null : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={sheetUrlFor(at)} alt={described} className={fills} />
+          )}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={sheetUrlFor(at)}
+            key={at}
+            src={urlFor(at)}
+            srcSet={srcSetFor(at)}
+            sizes={sizesFor(photo)}
             alt={described}
-            width={photo.width}
-            height={photo.height}
-            className={drawn}
+            // Ahead of anything else the page is still fetching: this one is
+            // the whole of what the viewer is for.
+            fetchPriority="high"
+            onLoad={() => {
+              setLoaded(at);
+            }}
+            className={`${fills} ${shown ? "" : "hidden"}`}
           />
-        )}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          key={at}
-          src={urlFor(at)}
-          srcSet={srcSetFor(at)}
-          sizes={SIZES}
-          alt={described}
-          width={photo.width}
-          height={photo.height}
-          // Ahead of anything else the page is still fetching: this one is
-          // the whole of what the viewer is for.
-          fetchPriority="high"
-          onLoad={() => {
-            setLoaded(at);
-          }}
-          className={`${drawn} ${shown ? "" : "hidden"}`}
-        />
+        </div>
       </div>
 
       <div className="flex items-center justify-between gap-3 px-5 pb-5">

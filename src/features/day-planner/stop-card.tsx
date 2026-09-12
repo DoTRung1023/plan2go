@@ -292,7 +292,7 @@ export function StopCard({
       onMouseLeave={() => {
         onHover(null);
       }}
-      className={`day-stop group grid grid-cols-[30px_minmax(0,1fr)] gap-x-[13px] rounded-row border bg-paper-raised px-4 py-[13px] ${
+      className={`day-stop group @container grid grid-cols-[30px_minmax(0,1fr)] gap-x-[13px] rounded-row border bg-paper-raised px-4 py-[13px] ${
         dragging ? "opacity-35" : ""
       } ${
         dragOver && !dragging
@@ -327,28 +327,38 @@ export function StopCard({
           whatever else goes: it is where the stacked marks of a Vietnamese
           street name land, and nothing here is worth clipping one. */}
       <div className="flex min-w-0 flex-col gap-2">
-        <div className="flex items-start gap-[10px]">
-          <div className="min-w-0 flex-1">
-            <h3 className="font-display text-place text-ink">{stop.placeName}</h3>
-            {address === null ? null : (
-              <p className="mt-[3px] text-meta text-ink-faint">{address}</p>
-            )}
-          </div>
+        {/* The name, the times, the tools and the address, laid out by how
+            wide the card is. Given the room, the tools sit beside the times
+            and the address has the whole width under the name, so a street
+            and a suburb fit on one line where they used to break early
+            against the times. On a narrower card the tools drop under the
+            times, as they always did, and the address runs on under the
+            times as far as the tools, which are narrower. One set of
+            elements either way: only the areas move, so nothing is drawn
+            twice. The width is the card's own, measured inside its padding,
+            and the step is where a name would otherwise be left about a
+            hundred and seventy pixels beside the tools and the times. */}
+        <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-x-[10px] gap-y-[3px] [grid-template-areas:'name_times_times'_'address_address_tools'] @min-[395px]:[grid-template-areas:'name_tools_times'_'address_address_address']">
+          <h3 className="min-w-0 font-display text-place text-ink [grid-area:name]">
+            {stop.placeName}
+          </h3>
+          {address === null ? null : (
+            <p className="min-w-0 text-meta text-ink-faint [grid-area:address]">{address}</p>
+          )}
 
-          <div className="flex flex-none flex-col items-end gap-[3px]">
-            {/* Read, never set. Every time on the day follows from when it
-                leaves, worked out through the legs and the stays, so the one
-                clock to change is beside the day's name at the top of the
-                panel. In the accent, a shade down for text at this size: the
-                time is the loudest thing on the card, and it is warm rather
-                than black beside the disc that shares its colour.
+          {/* Read, never set. Every time on the day follows from when it
+              leaves, worked out through the legs and the stays, so the one
+              clock to change is beside the day's name at the top of the
+              panel. In the accent, a shade down for text at this size: the
+              time is the loudest thing on the card, and it is warm rather
+              than black beside the disc that shares its colour.
 
-                Both ends of the stay rather than only its beginning. When you
-                get somewhere is half of what a stop is; the other half is when
-                you are done with it, and it was only ever readable by adding
-                the stay underneath to the time above it. The arrow is the same
-                one the starter page puts between the two ends of a trip. */}
-            <p className="flex items-center gap-[5px] font-display text-time whitespace-nowrap text-terracotta-700 tabular-nums">
+              Both ends of the stay rather than only its beginning. When you
+              get somewhere is half of what a stop is; the other half is when
+              you are done with it, and it was only ever readable by adding
+              the stay underneath to the time above it. The arrow is the same
+              one the starter page puts between the two ends of a trip. */}
+          <p className="flex items-center gap-[5px] self-start justify-self-end font-display text-time whitespace-nowrap text-terracotta-700 tabular-nums [grid-area:times] @min-[395px]:self-center">
               {stop.arrival === null ? (
                 "Time not known"
               ) : (
@@ -368,13 +378,13 @@ export function StopCard({
                   )}
                 </>
               )}
-            </p>
+          </p>
 
-            <div
-              className={`-mr-1 flex items-center group-hover:opacity-100 focus-within:opacity-100 ${
-                hovered ? "opacity-100" : "opacity-55"
-              }`}
-            >
+          <div
+            className={`-mr-1 flex items-center self-start justify-self-end group-hover:opacity-100 focus-within:opacity-100 [grid-area:tools] @min-[395px]:self-center ${
+              hovered ? "opacity-100" : "opacity-55"
+            }`}
+          >
               {/* For anyone reading, not only whoever can edit: what a place
                   is like is the question the people travelling ask too. */}
               <AboutPlaceButton name={stop.placeName} onOpen={onOpen} />
@@ -403,8 +413,6 @@ export function StopCard({
                   </button>
                 </>
               )}
-            </div>
-
           </div>
         </div>
 

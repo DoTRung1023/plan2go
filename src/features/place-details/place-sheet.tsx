@@ -44,13 +44,15 @@ const refusalSchema = z.object({ error: z.string(), action: z.string().optional(
 const HERO_WIDTH = 800;
 const STRIP_WIDTH = 320;
 /**
- * A picture opened to fill the window, at the two densities a screen comes
- * in: the first is enough for a plain screen, the second for one drawing two
- * device pixels to the CSS pixel, which is most laptops and every phone. The
- * browser picks, from what it knows about the screen it is on. Fetched only
- * then, never with the sheet.
+ * A picture opened to fill the window, at three sizes: enough for a plain
+ * screen, enough for one drawing two device pixels to the CSS pixel, which
+ * is most laptops and every phone, and the most the provider will give,
+ * for a large screen of that kind where even the second falls short. The
+ * browser picks, from what it knows about the screen and the room the
+ * picture will have on it, so the largest is fetched only where it can be
+ * seen. Fetched only then, never with the sheet.
  */
-const VIEW_WIDTHS = [1600, 3200] as const;
+const VIEW_WIDTHS = [1600, 3200, 4800] as const;
 
 /** A picture on the sheet, which opens the viewer on it. */
 const OPENS =
@@ -97,6 +99,16 @@ function viewSrcSet(slug: string, providerPlaceId: string, at: number, photo: Pl
 }
 
 const STARS = [1, 2, 3, 4, 5] as const;
+
+/** Whether anything on the sheet is Google's rather than ours, and so needs its credit. */
+function fromGoogle(card: PlaceCard): boolean {
+  return (
+    card.photos.length > 0 ||
+    card.reviews.length > 0 ||
+    card.rating !== null ||
+    card.summary !== null
+  );
+}
 
 const COUNT = new Intl.NumberFormat("en-AU");
 
@@ -601,7 +613,14 @@ export function PlaceSheet({ slug, place, askedFor, onClose }: PlaceSheetProps) 
               </div>
             )}
 
-            {card === null ? null : (
+            {/* Said plainly when there is nothing to show, because a sheet
+                that simply stopped after the address read as one that had
+                not finished loading. The credit is for what is shown, so it
+                goes only under something. */}
+            {card === null ? null : card.photos.length === 0 && card.reviews.length === 0 ? (
+              <p className="text-meta text-ink-muted">Google has no photos or reviews for this place.</p>
+            ) : null}
+            {card === null || !fromGoogle(card) ? null : (
               <p className="text-micro text-ink-faint">Ratings, photos and reviews from Google.</p>
             )}
           </div>

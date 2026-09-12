@@ -17,7 +17,7 @@ const ROUTE = "places-photo";
  * it, and one opened to fill the window, which is asked for only when it is
  * and at whichever of two densities the screen looking at it has.
  */
-const WIDTHS = [3200, 1600, 800, 320] as const;
+const WIDTHS = [4800, 3200, 1600, 800, 320] as const;
 
 /** As many as a card holds. */
 const MOST_PHOTOS = 10;
