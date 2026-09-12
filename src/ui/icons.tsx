@@ -88,6 +88,24 @@ export function ChevronRightIcon(props: IconProps) {
   );
 }
 
+/** Pointing down: the way a row goes when it opens. */
+export function ChevronDownIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="m6 9 6 6 6-6" />
+    </Glyph>
+  );
+}
+
+/** Pointing up: the way an open panel goes when it closes. */
+export function ChevronUpIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="m6 15 6-6 6 6" />
+    </Glyph>
+  );
+}
+
 /** A whole arrow, shaft and head, for stepping through something in order. */
 export function ArrowLeftIcon(props: IconProps) {
   return (

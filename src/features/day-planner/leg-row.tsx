@@ -5,7 +5,13 @@ import type { Conflict } from "@/core/model/conflict";
 import type { TransitRide, TravelMode } from "@/core/model/leg";
 import type { ComputedLeg } from "@/core/time/compute-day";
 import { formatDuration } from "@/core/time/minutes";
-import { CarIcon, TrainIcon, WalkIcon } from "@/ui/icons";
+import {
+  CarIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  TrainIcon,
+  WalkIcon,
+} from "@/ui/icons";
 import type { LegOption, PlannedLeg } from "./compute-trip";
 import { ConflictNotice } from "./conflict-notice";
 import type { DayActions } from "./day-actions";
@@ -23,6 +29,18 @@ const MODE_ICON: Readonly<Record<TravelMode, typeof WalkIcon>> = {
   walk: WalkIcon,
   drive: CarIcon,
   transit: TrainIcon,
+};
+
+/**
+ * The disc behind the glyph on a closed row, tinted the way the map draws the
+ * mode: the accent for walking, sage for public transport, and the warm grey
+ * that has always been the drive tint. Each is the 200 step under the 700, so
+ * the glyph reads on its own ground at the same weight in every row.
+ */
+const MODE_TINT: Readonly<Record<TravelMode, string>> = {
+  walk: "bg-terracotta-200 text-terracotta-700",
+  drive: "bg-neutral-200 text-neutral-700",
+  transit: "bg-sage-200 text-sage-700",
 };
 
 interface LegRowProps {
@@ -66,73 +84,55 @@ function Option({
       disabled={disabled || unavailable}
       aria-pressed={isChosen}
       /*
-       * Four things down a tile: what it is, what it is called, how long it
-       * takes and how far it is. They were spaced by a gap alone, over line
-       * boxes each carrying the leading its own step brought with it, so the
-       * space between any two was the gap plus whatever the type either side
-       * happened to add, and no two were the same. The leading is turned off
-       * where a line cannot wrap and the gap is the whole of the spacing.
+       * The one in use is drawn on raised paper inside a heavier terracotta
+       * line, with its dot filled. The rest sit straight on the well behind a
+       * hairline, so the chosen tile is the one thing in the panel that looks
+       * like a card.
        */
-      className={`flex min-w-0 flex-col items-start gap-[3px] rounded-chip border px-[10px] pt-[11px] pb-3 text-left disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
+      className={`flex min-w-0 flex-col items-start gap-[5px] rounded-chip px-[10px] pt-[11px] pb-3 text-left disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
         isChosen
-          ? "border-terracotta bg-paper-raised"
+          ? "border-[1.5px] border-terracotta bg-paper-raised"
           : unavailable
-            ? "border-rule bg-transparent"
-            : "border-rule bg-transparent hover:border-rule-strong"
+            ? "border border-rule bg-transparent"
+            : "border border-rule bg-transparent hover:border-rule-strong"
       }`}
     >
       <span
         className={`flex w-full items-center justify-between ${
-          isChosen ? "text-terracotta-700" : "text-ink-muted"
+          isChosen ? "text-ink" : "text-ink-muted"
         }`}
       >
         <Icon size={17} strokeWidth={2.4} />
         <span
           aria-hidden="true"
-          className={`h-[13px] w-[13px] rounded-pill border ${
+          className={`h-[13px] w-[13px] rounded-pill border-[1.5px] ${
             isChosen
               ? "border-terracotta bg-terracotta"
               : "border-rule-strong bg-transparent"
           }`}
         />
       </span>
-      {/* The mode and the distance are written the way the closed row writes
-          them, because the open panel is that row with its workings shown and
-          not a second component: the name in ink at the tier the interface is
-          made of, the distance the same tier in the quiet colour. Only the
-          duration is promoted, and only here, because comparing durations is
-          the whole of what the panel is opened for.
-
-          This one line can run to two, so it keeps a leading where the closed
-          row turns it off: two words of a mode name are closer kin than two
-          lines of a paragraph. */}
-      <span className="text-small/[1.2] font-semibold text-ink [overflow-wrap:anywhere]">
+      {/* The name is quiet and sits in a box two lines tall whether it takes
+          one or two, so "Public transport" wrapping does not push its time
+          down out of line with the times either side of it. Comparing those
+          is the whole of what the panel is opened for, and they have to sit
+          on one row to be compared. */}
+      <span className="flex h-[28px] min-w-0 items-start text-micro/[1.2] font-semibold text-ink-muted [overflow-wrap:anywhere]">
         {MODE_WORDS[option.mode]}
       </span>
-      {/* How long, and beside it how far. Stacked they read as two facts
-          about the mode rather than as the one answer the tile is for, and
-          each cost the tile a line of its height.
-
-          The time keeps the display face and the larger step it had: it is
-          the number the three tiles are compared on, and a measurement that
-          leads a line should not be the same weight as the one qualifying it.
-          That difference is also what separates the two, where the closed row
-          needs a dot between them because there it is one run of one colour.
-          A dot here would be the first thing on the next line whenever the
-          pair did not fit, and at this width a long enough journey never
-          does.
-
-          Baselines rather than boxes, so two sizes sit on one line. */}
-      <span className="flex flex-wrap items-baseline gap-x-[7px]">
-        <span className="font-display text-place/none text-ink tabular-nums [overflow-wrap:anywhere]">
-          {unavailable ? "Unavailable" : formatDuration(option.durationMinutes ?? 0)}
-        </span>
-        {option.distanceMeters === null ? null : (
-          <span className="text-small/none text-ink-muted tabular-nums">
-            {formatDistance(option.distanceMeters)}
-          </span>
-        )}
+      {/* The time on its own line in the display face, the one promoted
+          number on the tile, and how far under it in body text at the quiet
+          tier: two facts, the second qualifying the first. The weight is
+          stated because a step with its leading turned off loses the weight
+          the scale gives it. */}
+      <span className="font-display text-place/none font-semibold tracking-[-0.01em] text-ink tabular-nums [overflow-wrap:anywhere]">
+        {unavailable ? "Unavailable" : formatDuration(option.durationMinutes ?? 0)}
       </span>
+      {option.distanceMeters === null ? null : (
+        <span className="text-meta/[1.2] text-ink-muted tabular-nums">
+          {formatDistance(option.distanceMeters)}
+        </span>
+      )}
       {/* Numbers but no shape to the route: nobody could tell us the way, so
           this is the line between the two ends at an assumed speed. Said here
           because the map draws that line the same as any other. */}
@@ -268,13 +268,11 @@ export function LegRow({
     ) : null;
 
   /**
-   * How long and how far, as one phrase rather than as two facts of different
-   * weights. The duration was set in the display face and the distance beside
-   * it in body text, which made a leg shout a number louder than the stop it
-   * leads to. Between two places the interesting thing is the pair of them.
+   * How far, and whether that is a guess, as one quiet phrase after the time.
+   * The time stands apart from it in the display face, because it is what the
+   * day is built out of and the one number worth reading the row for.
    */
-  const covering = [
-    formatDuration(leg.durationMinutes ?? 0),
+  const aside = [
     leg.distanceMeters === null ? null : formatDistance(leg.distanceMeters),
     crowFlies ? "crow flies" : null,
   ]
@@ -283,21 +281,38 @@ export function LegRow({
 
   const summary = covered ? (
     <>
-      {/* The glyph on its own, uncircled: a disc around it made the leg look
-          like another numbered stop in the list it sits between. */}
-      <Icon size={17} strokeWidth={2.4} className="shrink-0 text-ink-muted" />
+      {/* The glyph on a small disc in the mode's own tint. Smaller than a
+          stop's number and never terracotta on its own, so it reads as a
+          way between two stops rather than as a third one. */}
+      <span
+        className={`grid h-[26px] w-[26px] shrink-0 place-items-center rounded-pill ${MODE_TINT[leg.mode]}`}
+      >
+        <Icon size={15} strokeWidth={2.4} />
+      </span>
       <span className="text-small/none font-semibold whitespace-nowrap text-ink">
         {MODE_WORDS[leg.mode]}
       </span>
-      <span className="text-small/none whitespace-nowrap text-ink-muted tabular-nums">
-        {covering}
+      <span className="font-display text-time whitespace-nowrap text-ink tabular-nums">
+        {formatDuration(leg.durationMinutes ?? 0)}
       </span>
+      {aside === "" ? null : (
+        <span className="text-meta/none whitespace-nowrap text-ink-muted tabular-nums">
+          {aside}
+        </span>
+      )}
     </>
   ) : (
     <span className="text-small/none text-ink-muted">
       {anyWay ? "No way chosen to get there yet" : "No way to get there"}
     </span>
   );
+
+  /**
+   * One line inside a hairline, whoever is reading it. Under the pointer,
+   * here or on the map, the line darkens and the row sits on the well.
+   */
+  const rowShape =
+    "flex w-full flex-wrap items-center gap-x-[10px] gap-y-[6px] rounded-row border pt-2 pr-[14px] pb-[9px] pl-3 text-left";
 
   return (
     /*
@@ -331,8 +346,8 @@ export function LegRow({
       >
         {onChange === null ? (
           <div
-            className={`flex flex-wrap items-center gap-x-[11px] gap-y-[6px] rounded-chip px-[10px] py-2 ${
-              hovered ? "bg-paper-sunken" : ""
+            className={`${rowShape} ${
+              hovered ? "border-rule-strong bg-paper-sunken" : "border-rule bg-transparent"
             }`}
           >
             {summary}
@@ -340,8 +355,8 @@ export function LegRow({
         ) : open ? (
           /* Its own scrollbar on a short window, so a panel too tall to fit
              scrolls inside itself rather than pushing the day down past it. */
-          <div className="scroll-quiet max-h-[50vh] overflow-y-auto rounded-row bg-paper-sunken px-[14px] pt-[13px] pb-[14px]">
-            <div className="flex items-baseline gap-2">
+          <div className="scroll-quiet max-h-[50vh] overflow-y-auto rounded-panel border border-rule bg-paper-sunken px-[14px] pt-[13px] pb-[14px]">
+            <div className="mb-[11px] flex items-baseline gap-2">
               {/* No distance beside the heading: every way of covering the leg
                   is about to say its own, and they are not all the same. */}
               <p className="text-label font-semibold text-ink-muted">How you get there</p>
@@ -350,13 +365,14 @@ export function LegRow({
                 onClick={() => {
                   setOpen(false);
                 }}
-                className="ml-auto rounded-pill px-1 text-micro font-semibold text-ink-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+                className="ml-auto flex items-center gap-1 rounded-pill px-1 py-[2px] text-micro/none font-semibold text-ink-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
               >
                 Collapse
+                <ChevronUpIcon size={13} strokeWidth={2.75} />
               </button>
             </div>
 
-            <div className="mt-[11px] grid grid-cols-2 gap-2 lg:grid-cols-3">
+            <div className="grid grid-cols-2 gap-2 lg:grid-cols-3">
               {planned.options.map((option) => (
                 <Option
                   key={option.mode}
@@ -389,19 +405,19 @@ export function LegRow({
               setOpen(true);
               setError(null);
             }}
-            className={`group flex w-full flex-wrap items-center gap-x-[11px] gap-y-[6px] rounded-chip border-0 px-[10px] py-2 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${
-              hovered ? "bg-paper-sunken" : "bg-transparent hover:bg-neutral-200"
+            className={`${rowShape} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
+              hovered
+                ? "border-rule-strong bg-paper-sunken"
+                : "border-rule bg-transparent hover:border-rule-strong hover:bg-neutral-200"
             }`}
           >
             {summary}
-            {/* Quiet, and the same quiet as the Collapse that takes its place
-                once the row is open. In the accent it was the loudest thing
-                on a line whose job is to say how long the leg takes: the way
-                to change it should not outrank what there is to change. The
-                whole row is the button and lights up under the pointer, so
-                the word has no affordance to carry on its own. */}
-            <span className="ml-auto text-small/none font-bold whitespace-nowrap text-ink-muted group-hover:text-ink">
+            {/* Accent coloured at the step that reads at this size, with the
+                chevron pointing the way the row is about to go. Small and at
+                the far end, so it is found rather than read first. */}
+            <span className="ml-auto flex items-center gap-[5px] text-micro/none font-semibold whitespace-nowrap text-terracotta-700">
               Change
+              <ChevronDownIcon size={13} strokeWidth={2.75} />
             </span>
           </button>
         )}
