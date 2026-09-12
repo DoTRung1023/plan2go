@@ -35,6 +35,13 @@ interface PhotoViewerProps {
  * strength, not black, and the controls are the paper the sheet is made of,
  * so this is still the same product with the lights down.
  *
+ * The two pictures either side are fetched once the one being looked at has
+ * arrived, so stepping is instant and nothing competes with what is on
+ * screen. Only the two: stepping is how this is read, and the step after
+ * next is a guess too far to spend a fetch on. Each picture is paid for once
+ * ever, whoever opens it, so a neighbour fetched and not looked at is not
+ * wasted, only early.
+ *
  * The picture is fetched at this size when it is first opened, never before.
  * Until it arrives the sheet's own copy stands in, scaled up from the width
  * the strip drew it at: the browser has that one already, so the picture is
@@ -56,15 +63,41 @@ export function PhotoViewer({
   const closeButton = useRef<HTMLButtonElement | null>(null);
   const photo = photos[at];
   const count = photos.length;
+  const shown = loaded === at;
+
+  /**
+   * The pictures either side, by their addresses rather than by the function
+   * that builds them: the caller hands over a new one of those every time it
+   * renders, and these are the same two strings until the step changes.
+   */
+  const before = at > 0 ? urlFor(at - 1) : null;
+  const after = at < count - 1 ? urlFor(at + 1) : null;
 
   useEffect(() => {
     closeButton.current?.focus();
   }, []);
 
+  useEffect(() => {
+    if (!shown) {
+      return;
+    }
+    for (const url of [before, after]) {
+      if (url === null) {
+        continue;
+      }
+      const picture = new Image();
+      // Behind the picture on screen and behind anything else the page is
+      // waiting on. Nobody is looking at these yet.
+      picture.fetchPriority = "low";
+      picture.src = url;
+    }
+    // Nothing to undo. A fetch left running warms the same cache the step
+    // would have asked for, so calling it off would only throw the work away.
+  }, [shown, before, after]);
+
   if (photo === undefined) {
     return null;
   }
-  const shown = loaded === at;
   /** The same words for either copy: it is the same picture, only sharper. */
   const described = `${placeName}${photo.by === null ? "" : `, photographed by ${photo.by}`}`;
   /**
