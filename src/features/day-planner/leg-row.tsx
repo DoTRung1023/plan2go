@@ -353,12 +353,18 @@ export function LegRow({
               setOpen(true);
               setError(null);
             }}
-            className={`flex w-full flex-wrap items-center gap-x-[11px] gap-y-[6px] rounded-chip border-0 px-[10px] py-2 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${
+            className={`group flex w-full flex-wrap items-center gap-x-[11px] gap-y-[6px] rounded-chip border-0 px-[10px] py-2 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${
               hovered ? "bg-paper-sunken" : "bg-transparent hover:bg-neutral-200"
             }`}
           >
             {summary}
-            <span className="ml-auto text-small/none font-bold whitespace-nowrap text-terracotta-700">
+            {/* Quiet, and the same quiet as the Collapse that takes its place
+                once the row is open. In the accent it was the loudest thing
+                on a line whose job is to say how long the leg takes: the way
+                to change it should not outrank what there is to change. The
+                whole row is the button and lights up under the pointer, so
+                the word has no affordance to carry on its own. */}
+            <span className="ml-auto text-small/none font-bold whitespace-nowrap text-ink-muted group-hover:text-ink">
               Change
             </span>
           </button>
