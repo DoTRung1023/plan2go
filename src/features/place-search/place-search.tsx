@@ -40,6 +40,13 @@ type Suggestion = z.infer<typeof suggestionSchema>;
 interface Landing {
   readonly id: number;
   readonly name: string;
+  readonly providerPlaceId: string;
+  /**
+   * Whether the server has written it down. Written is not arrived: the page
+   * redrawn with the stop on it comes a moment after the answer, and until
+   * it does the place is still on its way as far as anyone watching can see.
+   */
+  readonly written: boolean;
 }
 
 export interface AddPlaceOutcome {
@@ -197,6 +204,18 @@ export function PlaceSearch({
   if ([...chosen].some((one) => onTheTrip.has(one))) {
     setChosen(new Set([...chosen].filter((one) => !onTheTrip.has(one))));
   }
+  /*
+   * A landing is over when the stop is on the day, which is the render that
+   * carries the new trip and not the answer that asked for it. Taken off
+   * here, the count of places on their way never drops before the place it
+   * counted can be seen to have arrived. A place the trip already held
+   * somewhere else cannot be told apart from itself, and comes off as soon
+   * as it is written.
+   */
+  const arrived = (one: Landing): boolean => one.written && onTheTrip.has(one.providerPlaceId);
+  if (landing.some(arrived)) {
+    setLanding(landing.filter((one) => !arrived(one)));
+  }
 
   const trimmed = query.trim();
   const searched = trimmed.length >= MINIMUM_LETTERS;
@@ -318,17 +337,18 @@ export function PlaceSearch({
     setSuggestions([]);
     setSearchMessage(null);
     setAddError(null);
-    setLanding((waiting) => [...waiting, { id, name }]);
+    setLanding((waiting) => [...waiting, { id, name, providerPlaceId, written: false }]);
     setChosen((already) => new Set(already).add(providerPlaceId));
     input.current?.focus();
 
     const add = async (): Promise<void> => {
       const outcome = await onAdd({ slug, dayId, providerPlaceId, session: chosenIn });
-      setLanding((waiting) => waiting.filter((one) => one.id !== id));
 
       if (outcome.error !== null) {
+        // It never landed, so it is not on its way and the list may offer it
+        // again.
+        setLanding((waiting) => waiting.filter((one) => one.id !== id));
         setAddError(outcome.error);
-        // It never landed, so the list may offer it again.
         setChosen((already) => {
           const left = new Set(already);
           left.delete(providerPlaceId);
@@ -336,6 +356,10 @@ export function PlaceSearch({
         });
         return;
       }
+      // Written, and still on its way until the trip comes back with it on.
+      setLanding((waiting) =>
+        waiting.map((one) => (one.id === id ? { ...one, written: true } : one)),
+      );
       setLanded(outcome.added === null ? null : `${outcome.added} is on ${dayName}.`);
     };
 
