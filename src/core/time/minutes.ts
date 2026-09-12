@@ -1,4 +1,4 @@
-const MINUTES_PER_HOUR = 60;
+export const MINUTES_PER_HOUR = 60;
 export const MINUTES_PER_DAY = 1440;
 
 /**

@@ -17,6 +17,7 @@ import {
 import type { DayActions } from "./day-actions";
 import { ConflictNotice } from "./conflict-notice";
 import { formatDayTime } from "./format-day-time";
+import { formatStay } from "./format-stay";
 
 /** The server's own limit, repeated because that module may not reach the browser. */
 const MAX_STAY_MINUTES = 99 * 60 + 59;
@@ -409,7 +410,10 @@ export function StopCard({
               Stay for {formatDuration(stop.stayMinutes)}
             </span>
           ) : (
-            <span className="flex items-center gap-[7px] text-meta/none text-ink-muted">
+            /* The two buttons and the number they move are one control, so
+               they sit in one well rather than as three things in a row with
+               the card's own paper showing between them. */
+            <span className="flex items-center gap-1 rounded-pill bg-neutral-200 p-[3px] text-meta/none text-ink-muted">
               <button
                 type="button"
                 disabled={busy === "stay" || stop.stayMinutes <= STAY_STEP}
@@ -421,8 +425,9 @@ export function StopCard({
               >
                 <MinusIcon size={11} strokeWidth={3} />
               </button>
-              <span className="min-w-[74px] text-center font-semibold tabular-nums">
-                {formatDuration(stop.stayMinutes)}
+              <span className="min-w-[58px] text-center font-semibold tabular-nums">
+                <span aria-hidden="true">{formatStay(stop.stayMinutes)}</span>
+                <span className="sr-only">{formatDuration(stop.stayMinutes)}</span>
               </span>
               <button
                 type="button"
