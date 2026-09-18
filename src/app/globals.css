@@ -184,6 +184,23 @@
 }
 
 /*
+ * On top of scroll-quiet: nothing drawn at rest, the thumb only while the
+ * pointer is over the box or the content is moving. The second is the
+ * `data-scrolling` mark from useScrolling, which is how a strip on a phone,
+ * with nothing to hover it with, still shows where it has got to. Stated as
+ * the rest state so it wins over scroll-quiet whichever order the two land in.
+ */
+@utility scroll-shy {
+  &:not(:hover):not([data-scrolling]) {
+    scrollbar-color: transparent transparent;
+  }
+
+  &:not(:hover):not([data-scrolling])::-webkit-scrollbar-thumb {
+    background-color: transparent;
+  }
+}
+
+/*
  * The dotted thread that runs down the left of the day, joining a stop to the
  * leg under it. Drawn rather than bordered, because a dotted border rounds its
  * dots off at this width and a gradient keeps them square.

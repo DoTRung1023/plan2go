@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import type { Place, PlaceCard, PlacePhoto, PlaceReview } from "@/core/model/place";
 import { ChevronLeftIcon, CloseIcon, GlobeIcon, PhoneIcon, PinIcon, StarIcon } from "@/ui/icons";
+import { useScrolling } from "@/ui/use-scrolling";
 import { PhotoViewer } from "./photo-viewer";
 import "./place-sheet.css";
 
@@ -248,6 +249,7 @@ export function PlaceSheet({ slug, place, askedFor, onClose }: PlaceSheetProps) 
    * are told apart.
    */
   const openedByKey = useRef(false);
+  const watchScrolling = useScrolling();
 
   const ready =
     asked.status === "refused" ||
@@ -538,7 +540,10 @@ export function PlaceSheet({ slug, place, askedFor, onClose }: PlaceSheetProps) 
             )}
 
             {card === null || card.photos.length <= 1 ? null : (
-              <ul className="scroll-quiet -mx-5 flex gap-2 overflow-x-auto px-5">
+              <ul
+                ref={watchScrolling}
+                className="scroll-quiet scroll-shy -mx-5 flex gap-2 overflow-x-auto px-5"
+              >
                 {card.photos.slice(1).map((photo, index) => (
                   <li key={photo.name} className="shrink-0">
                     <button
