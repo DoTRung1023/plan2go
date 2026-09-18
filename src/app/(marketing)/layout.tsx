@@ -35,6 +35,8 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
             <span>by</span>
             <a
               href="https://vietbrosinaus.com"
+              target="_blank"
+              rel="noopener noreferrer"
               className="font-semibold text-terracotta-700 underline underline-offset-2"
             >
               vietbrosinaus
