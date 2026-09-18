@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import type { Place, PlaceCard, PlacePhoto, PlaceReview } from "@/core/model/place";
 import { ChevronLeftIcon, CloseIcon, GlobeIcon, PhoneIcon, PinIcon, StarIcon } from "@/ui/icons";
-import { useScrolling } from "@/ui/use-scrolling";
+import { useScrollBar } from "@/ui/use-scroll-bar";
 import { PhotoViewer } from "./photo-viewer";
 import "./place-sheet.css";
 
@@ -249,7 +249,9 @@ export function PlaceSheet({ slug, place, askedFor, onClose }: PlaceSheetProps) 
    * are told apart.
    */
   const openedByKey = useRef(false);
-  const watchScrolling = useScrolling();
+  /** Twelve in from the ends: the sheet's corners are rounded and would clip a thumb run into them. */
+  const watchSheet = useScrollBar("y", { inset: 12 });
+  const watchStrip = useScrollBar("x");
 
   const ready =
     asked.status === "refused" ||
@@ -455,8 +457,8 @@ export function PlaceSheet({ slug, place, askedFor, onClose }: PlaceSheetProps) 
           </div>
         ) : (
         <div
-          ref={watchScrolling}
-          className="scroll-quiet scroll-shy min-h-0 flex-1 overflow-y-auto lg:rounded-panel"
+          ref={watchSheet}
+          className="scroll-line scroll-shy min-h-0 flex-1 overflow-y-auto lg:rounded-panel"
         >
           {/* On a phone the close sits over the picture when there is one and
               over the name when there is not, so it is in the same corner
@@ -544,8 +546,8 @@ export function PlaceSheet({ slug, place, askedFor, onClose }: PlaceSheetProps) 
 
             {card === null || card.photos.length <= 1 ? null : (
               <ul
-                ref={watchScrolling}
-                className="scroll-quiet scroll-shy -mx-5 flex gap-2 overflow-x-auto px-5"
+                ref={watchStrip}
+                className="scroll-line scroll-shy -mx-5 flex gap-2 overflow-x-auto px-5 pb-[6px]"
               >
                 {card.photos.slice(1).map((photo, index) => (
                   <li key={photo.name} className="shrink-0">

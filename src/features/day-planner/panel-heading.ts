@@ -25,9 +25,8 @@ export const HEADING_BODY = `border-b border-rule bg-paper-raised pt-[10px] pb-[
 
 /**
  * The line naming the open day, closed off from the strip above it by a rule
- * inset to the gutter. Ten under the strip, which with the strip's own four
- * puts the rule fourteen under the pills, the same as the pills sit under the
- * band.
+ * inset to the gutter. Thirteen under the strip, which with the seven the
+ * strip keeps under its pills puts the rule twenty under them.
  */
 export const HEADING_DAY_LINE =
-  "mt-[10px] flex items-center gap-[22px] border-t border-rule pt-[13px]";
+  "mt-[13px] flex items-center gap-[22px] border-t border-rule pt-[13px]";

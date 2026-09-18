@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useScrolling } from "@/ui/use-scrolling";
+import { useScrollBar } from "@/ui/use-scroll-bar";
 import type { PlannedDay } from "./compute-trip";
 import type { EndpointRef } from "./day-itinerary";
 import { DayItinerary } from "./day-itinerary";
@@ -97,7 +97,7 @@ export function DayPlanner({
 }: DayPlannerProps) {
   const selected = days[selectedIndex] ?? days[0];
   const range = dateRange(days);
-  const watchScrolling = useScrolling();
+  const watchList = useScrollBar("y");
 
   return (
     <>
@@ -151,8 +151,8 @@ export function DayPlanner({
            * hold the stop underneath it in place. Off, the list stays exactly
            * where it was and the panel opens downwards, where it was clicked.
            */
-          ref={watchScrolling}
-          className={`scroll-quiet scroll-shy min-h-0 flex-1 overflow-x-hidden overflow-y-auto pt-1 pb-[26px] [overflow-anchor:none] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${GUTTER}`}
+          ref={watchList}
+          className={`scroll-line scroll-shy min-h-0 flex-1 overflow-x-hidden overflow-y-auto pt-1 pb-[26px] [overflow-anchor:none] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${GUTTER}`}
         >
           <DayItinerary
             day={selected.plan}

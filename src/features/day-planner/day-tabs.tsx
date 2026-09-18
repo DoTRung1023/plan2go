@@ -2,7 +2,7 @@
 
 import type { KeyboardEvent } from "react";
 import { useRef, useState, useTransition } from "react";
-import { useScrolling } from "@/ui/use-scrolling";
+import { useScrollBar } from "@/ui/use-scroll-bar";
 import type { DayPlan } from "@/core/model/day";
 import { PlusIcon } from "@/ui/icons";
 import type { EditOutcome } from "./day-actions";
@@ -60,7 +60,7 @@ export function DayTabs({
   onAddDay,
 }: DayTabsProps) {
   const tabs = useRef<(HTMLButtonElement | null)[]>([]);
-  const watchScrolling = useScrolling();
+  const watchStrip = useScrollBar("x");
   const [error, setError] = useState<string | null>(null);
   const [adding, startAdding] = useTransition();
 
@@ -115,13 +115,14 @@ export function DayTabs({
           and below. Whoever puts the strip on a page takes those four off
           the space above it, so the pills sit where they would have anyway.
 
-          Below, the same four are over the track the scrollbar is always
-          given, so the hairline it draws when a trip is long enough sits
-          just under the pills as their edge, and the line naming the day is
-          close under the strip whether or not the hairline is there. */}
+          Below, seven: the same four, and under them the line the strip
+          draws as its scrollbar once a trip is long enough, which sits just
+          under the pills as their edge and clear of any ring. The room is
+          there whether or not the line is, so the line naming the day is as
+          close under the strip either way. */}
       <div
-        ref={watchScrolling}
-        className="day-tabs scroll-quiet scroll-shy flex items-center gap-[7px] py-[4px]"
+        ref={watchStrip}
+        className="day-tabs scroll-line scroll-shy flex items-center gap-[7px] pt-[4px] pb-[7px]"
       >
         <div
           role="tablist"
