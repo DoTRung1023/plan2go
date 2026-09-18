@@ -78,6 +78,13 @@ for a screenshot.
   mode the leg uses. Rides are no longer listed on screen; they still go to the PDF
   behind the "Distance of each leg" switch.
 
+## The pane's width
+
+- On a desktop the list pane can be resized from `button[title="Drag to resize"]`, the
+  grip astride its left edge. Drag it, press ArrowLeft/ArrowRight with it focused, or
+  double click it to go back to the laid out width. The width is `--pane` on `main`;
+  the pane never goes under 400px and the map keeps 480px.
+
 ## The dates field
 
 - The pill is `button[aria-haspopup="dialog"]`; its calendar is

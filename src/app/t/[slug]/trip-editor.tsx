@@ -10,6 +10,7 @@ import { PlaceSearch } from "@/features/place-search/place-search";
 import { DayTabs } from "@/features/day-planner/day-tabs";
 import { dayStatus } from "@/features/day-planner/day-status";
 import { ExportDialog } from "@/features/day-planner/export-dialog";
+import { PaneHandle } from "./pane-handle";
 import { LeaveAt } from "@/features/day-planner/leave-at";
 import { PrintedTrip } from "@/features/day-planner/printed-trip";
 import { placesOnTheTrip } from "@/features/place-search/places-on-the-trip";
@@ -119,6 +120,7 @@ export function TripEditor({
 }: TripEditorProps) {
   const [chosenIndex, setChosenIndex] = useState(0);
   const [expanded, setExpanded] = useState(false);
+  const shell = useRef<HTMLElement | null>(null);
   /**
    * How many changes have landed. Every way of changing this trip reports
    * here, so the one notice in the corner speaks for all of them: a note
@@ -236,8 +238,14 @@ export function TripEditor({
      * viewport and lets both panes shrink inside it, and the hidden overflow is
      * the guarantee: nothing in either pane can scroll the window instead of
      * itself.
+     *
+     * The list's column is --pane where the handle on its edge has set one,
+     * and the width it was laid out with otherwise.
      */
-    <main className="planner-shell relative lg:grid lg:h-dvh lg:grid-cols-[minmax(0,1fr)_clamp(460px,38%,600px)] lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden">
+    <main
+      ref={shell}
+      className="planner-shell relative lg:grid lg:h-dvh lg:grid-cols-[minmax(0,1fr)_var(--pane,clamp(460px,38%,600px))] lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden"
+    >
       <section
         aria-label="Map of this day"
         className={
@@ -320,6 +328,8 @@ export function TripEditor({
       </section>
 
       <section className="relative flex min-h-0 flex-col border-rule lg:h-full lg:min-h-0 lg:border-l">
+        <PaneHandle shell={shell} />
+
         {/* A reader who cannot edit has no actions to put on the name's row,
             so what they get instead is the reason why. */}
         {editKey === null ? (
