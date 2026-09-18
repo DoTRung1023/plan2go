@@ -454,7 +454,10 @@ export function PlaceSheet({ slug, place, askedFor, onClose }: PlaceSheetProps) 
             {close}
           </div>
         ) : (
-        <div className="scroll-quiet min-h-0 flex-1 overflow-y-auto lg:rounded-panel">
+        <div
+          ref={watchScrolling}
+          className="scroll-quiet scroll-shy min-h-0 flex-1 overflow-y-auto lg:rounded-panel"
+        >
           {/* On a phone the close sits over the picture when there is one and
               over the name when there is not, so it is in the same corner
               either way, and the name is held down from the corner it needs.
