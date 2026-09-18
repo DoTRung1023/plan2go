@@ -13,9 +13,6 @@ export const MENU_ITEM =
 /** The line between what a trip does and what ends it. */
 export const MENU_RULE = "mx-[10px] my-[5px] h-px bg-rule";
 
-/** Long enough to cross the gap to the menu without it feeling sticky. */
-const LEAVE_MS = 260;
-
 interface TripMenuProps {
   readonly label: string;
   readonly children: React.ReactNode;
@@ -24,47 +21,14 @@ interface TripMenuProps {
 /**
  * Everything that can be done to the trip as a whole, behind one button.
  *
- * Opened by hovering and by clicking, because those are two different
- * intentions and a menu that only answers one of them is missing for whoever
- * meant the other: there is no hover on a phone, and a pointer that has to be
- * clicked to see what is there is slower than one that does not.
- *
- * Leaving closes it after a moment rather than at once. The button and the menu
- * under it are two rectangles with a gap between them, and a pointer crossing
- * that gap has left both; closing on the instant would make the menu
- * unreachable by the very movement meant to reach it.
+ * Opened by a click and nothing else. It opened under the pointer for a
+ * while, and a menu that unfolds because the pointer passed the corner on its
+ * way somewhere else is a menu in the way; a press is the one signal that
+ * means it. Clicking away or pressing Escape closes it.
  */
 export function TripMenu({ label, children }: TripMenuProps) {
   const [open, setOpen] = useState(false);
-  const leaving = useRef<ReturnType<typeof setTimeout> | null>(null);
   const container = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (leaving.current !== null) {
-        clearTimeout(leaving.current);
-      }
-    };
-  }, []);
-
-  const hold = (): void => {
-    if (leaving.current !== null) {
-      clearTimeout(leaving.current);
-      leaving.current = null;
-    }
-  };
-
-  const show = (): void => {
-    hold();
-    setOpen(true);
-  };
-
-  const leave = (): void => {
-    hold();
-    leaving.current = setTimeout(() => {
-      setOpen(false);
-    }, LEAVE_MS);
-  };
 
   useEffect(() => {
     if (!open) {
@@ -90,8 +54,6 @@ export function TripMenu({ label, children }: TripMenuProps) {
     <div
       ref={container}
       className="relative flex-none"
-      onMouseEnter={show}
-      onMouseLeave={leave}
       onKeyDown={(event) => {
         if (event.key === "Escape") {
           setOpen(false);
@@ -103,7 +65,6 @@ export function TripMenu({ label, children }: TripMenuProps) {
         aria-label={label}
         aria-expanded={open}
         onClick={() => {
-          hold();
           setOpen(!open);
         }}
         // Thirty-four, under what the row it sits on comes to without it: the
@@ -124,7 +85,9 @@ export function TripMenu({ label, children }: TripMenuProps) {
         <div
           role="menu"
           aria-label={label}
-          className="absolute top-[46px] right-0 z-40 w-[172px] rounded-panel border border-rule bg-paper-raised p-[6px] shadow-lg"
+          // Close under the button, so the menu reads as what the button
+          // opened rather than as a panel that appeared near it.
+          className="absolute top-full right-0 z-40 mt-[6px] w-[172px] rounded-panel border border-rule bg-paper-raised p-[6px] shadow-lg"
         >
           {children}
         </div>
