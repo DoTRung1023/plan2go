@@ -487,7 +487,10 @@ export function PlaceSearch({
   })();
 
   const listed = open && visible.length > 0;
-  const panel = listed || line !== null || landingLine !== null;
+
+  /** The part of the panel that scrolls: the list, or the sentence in its place. */
+  const body = listed || line !== null;
+  const panel = body || landingLine !== null;
 
   return (
     <div className="relative" ref={container}>
@@ -534,61 +537,72 @@ export function PlaceSearch({
       </div>
 
       {panel ? (
-        <div className="scroll-quiet absolute top-full right-0 left-0 z-30 mt-2 max-h-[330px] overflow-x-hidden overflow-y-auto rounded-panel border border-rule bg-paper-raised p-[7px] shadow-md">
-          {landingLine === null ? null : <p className={PANEL_LINE}>{landingLine}</p>}
-          {line === null ? null : <p className={PANEL_LINE}>{line}</p>}
+        <div className="absolute top-full right-0 left-0 z-30 mt-2 flex max-h-[330px] flex-col overflow-hidden rounded-panel border border-rule bg-paper-raised shadow-md">
+          {/* Pinned above the list rather than at the top of it, so it is still
+              there once the reader has scrolled down to the next place. */}
+          {landingLine === null ? null : (
+            <p className="shrink-0 border-b border-rule px-[18px] py-[8px] text-meta text-ink-muted">
+              {landingLine}
+            </p>
+          )}
 
-          {listed ? (
-            <>
-              <p className="px-[11px] pt-1 pb-[9px] text-label font-semibold text-ink-muted">
-                {recommending ? popularIn : "Matching places"}
-              </p>
-              <ul
-                id={listId}
-                role="listbox"
-                aria-label={
-                  recommending ? popularIn : "Places that match"
-                }
-              >
-                {visible.map((suggestion, index) => (
-                  <li
-                    key={suggestion.providerPlaceId}
-                    id={`${listId}-option-${String(index)}`}
-                    role="option"
-                    aria-selected={index === activeIndex}
+          {body ? (
+            <div className="scroll-quiet min-h-0 overflow-x-hidden overflow-y-auto p-[7px]">
+              {line === null ? null : <p className={PANEL_LINE}>{line}</p>}
+
+              {listed ? (
+                <>
+                  <p className="px-[11px] pt-1 pb-[9px] text-label font-semibold text-ink-muted">
+                    {recommending ? popularIn : "Matching places"}
+                  </p>
+                  <ul
+                    id={listId}
+                    role="listbox"
+                    aria-label={
+                      recommending ? popularIn : "Places that match"
+                    }
                   >
-                    <button
-                      type="button"
-                      onMouseEnter={() => {
-                        setActive(index);
-                      }}
-                      onClick={() => {
-                        choose(suggestion);
-                      }}
-                      className={`flex w-full items-start gap-[10px] rounded-chip px-[11px] py-2 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${
-                        index === activeIndex ? "bg-terracotta-100" : ""
-                      }`}
-                    >
-                      <PinIcon
-                        size={15}
-                        strokeWidth={2.75}
-                        className="mt-[2px] shrink-0 text-terracotta"
-                      />
-                      <span className="min-w-0">
-                        <span className="block text-meta font-semibold text-ink">
-                          {suggestion.name}
-                        </span>
-                        {suggestion.address === null ? null : (
-                          <span className="block text-micro text-ink-muted">
-                            {suggestion.address}
+                    {visible.map((suggestion, index) => (
+                      <li
+                        key={suggestion.providerPlaceId}
+                        id={`${listId}-option-${String(index)}`}
+                        role="option"
+                        aria-selected={index === activeIndex}
+                      >
+                        <button
+                          type="button"
+                          onMouseEnter={() => {
+                            setActive(index);
+                          }}
+                          onClick={() => {
+                            choose(suggestion);
+                          }}
+                          className={`flex w-full items-start gap-[10px] rounded-chip px-[11px] py-2 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${
+                            index === activeIndex ? "bg-terracotta-100" : ""
+                          }`}
+                        >
+                          <PinIcon
+                            size={15}
+                            strokeWidth={2.75}
+                            className="mt-[2px] shrink-0 text-terracotta"
+                          />
+                          <span className="min-w-0">
+                            <span className="block text-meta font-semibold text-ink">
+                              {suggestion.name}
+                            </span>
+                            {suggestion.address === null ? null : (
+                              <span className="block text-micro text-ink-muted">
+                                {suggestion.address}
+                              </span>
+                            )}
                           </span>
-                        )}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : null}
+            </div>
           ) : null}
         </div>
       ) : null}
