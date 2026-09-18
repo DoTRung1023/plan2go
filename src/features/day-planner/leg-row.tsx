@@ -31,16 +31,11 @@ const MODE_ICON: Readonly<Record<TravelMode, typeof WalkIcon>> = {
 };
 
 /**
- * The disc behind the glyph on a closed row, tinted by mode: the accent for
- * walking, sage for public transport, and the warm grey for a drive. Each is
- * the 200 step under the 700, so the glyph reads on its own ground at the same
- * weight in every row.
+ * The disc behind the glyph on a closed row, the same warm grey whatever the
+ * mode. The map no longer colours a mode, so a tint here would be a key to
+ * nothing; the glyph and the word beside it say how the leg is travelled.
  */
-const MODE_TINT: Readonly<Record<TravelMode, string>> = {
-  walk: "bg-terracotta-200 text-terracotta-700",
-  drive: "bg-neutral-200 text-neutral-700",
-  transit: "bg-sage-200 text-sage-700",
-};
+const MODE_DISC = "bg-neutral-200 text-neutral-700";
 
 interface LegRowProps {
   readonly leg: ComputedLeg;
@@ -236,7 +231,7 @@ export function LegRow({
           stop's number and never terracotta on its own, so it reads as a
           way between two stops rather than as a third one. */}
       <span
-        className={`grid h-[26px] w-[26px] shrink-0 place-items-center rounded-pill ${MODE_TINT[leg.mode]}`}
+        className={`grid h-[26px] w-[26px] shrink-0 place-items-center rounded-pill ${MODE_DISC}`}
       >
         <Icon size={15} strokeWidth={2.4} />
       </span>
