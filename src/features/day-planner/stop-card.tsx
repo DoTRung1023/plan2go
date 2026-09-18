@@ -10,8 +10,8 @@ import {
   ClockIcon,
   CloseIcon,
   GripIcon,
+  InfoIcon,
   MinusIcon,
-  PhotosIcon,
   PlusIcon,
 } from "@/ui/icons";
 import type { DayActions } from "./day-actions";
@@ -54,7 +54,7 @@ export function AboutPlaceButton({
       aria-label={`About ${name}`}
       className={TOOL}
     >
-      <PhotosIcon size={TOOL_GLYPH.photos} strokeWidth={TOOL_GLYPH.stroke} />
+      <InfoIcon size={TOOL_GLYPH.info} strokeWidth={TOOL_GLYPH.stroke} />
     </button>
   );
 }
@@ -64,15 +64,17 @@ export function AboutPlaceButton({
  * the page to the size of the others.
  *
  * They are drawn in a box of 24 and fill it differently, so the edge is not
- * the size: the X runs 6 to 18, the photograph 3 to 21, the pencil corner to
- * corner. Measured rather than guessed, painted stroke and all, these land
- * within a tenth of a pixel of each other at about ten and a half. The grip
- * is two columns of dots and cannot be as wide as the rest without being
- * taller than them, so it matches on height and is left narrow.
+ * the size: the X runs 6 to 18, the pencil corner to corner. Measured rather
+ * than guessed, painted stroke and all, these land within a tenth of a pixel
+ * of each other at about ten and a half. The grip is two columns of dots and
+ * cannot be as wide as the rest without being taller than them, so it matches
+ * on height and is left narrow. The info circle is set a step over the rest,
+ * because a round shape holds less ink than an X of the same extent and reads
+ * smaller beside it at a matching size.
  */
 export const TOOL_GLYPH = {
   stroke: 2.75,
-  photos: 12,
+  info: 14,
   pencil: 11,
   grip: 16,
   close: 17,

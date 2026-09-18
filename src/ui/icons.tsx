@@ -262,6 +262,17 @@ export function ClockIcon(props: IconProps) {
   );
 }
 
+/** A circle with an i in it: there is more to know about this. */
+export function InfoIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 11v5" />
+      <path d="M12 8h.01" />
+    </Glyph>
+  );
+}
+
 /** A triangle with a mark in it: something about the plan worth reading. */
 export function WarningIcon(props: IconProps) {
   return (
@@ -286,17 +297,6 @@ export function StarIcon({ size, className }: Omit<IconProps, "strokeWidth">) {
     >
       <path d="M12 2.6l2.9 6.1 6.7.8-4.9 4.6 1.3 6.6L12 17.4l-6 3.3 1.3-6.6L2.4 9.5l6.7-.8z" />
     </svg>
-  );
-}
-
-/** A picture: the sign that there are photographs of something. */
-export function PhotosIcon(props: IconProps) {
-  return (
-    <Glyph {...props}>
-      <rect x="3" y="4" width="18" height="16" rx="3" />
-      <circle cx="9" cy="10" r="1.6" />
-      <path d="M21 16l-5-5-8 8" />
-    </Glyph>
   );
 }
 
