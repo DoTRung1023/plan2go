@@ -19,7 +19,7 @@ import {
 } from "./load-google-maps";
 import { paperMapStyle } from "./map-style";
 import type { RouteStroke } from "./route-style";
-import { ROUTE_STROKES, routeStroke } from "./route-style";
+import { ROUTE_STROKES, legInk, routeStroke } from "./route-style";
 import "./trip-map.css";
 
 /** Zoom used when a day has one point and there is no extent to fit. */
@@ -396,7 +396,7 @@ export function TripMap({
     const casing = palette.getPropertyValue("--color-paper").trim();
     routeLegs(start, end, stops, endTravelMode).forEach((leg, index) => {
       const stroke = routeStroke(leg.mode);
-      const color = palette.getPropertyValue(stroke.colorProperty).trim();
+      const color = palette.getPropertyValue(legInk(index)).trim();
       // The road, when whoever answered the leg knew it, and otherwise the line
       // between its two ends. Both are drawn the same way: a leg nobody could
       // give the shape of is still the leg you are travelling, and drawing it
@@ -664,6 +664,10 @@ export function TripMap({
          * that used to sit over them was a label on a thing that explains
          * itself. Laid flat it also stops eating the corner of the map, which
          * is the part of the page it was covering.
+         *
+         * The samples are in the same muted ink as the words. A leg's colour
+         * says which leg it is, not how it is travelled, so a coloured sample
+         * would be a key to nothing.
          */
         <ul className="pointer-events-none absolute bottom-[14px] left-[14px] z-[2] flex list-none items-center gap-4 rounded-pill border border-rule bg-paper-raised/90 px-[18px] py-[10px] text-micro/none text-ink-muted lg:bottom-[22px] lg:left-[22px]">
           {ROUTE_STROKES.map((stroke) => (
@@ -673,7 +677,7 @@ export function TripMap({
                 viewBox="0 0 26 6"
                 width="26"
                 height="6"
-                className={`shrink-0 ${stroke.inkClass}`}
+                className="shrink-0"
               >
                 <path
                   d="M0 3h26"

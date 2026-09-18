@@ -31,10 +31,10 @@ const MODE_ICON: Readonly<Record<TravelMode, typeof WalkIcon>> = {
 };
 
 /**
- * The disc behind the glyph on a closed row, tinted the way the map draws the
- * mode: the accent for walking, sage for public transport, and the warm grey
- * that has always been the drive tint. Each is the 200 step under the 700, so
- * the glyph reads on its own ground at the same weight in every row.
+ * The disc behind the glyph on a closed row, tinted by mode: the accent for
+ * walking, sage for public transport, and the warm grey for a drive. Each is
+ * the 200 step under the 700, so the glyph reads on its own ground at the same
+ * weight in every row.
  */
 const MODE_TINT: Readonly<Record<TravelMode, string>> = {
   walk: "bg-terracotta-200 text-terracotta-700",

@@ -67,7 +67,7 @@ describe("googleStaticMapUrl", () => {
     expect(markers[10]).not.toContain("label:");
   });
 
-  it("draws a leg with a shape as an encoded route in its mode's colour", () => {
+  it("draws a leg with a shape as an encoded route, in the first leg's ink", () => {
     const leg: DrawnLeg = {
       from: HOTEL,
       to: MARKET,
@@ -77,7 +77,22 @@ describe("googleStaticMapUrl", () => {
     const paths = params(googleStaticMapUrl(day(), [leg])).getAll("path");
 
     expect(paths).toHaveLength(1);
-    expect(paths[0]).toMatch(/^color:0xb2622dff\|weight:4\|enc:.+$/);
+    expect(paths[0]).toMatch(/^color:0x8c491aff\|weight:4\|enc:.+$/);
+  });
+
+  it("gives each leg the next ink in turn, whatever its mode", () => {
+    const legs: DrawnLeg[] = [
+      { from: HOTEL, to: MARKET, mode: "drive", path: null },
+      { from: MARKET, to: GALLERY, mode: "drive", path: null },
+      { from: GALLERY, to: HOTEL, mode: "walk", path: null },
+    ];
+    const paths = params(googleStaticMapUrl(day(), legs)).getAll("path");
+
+    expect(paths.map((path) => path.slice(0, "color:0x000000ff".length))).toEqual([
+      "color:0x8c491aff",
+      "color:0x56633fff",
+      "color:0xc67139ff",
+    ]);
   });
 
   it("draws a leg with no shape as the line between its ends", () => {

@@ -373,27 +373,36 @@ arrive. Every picture and rating in it is credited to where it came from.
 ## The map
 
 A line is drawn between each pair of points in travel order, under the markers. The
-mode is carried by the stroke pattern as well as by the colour, so colour is never the
-only thing distinguishing them:
+pattern is the mode and nothing else, and the colour is the leg:
 
 ```
-drive      4.6px  solid                terracotta-700
-transit    4.6px  solid                sage-700
-walk       5px    dash 0.5 8, round    terracotta-600
+drive      4.6px  solid
+transit    4.6px  dash 9 5
+walk       5px    dash 0.5 8, round
 ```
 
-One table in `src/features/trip-map/route-style.ts` holds those three rows, and both the
-map and the key read from it, so a line and the sample that explains it cannot drift
-apart. Google draws a dash or a dot as a symbol repeated along an invisible line rather
-than as a stroke pattern, which is why each row also says what shape it repeats, and a
-dash in the key is the length the map actually draws.
+Each leg of a day takes the next ink in this order and the seventh starts again:
+terracotta-700, sage-700, terracotta, neutral-700, sage-600, terracotta-900. Two legs
+in the same mode one after the other are the same pattern, and where they run along
+the same road they were one line; the colour is what makes them two. The order
+alternates the accent with sage and the warm grey, so no two neighbours sit on the
+same ramp.
+
+One table in `src/features/trip-map/route-style.ts` holds the three pattern rows and
+the ink order, and both the map and the key read from it, so a line and the sample
+that explains it cannot drift apart. Google draws a dash or a dot as a symbol repeated
+along an invisible line rather than as a stroke pattern, which is why each row also
+says what shape it repeats, and a dash in the key is the length the map actually draws.
+The printed map cannot pattern a line at all, so on paper the colour is all that tells
+one leg from the next.
 
 Every leg also states its mode in words in the list, so the pattern is a reminder and
 not the only source of the fact.
 
-The route key sits in the bottom left and lists all four modes, in the order Google
+The route key sits in the bottom left and lists all three modes, in the order Google
 lists them, whenever the day has a line on it. It is the notation, so it does not
-change with the modes this particular day happens to use. The markers have no key of
+change with the modes this particular day happens to use, and its samples are drawn in
+the same muted ink as its words: a coloured sample would say the colour meant something. The markers have no key of
 their own, because a numbered disc in the order you visit them and a named marker for
 the ends of the day explain themselves.
 

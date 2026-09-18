@@ -43,12 +43,21 @@ const INK_FAINT = "0x82796a";
 const TERRACOTTA = "0xc67139";
 const SAGE_600 = "0x728157";
 
-/** The same three inks the live map draws each way of travelling in. */
-const ROUTE_COLOR: Readonly<Record<TravelMode, string>> = {
-  drive: "0x8c491a",
-  transit: "0x56633f",
-  walk: "0xb2622d",
-};
+/**
+ * The inks the live map draws a day's legs in, one after another and round
+ * again: the same six, in the same order, as route-style.ts names as custom
+ * properties. A static map cannot dash or dot a line, so on paper the colour
+ * is all that tells one leg from the next, and the list beside it says the
+ * mode in words.
+ */
+const LEG_INKS: readonly string[] = [
+  "0x8c491a", // terracotta 700
+  "0x56633f", // sage 700
+  "0xc67139", // terracotta
+  "0x645c50", // neutral 700
+  "0x728157", // sage 600
+  "0x402310", // terracotta 900
+];
 
 const ROUTE_WEIGHT = 4;
 
@@ -115,8 +124,9 @@ function markerParams(day: DayPlan): readonly string[] {
   return [...stops, ...ends];
 }
 
-function pathParam(leg: DrawnLeg, keepEvery: number): string {
-  const head = `color:${ROUTE_COLOR[leg.mode]}ff|weight:${String(ROUTE_WEIGHT)}`;
+function pathParam(leg: DrawnLeg, index: number, keepEvery: number): string {
+  const ink = LEG_INKS[index % LEG_INKS.length] ?? LEG_INKS[0] ?? "0x8c491a";
+  const head = `color:${ink}ff|weight:${String(ROUTE_WEIGHT)}`;
   if (leg.path === null || leg.path.length < 2) {
     // The line between the two ends, which is what the live map draws for a
     // leg nobody could give the shape of.
@@ -146,9 +156,9 @@ export function googleStaticMapUrl(day: DayPlan, legs: readonly DrawnLeg[]): str
     for (const marker of markerParams(day)) {
       params.append("markers", marker);
     }
-    for (const leg of legs) {
-      params.append("path", pathParam(leg, keepEvery));
-    }
+    legs.forEach((leg, index) => {
+      params.append("path", pathParam(leg, index, keepEvery));
+    });
     const url = `${ENDPOINT}?${params.toString()}`;
     // Thinning a route by half each time reaches the budget within a few
     // rounds for any day, and a day of straight lines is already under it.

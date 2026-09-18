@@ -6,11 +6,11 @@ import type { TravelMode } from "@/core/model/leg";
  * The map and the key beside it read from the same row, so a line on the map
  * and the sample in the key can never drift apart.
  *
- * Only walking is patterned. Three broken lines crossing one another read as
- * texture rather than as three routes, so the rest are drawn continuous and
- * the colour is what tells them apart. Walking keeps its dots because a route
- * made of separated marks is the one that says "on foot" without being told,
- * and every leg says its mode in words in the list besides.
+ * The pattern is the mode and nothing else: a continuous line is a drive, a
+ * dashed one is public transport, and a route made of separated marks is the
+ * one that says "on foot" without being told. Colour says which leg, not
+ * which mode, and the key is drawn in the panel's own muted ink for the same
+ * reason: a sample in a colour would say the colour meant something.
  *
  * A dash in the sample is the length the map actually draws, because the two
  * are read one after the other and a sample that only resembled the line would
@@ -25,10 +25,6 @@ export interface RouteStroke {
    * transport" in full and does.
    */
   readonly label: string;
-  /** Read at runtime, because Google is handed a colour and not a class. */
-  readonly colorProperty: string;
-  /** Paints the same colour in the key. */
-  readonly inkClass: string;
   readonly weight: number;
   /** The sample drawn in the key. Null is a solid line. */
   readonly dashArray: string | null;
@@ -46,16 +42,7 @@ export interface RouteStroke {
 const STROKES: Readonly<Record<TravelMode, RouteStroke>> = {
   drive: {
     mode: "drive",
-    // The accent at its pressed weight. Routes were kept off terracotta for a
-    // while, on the argument that a line in the product's own colour reads as
-    // the line the product is recommending; the design canvas puts them back on
-    // it, and the argument does not survive contact with the drawing. What a
-    // route is is settled by the pattern and the key beside it, and a map whose
-    // ground, markers and lines are all one family reads as one thing rather
-    // than as a chart that happens to be over a map.
     label: "Driving",
-    colorProperty: "--color-terracotta-700",
-    inkClass: "text-terracotta-700",
     weight: 4.6,
     dashArray: null,
     roundCaps: false,
@@ -63,25 +50,18 @@ const STROKES: Readonly<Record<TravelMode, RouteStroke>> = {
   },
   transit: {
     mode: "transit",
-    // Sage, the second voice, which is the one thing on the map that is not a
-    // shade of the accent and is therefore the line told apart at a glance.
     label: "Transport",
-    colorProperty: "--color-sage-700",
-    inkClass: "text-sage-700",
     weight: 4.6,
-    dashArray: null,
+    // Nine of line to five of gap: long enough that a dash still reads as a
+    // piece of route where the line bends, short enough that three of them
+    // fit in the sample.
+    dashArray: "9 5",
     roundCaps: false,
-    drawn: { kind: "solid" },
+    drawn: { kind: "dashes", scale: 4.5, repeat: "14px" },
   },
   walk: {
     mode: "walk",
     label: "Walking",
-    // One step up the accent from driving. The two are close on purpose: the
-    // pattern is what separates them, and it is the strongest signal of the
-    // three, because a line of separated marks is the one that says "on foot"
-    // without being read.
-    colorProperty: "--color-terracotta-600",
-    inkClass: "text-terracotta-600",
     weight: 5,
     dashArray: "0.5 8",
     roundCaps: true,
@@ -99,4 +79,29 @@ export const ROUTE_STROKES: readonly RouteStroke[] = [
 /** Total by construction: the table has a row for every mode there is. */
 export function routeStroke(mode: TravelMode): RouteStroke {
   return STROKES[mode];
+}
+
+/**
+ * The ink each leg of a day is drawn in, by its place in the day, round and
+ * round. Two legs in the same mode one after the other are the same pattern,
+ * and where they run along the same road they were one line; the colour is
+ * what makes them two. The order alternates the accent with sage and the
+ * warm grey, so no two neighbours are near each other on the same ramp, and
+ * six is more legs than most days have before it comes round again.
+ *
+ * Read at runtime as custom properties, because Google is handed a colour and
+ * not a class. The printed map keeps its own copy of these, in hex, as it
+ * does of the rest of the palette.
+ */
+const LEG_INKS: readonly string[] = [
+  "--color-terracotta-700",
+  "--color-sage-700",
+  "--color-terracotta",
+  "--color-neutral-700",
+  "--color-sage-600",
+  "--color-terracotta-900",
+];
+
+export function legInk(index: number): string {
+  return LEG_INKS[index % LEG_INKS.length] ?? LEG_INKS[0] ?? "--color-terracotta-700";
 }
