@@ -23,16 +23,16 @@ const UNSAVED: TripSettingsOutcome = { saved: false, error: null, field: null };
 const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
- * The name is the heading, so it keeps display type, one step under the title
- * it was: at 24px the field stood a third taller than the dates and the actions
- * around it, and a row of controls at three heights reads as three sections.
- * Height is stated rather than padded, so all of them agree exactly.
+ * The name is the heading of the whole panel, so it is set at the headline
+ * step, over every other heading on it. The dates and the actions beside it
+ * are sized to its line box rather than the other way round, so the row is
+ * still one height with the name the tallest thing in it.
  *
  * It shares its row with the trip's actions and gives way to them, down to the
  * width a trip name still reads at, below which the row wraps instead.
  */
 const NAME_FIELD =
-  "min-w-0 flex-1 border-0 bg-transparent px-0 py-[2px] font-display text-title tracking-[-0.01em] text-ink caret-terracotta outline-none placeholder:text-ink-faint aria-invalid:text-terracotta-700 focus-visible:rounded-[6px] focus-visible:outline-2 focus-visible:outline-offset-[4px] focus-visible:outline-terracotta";
+  "min-w-0 flex-1 border-0 bg-transparent px-0 py-[2px] font-display text-headline tracking-[-0.01em] text-ink caret-terracotta outline-none placeholder:text-ink-faint aria-invalid:text-terracotta-700 focus-visible:rounded-[6px] focus-visible:outline-2 focus-visible:outline-offset-[4px] focus-visible:outline-terracotta";
 
 interface TripSettingsProps {
   readonly slug: string;

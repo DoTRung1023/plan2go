@@ -116,7 +116,7 @@ export function DayPlanner({
           <>
             <div className={`${HEADING_BAND} flex items-center gap-[10px]`}>
               <div className="min-w-0 flex-1">
-                <h1 className="font-display text-title tracking-[-0.01em] text-ink">
+                <h1 className="font-display text-headline tracking-[-0.01em] text-ink">
                   {title}
                 </h1>
                 {range === null ? null : (

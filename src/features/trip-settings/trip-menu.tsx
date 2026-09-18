@@ -106,12 +106,12 @@ export function TripMenu({ label, children }: TripMenuProps) {
           hold();
           setOpen(!open);
         }}
-        // Thirty, which is what the row it sits on comes to without it: the
-        // trip's name is 23px over a line box of 29. At 36 this one button
-        // was taller than anything else on the panel and set the height of
-        // the whole name row, so the block at the top of the list was a few
-        // pixels deep in nothing but the room around a glyph.
-        className={`grid h-[30px] w-[30px] place-items-center rounded-pill border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
+        // Thirty-four, a hair under what the row it sits on comes to without
+        // it: the trip's name is 28px over a line box of 35. Any taller and
+        // this one button would set the height of the whole name row, so the
+        // block at the top of the list was a few pixels deep in nothing but
+        // the room around a glyph.
+        className={`grid h-[34px] w-[34px] place-items-center rounded-pill border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
           open
             ? "border-terracotta-800 bg-terracotta-800 text-paper"
             : "border-rule bg-transparent text-ink-muted hover:bg-neutral-200 hover:text-ink"
@@ -124,7 +124,7 @@ export function TripMenu({ label, children }: TripMenuProps) {
         <div
           role="menu"
           aria-label={label}
-          className="absolute top-[42px] right-0 z-40 w-[172px] rounded-panel border border-rule bg-paper-raised p-[6px] shadow-lg"
+          className="absolute top-[46px] right-0 z-40 w-[172px] rounded-panel border border-rule bg-paper-raised p-[6px] shadow-lg"
         >
           {children}
         </div>

@@ -36,6 +36,11 @@ colors:
     700: "#645C50"
     900: "#2E2B25"
 typography:
+  headline:
+    fontFamily: Baloo 2
+    fontSize: 28px
+    lineHeight: 1.25
+    fontWeight: 600
   title:
     fontFamily: Baloo 2
     fontSize: 23px
@@ -232,7 +237,7 @@ English clips the upper one.
 Display carries times, place names, durations and the day heading. Body carries
 everything else.
 
-Ten steps and no others. Every size in the planner is one of them, set with its own
+Eleven steps and no others. Every size in the planner is one of them, set with its own
 line height and, where it is a pill, with `text-step/none` rather than a second leading
 utility fighting the first. Lead is the day a panel is open on, the one heading that is
 neither the trip's title nor a place. Small is the tier the interface is mostly made of,
@@ -242,7 +247,10 @@ not been thought about, and the marketing page, which the scale does not govern,
 one place such a number may appear. Every element that renders a time or a duration sets
 `font-variant-numeric: tabular-nums` so numbers stack in a column.
 
-- **title:** the trip name, and the heading of an empty day.
+- **headline:** the trip name, the one line about the whole trip, a step over every
+  other heading.
+- **title:** the heading of an empty day, the printed day, and a page that has nothing
+  to show.
 - **place:** a place name, and the time against an anchor row.
 - **time:** when a stop is arrived at and left, on its card.
 - **body:** running text.
