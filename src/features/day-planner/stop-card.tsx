@@ -50,7 +50,7 @@ export function AboutPlaceButton({
     <button
       type="button"
       onClick={onOpen}
-      title="About this place"
+      title="Place details"
       aria-label={`About ${name}`}
       className={TOOL}
     >
