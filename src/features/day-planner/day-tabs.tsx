@@ -119,7 +119,10 @@ export function DayTabs({
           given, so the hairline it draws when a trip is long enough sits
           just under the pills as their edge, and the line naming the day is
           close under the strip whether or not the hairline is there. */}
-      <div ref={watchScrolling} className="day-tabs flex items-center gap-[7px] py-[4px]">
+      <div
+        ref={watchScrolling}
+        className="day-tabs scroll-quiet scroll-shy flex items-center gap-[7px] py-[4px]"
+      >
         <div
           role="tablist"
           aria-label="Days of this trip"

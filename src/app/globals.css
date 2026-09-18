@@ -143,11 +143,11 @@
 }
 
 /*
- * The scrollbar on the page and on the list pane. A browser's own arrives in
- * system grey and there is no grey in this palette, so it is drawn in tokens
- * instead: a thin thumb that darkens under the pointer, over whichever surface
- * it happens to be sitting on. The tab strip does the same for its sideways bar
- * in day-tabs.css.
+ * The one scrollbar in the product, on the page, the list pane, the sheet and
+ * every strip that scrolls sideways. A browser's own arrives in system grey
+ * and there is no grey in this palette, so it is drawn in tokens instead: a
+ * thin thumb that darkens under the pointer, over whichever surface it
+ * happens to be sitting on.
  */
 @utility scroll-quiet {
   /* Firefox, which has these two properties and no pseudo-elements. */
@@ -158,8 +158,8 @@
      stated, or a strip that scrolls sideways gets the browser's own bar at
      the browser's own height under it. */
   &::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+    width: 6px;
+    height: 6px;
   }
 
   &::-webkit-scrollbar-track {
@@ -167,12 +167,14 @@
   }
 
   /*
-   * Four pixels of paint inside a ten pixel track. The border is transparent
-   * and the paint is clipped to the content box, which is the only way a
-   * scrollbar thumb gets a margin.
+   * Two pixels of paint inside a six pixel track: the weight of a rule, so it
+   * reads as an edge of the box rather than as a control, while the thumb is
+   * still the whole six to take hold of. The border is transparent and the
+   * paint is clipped to the content box, which is the only way a scrollbar
+   * thumb gets a margin.
    */
   &::-webkit-scrollbar-thumb {
-    border: 3px solid transparent;
+    border: 2px solid transparent;
     border-radius: var(--radius-pill);
     background-color: var(--color-rule-strong);
     background-clip: content-box;

@@ -1,9 +1,7 @@
 /*
- * The tab strip scrolls sideways once a trip is long enough. Its scrollbar is
- * styled here with the tokens from DESIGN.md rather than with utility classes,
- * because a browser's own scrollbar arrives in system grey and there is no grey
- * in this palette. Nothing in this file introduces a value that is not already
- * a token.
+ * The tab strip scrolls sideways once a trip is long enough. Its bar is the
+ * product's one scrollbar, scroll-quiet and scroll-shy from globals.css; what
+ * is here is only how the strip overflows.
  */
 
 .day-tabs {
@@ -21,49 +19,4 @@
    */
   overflow-x: scroll;
   overflow-y: hidden;
-
-  /* Firefox. The track is left as the surface the strip is sitting on. */
-  scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
-}
-
-.day-tabs:hover,
-.day-tabs[data-scrolling] {
-  scrollbar-color: var(--color-rule-strong) transparent;
-}
-
-/*
- * The rest is Chrome and Safari, which ignore the properties above.
- *
- * A hairline under the strip rather than a bar across it: three pixels of
- * paint inside a seven pixel track, the paint clipped to the content box
- * behind a transparent border, which is the only way a scrollbar thumb gets a
- * margin. Nothing at rest: the thumb is drawn while the pointer is over the
- * strip or the strip is moving, the second being the `data-scrolling` mark
- * from useScrolling, so a thumb with nothing to hover with still sees where
- * the days have got to while it swipes them.
- */
-.day-tabs::-webkit-scrollbar {
-  height: 7px;
-}
-
-.day-tabs::-webkit-scrollbar-track {
-  background-color: transparent;
-}
-
-.day-tabs::-webkit-scrollbar-thumb {
-  border: 2px solid transparent;
-  border-radius: var(--radius-pill);
-  background-color: transparent;
-  background-clip: content-box;
-}
-
-.day-tabs:hover::-webkit-scrollbar-thumb,
-.day-tabs[data-scrolling]::-webkit-scrollbar-thumb {
-  background-color: var(--color-rule-strong);
-}
-
-.day-tabs::-webkit-scrollbar-thumb:hover,
-.day-tabs::-webkit-scrollbar-thumb:active {
-  background-color: var(--color-ink-muted);
 }
