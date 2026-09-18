@@ -48,13 +48,12 @@ export default async function MarketingPage() {
         />
 
         <h1 className="font-display text-[clamp(28px,3.2vw,42px)] leading-[1.14] font-semibold tracking-[-0.01em] text-pretty text-ink">
-          Plan one day at a time.
+          Plan it, sort it, share it.
         </h1>
 
         <p className="max-w-[34ch] text-[17px] leading-[1.65] text-pretty text-ink-muted">
-          Add the places you want to visit and see what the day actually takes: how far
-          apart they are, how long you spend getting between them, and what time you
-          would arrive. If a place is shut when you get there, it says so.
+          Drop in your spots, sort out the order, and see if the day actually works.
+          When it&apos;s ready, export it as a clean PDF to share with whoever&apos;s coming.
         </p>
       </div>
 
