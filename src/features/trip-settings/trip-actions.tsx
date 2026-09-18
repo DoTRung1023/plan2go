@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import { PlusIcon, TrashIcon } from "@/ui/icons";
 import { MENU_ITEM, MENU_RULE } from "./trip-menu";
 
@@ -52,10 +53,12 @@ interface TripActionsProps {
  * spelled out in the question it asks, which is where it matters.
  *
  * Deleting asks first. There is nothing to undo it with, which is exactly the
- * kind of button that should not fire on one stray click. The question is asked
- * where it was asked from, in a panel under the button, rather than in a
- * browser dialog drawn in a system's own palette on a page that is meant to
- * read like a printed guide.
+ * kind of button that should not fire on one stray click. The question is
+ * asked in the middle of the page, over the whole of it, with the page dimmed
+ * and softened behind: it is the one question in the product that cannot be
+ * left half answered, and the ground going quiet is what says so. Drawn in
+ * the product's own panel rather than in a browser dialog in a system's
+ * palette, on a page that is meant to read like a printed guide.
  */
 export function TripActions({
   slug,
@@ -66,7 +69,6 @@ export function TripActions({
   const [message, setMessage] = useState<string | null>(null);
   const [asking, setAsking] = useState(false);
   const [deleting, startDeleting] = useTransition();
-  const container = useRef<HTMLDivElement | null>(null);
   const trigger = useRef<HTMLButtonElement | null>(null);
   const cancel = useRef<HTMLButtonElement | null>(null);
 
@@ -79,26 +81,6 @@ export function TripActions({
       return;
     }
     cancel.current?.focus();
-  }, [asking]);
-
-  useEffect(() => {
-    if (!asking) {
-      return;
-    }
-    const dismiss = (event: MouseEvent): void => {
-      const target = event.target;
-      const inside =
-        target instanceof Node &&
-        container.current !== null &&
-        container.current.contains(target);
-      if (!inside) {
-        setAsking(false);
-      }
-    };
-    document.addEventListener("mousedown", dismiss);
-    return () => {
-      document.removeEventListener("mousedown", dismiss);
-    };
   }, [asking]);
 
   /** Closing hands the focus back to what opened it, wherever it came from. */
@@ -116,7 +98,7 @@ export function TripActions({
   };
 
   return (
-    <div className="relative" ref={container}>
+    <div className="relative">
       <div>
         {/* Its own tab, so the trip being read is still there behind it. */}
         <Link href={startAnotherPath} target="_blank" className={MENU_ITEM}>
@@ -144,40 +126,72 @@ export function TripActions({
         </button>
       </div>
 
-      {asking ? (
-        <div
-          role="dialog"
-          aria-label="Delete this trip"
-          onKeyDown={(event) => {
-            if (event.key === "Escape") {
-              event.preventDefault();
-              close();
-            }
-          }}
-          className="absolute top-full right-0 z-50 mt-2 w-[min(320px,calc(100vw-2rem))] rounded-panel border border-rule bg-paper-raised p-[14px] text-left shadow-lg"
-        >
-          {/* The question as a heading, at the step for a heading that is
-              neither the trip's name nor a place, and under it the one thing
-              worth saying before the answer: that there is no taking it back.
-              The answers sit at the right, the way out first and the deed
-              last. The same panel, heading and tier as the dialog that
-              shares the trip, so the two read as one kind of thing. */}
-          <p className="font-display text-place text-ink">Delete this trip?</p>
-          {/* Six under the question, because it finishes the question rather
-              than starting anything; twelve over the answers, which are a
-              different thing again. The same three numbers the dialog that
-              shares the trip is built from. */}
-          <p className="mt-[6px] text-small/none text-ink-muted">This cannot be undone.</p>
-          <div className="mt-[10px] flex justify-end gap-2">
-            <button type="button" ref={cancel} onClick={close} className={CANCEL}>
-              Cancel
-            </button>
-            <button type="button" onClick={remove} className={CONFIRM}>
-              Delete
-            </button>
-          </div>
-        </div>
-      ) : null}
+      {/* Put at the root of the document rather than under the menu, so it
+          lies over the menu too: inside it, the dimming could only reach what
+          was beneath the menu, and the row the question came from stayed lit
+          and sharp above the page it was asking about.
+
+          Every press in it is kept from the document. The menu the question
+          came from closes on a press outside itself, and being at the root
+          this is outside it: without this, pressing the page would close the
+          menu with the question, and pressing Delete would close the menu
+          under the question before the click could land. */}
+      {asking
+        ? createPortal(
+            <div
+              onMouseDown={(event) => {
+                event.stopPropagation();
+              }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            >
+              {/* The page behind, dimmed and softened, and closing the question
+                  when clicked: everything that is not the question is the way
+                  out of it. */}
+              <div
+                aria-hidden="true"
+                onClick={close}
+                className="absolute inset-0 bg-ink/30 backdrop-blur-[3px]"
+              />
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-label="Delete this trip"
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") {
+                    // One layer per press: the question closes and the menu it
+                    // was asked from stays, with the focus back on the row.
+                    event.preventDefault();
+                    event.stopPropagation();
+                    close();
+                  }
+                }}
+                className="relative w-[min(320px,calc(100vw-2rem))] rounded-panel border border-rule bg-paper-raised p-[14px] text-left shadow-lg"
+              >
+                {/* The question as a heading, at the step for a heading that is
+                    neither the trip's name nor a place, and under it the one thing
+                    worth saying before the answer: that there is no taking it back.
+                    The answers sit at the right, the way out first and the deed
+                    last. The same panel, heading and tier as the dialog that
+                    shares the trip, so the two read as one kind of thing. */}
+                <p className="font-display text-place text-ink">Delete this trip?</p>
+                {/* Six under the question, because it finishes the question rather
+                    than starting anything; twelve over the answers, which are a
+                    different thing again. The same three numbers the dialog that
+                    shares the trip is built from. */}
+                <p className="mt-[6px] text-small/none text-ink-muted">This cannot be undone.</p>
+                <div className="mt-[10px] flex justify-end gap-2">
+                  <button type="button" ref={cancel} onClick={close} className={CANCEL}>
+                    Cancel
+                  </button>
+                  <button type="button" onClick={remove} className={CONFIRM}>
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
 
       {message === null ? null : (
         <p

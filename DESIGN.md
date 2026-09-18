@@ -486,7 +486,10 @@ Pure white or pure black, anywhere.
 A third accent, or red, amber, and green used as status.
 
 Decorative gradients, glassmorphism, backdrop blur, mesh backgrounds. The dotted thread
-is a rule drawn as a gradient, which is the only gradient in the product.
+is a rule drawn as a gradient, which is the only gradient in the product. The page
+behind the question that deletes a trip is dimmed and blurred, which is the only blur:
+it is the one question that cannot be left half answered, and the ground going quiet
+is what says so.
 
 Shadows on anything that is not floating over something else.
 
