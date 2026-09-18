@@ -125,6 +125,22 @@ export function TripSettings({
   const form = useRef<HTMLFormElement | null>(null);
 
   /**
+   * The name the save refused, while it is still the name in the field. The
+   * refusal is about a value, not about the field: once a letter of it has
+   * changed, what is there is a new name nobody has judged yet, and it is
+   * shown in ink rather than in the colour of the refusal, with the sentence
+   * about the old one gone. Set from the outcome as it arrives, and let go of
+   * on the first change after it.
+   */
+  const [refused, setRefused] = useState<string | null>(null);
+  const [answered, setAnswered] = useState(state);
+  if (answered !== state) {
+    setAnswered(state);
+    setRefused(state.field === "title" ? name : null);
+  }
+  const nameRefused = refused !== null && refused === name;
+
+  /**
    * The trip can change underneath this form: saving from it, or clearing the
    * trip, which puts the name and both dates back to what a new trip has. These
    * three fields hold what is being typed, so they have to follow it, or the
@@ -193,7 +209,7 @@ export function TripSettings({
           id={`${fieldId}-title`}
           name="title"
           type="text"
-          aria-invalid={state.field === "title"}
+          aria-invalid={nameRefused}
           maxLength={80}
           value={name}
           onChange={(event) => {
@@ -243,7 +259,7 @@ export function TripSettings({
             and over what is under it rather than in the column with it. In the
             flow it would push the dates and the whole day down the moment it
             appeared, so saying what is wrong would rearrange the panel. */}
-        {state.field === "title" && state.error !== null ? (
+        {nameRefused && state.error !== null ? (
           <p
             role="alert"
             className="absolute top-full left-0 z-20 mt-[5px] max-w-full rounded-chip bg-terracotta-200 px-[11px] py-[6px] text-micro font-semibold text-terracotta-900 shadow-md"
