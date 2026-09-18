@@ -12,12 +12,13 @@ export interface DeleteTripOutcome {
 }
 
 /**
- * An answer to the question, at the height of the product's standing buttons
- * rather than a menu row's: the question stands alone in the middle of the
- * page, and answers sized for a popover looked lost under it.
+ * An answer to the question, the height of the menu's own button: the question
+ * stands alone in the middle of the page, and answers sized for a popover
+ * looked lost under it, while the product's standing buttons outweighed the
+ * one line they answered.
  */
 const ANSWER =
-  "inline-flex h-[38px] items-center justify-center rounded-pill px-[18px] text-small/none font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "inline-flex h-[34px] items-center justify-center rounded-pill px-4 text-small/none font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 /** The answer that destroys something is the one that carries the accent, and the only one in a pill. */
 const CONFIRM = `${ANSWER} bg-terracotta text-paper hover:bg-terracotta-600 active:bg-terracotta-700`;
@@ -170,7 +171,7 @@ export function TripActions({
                     close();
                   }
                 }}
-                className="relative w-[min(400px,calc(100vw-2rem))] rounded-panel border border-rule bg-paper-raised p-[22px] text-left shadow-lg"
+                className="relative w-[min(360px,calc(100vw-2rem))] rounded-panel border border-rule bg-paper-raised p-[18px] text-left shadow-lg"
               >
                 {/* The question as a heading at the lead step, the one the
                     export dialog's heading is set at, since the two are the
@@ -179,11 +180,11 @@ export function TripActions({
                     that there is no taking it back. The answers sit at the
                     right, the way out first and the deed last. */}
                 <p className="font-display text-lead text-ink">Delete this trip?</p>
-                {/* Eight under the question, because it finishes the question
-                    rather than starting anything; twenty over the answers,
+                {/* Six under the question, because it finishes the question
+                    rather than starting anything; sixteen over the answers,
                     which are a different thing again. */}
-                <p className="mt-[8px] text-body text-ink-muted">This cannot be undone.</p>
-                <div className="mt-[20px] flex justify-end gap-2">
+                <p className="mt-[6px] text-body text-ink-muted">This cannot be undone.</p>
+                <div className="mt-4 flex justify-end gap-2">
                   <button type="button" ref={cancel} onClick={close} className={CANCEL}>
                     Cancel
                   </button>
