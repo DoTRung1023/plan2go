@@ -1,11 +1,12 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useScrolling } from "@/ui/use-scrolling";
 import type { PlannedDay } from "./compute-trip";
 import type { EndpointRef } from "./day-itinerary";
 import { DayItinerary } from "./day-itinerary";
 import { DayTabs } from "./day-tabs";
-import { HEADING_BAND, HEADING_BODY } from "./panel-heading";
+import { GUTTER, HEADING_BAND, HEADING_BODY } from "./panel-heading";
 import type { DayActions, EditOutcome } from "./day-actions";
 import { formatDayDate } from "./format-day-date";
 
@@ -54,8 +55,6 @@ interface DayPlannerProps {
 }
 
 /** The panel's own gutter. Wider on a desktop, where the panel is wider. */
-const GUTTER = "px-5 lg:px-[26px]";
-
 function dateRange(days: readonly PlannedDay[]): string | null {
   const first = days[0];
   const last = days[days.length - 1];
@@ -98,6 +97,7 @@ export function DayPlanner({
 }: DayPlannerProps) {
   const selected = days[selectedIndex] ?? days[0];
   const range = dateRange(days);
+  const watchScrolling = useScrolling();
 
   return (
     <>
@@ -106,38 +106,36 @@ export function DayPlanner({
           day's line are part of it. A reader who cannot edit gets the heading
           and the strip on their own.
 
-          A card inside the gutter, level with the cards of the day under it,
-          so the block reads as one thing and its bottom edge is where the day
+          Edge to edge across the panel, its two surfaces closed by rules, so
+          the block reads as one thing and its bottom edge is where the day
           starts scrolling. Without an edge the day's line and the first row
           of the day sat either side of a stretch of bare paper that read as a
           gap rather than as two things: the heading, then its list. */}
-      <div className={`relative z-20 shrink-0 pt-[14px] pb-3 ${GUTTER}`}>
-        <div className="rounded-card border border-rule bg-paper-raised">
-          {settings ?? (
-            <>
-              <div className={`${HEADING_BAND} flex items-center gap-[10px]`}>
-                <div className="min-w-0 flex-1">
-                  <h1 className="font-display text-title tracking-[-0.01em] text-ink">
-                    {title}
-                  </h1>
-                  {range === null ? null : (
-                    <p className="mt-1 text-meta text-ink-muted">{range}</p>
-                  )}
-                </div>
-                {exporting}
+      <div className="relative z-20 shrink-0">
+        {settings ?? (
+          <>
+            <div className={`${HEADING_BAND} flex items-center gap-[10px]`}>
+              <div className="min-w-0 flex-1">
+                <h1 className="font-display text-title tracking-[-0.01em] text-ink">
+                  {title}
+                </h1>
+                {range === null ? null : (
+                  <p className="mt-1 text-meta text-ink-muted">{range}</p>
+                )}
               </div>
-              <div className={HEADING_BODY}>
-                <DayTabs
-                  days={days.map((day) => day.plan)}
-                  today={today}
-                  selectedIndex={selectedIndex}
-                  onSelect={onSelect}
-                  onAddDay={onAddDay}
-                />
-              </div>
-            </>
-          )}
-        </div>
+              {exporting}
+            </div>
+            <div className={HEADING_BODY}>
+              <DayTabs
+                days={days.map((day) => day.plan)}
+                today={today}
+                selectedIndex={selectedIndex}
+                onSelect={onSelect}
+                onAddDay={onAddDay}
+              />
+            </div>
+          </>
+        )}
       </div>
 
       {selected === undefined ? null : (
@@ -153,7 +151,8 @@ export function DayPlanner({
            * hold the stop underneath it in place. Off, the list stays exactly
            * where it was and the panel opens downwards, where it was clicked.
            */
-          className={`scroll-quiet min-h-0 flex-1 overflow-x-hidden overflow-y-auto pt-1 pb-[26px] [overflow-anchor:none] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${GUTTER}`}
+          ref={watchScrolling}
+          className={`scroll-quiet scroll-shy min-h-0 flex-1 overflow-x-hidden overflow-y-auto pt-1 pb-[26px] [overflow-anchor:none] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${GUTTER}`}
         >
           <DayItinerary
             day={selected.plan}
