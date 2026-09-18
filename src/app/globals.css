@@ -198,35 +198,60 @@
 /*
  * A scrollbar drawn as a line, on a box that useScrollBar measures. The
  * browser's own bar is hidden, since no two browsers draw one alike and
- * Firefox draws none thinner than its own idea of thin, and a two pixel line
- * is painted along the edge instead, as the box's background: a background
- * stays put while the content scrolls, which is what a scrollbar has to do.
- * Where the thumb starts and how long it is are the two properties the hook
- * writes; down the right edge unless the hook says the box scrolls sideways,
- * when it runs along the bottom.
+ * Firefox draws none thinner than its own idea of thin, and a line is painted
+ * along the edge instead, as the box's background: a background stays put
+ * while the content scrolls, which is what a scrollbar has to do. Where the
+ * thumb starts and how long it is are the two properties the hook writes;
+ * down the right edge unless the hook says the box scrolls sideways, when it
+ * runs along the bottom.
+ *
+ * Two pixels wide unless the box says otherwise in --bar-width. The thumb is
+ * three layers, a half disc at each end and a straight run between them, so
+ * a wider one has round ends like everything else here. The three meet edge
+ * to edge and never overlap: the ink is translucent, and where two layers of
+ * it lay over each other the ends came out darker than the middle. A cap is
+ * never longer than half the thumb, so a thumb of nothing draws nothing.
  */
 @utility scroll-line {
   --bar-ink: var(--color-rule-strong);
+  --bar-w: var(--bar-width, 2px);
+  --bar-r: calc(var(--bar-w) / 2);
+  --bar-cap: min(var(--bar-r), calc(var(--bar-size, 0px) / 2));
+  --bar-run: max(0px, calc(var(--bar-size, 0px) - 2 * var(--bar-cap)));
+  --bar-end: calc(var(--bar-start, 0px) + var(--bar-size, 0px) - var(--bar-cap));
+  --bar-mid: calc(var(--bar-start, 0px) + var(--bar-cap));
   scrollbar-width: none;
-  background-image: linear-gradient(
-    var(--bar-along, to bottom),
-    transparent var(--bar-start, 0px),
-    var(--bar-ink) var(--bar-start, 0px),
-    var(--bar-ink) calc(var(--bar-start, 0px) + var(--bar-size, 0px)),
-    transparent calc(var(--bar-start, 0px) + var(--bar-size, 0px))
-  );
+  background-image:
+    radial-gradient(circle var(--bar-r) at 50% 100%, var(--bar-ink) 0 98%, transparent 100%),
+    radial-gradient(circle var(--bar-r) at 50% 0%, var(--bar-ink) 0 98%, transparent 100%),
+    linear-gradient(var(--bar-ink), var(--bar-ink));
   background-repeat: no-repeat;
-  background-size: 2px 100%;
-  background-position: right top;
+  background-size:
+    var(--bar-w) var(--bar-cap),
+    var(--bar-w) var(--bar-cap),
+    var(--bar-w) var(--bar-run);
+  background-position:
+    right 0 top var(--bar-start, 0px),
+    right 0 top var(--bar-end),
+    right 0 top var(--bar-mid);
 
   &::-webkit-scrollbar {
     display: none;
   }
 
   &[data-axis="x"] {
-    --bar-along: to right;
-    background-size: 100% 2px;
-    background-position: left bottom;
+    background-image:
+      radial-gradient(circle var(--bar-r) at 100% 50%, var(--bar-ink) 0 98%, transparent 100%),
+      radial-gradient(circle var(--bar-r) at 0% 50%, var(--bar-ink) 0 98%, transparent 100%),
+      linear-gradient(var(--bar-ink), var(--bar-ink));
+    background-size:
+      var(--bar-cap) var(--bar-w),
+      var(--bar-cap) var(--bar-w),
+      var(--bar-run) var(--bar-w);
+    background-position:
+      left var(--bar-start, 0px) bottom 0,
+      left var(--bar-end) bottom 0,
+      left var(--bar-mid) bottom 0;
   }
 }
 

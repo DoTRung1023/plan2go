@@ -145,6 +145,12 @@ export function DayPlanner({
           aria-labelledby={`day-tab-${selected.plan.id}`}
           tabIndex={0}
           /*
+           * Its bar is always drawn, and three times the width of the others:
+           * a day longer than the window is the one thing on the page a reader
+           * has to find out about by scrolling, and a line that only appeared
+           * under the pointer left a first-time reader with no sign that there
+           * were stops below the last one they could see.
+           *
            * Scroll anchoring off. A browser keeps whatever it picked as the
            * anchor still when something above it grows, so opening the ways of
            * getting somewhere pushed the panel out of the top of the list to
@@ -152,7 +158,7 @@ export function DayPlanner({
            * where it was and the panel opens downwards, where it was clicked.
            */
           ref={watchList}
-          className={`scroll-line scroll-shy min-h-0 flex-1 overflow-x-hidden overflow-y-auto pt-1 pb-[26px] [overflow-anchor:none] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${GUTTER}`}
+          className={`scroll-line [--bar-width:6px] min-h-0 flex-1 overflow-x-hidden overflow-y-auto pt-1 pb-[26px] [overflow-anchor:none] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${GUTTER}`}
         >
           <DayItinerary
             day={selected.plan}
