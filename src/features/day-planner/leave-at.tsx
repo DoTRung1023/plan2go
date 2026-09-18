@@ -32,11 +32,13 @@ interface LeaveAtProps {
  * legs and the stays, which is why no stop and no end of the day offers a
  * time of its own to set.
  *
- * The field is the browser's own, in a pill on the raised paper an input sits
- * on, and the time is typed into it. The browser's picker is not offered: it
- * is drawn in the browser's colours and the page cannot reach into it, and a
- * time is two numbers, which are quicker to type than to scroll to. A phone
- * still opens its own picker on a tap, which is the one that fits a thumb.
+ * The field is the browser's own, drawn as the words it shows rather than as
+ * a box, the way the dates are on the row that names the trip: it tints under
+ * the pointer to say it can be changed, and the time is typed into it. The
+ * browser's picker is not offered: it is drawn in the browser's colours and
+ * the page cannot reach into it, and a time is two numbers, which are quicker
+ * to type than to scroll to. A phone still opens its own picker on a tap,
+ * which is the one that fits a thumb.
  *
  * Nothing is written while a time is still being typed. The field is written
  * when it is left or Enter is pressed, so a morning typed a digit at a time
@@ -89,7 +91,7 @@ export function LeaveAt({ value, onChoose }: LeaveAtProps) {
             event.currentTarget.blur();
           }
         }}
-        className="leave-at-field rounded-pill border border-rule bg-paper-raised px-3 py-[6px] text-center text-small/none font-semibold text-ink caret-terracotta tabular-nums outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta disabled:opacity-45"
+        className="leave-at-field rounded-pill border-0 bg-transparent px-2 py-[5px] text-center text-small/none font-semibold text-ink caret-terracotta tabular-nums outline-none hover:bg-terracotta-100 hover:text-terracotta-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta disabled:opacity-45"
       />
 
       {/* Hangs off the control, over what is under it rather than in the row
