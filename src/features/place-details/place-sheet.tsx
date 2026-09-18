@@ -433,17 +433,18 @@ export function PlaceSheet({ slug, place, askedFor, onClose }: PlaceSheetProps) 
           leaving ? "place-sheet-leaving" : "place-sheet-arriving"
         }`}
       >
-        {/* The way out on a desk: a tab on the sheet's free edge, halfway
-            down, pointing the way the sheet goes. It is drawn in the sheet's
-            own paper with the sheet's own rule around it and none between
-            them, so it is part of the sheet rather than a button near it,
-            and it is there whatever the sheet is showing. */}
+        {/* The way out on a desk: a pill astride the sheet's free edge,
+            halfway down, pointing the way the sheet goes. Drawn the way the
+            grip on the planner's edge is, on raised paper behind a hairline
+            with a floating control's shadow, so the two edges of the map
+            carry the same kind of thing and the way out is found the same
+            way the grip is. It is there whatever the sheet is showing. */}
         <button
           type="button"
           onClick={leave}
           title="Close"
           aria-label="Close"
-          className="absolute top-1/2 left-full hidden h-[40px] w-[18px] -translate-y-1/2 place-items-center rounded-r-pill border border-l-0 border-rule bg-paper-raised text-ink-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:grid"
+          className="absolute top-1/2 left-full hidden h-[40px] w-[18px] -translate-x-1/2 -translate-y-1/2 place-items-center rounded-pill border border-rule bg-paper-raised text-ink-muted shadow-sm hover:border-rule-strong hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:grid"
         >
           <ChevronLeftIcon size={12} strokeWidth={2.75} />
         </button>
