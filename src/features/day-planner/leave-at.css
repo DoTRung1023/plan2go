@@ -14,20 +14,8 @@
   color: var(--color-ink);
 }
 
-/* The browser's own way into its own picker. The clock beside the field opens ours. */
+/* The browser's own way into its own picker, which is drawn in the browser's
+   colours and is not offered. The time is typed. */
 .leave-at-field::-webkit-calendar-picker-indicator {
-  display: none;
-}
-
-/*
- * Each column scrolls with no bar showing, the way the browser's picker does.
- * The rows themselves are the whole of the affordance: a column that opens on
- * the chosen value with more above and below it says it scrolls.
- */
-.leave-at-list {
-  scrollbar-width: none;
-}
-
-.leave-at-list::-webkit-scrollbar {
   display: none;
 }
