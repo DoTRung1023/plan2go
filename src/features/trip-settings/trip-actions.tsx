@@ -11,8 +11,13 @@ export interface DeleteTripOutcome {
   readonly error: string | null;
 }
 
+/**
+ * An answer to the question, at the height of the product's standing buttons
+ * rather than a menu row's: the question stands alone in the middle of the
+ * page, and answers sized for a popover looked lost under it.
+ */
 const ANSWER =
-  "inline-flex h-8 items-center justify-center rounded-pill px-4 text-small/none font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "inline-flex h-[38px] items-center justify-center rounded-pill px-[18px] text-small/none font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 /** The answer that destroys something is the one that carries the accent, and the only one in a pill. */
 const CONFIRM = `${ANSWER} bg-terracotta text-paper hover:bg-terracotta-600 active:bg-terracotta-700`;
@@ -165,21 +170,20 @@ export function TripActions({
                     close();
                   }
                 }}
-                className="relative w-[min(320px,calc(100vw-2rem))] rounded-panel border border-rule bg-paper-raised p-[14px] text-left shadow-lg"
+                className="relative w-[min(400px,calc(100vw-2rem))] rounded-panel border border-rule bg-paper-raised p-[22px] text-left shadow-lg"
               >
-                {/* The question as a heading, at the step for a heading that is
-                    neither the trip's name nor a place, and under it the one thing
-                    worth saying before the answer: that there is no taking it back.
-                    The answers sit at the right, the way out first and the deed
-                    last. The same panel, heading and tier as the dialog that
-                    shares the trip, so the two read as one kind of thing. */}
-                <p className="font-display text-place text-ink">Delete this trip?</p>
-                {/* Six under the question, because it finishes the question rather
-                    than starting anything; twelve over the answers, which are a
-                    different thing again. The same three numbers the dialog that
-                    shares the trip is built from. */}
-                <p className="mt-[6px] text-small/none text-ink-muted">This cannot be undone.</p>
-                <div className="mt-[10px] flex justify-end gap-2">
+                {/* The question as a heading at the lead step, the one the
+                    export dialog's heading is set at, since the two are the
+                    product's two panels that stand in the middle of the page,
+                    and under it the one thing worth saying before the answer:
+                    that there is no taking it back. The answers sit at the
+                    right, the way out first and the deed last. */}
+                <p className="font-display text-lead text-ink">Delete this trip?</p>
+                {/* Eight under the question, because it finishes the question
+                    rather than starting anything; twenty over the answers,
+                    which are a different thing again. */}
+                <p className="mt-[8px] text-body text-ink-muted">This cannot be undone.</p>
+                <div className="mt-[20px] flex justify-end gap-2">
                   <button type="button" ref={cancel} onClick={close} className={CANCEL}>
                     Cancel
                   </button>
