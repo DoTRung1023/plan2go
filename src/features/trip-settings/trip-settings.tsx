@@ -28,11 +28,15 @@ const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/;
  * are sized to its line box rather than the other way round, so the row is
  * still one height with the name the tallest thing in it.
  *
+ * That height is stated, forty, rather than left to the line height: Firefox
+ * sets a field's line at the face's own height whatever it is told, which
+ * made the row a dozen pixels taller there than anywhere else.
+ *
  * It shares its row with the trip's actions and gives way to them, down to the
  * width a trip name still reads at, below which the row wraps instead.
  */
 const NAME_FIELD =
-  "min-w-0 flex-1 border-0 bg-transparent px-0 py-[2px] font-display text-headline tracking-[-0.01em] text-ink caret-terracotta outline-none placeholder:text-ink-faint aria-invalid:text-terracotta-700 focus-visible:rounded-[6px] focus-visible:outline-2 focus-visible:outline-offset-[4px] focus-visible:outline-terracotta";
+  "h-[40px] min-w-0 flex-1 border-0 bg-transparent px-0 py-0 font-display text-headline tracking-[-0.01em] text-ink caret-terracotta outline-none placeholder:text-ink-faint aria-invalid:text-terracotta-700 focus-visible:rounded-[6px] focus-visible:outline-2 focus-visible:outline-offset-[4px] focus-visible:outline-terracotta";
 
 interface TripSettingsProps {
   readonly slug: string;

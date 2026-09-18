@@ -38,7 +38,7 @@ colors:
 typography:
   headline:
     fontFamily: Baloo 2
-    fontSize: 28px
+    fontSize: 32px
     lineHeight: 1.25
     fontWeight: 600
   title:

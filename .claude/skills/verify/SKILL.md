@@ -82,8 +82,9 @@ for a screenshot.
 
 - On a desktop the list pane can be resized from `button[title="Drag to resize"]`, the
   grip astride its left edge. Drag it, press ArrowLeft/ArrowRight with it focused, or
-  double click it to go back to the laid out width. The width is `--pane` on `main`;
-  the pane never goes under 400px and the map keeps 480px.
+  double click it to go back to the laid out width. The width is `--pane` on `main`
+  and is kept in `localStorage` under `plan2go.pane` (a reset removes it); the pane
+  never goes under 400px and the map keeps 480px.
 
 ## The dates field
 

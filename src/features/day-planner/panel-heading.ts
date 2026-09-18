@@ -15,7 +15,8 @@ export const GUTTER = "px-5 lg:px-[26px]";
  * change of surface says so without a heading saying it. Neither clips, since
  * the calendar and the trip's menu hang out of the band over the list.
  */
-export const HEADING_BAND = `border-b border-rule bg-paper-sunken py-[8px] ${GUTTER}`;
+/** Eight over the name and seven under, which with its forty pixel line box is a row of fifty-five. */
+export const HEADING_BAND = `border-b border-rule bg-paper-sunken pt-[8px] pb-[7px] ${GUTTER}`;
 
 /**
  * Six rather than ten over the strip of days: the strip carries four of its

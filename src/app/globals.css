@@ -92,7 +92,7 @@
    * than a day or a place in it, a step over every other heading. Still 1.25:
    * a trip is named in the language of wherever it goes.
    */
-  --text-headline: 28px;
+  --text-headline: 32px;
   --text-headline--line-height: 1.25;
   --text-headline--font-weight: 600;
   --text-title: 23px;

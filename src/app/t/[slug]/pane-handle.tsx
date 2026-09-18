@@ -1,7 +1,7 @@
 "use client";
 
 import type { KeyboardEvent, PointerEvent, RefObject } from "react";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { GripIcon } from "@/ui/icons";
 
 /** Narrower than this and a stop card's name, times and tools no longer share a row. */
@@ -12,6 +12,33 @@ const MIN_MAP = 480;
 
 /** How far one press of an arrow key moves the edge. */
 const STEP = 24;
+
+/** Where the width is kept between visits, in this browser. */
+const REMEMBERED = "plan2go.pane";
+
+/**
+ * The browser's storage, or null where there is none to be had: a private
+ * window, or site data blocked. Reached through here rather than directly,
+ * because reaching for it directly throws in those, and a width that cannot
+ * be kept is still a width that can be dragged to.
+ */
+function storage(): Storage | null {
+  try {
+    const found = window.localStorage;
+    found.getItem(REMEMBERED);
+    return found;
+  } catch {
+    return null;
+  }
+}
+
+/** Sets the pane to this width, within what the shell allows, and says what it came to. */
+function resizePane(main: HTMLElement, width: number): number {
+  const widest = main.getBoundingClientRect().width - MIN_MAP;
+  const clamped = Math.round(Math.min(Math.max(width, MIN_PANE), widest));
+  main.style.setProperty("--pane", `${String(clamped)}px`);
+  return clamped;
+}
 
 interface PaneHandleProps {
   /**
@@ -30,12 +57,22 @@ interface PaneHandleProps {
  *
  * The width is written straight onto the shell rather than kept in state, so
  * dragging does not render the planner on every frame; the map is laid out
- * again by the grid, and it watches its own box. On a desktop only: below the
- * breakpoint there is one column and no edge to drag.
+ * again by the grid, and it watches its own box. Where the edge is let go is
+ * kept in the browser, so the next trip opens at the same width; putting it
+ * back forgets it. On a desktop only: below the breakpoint there is one
+ * column and no edge to drag.
  */
 export function PaneHandle({ shell }: PaneHandleProps) {
   const dragging = useRef(false);
   const handle = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    const main = shell.current;
+    const kept = Number(storage()?.getItem(REMEMBERED));
+    if (main !== null && Number.isFinite(kept) && kept > 0) {
+      resizePane(main, kept);
+    }
+  }, [shell]);
 
   /** The pane's width as it is now, whichever way it was set. The handle sits inside the pane. */
   const current = (): number =>
@@ -46,13 +83,12 @@ export function PaneHandle({ shell }: PaneHandleProps) {
     if (main === null) {
       return;
     }
-    const widest = main.getBoundingClientRect().width - MIN_MAP;
-    const clamped = Math.round(Math.min(Math.max(width, MIN_PANE), widest));
-    main.style.setProperty("--pane", `${String(clamped)}px`);
+    storage()?.setItem(REMEMBERED, String(resizePane(main, width)));
   };
 
   const reset = (): void => {
     shell.current?.style.removeProperty("--pane");
+    storage()?.removeItem(REMEMBERED);
   };
 
   const onPointerDown = (event: PointerEvent<HTMLButtonElement>): void => {
@@ -70,15 +106,19 @@ export function PaneHandle({ shell }: PaneHandleProps) {
       return;
     }
     // The pane runs to the shell's right edge, so its width is how far the
-    // pointer is from there.
-    resize(main.getBoundingClientRect().right - event.clientX);
+    // pointer is from there. Not kept until the edge is let go.
+    resizePane(main, main.getBoundingClientRect().right - event.clientX);
   };
 
   const onPointerUp = (event: PointerEvent<HTMLButtonElement>): void => {
+    if (!dragging.current) {
+      return;
+    }
     dragging.current = false;
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
+    storage()?.setItem(REMEMBERED, String(current()));
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLButtonElement>): void => {

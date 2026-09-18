@@ -106,8 +106,8 @@ export function TripMenu({ label, children }: TripMenuProps) {
           hold();
           setOpen(!open);
         }}
-        // Thirty-four, a hair under what the row it sits on comes to without
-        // it: the trip's name is 28px over a line box of 35. Any taller and
+        // Thirty-four, under what the row it sits on comes to without it: the
+        // trip's name is 32px over a line box of 40. Taller than that and
         // this one button would set the height of the whole name row, so the
         // block at the top of the list was a few pixels deep in nothing but
         // the room around a glyph.
