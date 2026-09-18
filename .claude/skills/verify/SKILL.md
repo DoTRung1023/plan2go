@@ -74,10 +74,9 @@ for a screenshot.
   times." with `aria-busy` until the server answers; wait for that line to go before
   reading times.
 - `button:has-text("Change")` index 0 is not a leg. Legs start at index 1.
-- A public transport leg lists its rides in `ol li` under the row and a "Live times in
-  Google Maps" link. Rows cached before rides were asked for show only the link until
-  the hourly transit expiry; `legCache.deleteMany({ mode: "TRANSIT" })` forces a fresh
-  ask (one Routes call per transit leg viewed).
+- Every leg with a route has a "Live times in Google Maps" link under the row, in the
+  mode the leg uses. Rides are no longer listed on screen; they still go to the PDF
+  behind the "Distance of each leg" switch.
 
 ## The dates field
 
@@ -92,7 +91,7 @@ for a screenshot.
 
 ## A place, opened
 
-- `button:has-text("About this place")` on a card, or `.trip-map-stop` on the map, opens
+- `button[title="Place details"]` on a card, or `.trip-map-stop` on the map, opens
   `section[role="dialog"][aria-label="<place name>"]`. It reads "Looking up X." until
   `/api/places/card` answers; pictures come from `/api/places/photo`.
 - A second dev server cannot start while one is running for this project. Drive the

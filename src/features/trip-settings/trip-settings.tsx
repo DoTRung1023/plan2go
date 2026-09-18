@@ -4,6 +4,11 @@ import type { ReactNode } from "react";
 import { useActionState, useId, useRef, useState } from "react";
 import type { IsoDate } from "@/core/model/day";
 import { daysBetween } from "@/core/time/zoned";
+import {
+  HEADING_BAND,
+  HEADING_BODY,
+  HEADING_DAY_LINE,
+} from "@/features/day-planner/panel-heading";
 import { DateRangeField } from "./date-range-field";
 
 export interface TripSettingsOutcome {
@@ -174,7 +179,7 @@ export function TripSettings({
       <label className="sr-only" htmlFor={`${fieldId}-title`}>
         Trip name
       </label>
-      <div className="relative flex items-center gap-[10px]">
+      <div className={`${HEADING_BAND} relative flex items-center gap-[10px]`}>
         {/* Not `required`. requestSubmit runs the browser's own validation, and
             a field marked required stops there and puts up a grey system
             bubble reading "Please fill out this field", in a typeface this
@@ -244,30 +249,27 @@ export function TripSettings({
         ) : null}
       </div>
 
-      {/* Four less than the pills are meant to sit from the name row: the
-          strip carries those four itself, as room for a focus ring. */}
-      <div className="mt-1">{tabs}</div>
+      <div className={HEADING_BODY}>
+        {tabs}
 
-      {/* Nothing but which day is open now: the dates that used to end this
-          line have gone up to the row that names the trip. Close under the
-          strip and with no rule between them, because the line names the tab
-          that is chosen and belongs with it; the rule that closes the block
-          is under this line, where the day itself begins. */}
-      <div className="mt-[6px] flex items-center gap-[22px]">
-        <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-[10px]">
-          {dayLine}
+        {/* Nothing but which day is open now: the dates that used to end this
+            line have gone up to the row that names the trip. */}
+        <div className={HEADING_DAY_LINE}>
+          <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-[10px]">
+            {dayLine}
+          </div>
+          {leaveAt}
         </div>
-        {leaveAt}
-      </div>
 
-      {state.error === null || state.field !== null ? null : (
-        <p
-          role="alert"
-          className="mt-3 rounded-chip bg-terracotta-200 px-3 py-2 text-meta text-terracotta-900"
-        >
-          {state.error}
-        </p>
-      )}
+        {state.error === null || state.field !== null ? null : (
+          <p
+            role="alert"
+            className="mt-3 rounded-chip bg-terracotta-200 px-3 py-2 text-meta text-terracotta-900"
+          >
+            {state.error}
+          </p>
+        )}
+      </div>
     </form>
   );
 }

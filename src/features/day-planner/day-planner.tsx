@@ -5,6 +5,7 @@ import type { PlannedDay } from "./compute-trip";
 import type { EndpointRef } from "./day-itinerary";
 import { DayItinerary } from "./day-itinerary";
 import { DayTabs } from "./day-tabs";
+import { HEADING_BAND, HEADING_BODY } from "./panel-heading";
 import type { DayActions, EditOutcome } from "./day-actions";
 import { formatDayDate } from "./format-day-date";
 
@@ -105,37 +106,38 @@ export function DayPlanner({
           day's line are part of it. A reader who cannot edit gets the heading
           and the strip on their own.
 
-          A rule closes the block, the full width of the panel, where the day
-          starts scrolling under it. Without one the day's line and the first
-          row of the day sat either side of a stretch of bare paper that read
-          as a gap rather than as two things: the heading, then its list. */}
-      <div className={`relative z-20 shrink-0 border-b border-rule pt-[14px] pb-3 ${GUTTER}`}>
-        {settings ?? (
-          <>
-            <div className="flex items-center gap-[10px]">
-              <div className="min-w-0 flex-1">
-                <h1 className="font-display text-title tracking-[-0.01em] text-ink">
-                  {title}
-                </h1>
-                {range === null ? null : (
-                  <p className="mt-1 text-meta text-ink-muted">{range}</p>
-                )}
+          A card inside the gutter, level with the cards of the day under it,
+          so the block reads as one thing and its bottom edge is where the day
+          starts scrolling. Without an edge the day's line and the first row
+          of the day sat either side of a stretch of bare paper that read as a
+          gap rather than as two things: the heading, then its list. */}
+      <div className={`relative z-20 shrink-0 pt-[14px] pb-3 ${GUTTER}`}>
+        <div className="rounded-card border border-rule bg-paper-raised">
+          {settings ?? (
+            <>
+              <div className={`${HEADING_BAND} flex items-center gap-[10px]`}>
+                <div className="min-w-0 flex-1">
+                  <h1 className="font-display text-title tracking-[-0.01em] text-ink">
+                    {title}
+                  </h1>
+                  {range === null ? null : (
+                    <p className="mt-1 text-meta text-ink-muted">{range}</p>
+                  )}
+                </div>
+                {exporting}
               </div>
-              {exporting}
-            </div>
-            {/* Four less than the pills sit from the range: the strip carries
-                those four itself, as room for a focus ring. */}
-            <div className="mt-1">
-              <DayTabs
-                days={days.map((day) => day.plan)}
-                today={today}
-                selectedIndex={selectedIndex}
-                onSelect={onSelect}
-                onAddDay={onAddDay}
-              />
-            </div>
-          </>
-        )}
+              <div className={HEADING_BODY}>
+                <DayTabs
+                  days={days.map((day) => day.plan)}
+                  today={today}
+                  selectedIndex={selectedIndex}
+                  onSelect={onSelect}
+                  onAddDay={onAddDay}
+                />
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {selected === undefined ? null : (
