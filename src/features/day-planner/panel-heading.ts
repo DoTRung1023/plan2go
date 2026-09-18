@@ -18,15 +18,16 @@ export const GUTTER = "px-5 lg:px-[26px]";
 export const HEADING_BAND = `border-b border-rule bg-paper-sunken py-[11px] ${GUTTER}`;
 
 /**
- * Ten rather than fourteen over the strip of days: the strip carries four of
- * its own, as room for a focus ring, so the pills sit fourteen under the rule.
+ * Six rather than ten over the strip of days: the strip carries four of its
+ * own, as room for a focus ring, so the pills sit ten under the rule.
  */
-export const HEADING_BODY = `border-b border-rule bg-paper-raised pt-[10px] pb-[15px] ${GUTTER}`;
+export const HEADING_BODY = `border-b border-rule bg-paper-raised pt-[6px] pb-[15px] ${GUTTER}`;
 
 /**
  * The line naming the open day, closed off from the strip above it by a rule
- * inset to the gutter. Thirteen under the strip, which with the seven the
- * strip keeps under its pills puts the rule twenty under them.
+ * inset to the gutter. Three under the strip, so the line the strip draws as
+ * its scrollbar, when it draws one, sits just over the rule rather than
+ * floating between the pills and it.
  */
 export const HEADING_DAY_LINE =
-  "mt-[13px] flex items-center gap-[22px] border-t border-rule pt-[13px]";
+  "mt-[3px] flex items-center gap-[22px] border-t border-rule pt-[13px]";
