@@ -12,6 +12,7 @@ import {
   TrainIcon,
   WalkIcon,
 } from "@/ui/icons";
+import { legInk } from "@/features/trip-map/route-style";
 import type { LegOption, PlannedLeg } from "./compute-trip";
 import { ConflictNotice } from "./conflict-notice";
 import type { DayActions } from "./day-actions";
@@ -31,11 +32,23 @@ const MODE_ICON: Readonly<Record<TravelMode, typeof WalkIcon>> = {
 };
 
 /**
- * The disc behind the glyph on a closed row, the same warm grey whatever the
- * mode. The map no longer colours a mode, so a tint here would be a key to
- * nothing; the glyph and the word beside it say how the leg is travelled.
+ * How much of the leg's ink the disc behind its glyph is washed with. Enough
+ * to be the same colour as the line on the map at a glance, not so much that
+ * six discs down a day read as six badges.
  */
-const MODE_DISC = "bg-neutral-200 text-neutral-700";
+const DISC_WASH = "16%";
+
+/**
+ * The disc behind the glyph on a closed row, in the leg's own ink: the glyph
+ * in it outright, and the disc a wash of it. The map draws each leg in the
+ * next colour along, and this is the same colour on the row that names the
+ * leg, so the two are matched by eye across the page. The mode is the glyph
+ * and the word, never the colour.
+ */
+function legDisc(index: number): { readonly color: string; readonly backgroundColor: string } {
+  const ink = `var(${legInk(index)})`;
+  return { color: ink, backgroundColor: `color-mix(in srgb, ${ink} ${DISC_WASH}, transparent)` };
+}
 
 interface LegRowProps {
   readonly leg: ComputedLeg;
@@ -231,7 +244,8 @@ export function LegRow({
           stop's number and never terracotta on its own, so it reads as a
           way between two stops rather than as a third one. */}
       <span
-        className={`grid h-[26px] w-[26px] shrink-0 place-items-center rounded-pill ${MODE_DISC}`}
+        style={legDisc(leg.index)}
+        className="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-pill"
       >
         <Icon size={15} strokeWidth={2.4} />
       </span>
