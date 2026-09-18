@@ -1,21 +1,16 @@
 /*
- * The browser's own time field, and the two things it draws that the page can
- * reach. Styled here with the tokens from DESIGN.md rather than with utility
- * classes, because they are pseudo-elements of a control the browser builds.
- * Nothing in this file introduces a value that is not already a token.
+ * The columns of the picker under the time. Styled here rather than with
+ * utility classes because a scrollbar is a pseudo-element, and nothing in this
+ * file introduces a value that is not already a token.
+ *
+ * Each column scrolls with no bar showing, the way the browser's picker does.
+ * The rows themselves are the whole of the affordance: a column that opens on
+ * the chosen value with more above and below it says it scrolls.
  */
-
-/* The segment under the caret, which the browser would paint in its own blue. */
-.leave-at-field::-webkit-datetime-edit-hour-field:focus,
-.leave-at-field::-webkit-datetime-edit-minute-field:focus,
-.leave-at-field::-webkit-datetime-edit-ampm-field:focus {
-  border-radius: var(--radius-chip);
-  background-color: var(--color-terracotta-200);
-  color: var(--color-ink);
+.leave-at-list {
+  scrollbar-width: none;
 }
 
-/* The browser's own way into its own picker, which is drawn in the browser's
-   colours and is not offered. The time is typed. */
-.leave-at-field::-webkit-calendar-picker-indicator {
+.leave-at-list::-webkit-scrollbar {
   display: none;
 }
