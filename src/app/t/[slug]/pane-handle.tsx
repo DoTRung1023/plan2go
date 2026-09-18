@@ -147,9 +147,9 @@ export function PaneHandle({ shell }: PaneHandleProps) {
       // Astride the edge, half over the map, the way the sheet's close sits
       // on its edge, and drawn the way the sheet draws it: a tall pill on
       // raised paper behind a hairline.
-      className="absolute top-1/2 left-0 z-30 hidden h-[52px] w-[22px] -translate-x-1/2 -translate-y-1/2 cursor-col-resize touch-none place-items-center rounded-pill border border-rule bg-paper-raised text-ink-muted shadow-sm hover:border-rule-strong hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:grid"
+      className="absolute top-1/2 left-0 z-30 hidden h-[40px] w-[18px] -translate-x-1/2 -translate-y-1/2 cursor-col-resize touch-none place-items-center rounded-pill border border-rule bg-paper-raised text-ink-muted shadow-sm hover:border-rule-strong hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:grid"
     >
-      <GripIcon size={16} />
+      <GripIcon size={14} />
     </button>
   );
 }

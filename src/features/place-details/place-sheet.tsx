@@ -443,9 +443,9 @@ export function PlaceSheet({ slug, place, askedFor, onClose }: PlaceSheetProps) 
           onClick={leave}
           title="Close"
           aria-label="Close"
-          className="absolute top-1/2 left-full hidden h-[52px] w-[22px] -translate-y-1/2 place-items-center rounded-r-pill border border-l-0 border-rule bg-paper-raised text-ink-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:grid"
+          className="absolute top-1/2 left-full hidden h-[40px] w-[18px] -translate-y-1/2 place-items-center rounded-r-pill border border-l-0 border-rule bg-paper-raised text-ink-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:grid"
         >
-          <ChevronLeftIcon size={14} strokeWidth={2.75} />
+          <ChevronLeftIcon size={12} strokeWidth={2.75} />
         </button>
 
         {!ready ? (
