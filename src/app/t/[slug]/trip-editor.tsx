@@ -187,8 +187,8 @@ export function TripEditor({
   const [leaving, setLeaving] = useState(false);
   /**
    * Put aside: off the map's edge, to see the map whole, and still open on
-   * the same thing. The field keeps the place's name, the map keeps its pin,
-   * and a tab at the window's edge brings the sheet back.
+   * the same thing. The field keeps the place's name, the map keeps its pin
+   * and its view, and a tab at the window's edge brings the sheet back.
    */
   const [aside, setAside] = useState(false);
   const open = (what: Opened): void => {
@@ -272,11 +272,13 @@ export function TripEditor({
   const candidate = opened?.kind === "candidate" ? opened.place : null;
   /**
    * How much of the map's edge the sheet is over, for the map to frame the
-   * day beside it: none while it is put aside. The sheet is on the page
-   * exactly when there is a place for it, which is the same test the page
-   * makes below.
+   * day beside it. Counted while the sheet is put aside as well: the map is
+   * framed for a sheet opening or closing, and putting one aside is done to
+   * see what is under it, not to have the map move again. The sheet is on
+   * the page exactly when there is a place for it, which is the same test
+   * the page makes below.
    */
-  const covered = openedPlace === null || aside ? 0 : SHEET_REACH;
+  const covered = openedPlace === null ? 0 : SHEET_REACH;
 
   const legPaths = useMemo(
     () =>

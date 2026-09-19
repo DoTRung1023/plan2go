@@ -141,7 +141,8 @@ interface TripMapProps {
    * How far in from the map's left edge whatever is open over it reaches, in
    * px, on a window wide enough for the map to be seen beside it, and 0 with
    * nothing over it. The day is framed in the map that is left, not in the
-   * map underneath.
+   * map underneath. Whoever lays the sheet out keeps this while the sheet is
+   * put aside, so the map holds its view for it to come back to.
    */
   readonly covered: number;
 }

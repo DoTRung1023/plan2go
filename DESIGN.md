@@ -366,9 +366,10 @@ while the sheet is open it holds the place's name, as a map search does: the pla
 what was searched for, whether it was found in the field or opened from the day, and
 the cross on the field is what closes the sheet, drops the pin and empties the field. It slides in from the left and slides back out the same way. On a desk the tab
 on its free edge, halfway down, pointing the way it goes, puts it aside rather than
-closing it: the map is seen whole, framed again to its full width, and the pin, the
-name in the field and the place stay; the tab waits at the window's edge, pointing
-back, and brings the sheet back, as does opening anything. On a phone a close button in
+closing it: the map is seen whole, exactly as it was, and the pin, the name in the
+field and the place stay; the tab waits at the window's edge, pointing back, and
+brings the sheet back, as does opening anything. The map is framed for a sheet
+opening or closing and never moved for one going aside or coming back. On a phone a close button in
 the corner closes it, and so does Escape anywhere. The picture comes first because it answers
 fastest; then the name, the kind of place and its rating out of five with a filled
 terracotta star; then the sentence the provider has for it, a strip of more pictures, the
