@@ -243,6 +243,12 @@ export function TripEditor({
   };
   /** The place being looked at from a search, for the map to pin, or null. */
   const candidate = opened?.kind === "candidate" ? opened.place : null;
+  /**
+   * How much of the map's edge the sheet is over, for the map to frame the
+   * day beside it. The sheet is on the page exactly when there is a place
+   * for it, which is the same test the page makes below.
+   */
+  const covered = openedPlace === null ? 0 : SHEET_REACH;
 
   const legPaths = useMemo(
     () =>
@@ -303,7 +309,7 @@ export function TripEditor({
               hoveredEndpointId={hoveredEndpointId}
               onHoverEndpoint={setHoveredEndpointId}
               candidate={candidate}
-              covered={SHEET_REACH}
+              covered={covered}
               expanded={expanded}
               onToggleExpanded={() => {
                 setExpanded(!expanded);

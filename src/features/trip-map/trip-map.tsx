@@ -134,9 +134,10 @@ interface TripMapProps {
    */
   readonly candidate: Place | null;
   /**
-   * How far in from the map's left edge whatever the candidate is looked at in
-   * reaches, in px, on a window wide enough for the map to be seen beside it.
-   * The candidate is centred in the map that is left, not in the map under it.
+   * How far in from the map's left edge whatever is open over it reaches, in
+   * px, on a window wide enough for the map to be seen beside it, and 0 with
+   * nothing over it. The day is framed in the map that is left, not in the
+   * map underneath.
    */
   readonly covered: number;
 }
@@ -151,6 +152,26 @@ function pointOf(endpoint: {
   place: { position: { lat: number; lng: number } };
 }): google.maps.LatLngLiteral {
   return { lat: endpoint.place.position.lat, lng: endpoint.place.position.lng };
+}
+
+/**
+ * Where the day is, for framing it. A day that starts and ends in the same
+ * place is there once, as it has one marker: twice would be a frame with no
+ * extent, which fits as close as the map goes.
+ */
+function dayPoints(
+  start: DayEndpoint | null,
+  end: DayEndpoint | null,
+  stops: readonly Stop[],
+): google.maps.LatLngLiteral[] {
+  const points = stops.map(pointOf);
+  if (start !== null) {
+    points.push(pointOf(start));
+  }
+  if (end !== null && (start === null || start.place.id !== end.place.id)) {
+    points.push(pointOf(end));
+  }
+  return points;
 }
 
 /**
@@ -508,8 +529,6 @@ export function TripMap({
       });
     });
 
-    const points: google.maps.LatLngLiteral[] = [];
-
     endpointMarkers.current.clear();
     const drawEndpoint = (endpoint: DayEndpoint, kind: EndpointKind): void => {
       const point = {
@@ -528,7 +547,6 @@ export function TripMap({
       });
       endpointMarkers.current.set(endpoint.place.id, element);
       overlays.current.push(placeDomMarker(maps, map, point, element));
-      points.push(point);
     };
 
     // A day that starts and ends in the same place gets one marker, not two on
@@ -564,7 +582,6 @@ export function TripMap({
       });
       markers.current.set(stop.id, element);
       overlays.current.push(placeDomMarker(maps, map, point, element));
-      points.push(point);
     });
 
     if (candidate !== null) {
@@ -572,17 +589,34 @@ export function TripMap({
       overlays.current.push(
         placeDomMarker(maps, map, point, candidateMarkerElement(candidate.name)),
       );
+    }
+  }, [state, start, end, stops, endTravelMode, legPaths, candidate]);
+
+  /**
+   * Where the map looks, apart from what it draws. A sheet opening over the
+   * map's edge changes the first and not the second, and redrawing the day to
+   * move the camera would blink every marker each time one opened.
+   */
+  useEffect(() => {
+    if (state.status !== "ready") {
+      return;
+    }
+    const { map } = state;
+    // On a wide window whatever is open stands over the map's left edge, and
+    // the day is framed in what is left beside it: a frame that filled the
+    // map would have its left under the sheet, or all of it once the pane
+    // beside the map had been dragged wide. Below that width the sheet is the
+    // whole window, and the map is out of sight for as long as it is open.
+    const seen = window.matchMedia(WIDE_WINDOW).matches ? covered : 0;
+
+    if (candidate !== null) {
+      const point = { lat: candidate.position.lat, lng: candidate.position.lng };
       // Taken to, not framed with the rest: the day stays where it was and
       // the map slides over to the place, so where it is relative to the
       // day is seen in the movement. Closer than the city if the map was
-      // wider than that, and left alone otherwise. Centred in the map that
-      // can be seen: on a wide window the sheet the place is looked at in
-      // stands over the map's left edge, and a pin in the middle of the map
-      // sits off to one side of what is left, or under the sheet itself once
-      // the pane beside the map has been dragged wide.
+      // wider than that, and left alone otherwise.
       const current = map.getZoom() ?? 0;
       const zoom = Math.max(current, SINGLE_POINT_ZOOM);
-      const seen = window.matchMedia(WIDE_WINDOW).matches ? covered : 0;
       map.panTo(centredBeside(point, seen, zoom));
       if (zoom > current) {
         map.setZoom(zoom);
@@ -590,28 +624,34 @@ export function TripMap({
       return;
     }
 
+    const points = dayPoints(start, end, stops);
     const only = points[0];
     if (only === undefined) {
       // Nothing on this day, so it shows the city the trip is in rather than
       // whatever the day before it happened to leave on screen.
       if (centre !== null) {
-        map.setCenter(centre);
+        map.setCenter(centredBeside(centre, seen, CITY_ZOOM));
         map.setZoom(CITY_ZOOM);
       }
       return;
     }
     if (points.length === 1) {
-      map.setCenter(only);
+      map.setCenter(centredBeside(only, seen, SINGLE_POINT_ZOOM));
       map.setZoom(SINGLE_POINT_ZOOM);
       return;
     }
 
-    const bounds = new maps.LatLngBounds();
+    const bounds = new google.maps.LatLngBounds();
     for (const point of points) {
       bounds.extend(point);
     }
-    map.fitBounds(bounds, FIT_PADDING);
-  }, [state, start, end, stops, endTravelMode, legPaths, centre, candidate, covered]);
+    map.fitBounds(bounds, {
+      top: FIT_PADDING,
+      right: FIT_PADDING,
+      bottom: FIT_PADDING,
+      left: FIT_PADDING + seen,
+    });
+  }, [state, start, end, stops, centre, candidate, covered]);
 
   const drawnLegs = routeLegs(start, end, stops, endTravelMode).length;
 

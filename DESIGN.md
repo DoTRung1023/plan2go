@@ -358,7 +358,9 @@ happening, which is what this product does instead of a skeleton.
 A stop, or an end of a day, can be opened to see what its place is like, from **About
 this place** on its row or by pressing its marker on the map. What opens is a sheet over
 the left edge of the map, 400px wide with the map still in sight beside it, and the
-whole window on a phone. It slides in from the left and slides back out when closed:
+whole window on a phone. The map frames the day, or the place a search is looking at,
+in what is left of it beside the sheet, so nothing it is showing is under the sheet.
+It slides in from the left and slides back out when closed:
 on a desk by a tab on its free edge, halfway down, pointing the way it goes, and on a
 phone by a close button in the corner. The picture comes first because it answers
 fastest; then the name, the kind of place and its rating out of five with a filled
