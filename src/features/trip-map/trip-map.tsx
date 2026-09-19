@@ -92,6 +92,8 @@ interface TripMapProps {
   /** The stop under the pointer, here or in the panel beside the map. */
   readonly hoveredStopId: string | null;
   readonly onHoverStop: (stopId: string | null) => void;
+  /** The stop the sheet is open on, held the way the one under the pointer is shown. */
+  readonly openedStopId: string | null;
   /** A marker pressed, which opens the place it stands for beside the map. */
   readonly onOpenStop: (stopId: string) => void;
   /**
@@ -108,6 +110,8 @@ interface TripMapProps {
    */
   readonly hoveredEndpointId: string | null;
   readonly onHoverEndpoint: (placeId: string | null) => void;
+  /** The end of this day the sheet is open on, by its place, the same way. */
+  readonly openedEndpointId: string | null;
   /**
    * Asked for rather than done here: what the map grows over belongs to
    * whoever laid the two panes out, and a map that resized itself would be
@@ -325,12 +329,14 @@ export function TripMap({
   onToggleExpanded,
   hoveredStopId,
   onHoverStop,
+  openedStopId,
   onOpenStop,
   onOpenEndpoint,
   hoveredLegIndex,
   onHoverLeg,
   hoveredEndpointId,
   onHoverEndpoint,
+  openedEndpointId,
   start,
   end,
   stops,
@@ -367,12 +373,21 @@ export function TripMap({
   const hoveringLeg = useRef(onHoverLeg);
   const hoveringEndpoint = useRef(onHoverEndpoint);
   const openingEndpoint = useRef(onOpenEndpoint);
+  /**
+   * Read the same way when the day is drawn, so a marker built while the
+   * sheet is open on it is built held. Pointing at one is over before the
+   * day is drawn again; the sheet stays open across a day being edited.
+   */
+  const openedStop = useRef(openedStopId);
+  const openedEndpoint = useRef(openedEndpointId);
   useEffect(() => {
     hovering.current = onHoverStop;
     opening.current = onOpenStop;
     hoveringLeg.current = onHoverLeg;
     hoveringEndpoint.current = onHoverEndpoint;
     openingEndpoint.current = onOpenEndpoint;
+    openedStop.current = openedStopId;
+    openedEndpoint.current = openedEndpointId;
   });
   const overlays = useRef<google.maps.OverlayView[]>([]);
   const lines = useRef<google.maps.Polyline[]>([]);
@@ -545,6 +560,7 @@ export function TripMap({
       element.addEventListener("click", () => {
         openingEndpoint.current(kind === "end" ? "end" : "start");
       });
+      element.classList.toggle("is-opened", endpoint.place.id === openedEndpoint.current);
       endpointMarkers.current.set(endpoint.place.id, element);
       overlays.current.push(placeDomMarker(maps, map, point, element));
     };
@@ -580,6 +596,7 @@ export function TripMap({
       element.addEventListener("click", () => {
         opening.current(stop.id);
       });
+      element.classList.toggle("is-opened", stop.id === openedStop.current);
       markers.current.set(stop.id, element);
       overlays.current.push(placeDomMarker(maps, map, point, element));
     });
@@ -666,6 +683,18 @@ export function TripMap({
       element.classList.toggle("is-hovered", placeId === hoveredEndpointId);
     }
   }, [hoveredEndpointId]);
+
+  useEffect(() => {
+    for (const [stopId, element] of markers.current) {
+      element.classList.toggle("is-opened", stopId === openedStopId);
+    }
+  }, [openedStopId]);
+
+  useEffect(() => {
+    for (const [placeId, element] of endpointMarkers.current) {
+      element.classList.toggle("is-opened", placeId === openedEndpointId);
+    }
+  }, [openedEndpointId]);
 
   useEffect(() => {
     if (state.status !== "ready") {

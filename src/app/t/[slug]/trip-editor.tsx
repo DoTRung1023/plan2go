@@ -324,6 +324,7 @@ export function TripEditor({
             <TripMap
               hoveredStopId={hoveredStopId}
               onHoverStop={setHoveredStopId}
+              openedStopId={opened?.kind === "stop" ? opened.stopId : null}
               onOpenStop={openStop}
               onOpenEndpoint={(which) => {
                 // The map says which end was pressed; which day, and what stands
@@ -342,6 +343,13 @@ export function TripEditor({
               onHoverLeg={setHoveredLegIndex}
               hoveredEndpointId={hoveredEndpointId}
               onHoverEndpoint={setHoveredEndpointId}
+              // By its place, which is how the map knows an end; and only on
+              // the day being shown, since the same place can end another.
+              openedEndpointId={
+                opened?.kind === "endpoint" && opened.dayId === selected.plan.id
+                  ? opened.placeId
+                  : null
+              }
               candidate={candidate}
               covered={covered}
               expanded={expanded}
