@@ -74,6 +74,14 @@ const OPENS =
  */
 const PICTURES_WAIT_MS = 8_000;
 
+/**
+ * How far in from the map's left edge the sheet reaches on a wide window, in
+ * px: the 12px it stands in from the edge and its 400px width, as the classes
+ * on it lay it out. Below that width it is the whole window instead. For the
+ * map, which centres a place beside the sheet rather than under it.
+ */
+export const SHEET_REACH = 12 + 400;
+
 /** Which place's pictures, and the key to show them with when the place is not on the trip yet. */
 interface Pictured {
   readonly slug: string;

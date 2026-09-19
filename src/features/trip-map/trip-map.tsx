@@ -42,6 +42,17 @@ const CITY_ZOOM = 12;
 const FIT_PADDING = 56;
 
 /**
+ * Tailwind's lg, from which the planner is two panes side by side and a sheet
+ * is a panel over the map's edge rather than the whole window; globals.css
+ * stops the window scrolling at the same width. Below it nothing laid over
+ * the map leaves any of it in sight, so there is nothing to centre a place in.
+ */
+const WIDE_WINDOW = "(min-width: 1024px)";
+
+/** The whole world at zoom 0 is one tile wide, and each zoom doubles it. */
+const WORLD_PX = 256;
+
+/**
  * Inlined at build time, so whether this deployment has a map at all is settled
  * before the first render rather than discovered in an effect.
  */
@@ -122,6 +133,12 @@ interface TripMapProps {
    * the day. Gone, the map frames the day again.
    */
   readonly candidate: Place | null;
+  /**
+   * How far in from the map's left edge whatever the candidate is looked at in
+   * reaches, in px, on a window wide enough for the map to be seen beside it.
+   * The candidate is centred in the map that is left, not in the map under it.
+   */
+  readonly covered: number;
 }
 
 interface RouteLeg {
@@ -134,6 +151,22 @@ function pointOf(endpoint: {
   place: { position: { lat: number; lng: number } };
 }): google.maps.LatLngLiteral {
   return { lat: endpoint.place.position.lat, lng: endpoint.place.position.lng };
+}
+
+/**
+ * The centre that puts a point in the middle of the map's uncovered part
+ * rather than in the middle of the map: the point, moved west by half of what
+ * is covered, at the zoom the map will be at. Worked out rather than asked of
+ * the map's projection because longitude is the one axis Mercator keeps
+ * linear, so a sideways distance in px is a fixed number of degrees at a zoom.
+ */
+function centredBeside(
+  point: google.maps.LatLngLiteral,
+  covered: number,
+  zoom: number,
+): google.maps.LatLngLiteral {
+  const pxPerDegree = (WORLD_PX * 2 ** zoom) / 360;
+  return { lat: point.lat, lng: point.lng - covered / 2 / pxPerDegree };
 }
 
 /**
@@ -284,6 +317,7 @@ export function TripMap({
   legPaths,
   centre,
   candidate,
+  covered,
 }: TripMapProps) {
   const container = useRef<HTMLDivElement | null>(null);
   /**
@@ -541,10 +575,17 @@ export function TripMap({
       // Taken to, not framed with the rest: the day stays where it was and
       // the map slides over to the place, so where it is relative to the
       // day is seen in the movement. Closer than the city if the map was
-      // wider than that, and left alone otherwise.
-      map.panTo(point);
-      if ((map.getZoom() ?? 0) < SINGLE_POINT_ZOOM) {
-        map.setZoom(SINGLE_POINT_ZOOM);
+      // wider than that, and left alone otherwise. Centred in the map that
+      // can be seen: on a wide window the sheet the place is looked at in
+      // stands over the map's left edge, and a pin in the middle of the map
+      // sits off to one side of what is left, or under the sheet itself once
+      // the pane beside the map has been dragged wide.
+      const current = map.getZoom() ?? 0;
+      const zoom = Math.max(current, SINGLE_POINT_ZOOM);
+      const seen = window.matchMedia(WIDE_WINDOW).matches ? covered : 0;
+      map.panTo(centredBeside(point, seen, zoom));
+      if (zoom > current) {
+        map.setZoom(zoom);
       }
       return;
     }
@@ -570,7 +611,7 @@ export function TripMap({
       bounds.extend(point);
     }
     map.fitBounds(bounds, FIT_PADDING);
-  }, [state, start, end, stops, endTravelMode, legPaths, centre, candidate]);
+  }, [state, start, end, stops, endTravelMode, legPaths, centre, candidate, covered]);
 
   const drawnLegs = routeLegs(start, end, stops, endTravelMode).length;
 

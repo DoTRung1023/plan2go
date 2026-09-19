@@ -18,7 +18,7 @@ import { searchBias } from "@/features/place-search/search-bias";
 import { TripMenu } from "@/features/trip-settings/trip-menu";
 import { TripExport } from "@/features/trip-settings/trip-export";
 import { ShareLinks } from "@/features/trip-settings/share-links";
-import { PlaceSheet } from "@/features/place-details/place-sheet";
+import { PlaceSheet, SHEET_REACH } from "@/features/place-details/place-sheet";
 import { SavedNote } from "@/features/trip-settings/saved-note";
 import { TripActions } from "@/features/trip-settings/trip-actions";
 import { TripSettings } from "@/features/trip-settings/trip-settings";
@@ -303,6 +303,7 @@ export function TripEditor({
               hoveredEndpointId={hoveredEndpointId}
               onHoverEndpoint={setHoveredEndpointId}
               candidate={candidate}
+              covered={SHEET_REACH}
               expanded={expanded}
               onToggleExpanded={() => {
                 setExpanded(!expanded);
