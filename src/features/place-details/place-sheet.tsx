@@ -500,6 +500,11 @@ export function PlaceSheet({
        * Over the map on a wide window, the whole window on a narrow one. The
        * map is where the place is, and a sheet at its edge keeps the two in
        * sight together; a phone has no room for both, and gets the sheet.
+       *
+       * On a desk it stands 12px in from the map's edges, which puts it 10px
+       * behind the search field in the map's corner: the field floats over
+       * the top of the sheet, holding the place's name, as a map search
+       * floats over the panel it opened.
        */}
       <section
         ref={sheet}
@@ -532,7 +537,7 @@ export function PlaceSheet({
          * that ends: the animation fills forwards, so the class kept on is
          * the sheet kept off.
          */
-        className={`fixed inset-0 z-50 flex flex-col overflow-hidden bg-paper-raised outline-none lg:absolute lg:inset-auto lg:top-[22px] lg:bottom-[22px] lg:left-3 lg:z-30 lg:w-[400px] lg:overflow-visible lg:rounded-panel lg:border lg:border-rule lg:shadow-md ${
+        className={`fixed inset-0 z-50 flex flex-col overflow-hidden bg-paper-raised outline-none lg:absolute lg:inset-auto lg:inset-y-3 lg:left-3 lg:z-30 lg:w-[400px] lg:overflow-visible lg:rounded-panel lg:border lg:border-rule lg:shadow-md ${
           leaving || aside ? "place-sheet-leaving" : "place-sheet-arriving"
         }`}
       >
@@ -566,18 +571,17 @@ export function PlaceSheet({
           ref={watchSheet}
           className="scroll-line scroll-shy min-h-0 flex-1 overflow-y-auto lg:rounded-panel"
         >
-          {/* On a phone the close sits over the picture when there is one and
-              over the name when there is not, so it is in the same corner
-              either way, and the name is held down from the corner it needs.
-              On a desk the close is the tab on the sheet's edge, so a place
-              with no picture starts with its name at the top of the sheet
-              rather than under a space kept for nothing. */}
+          {/* The corner is taken: on a phone by the close, on a desk by the
+              search field floating over the sheet. Either sits over the
+              picture when there is one and over the name when there is not,
+              so it is in the same place either way, and a place with no
+              picture holds its name down from the corner instead. */}
           <div className="relative">
             {/* Plain img rather than the framework's: the picture is ours,
                 served from our own table at the width it is drawn, and the
                 framework would only fetch it again to make it smaller. */}
             {hero === undefined ? (
-              <div className="h-[56px] lg:hidden" />
+              <div className="h-[56px]" />
             ) : (
               <button
                 type="button"
@@ -604,7 +608,7 @@ export function PlaceSheet({
             {close}
           </div>
 
-          <div className={`flex flex-col gap-4 px-5 pb-6 ${hero === undefined ? "pt-4 lg:pt-6" : "pt-4"}`}>
+          <div className="flex flex-col gap-4 px-5 pt-4 pb-6">
             <div className="flex flex-col gap-[6px]">
               <h2 className="font-display text-lead text-ink">{place.name}</h2>
               {card === null ? null : (

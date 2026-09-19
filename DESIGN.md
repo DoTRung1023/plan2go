@@ -360,10 +360,10 @@ this place** on its row or by pressing its marker on the map. What opens is a sh
 the left edge of the map, 400px wide with the map still in sight beside it, and the
 whole window on a phone. The map frames the day, or the place a search is looking at,
 in what is left of it beside the sheet, so nothing it is showing is under the sheet.
-While it is open the search field holds the place's name, as a map search does: the
-place is what was searched for, whether it was found in the field or opened from the
-day, and the cross on the field is what closes the sheet, drops the pin and empties the
-field. It slides in from the left and slides back out the same way. On a desk the tab
+The search field stays in the map's corner, floating over the top of the sheet, and
+while the sheet is open it holds the place's name, as a map search does: the place is
+what was searched for, whether it was found in the field or opened from the day, and
+the cross on the field is what closes the sheet, drops the pin and empties the field. It slides in from the left and slides back out the same way. On a desk the tab
 on its free edge, halfway down, pointing the way it goes, puts it aside rather than
 closing it: the map is seen whole, framed again to its full width, and the pin, the
 name in the field and the place stay; the tab waits at the window's edge, pointing

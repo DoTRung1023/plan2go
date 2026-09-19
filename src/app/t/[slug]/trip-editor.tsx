@@ -352,8 +352,12 @@ export function TripEditor({
           )}
           {/* The corner of the map, where a map search belongs. The row itself
               takes no clicks, so the map still drags in the gap between the
-              search and the toggle. */}
-          <div className="pointer-events-none absolute inset-x-[14px] top-[14px] z-[3] flex items-start gap-2 lg:inset-x-[22px] lg:top-[22px]">
+              search and the toggle. On a desk it is over the sheet as well as
+              the map, the way a map search floats over the panel it opened:
+              the field stays put whatever is under it, and the sheet's own
+              top is kept clear for it. Not on a phone, where the sheet is
+              the window and has a close of its own. */}
+          <div className="pointer-events-none absolute inset-x-[14px] top-[14px] z-[3] flex items-start gap-2 lg:inset-x-[22px] lg:top-[22px] lg:z-40">
             {editKey !== null && selected !== undefined ? (
               <div className="pointer-events-auto w-full max-w-[346px] min-w-0">
                 <PlaceSearch
