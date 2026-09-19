@@ -782,8 +782,11 @@ export function PlaceSheet({
       {/* The same tab once the sheet has gone off the edge: at the edge it
           went to, pointing the way back. On a desk only, like the tab on the
           sheet, since on a phone the sheet is the window and closes instead.
-          Clear of the edge by the room a pill's own curve needs, rather than
-          astride an edge it cannot straddle. */}
+          Fixed to the window's edge as a tab is, rather than astride an edge
+          it cannot straddle: square where it meets the edge, with no line
+          drawn along it, and the pill's own curve on the side that shows. A
+          little wider than the tab on the sheet, since the whole of it is
+          on one side of the edge rather than half. */}
       {aside ? (
         <button
           ref={back}
@@ -791,7 +794,7 @@ export function PlaceSheet({
           onClick={onBringBack}
           title="Show"
           aria-label={`Show ${place.name}`}
-          className="absolute top-1/2 left-[3px] z-30 hidden h-[40px] w-[18px] -translate-y-1/2 place-items-center rounded-pill border border-rule bg-paper-raised text-ink-muted shadow-sm hover:border-rule-strong hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:grid"
+          className="absolute top-1/2 left-0 z-30 hidden h-[40px] w-[22px] -translate-y-1/2 place-items-center rounded-r-pill border border-l-0 border-rule bg-paper-raised text-ink-muted shadow-sm hover:border-rule-strong hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:grid"
         >
           <ChevronRightIcon size={12} strokeWidth={2.75} />
         </button>
