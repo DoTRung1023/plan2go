@@ -53,10 +53,6 @@ export function CreateTripForm({ today }: CreateTripFormProps) {
       action={submit}
       className="flex flex-col gap-5 rounded-card border border-rule bg-paper-sunken p-7 shadow-md"
     >
-      <p className="text-[12px] leading-none font-bold tracking-[0.14em] text-ink-faint uppercase">
-        Where and when
-      </p>
-
       <div>
         <PlaceField
           id="cityPlaceId"
