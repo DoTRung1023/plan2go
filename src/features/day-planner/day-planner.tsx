@@ -47,6 +47,8 @@ interface DayPlannerProps {
    * are. Null for a reader who holds no edit link.
    */
   readonly onAddDay: (() => Promise<EditOutcome>) | null;
+  /** Takes the reader to the search field, from a day with nothing on it. Null for a reader who cannot edit. */
+  readonly onFindPlace: (() => void) | null;
   /**
    * Everything the day can be changed by. Null for a reader who holds no edit
    * token, whose day is read rather than edited.
@@ -93,6 +95,7 @@ export function DayPlanner({
   settings,
   exporting,
   onAddDay,
+  onFindPlace,
   actions,
 }: DayPlannerProps) {
   const selected = days[selectedIndex] ?? days[0];
@@ -173,6 +176,7 @@ export function DayPlanner({
             hoveredEndpointId={hoveredEndpointId}
             onHoverEndpoint={onHoverEndpoint}
             actions={actions}
+            onFindPlace={onFindPlace}
           />
         </section>
       )}

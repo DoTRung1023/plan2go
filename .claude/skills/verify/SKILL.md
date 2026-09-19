@@ -52,16 +52,26 @@ before the click, gives a timestamped transcript of everything the panel says, w
 is the evidence for anything about loading states.
 
 Routes worth intercepting with `page.route`: `**/api/places/nearby**` (the city
-recommendations, asked once per mount) and `**/api/places/search**` (typed search,
-250 ms debounce, two letter minimum). Delay `nearby` to hold its waiting line still
+recommendations, asked once per mount), `**/api/places/search**` (typed search,
+250 ms debounce, two letter minimum) and `**/api/places/preview**` (the look at a
+chosen place, which needs the edit key). Delay `nearby` to hold its waiting line still
 for a screenshot.
+
+## Adding a place
+
+Choosing from the search list does not add. It looks the place up (`/api/places/preview`),
+pins it on the map as `.trip-map-candidate`, pans there, and opens the sheet
+`section[role="dialog"][aria-label="<place name>"]` with `button:has-text("Add to Day N")`
+at the top. Pressing that adds the stop and the sheet slides away. An empty day offers
+`button:has-text("Find a place")`, which focuses the search field; a reader without the
+edit key gets no such button.
 
 ## Gotchas
 
 - After Escape the field keeps focus, so clicking it again fires no focus event and the
   panel does not reopen. Blur first (click the map) before refocusing in a script.
-- Choosing a place hides the panel for about a second while it lands, then the panel
-  closes. Refocus to see the list again.
+- Choosing a place closes the panel and opens the sheet; the field is cleared. Refocus
+  it to see the list again.
 
 ## Legs and drag
 

@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { createGooglePlacesProvider } from "@/adapters/places/google-places";
 import { createGoogleTimeZoneProvider } from "@/adapters/time-zone/google-time-zone";
 import { googleMapsApiKey } from "@/server/places/google-key";
-import { cityDetailsFor } from "@/server/places/city-details";
+import { placeDetailsFor } from "@/server/places/place-details";
 import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
 import type { NewTripRequest } from "@/server/trips/create-trip";
 import { UNTITLED } from "@/server/trips/create-trip";
@@ -63,7 +63,7 @@ export async function createTripAction(
   // slower call spent finding out. Where neither can, the request's own guess
   // is a better answer than refusing to open the trip.
   const lookedUp = async (): Promise<NewTripRequest | null> => {
-    const city = await cityDetailsFor(cityPlaceId, createGooglePlacesProvider({ apiKey }));
+    const city = await placeDetailsFor(cityPlaceId, createGooglePlacesProvider({ apiKey }), null);
     if (city === null) {
       return null;
     }

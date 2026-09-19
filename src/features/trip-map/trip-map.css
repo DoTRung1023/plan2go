@@ -94,6 +94,24 @@
     0 2px 6px color-mix(in srgb, var(--color-neutral-900) 36%, transparent);
 }
 
+/*
+ * A place being looked at before it is added: a pin rather than a number,
+ * since it has no place in the order yet, ringed the way a hovered marker
+ * is, since it is the one thing on the map the reader is being shown.
+ */
+.trip-map-candidate {
+  z-index: 2;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-pill);
+  border: 2px solid var(--color-paper);
+  background-color: var(--color-terracotta-800);
+  color: var(--color-paper);
+  box-shadow:
+    0 0 0 8px color-mix(in srgb, var(--color-terracotta) 22%, transparent),
+    0 2px 6px color-mix(in srgb, var(--color-neutral-900) 36%, transparent);
+}
+
 /* The full name of the marker, read out but never drawn. */
 .trip-map-name {
   position: absolute;

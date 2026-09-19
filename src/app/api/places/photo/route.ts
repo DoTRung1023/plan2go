@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createGooglePlacesProvider } from "@/adapters/places/google-places";
+import { checkEditAccess } from "@/server/ownership/edit-access";
 import { googleMapsApiKey } from "@/server/places/google-key";
 import { placePhotoFor } from "@/server/places/place-photo";
 import { consumeRateLimit } from "@/server/rate-limit/ip-rate-limit";
@@ -27,13 +28,16 @@ const querySchema = z.object({
   id: z.string().min(1).max(300),
   at: z.coerce.number().int().min(0).max(MOST_PHOTOS - 1),
   width: z.coerce.number().int().refine((value) => WIDTHS.some((width) => width === value)),
+  /** The edit key, from whoever is looking at a place before putting it on the day. */
+  key: z.string().min(1).max(200).optional(),
 });
 
 /**
- * One picture of a place on a trip, served from here so the key never reaches
- * the browser. The browser may keep it for the day; our own table keeps it
- * for the month the terms allow, so a picture is paid for once however many
- * times the place is opened.
+ * One picture of a place, served from here so the provider's key never
+ * reaches the browser. The browser may keep it for the day; our own table
+ * keeps it for the month the terms allow, so a picture is paid for once
+ * however many times the place is opened. A place not on the trip is shown
+ * to whoever holds the edit key, as its card is.
  */
 export async function GET(request: Request): Promise<Response> {
   const limit = await consumeRateLimit(ROUTE, request.headers, POLICY);
@@ -54,10 +58,16 @@ export async function GET(request: Request): Promise<Response> {
     return new Response(null, { status: 400 });
   }
 
-  const { slug, id, at, width } = parsed.data;
+  const { slug, id, at, width, key } = parsed.data;
   const onTrip = await prismaTripRepository.findPlaceByProviderId(slug, id);
   if (onTrip === null) {
-    return new Response(null, { status: 404 });
+    const access =
+      key === undefined
+        ? null
+        : await checkEditAccess({ slug, presentedKey: key, repository: prismaTripRepository });
+    if (access?.status !== "granted") {
+      return new Response(null, { status: 404 });
+    }
   }
 
   try {

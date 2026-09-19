@@ -61,6 +61,39 @@ export function stopMarkerElement(order: number, name: string): HTMLElement {
   return marker;
 }
 
+/**
+ * A place being looked at from a search, not on the day yet. The same pin the
+ * search list draws beside each place and the empty day draws in its middle,
+ * so a place that has come from the list is still the thing from the list.
+ */
+export function candidateMarkerElement(name: string): HTMLElement {
+  const marker = document.createElement("span");
+  marker.className = "trip-map-marker trip-map-candidate";
+
+  const glyph = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  glyph.setAttribute("aria-hidden", "true");
+  glyph.setAttribute("viewBox", "0 0 24 24");
+  glyph.setAttribute("width", "17");
+  glyph.setAttribute("height", "17");
+  glyph.setAttribute("fill", "none");
+  glyph.setAttribute("stroke", "currentColor");
+  glyph.setAttribute("stroke-width", "2.75");
+  glyph.setAttribute("stroke-linecap", "round");
+  glyph.setAttribute("stroke-linejoin", "round");
+  for (const d of ["M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z", "M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"]) {
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", d);
+    glyph.append(path);
+  }
+
+  const spoken = document.createElement("span");
+  spoken.className = "trip-map-name";
+  spoken.textContent = `${name}, being looked at`;
+
+  marker.append(glyph, spoken);
+  return marker;
+}
+
 /** Which end of the day a marker stands for, or both where they are one place. */
 export type EndpointKind = "start" | "end" | "both";
 

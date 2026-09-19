@@ -54,6 +54,8 @@ interface DayItineraryProps {
   readonly onHoverEndpoint: (placeId: string | null) => void;
   /** Null for a reader who holds no edit token. */
   readonly actions: DayActions | null;
+  /** Takes the reader to the search field, from a day with nothing on it. Null for a reader who cannot edit. */
+  readonly onFindPlace: (() => void) | null;
 }
 
 function conflictsAtStop(conflicts: readonly Conflict[], stopId: StopId): readonly Conflict[] {
@@ -406,6 +408,7 @@ export function DayItinerary({
   hoveredEndpointId,
   onHoverEndpoint,
   actions,
+  onFindPlace,
 }: DayItineraryProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
@@ -468,7 +471,7 @@ export function DayItinerary({
       />
 
       {day.stops.length === 0 ? (
-        <EmptyDay dayName={formatDayDate(day.date)} />
+        <EmptyDay dayName={formatDayDate(day.date)} onFindPlace={onFindPlace} />
       ) : null}
 
       <div className={moving ? "opacity-55" : ""} aria-busy={moving}>

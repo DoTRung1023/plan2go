@@ -1,9 +1,9 @@
 "use client";
 
-import type { KeyboardEvent } from "react";
-import { useEffect, useId, useRef, useState, useTransition } from "react";
+import type { KeyboardEvent, RefObject } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { z } from "zod";
-import type { LatLng } from "@/core/model/place";
+import type { LatLng, Place } from "@/core/model/place";
 import { CloseIcon, PinIcon, SearchIcon } from "@/ui/icons";
 
 /** Long enough that typing does not spend money on every letter. */
@@ -38,31 +38,29 @@ const searchResponseSchema = z.object({ suggestions: z.array(suggestionSchema) }
 
 const refusalSchema = z.object({ error: z.string(), action: z.string().optional() });
 
+/** Where a chosen place is and what it is called, as the preview answers. */
+const previewSchema = z.object({
+  place: z.object({
+    providerPlaceId: z.string(),
+    name: z.string(),
+    address: z.string().nullable(),
+    position: z.object({ lat: z.number(), lng: z.number() }),
+  }),
+});
+
 type Suggestion = z.infer<typeof suggestionSchema>;
-
-/** A place chosen and on its way to the day, by the choice rather than the place. */
-interface Landing {
-  readonly id: number;
-  readonly name: string;
-  readonly providerPlaceId: string;
-  /**
-   * Whether the server has written it down. Written is not arrived: the page
-   * redrawn with the stop on it comes a moment after the answer, and until
-   * it does the place is still on its way as far as anyone watching can see.
-   */
-  readonly written: boolean;
-}
-
-export interface AddPlaceOutcome {
-  readonly added: string | null;
-  readonly error: string | null;
-}
 
 interface PlaceSearchProps {
   readonly slug: string;
-  readonly dayId: string;
-  /** What the day is called in the tabs, so the field says where a place lands. */
+  /** Travels with the look at a chosen place: only an editor may look before adding. */
+  readonly editKey: string;
+  /** What the day is called in the tabs, so the field says where a place would go. */
   readonly dayName: string;
+  /**
+   * The field itself, for whoever else needs to bring the reader here: the
+   * empty day offers a way to start looking, and this is where it points.
+   */
+  readonly field: RefObject<HTMLInputElement | null>;
   /** Where to look first, or null when the trip has nothing on it yet. */
   readonly near: LatLng | null;
   /**
@@ -84,15 +82,10 @@ interface PlaceSearchProps {
    */
   readonly onTheTrip: ReadonlySet<string>;
   /**
-   * Passed in rather than imported, because a feature may not reach into the
-   * route that owns the mutation.
+   * A place chosen and looked up: where it is, to pin it on the map and open
+   * it in the sheet, where deciding to add it happens.
    */
-  readonly onAdd: (input: {
-    slug: string;
-    dayId: string;
-    providerPlaceId: string;
-    session: string | null;
-  }) => Promise<AddPlaceOutcome>;
+  readonly onChoose: (place: Place) => void;
 }
 
 /**
@@ -129,30 +122,30 @@ async function askAboutCity(city: LatLng): Promise<readonly Suggestion[]> {
 }
 
 /**
- * Search for a place and put it on the day that is open.
+ * Search for a place, and open it to look at before it goes on the day.
  *
  * The field sits in the top left corner of the map, where a map search belongs,
- * and the day it names is the one chosen in the tabs beside it. That is the
- * whole of the wiring: the caller passes the chosen day, so a place always
- * lands on the day being read.
+ * and the day it names is the one chosen in the tabs beside it. Choosing a
+ * place does not put it on the day: it is looked up, pinned on the map and
+ * opened in the sheet, where what it is like can be read and the day it would
+ * join is one button away. A search that added on the spot was a search that
+ * put the wrong Central Market on the day and left the reader to find out.
  *
  * Everything transient lives in the panel under the field: the matches, the
- * line saying a search is running, and the sentence saying nothing matched. It
- * hangs over the map rather than pushing anything down.
- *
- * Nothing is said when a place lands. The stop appears in the day underneath,
- * which is the confirmation, so the only thing left to announce is for a reader
- * who cannot see it happen.
+ * line saying a search is running, the sentence saying nothing matched, and
+ * the line saying a chosen place is being looked up. It hangs over the map
+ * rather than pushing anything down.
  */
 export function PlaceSearch({
   slug,
-  dayId,
+  editKey,
   dayName,
+  field,
   near,
   city,
   cityName,
   onTheTrip,
-  onAdd,
+  onChoose,
 }: PlaceSearchProps) {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<readonly Suggestion[]>([]);
@@ -161,28 +154,20 @@ export function PlaceSearch({
   /** The text the suggestions on screen are an answer to. */
   const [answered, setAnswered] = useState<string | null>(null);
   const [searchMessage, setSearchMessage] = useState<string | null>(null);
-  const [addError, setAddError] = useState<string | null>(null);
-  const [landed, setLanded] = useState<string | null>(null);
-  /** Chosen and not yet on the day, in the order they were chosen. */
-  const [landing, setLanding] = useState<readonly Landing[]>([]);
-  /**
-   * Places chosen since the trip last came back, so the list stops offering
-   * one the moment it is picked rather than when the server says so. Pruned
-   * below as the trip catches up, which is also what lets a place come back
-   * to the list if the stop is taken off the day again.
-   */
-  const [chosen, setChosen] = useState<ReadonlySet<string>>(new Set());
+  /** The place chosen and being looked up, by name, or null between choices. */
+  const [lookingUp, setLookingUp] = useState<string | null>(null);
+  /** What went wrong with the last look, until the next search or choice. */
+  const [lookError, setLookError] = useState<string | null>(null);
   /**
    * What the city is known for, for the field nobody has typed in yet. Null
    * until the city has answered.
    */
   const [popular, setPopular] = useState<readonly Suggestion[] | null>(null);
-  const [, startTransition] = useTransition();
 
   const fieldId = useId();
   const listId = `${fieldId}-list`;
   const container = useRef<HTMLDivElement | null>(null);
-  const input = useRef<HTMLInputElement | null>(null);
+  const input = field;
   /** One session covers the typing and the detail lookup that follows it. */
   const session = useRef<string | null>(null);
   /** Answers can arrive out of order, so only the newest is allowed to land. */
@@ -193,33 +178,6 @@ export function PlaceSearch({
    * way in, only in the answer.
    */
   const askedAboutCity = useRef(false);
-  /**
-   * Adds go one at a time, in the order they were chosen. The way to a new
-   * stop is measured from the stop before it, so the server has to see them
-   * in that order: fired together, two places chosen a moment apart would
-   * both be measured from whatever the day ended with before either landed.
-   */
-  const queue = useRef<Promise<void>>(Promise.resolve());
-  /** Names each choice, so two of the same place are still two landings. */
-  const landings = useRef(0);
-
-  // Adjusted during the render that carries the new trip rather than in an
-  // effect, which would paint the place in both lists for a frame first.
-  if ([...chosen].some((one) => onTheTrip.has(one))) {
-    setChosen(new Set([...chosen].filter((one) => !onTheTrip.has(one))));
-  }
-  /*
-   * A landing is over when the stop is on the day, which is the render that
-   * carries the new trip and not the answer that asked for it. Taken off
-   * here, the count of places on their way never drops before the place it
-   * counted can be seen to have arrived. A place the trip already held
-   * somewhere else cannot be told apart from itself, and comes off as soon
-   * as it is written.
-   */
-  const arrived = (one: Landing): boolean => one.written && onTheTrip.has(one.providerPlaceId);
-  if (landing.some(arrived)) {
-    setLanding(landing.filter((one) => !arrived(one)));
-  }
 
   const trimmed = query.trim();
   const searched = trimmed.length >= MINIMUM_LETTERS;
@@ -318,62 +276,71 @@ export function PlaceSearch({
   };
 
   /**
-   * Put a place on the day, and be ready for the next one at once.
+   * Look a chosen place up, and hand it over to be looked at.
    *
-   * Somebody planning a day adds four or five places in a row, and each one
-   * used to take the list away, refuse a second choice, and hand the field
-   * back empty only once the server had written the stop and worked out the
-   * times. The field is cleared and the list is back the moment a place is
-   * chosen; the choice itself is still one at a time, behind the ones before
-   * it, but nothing waits on it to be made.
+   * The field is cleared and closed the moment a place is chosen, and the
+   * panel says the place is being looked up until it is: where it is has to
+   * be asked for, since a search answers with names and not positions, and
+   * the pin and the sheet both need the position. The next choice, if one is
+   * made before the answer, is the one that counts.
    */
   const choose = (suggestion: Suggestion): void => {
     const { providerPlaceId, name } = suggestion;
-    const id = landings.current + 1;
-    landings.current = id;
-    // The session covered the typing that found this place and the detail
-    // lookup that follows it, and ends here. The next search starts a new one.
+    // The session covered the typing that found this place and the look
+    // that follows it, and ends there. The next search starts a new one.
     const chosenIn = session.current;
     session.current = null;
 
     newest.current += 1;
+    const attempt = newest.current;
     setQuery("");
     setSuggestions([]);
     setSearchMessage(null);
-    setAddError(null);
-    setLanding((waiting) => [...waiting, { id, name, providerPlaceId, written: false }]);
-    setChosen((already) => new Set(already).add(providerPlaceId));
-    input.current?.focus();
+    setLookError(null);
+    setLookingUp(name);
+    setOpen(true);
 
-    const add = async (): Promise<void> => {
-      const outcome = await onAdd({ slug, dayId, providerPlaceId, session: chosenIn });
+    const parameters = new URLSearchParams({ slug, key: editKey, id: providerPlaceId });
+    if (chosenIn !== null) {
+      parameters.set("session", chosenIn);
+    }
 
-      if (outcome.error !== null) {
-        // It never landed, so it is not on its way and the list may offer it
-        // again.
-        setLanding((waiting) => waiting.filter((one) => one.id !== id));
-        setAddError(outcome.error);
-        setChosen((already) => {
-          const left = new Set(already);
-          left.delete(providerPlaceId);
-          return left;
-        });
+    const look = async (): Promise<void> => {
+      let body: unknown = null;
+      let ok = false;
+      try {
+        const response = await fetch(`/api/places/preview?${parameters.toString()}`);
+        body = await response.json();
+        ok = response.ok;
+      } catch {
+        body = null;
+      }
+      if (attempt !== newest.current) {
         return;
       }
-      // Written, and still on its way until the trip comes back with it on.
-      setLanding((waiting) =>
-        waiting.map((one) => (one.id === id ? { ...one, written: true } : one)),
-      );
-      setLanded(outcome.added === null ? null : `${outcome.added} is on ${dayName}.`);
+      setLookingUp(null);
+      const parsed = ok ? previewSchema.safeParse(body) : null;
+      if (parsed === null || !parsed.success) {
+        const refusal = refusalSchema.safeParse(body);
+        setLookError(
+          refusal.success
+            ? [refusal.data.error, refusal.data.action].filter(Boolean).join(" ")
+            : "Could not reach the place service. Your trip is saved, try again in a moment.",
+        );
+        return;
+      }
+      setOpen(false);
+      const { place } = parsed.data;
+      onChoose({
+        id: place.providerPlaceId,
+        providerPlaceId: place.providerPlaceId,
+        name: place.name,
+        address: place.address,
+        position: place.position,
+        openingHours: null,
+      });
     };
-
-    // Behind whatever is already going, and behind it whether that one
-    // landed or was refused: a refusal is this trip answering, not a reason
-    // to stop measuring the next leg from the right place.
-    queue.current = queue.current.then(add, add);
-    startTransition(async () => {
-      await queue.current;
-    });
+    void look();
   };
 
   /**
@@ -386,7 +353,7 @@ export function PlaceSearch({
    * leaves the list the instant it lands on a day, without asking again.
    */
   const recommended = (popular ?? [])
-    .filter((one) => !onTheTrip.has(one.providerPlaceId) && !chosen.has(one.providerPlaceId))
+    .filter((one) => !onTheTrip.has(one.providerPlaceId))
     .slice(0, RECOMMENDED_SHOWN);
 
   /**
@@ -447,14 +414,21 @@ export function PlaceSearch({
 
   /**
    * The one sentence the panel has when it is not showing a list: the place
-   * being added, the city being asked about, a refusal, the search being run,
-   * or nothing having matched. Null when the list is doing the talking, and
-   * null on a field nobody has typed in whose city had nothing to offer, so a
-   * trip with no city has a field and nothing more.
+   * being looked up, what went wrong with the last look, the city being
+   * asked about, a refusal, the search being run, or nothing having matched.
+   * Null when the list is doing the talking, and null on a field nobody has
+   * typed in whose city had nothing to offer, so a trip with no city has a
+   * field and nothing more.
    */
   const line = ((): string | null => {
     if (!open) {
       return null;
+    }
+    if (lookingUp !== null) {
+      return `Looking up ${lookingUp}.`;
+    }
+    if (lookError !== null) {
+      return lookError;
     }
     if (!searched) {
       return askingCity ? `Looking for places in ${cityLabel}.` : null;
@@ -470,27 +444,8 @@ export function PlaceSearch({
       : "Nothing matched. Try the name of the place, or the street it is on.";
   })();
 
-  /**
-   * What is still on its way, over the list rather than instead of it: the
-   * next place is chosen from the same list while this one is being written
-   * down, so taking the list away to say so would be taking away the thing
-   * the sentence is asking you to wait for.
-   */
-  const landingLine = ((): string | null => {
-    const [first] = landing;
-    if (first === undefined) {
-      return null;
-    }
-    return landing.length === 1
-      ? `Adding ${first.name} to ${dayName}.`
-      : `Adding ${String(landing.length)} places to ${dayName}.`;
-  })();
-
   const listed = open && visible.length > 0;
-
-  /** The part of the panel that scrolls: the list, or the sentence in its place. */
-  const body = listed || line !== null;
-  const panel = body || landingLine !== null;
+  const panel = listed || line !== null;
 
   return (
     <div className="relative" ref={container}>
@@ -515,7 +470,7 @@ export function PlaceSearch({
           value={query}
           onChange={(event) => {
             setQuery(event.target.value);
-            setLanded(null);
+            setLookError(null);
             setOpen(true);
           }}
           onFocus={() => {
@@ -538,89 +493,64 @@ export function PlaceSearch({
 
       {panel ? (
         <div className="absolute top-full right-0 left-0 z-30 mt-2 flex max-h-[330px] flex-col overflow-hidden rounded-panel border border-rule bg-paper-raised shadow-md">
-          {/* Pinned above the list rather than at the top of it, so it is still
-              there once the reader has scrolled down to the next place. */}
-          {landingLine === null ? null : (
-            <p className="shrink-0 border-b border-rule px-[18px] py-[8px] text-meta text-ink-muted">
-              {landingLine}
-            </p>
-          )}
+          <div className="scroll-quiet min-h-0 overflow-x-hidden overflow-y-auto p-[7px]">
+            {line === null ? null : <p className={PANEL_LINE}>{line}</p>}
 
-          {body ? (
-            <div className="scroll-quiet min-h-0 overflow-x-hidden overflow-y-auto p-[7px]">
-              {line === null ? null : <p className={PANEL_LINE}>{line}</p>}
-
-              {listed ? (
-                <>
-                  <p className="px-[11px] pt-1 pb-[9px] text-label font-semibold text-ink-muted">
-                    {recommending ? popularIn : "Matching places"}
-                  </p>
-                  <ul
-                    id={listId}
-                    role="listbox"
-                    aria-label={
-                      recommending ? popularIn : "Places that match"
-                    }
-                  >
-                    {visible.map((suggestion, index) => (
-                      <li
-                        key={suggestion.providerPlaceId}
-                        id={`${listId}-option-${String(index)}`}
-                        role="option"
-                        aria-selected={index === activeIndex}
+            {listed ? (
+              <>
+                <p className="px-[11px] pt-1 pb-[9px] text-label font-semibold text-ink-muted">
+                  {recommending ? popularIn : "Matching places"}
+                </p>
+                <ul
+                  id={listId}
+                  role="listbox"
+                  aria-label={
+                    recommending ? popularIn : "Places that match"
+                  }
+                >
+                  {visible.map((suggestion, index) => (
+                    <li
+                      key={suggestion.providerPlaceId}
+                      id={`${listId}-option-${String(index)}`}
+                      role="option"
+                      aria-selected={index === activeIndex}
+                    >
+                      <button
+                        type="button"
+                        onMouseEnter={() => {
+                          setActive(index);
+                        }}
+                        onClick={() => {
+                          choose(suggestion);
+                        }}
+                        className={`flex w-full items-start gap-[10px] rounded-chip px-[11px] py-2 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${
+                          index === activeIndex ? "bg-terracotta-100" : ""
+                        }`}
                       >
-                        <button
-                          type="button"
-                          onMouseEnter={() => {
-                            setActive(index);
-                          }}
-                          onClick={() => {
-                            choose(suggestion);
-                          }}
-                          className={`flex w-full items-start gap-[10px] rounded-chip px-[11px] py-2 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${
-                            index === activeIndex ? "bg-terracotta-100" : ""
-                          }`}
-                        >
-                          <PinIcon
-                            size={15}
-                            strokeWidth={2.75}
-                            className="mt-[2px] shrink-0 text-terracotta"
-                          />
-                          <span className="min-w-0">
-                            <span className="block text-meta font-semibold text-ink">
-                              {suggestion.name}
-                            </span>
-                            {suggestion.address === null ? null : (
-                              <span className="block text-micro text-ink-muted">
-                                {suggestion.address}
-                              </span>
-                            )}
+                        <PinIcon
+                          size={15}
+                          strokeWidth={2.75}
+                          className="mt-[2px] shrink-0 text-terracotta"
+                        />
+                        <span className="min-w-0">
+                          <span className="block text-meta font-semibold text-ink">
+                            {suggestion.name}
                           </span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              ) : null}
-            </div>
-          ) : null}
+                          {suggestion.address === null ? null : (
+                            <span className="block text-micro text-ink-muted">
+                              {suggestion.address}
+                            </span>
+                          )}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : null}
+          </div>
         </div>
       ) : null}
-
-      {addError === null ? null : (
-        <p
-          role="alert"
-          className="mt-2 rounded-chip bg-terracotta-200 px-3 py-2 text-meta text-terracotta-900 shadow-sm"
-        >
-          {addError}
-        </p>
-      )}
-
-      {/* The stop appears in the day below, so the only reader who needs this
-          sentence is the one who cannot see that happen. */}
-      <p aria-live="polite" className="sr-only">
-        {landed ?? ""}
-      </p>
     </div>
   );
 }

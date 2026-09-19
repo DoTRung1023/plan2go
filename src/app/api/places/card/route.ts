@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createGooglePlacesProvider } from "@/adapters/places/google-places";
+import { checkEditAccess } from "@/server/ownership/edit-access";
 import { googleMapsApiKey } from "@/server/places/google-key";
 import { placeCardFor } from "@/server/places/place-card";
 import { consumeRateLimit } from "@/server/rate-limit/ip-rate-limit";
@@ -18,13 +19,17 @@ const ROUTE = "places-card";
 const querySchema = z.object({
   slug: z.string().min(1).max(80),
   id: z.string().min(1).max(300),
+  /** The edit key, from whoever is looking at a place before putting it on the day. */
+  key: z.string().min(1).max(200).optional(),
 });
 
 /**
- * What a place on a trip is like. A read, so no edit key is asked for: anyone
- * holding the plain link may look. The place has to be on the trip named,
- * which is what stops this being a way to look up any place in the world on
- * our account.
+ * What a place is like. A read, so anyone holding the plain link may look at
+ * a place that is on the trip. A place that is not on it yet may be looked
+ * at by whoever holds the edit key, since they are the one deciding whether
+ * to add it and could add it and look regardless; without the key the place
+ * has to be on the trip, which is what stops this being a way to look up any
+ * place in the world on our account.
  */
 export async function GET(request: Request): Promise<NextResponse> {
   const limit = await consumeRateLimit(ROUTE, request.headers, POLICY);
@@ -51,10 +56,16 @@ export async function GET(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: "That request could not be read." }, { status: 400 });
   }
 
-  const { slug, id } = parsed.data;
+  const { slug, id, key } = parsed.data;
   const onTrip = await prismaTripRepository.findPlaceByProviderId(slug, id);
   if (onTrip === null) {
-    return NextResponse.json({ error: "That place is not on this trip." }, { status: 404 });
+    const access =
+      key === undefined
+        ? null
+        : await checkEditAccess({ slug, presentedKey: key, repository: prismaTripRepository });
+    if (access?.status !== "granted") {
+      return NextResponse.json({ error: "That place is not on this trip." }, { status: 404 });
+    }
   }
 
   try {

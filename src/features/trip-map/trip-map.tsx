@@ -3,10 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import type { DayEndpoint } from "@/core/model/day";
 import type { TravelMode } from "@/core/model/leg";
-import type { LatLng } from "@/core/model/place";
+import type { LatLng, Place } from "@/core/model/place";
 import type { Stop } from "@/core/model/stop";
 import type { EndpointKind } from "./dom-marker";
 import {
+  candidateMarkerElement,
   endpointMarkerElement,
   placeDomMarker,
   stopMarkerElement,
@@ -115,6 +116,12 @@ interface TripMapProps {
    * straight line provider knows.
    */
   readonly legPaths: readonly (readonly LatLng[] | null)[];
+  /**
+   * A place being looked at from a search, or null. Pinned, and the map goes
+   * to it: the point of looking is to see where it is against the rest of
+   * the day. Gone, the map frames the day again.
+   */
+  readonly candidate: Place | null;
 }
 
 interface RouteLeg {
@@ -276,6 +283,7 @@ export function TripMap({
   endTravelMode,
   legPaths,
   centre,
+  candidate,
 }: TripMapProps) {
   const container = useRef<HTMLDivElement | null>(null);
   /**
@@ -525,6 +533,22 @@ export function TripMap({
       points.push(point);
     });
 
+    if (candidate !== null) {
+      const point = { lat: candidate.position.lat, lng: candidate.position.lng };
+      overlays.current.push(
+        placeDomMarker(maps, map, point, candidateMarkerElement(candidate.name)),
+      );
+      // Taken to, not framed with the rest: the day stays where it was and
+      // the map slides over to the place, so where it is relative to the
+      // day is seen in the movement. Closer than the city if the map was
+      // wider than that, and left alone otherwise.
+      map.panTo(point);
+      if ((map.getZoom() ?? 0) < SINGLE_POINT_ZOOM) {
+        map.setZoom(SINGLE_POINT_ZOOM);
+      }
+      return;
+    }
+
     const only = points[0];
     if (only === undefined) {
       // Nothing on this day, so it shows the city the trip is in rather than
@@ -546,7 +570,7 @@ export function TripMap({
       bounds.extend(point);
     }
     map.fitBounds(bounds, FIT_PADDING);
-  }, [state, start, end, stops, endTravelMode, legPaths, centre]);
+  }, [state, start, end, stops, endTravelMode, legPaths, centre, candidate]);
 
   const drawnLegs = routeLegs(start, end, stops, endTravelMode).length;
 

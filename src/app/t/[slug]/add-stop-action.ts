@@ -5,6 +5,7 @@ import { z } from "zod";
 import { createGooglePlacesProvider } from "@/adapters/places/google-places";
 import { EDIT_KEY_PATTERN, hashEditKey } from "@/server/ownership/edit-key";
 import { googleMapsApiKey } from "@/server/places/google-key";
+import { placeDetailsFor } from "@/server/places/place-details";
 import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
 import { addStopFromSearch } from "@/server/trips/add-stop";
 import { travelProvider } from "./travel";
@@ -41,10 +42,19 @@ export async function addStopAction(input: unknown): Promise<AddStopState> {
   }
 
   const { editKey, ...rest } = parsed.data;
+  const google = createGooglePlacesProvider({ apiKey });
+  // A place is looked at before it is added, and the look leaves a row in
+  // our own table, so the add reads the place from there rather than paying
+  // the provider for the same answer twice.
+  const provider = {
+    ...google,
+    details: (providerPlaceId: string, session: string | null) =>
+      placeDetailsFor(providerPlaceId, google, session),
+  };
   const result = await addStopFromSearch(
     { ...rest, editKeyHash: hashEditKey(editKey) },
     prismaTripRepository,
-    createGooglePlacesProvider({ apiKey }),
+    provider,
     travelProvider(),
   );
 

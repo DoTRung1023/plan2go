@@ -56,14 +56,20 @@ const TripMap = dynamic(
  * What the place sheet can be opened on. A stop is named by its id and an end
  * of a day by the day, the end and the place standing there, each of which is
  * enough to find the place again after the trip has been re-read, and to find
- * nothing once it has gone.
+ * nothing once it has gone. A candidate is a place chosen from a search and
+ * not on the trip yet, so it is carried whole: nothing in the trip could
+ * find it again.
  */
 type Opened =
   | { readonly kind: "stop"; readonly stopId: string }
-  | ({ readonly kind: "endpoint" } & EndpointRef);
+  | ({ readonly kind: "endpoint" } & EndpointRef)
+  | { readonly kind: "candidate"; readonly place: Place };
 
 /** The place the sheet is open on, or null once what it was opened from has left. */
 function placeOpened(days: readonly PlannedDay[], opened: Opened): Place | null {
+  if (opened.kind === "candidate") {
+    return opened.place;
+  }
   if (opened.kind === "stop") {
     return (
       days.flatMap((day) => day.plan.stops).find((stop) => stop.id === opened.stopId)?.place ??
@@ -76,9 +82,14 @@ function placeOpened(days: readonly PlannedDay[], opened: Opened): Place | null 
 
 /** One sheet per thing opened, so opening another starts it afresh. */
 function keyOf(opened: Opened): string {
-  return opened.kind === "stop"
-    ? `stop:${opened.stopId}`
-    : `${opened.which}:${opened.dayId}:${opened.placeId}`;
+  switch (opened.kind) {
+    case "stop":
+      return `stop:${opened.stopId}`;
+    case "candidate":
+      return `candidate:${opened.place.id}`;
+    case "endpoint":
+      return `${opened.which}:${opened.dayId}:${opened.placeId}`;
+  }
 }
 
 interface TripEditorProps {
@@ -183,6 +194,15 @@ export function TripEditor({
    * the browser's own print command, so the two come out the same way.
    */
   const [exportOpen, setExportOpen] = useState(false);
+  /**
+   * The search field over the map, for the empty day to send the reader to.
+   * Focusing it is what opens its panel, so the reader lands on the city's
+   * best known places with the cursor already in the field.
+   */
+  const searchField = useRef<HTMLInputElement | null>(null);
+  const findPlace = (): void => {
+    searchField.current?.focus();
+  };
 
   const recording = <T extends { readonly error: string | null }>(
     change: Promise<T>,
@@ -221,6 +241,8 @@ export function TripEditor({
   const openStop = (stopId: string): void => {
     open({ kind: "stop", stopId });
   };
+  /** The place being looked at from a search, for the map to pin, or null. */
+  const candidate = opened?.kind === "candidate" ? opened.place : null;
 
   const legPaths = useMemo(
     () =>
@@ -280,6 +302,7 @@ export function TripEditor({
               onHoverLeg={setHoveredLegIndex}
               hoveredEndpointId={hoveredEndpointId}
               onHoverEndpoint={setHoveredEndpointId}
+              candidate={candidate}
               expanded={expanded}
               onToggleExpanded={() => {
                 setExpanded(!expanded);
@@ -300,8 +323,9 @@ export function TripEditor({
               <div className="pointer-events-auto w-full max-w-[346px] min-w-0">
                 <PlaceSearch
                   slug={slug}
-                  dayId={selected.plan.id}
+                  editKey={editKey}
                   dayName={`Day ${String(selectedIndex + 1)}`}
+                  field={searchField}
                   near={searchBias(
                     days.map((day) => day.plan),
                     selectedIndex,
@@ -310,7 +334,9 @@ export function TripEditor({
                   city={centre}
                   cityName={cityName}
                   onTheTrip={placesOnTheTrip(days.map((day) => day.plan))}
-                  onAdd={(input) => recording(addStopAction({ ...input, editKey }))}
+                  onChoose={(place) => {
+                    open({ kind: "candidate", place });
+                  }}
                 />
               </div>
             ) : null}
@@ -357,6 +383,7 @@ export function TripEditor({
           selectedIndex={selectedIndex}
           onSelect={setChosenIndex}
           exporting={exportControl("heading")}
+          onFindPlace={editKey === null ? null : findPlace}
           onAddDay={
             editKey === null
               ? null
@@ -513,6 +540,27 @@ export function TripEditor({
           key={keyOf(opened)}
           slug={slug}
           place={openedPlace}
+          editKey={editKey}
+          candidate={
+            opened.kind === "candidate" && editKey !== null && selected !== undefined
+              ? {
+                  dayName: `Day ${String(selectedIndex + 1)}`,
+                  onAdd: () =>
+                    recording(
+                      addStopAction({
+                        slug,
+                        editKey,
+                        dayId: selected.plan.id,
+                        providerPlaceId: opened.place.providerPlaceId,
+                        // The look that opened this sheet ended the search
+                        // session and left the place in our own table, which
+                        // is where the add reads it from.
+                        session: null,
+                      }),
+                    ),
+                }
+              : null
+          }
           askedFor={openings}
           onClose={() => {
             setOpened(null);

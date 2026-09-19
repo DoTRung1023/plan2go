@@ -26,19 +26,21 @@ const storedSchema = z.object({
  * What a place is, from our own table when the same place was asked about
  * recently, and otherwise from the provider, kept for next time.
  *
- * Only the front door comes through here. A stop being added arrives with the
- * search session that found it, and a session has to end in the provider's
- * own details call or the typing before it is billed one request at a time,
- * so an answer from our table would cost more than it saved. The city on the
- * front door is searched without a session, and the same city is opened many
- * times over, which is what makes this worth a row.
+ * The session is the one the search that found this place was typed under.
+ * A session has to end in the provider's own details call, or the typing
+ * before it is billed one request at a time, so a place arriving with a
+ * session is asked of the provider even when the table has it. A place that
+ * was looked at from a search and is now being put on the day comes without
+ * one, and is answered from the row the looking left.
  */
-export async function cityDetailsFor(
+export async function placeDetailsFor(
   providerPlaceId: string,
   provider: PlacesProvider,
+  session: string | null,
   now: Date = new Date(),
 ): Promise<PlaceDetails | null> {
-  const cached = await db.placeDetailsCache.findUnique({ where: { providerPlaceId } });
+  const cached =
+    session === null ? await db.placeDetailsCache.findUnique({ where: { providerPlaceId } }) : null;
   if (cached !== null && cached.expiresAt > now) {
     const parsed = storedSchema.safeParse(cached.details);
     if (parsed.success) {
@@ -55,7 +57,7 @@ export async function cityDetailsFor(
     }
   }
 
-  const details = await provider.details(providerPlaceId, null);
+  const details = await provider.details(providerPlaceId, session);
   if (details === null) {
     return null;
   }

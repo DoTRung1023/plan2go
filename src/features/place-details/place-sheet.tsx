@@ -1,9 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { z } from "zod";
 import type { Place, PlaceCard, PlacePhoto, PlaceReview } from "@/core/model/place";
-import { ChevronLeftIcon, CloseIcon, GlobeIcon, PhoneIcon, PinIcon, StarIcon } from "@/ui/icons";
+import {
+  ChevronLeftIcon,
+  CloseIcon,
+  GlobeIcon,
+  PhoneIcon,
+  PinIcon,
+  PlusIcon,
+  StarIcon,
+} from "@/ui/icons";
 import { useScrollBar } from "@/ui/use-scroll-bar";
 import { PhotoViewer } from "./photo-viewer";
 import "./place-sheet.css";
@@ -66,14 +74,25 @@ const OPENS =
  */
 const PICTURES_WAIT_MS = 8_000;
 
+/** Which place's pictures, and the key to show them with when the place is not on the trip yet. */
+interface Pictured {
+  readonly slug: string;
+  readonly providerPlaceId: string;
+  readonly key: string | null;
+}
+
 /** One of the place's photos at one width, from our own photo route. */
-function photoUrl(slug: string, providerPlaceId: string, at: number, width: number): string {
-  return `/api/places/photo?${new URLSearchParams({
-    slug,
-    id: providerPlaceId,
+function photoUrl(of: Pictured, at: number, width: number): string {
+  const parameters = new URLSearchParams({
+    slug: of.slug,
+    id: of.providerPlaceId,
     at: String(at),
     width: String(width),
-  }).toString()}`;
+  });
+  if (of.key !== null) {
+    parameters.set("key", of.key);
+  }
+  return `/api/places/photo?${parameters.toString()}`;
 }
 
 /** The picture the sheet draws at that position: the first is the hero, the rest the strip. */
@@ -87,11 +106,11 @@ function widthAt(at: number): number {
  * the list stops at the first width the picture does not reach: past that
  * would be the same picture under another name, paid for and kept twice.
  */
-function viewSrcSet(slug: string, providerPlaceId: string, at: number, photo: PlacePhoto): string {
+function viewSrcSet(of: Pictured, at: number, photo: PlacePhoto): string {
   const choices: string[] = [];
   for (const width of VIEW_WIDTHS) {
     const served = Math.min(width, photo.width);
-    choices.push(`${photoUrl(slug, providerPlaceId, at, width)} ${String(served)}w`);
+    choices.push(`${photoUrl(of, at, width)} ${String(served)}w`);
     if (width >= photo.width) {
       break;
     }
@@ -119,9 +138,30 @@ type Asked =
   | { readonly status: "answered"; readonly card: PlaceCard }
   | { readonly status: "refused"; readonly sentence: string };
 
+/**
+ * A place opened from a search rather than from the trip: not on the day
+ * yet, and the sheet is where deciding that happens.
+ */
+export interface Candidate {
+  /** What the day is called in the tabs, so the button says where the place would go. */
+  readonly dayName: string;
+  /**
+   * Passed in rather than imported, because a feature may not reach into the
+   * route that owns the mutation. Answers with what went wrong, or nothing.
+   */
+  readonly onAdd: () => Promise<{ readonly error: string | null }>;
+}
+
 interface PlaceSheetProps {
   readonly slug: string;
   readonly place: Place;
+  /**
+   * The edit key, when the reader holds one. A place that is not on the trip
+   * can only be looked at by an editor, and this is how the look says so.
+   */
+  readonly editKey: string | null;
+  /** Set when the place is being looked at before being added, and null for one already on the trip. */
+  readonly candidate: Candidate | null;
   /**
    * Goes up each time this place is asked for, a second time included. A
    * sheet on its way out and asked for again stays, and this is how it hears
@@ -204,7 +244,14 @@ function Review({ review }: { readonly review: PlaceReview }) {
  * answered the sheet says only that it is looking. The route keeps them for a
  * day, so the fetch that waited is the fetch the picture is then drawn from.
  */
-export function PlaceSheet({ slug, place, askedFor, onClose }: PlaceSheetProps) {
+export function PlaceSheet({
+  slug,
+  place,
+  editKey,
+  candidate,
+  askedFor,
+  onClose,
+}: PlaceSheetProps) {
   /**
    * Settled at mount for a place the provider never knew, which is a pin
    * somebody dropped. The sheet is keyed by the stop it opened from, so a
@@ -227,6 +274,15 @@ export function PlaceSheet({ slug, place, askedFor, onClose }: PlaceSheetProps) 
   const [leaving, setLeaving] = useState(false);
   /** The ask this sheet last answered, so a new one is told from a re-render. */
   const [answeredAsk, setAnsweredAsk] = useState(askedFor);
+  /** What went wrong putting the place on the day, under the button that tried. */
+  const [addError, setAddError] = useState<string | null>(null);
+  const [adding, startAdding] = useTransition();
+  /**
+   * The key the card is asked for with: only a place not on the trip needs
+   * one to be looked at, and only an editor has one to give. A value rather
+   * than the candidate itself, which is built afresh each render.
+   */
+  const lookingWith = candidate === null ? null : editKey;
   const sheet = useRef<HTMLElement | null>(null);
 
   // Asked for again while on its way out, it stays. Adjusted during the
@@ -240,6 +296,24 @@ export function PlaceSheet({ slug, place, askedFor, onClose }: PlaceSheetProps) 
 
   const leave = (): void => {
     setLeaving(true);
+  };
+
+  /**
+   * Put the place on the day. Once it is there the sheet goes, the way it
+   * would if the stop had been closed: the stop is on the day beside the map,
+   * with its marker, which is the confirmation.
+   */
+  const add = (): void => {
+    if (candidate === null) {
+      return;
+    }
+    startAdding(async () => {
+      const outcome = await candidate.onAdd();
+      setAddError(outcome.error);
+      if (outcome.error === null) {
+        leave();
+      }
+    });
   };
   /** The last picture that was open, so closing it puts focus back where it was pressed. */
   const lastViewed = useRef<number | null>(null);
@@ -301,6 +375,9 @@ export function PlaceSheet({ slug, place, askedFor, onClose }: PlaceSheetProps) 
       return;
     }
     const parameters = new URLSearchParams({ slug, id: place.providerPlaceId });
+    if (lookingWith !== null) {
+      parameters.set("key", lookingWith);
+    }
     let stale = false;
 
     const run = async (): Promise<void> => {
@@ -339,14 +416,14 @@ export function PlaceSheet({ slug, place, askedFor, onClose }: PlaceSheetProps) 
     return () => {
       stale = true;
     };
-  }, [slug, place.providerPlaceId]);
+  }, [slug, place.providerPlaceId, lookingWith]);
 
   useEffect(() => {
     if (asked.status !== "answered" || place.providerPlaceId === null) {
       return;
     }
-    const id = place.providerPlaceId;
-    const urls = asked.card.photos.map((_photo, at) => photoUrl(slug, id, at, widthAt(at)));
+    const of: Pictured = { slug, providerPlaceId: place.providerPlaceId, key: lookingWith };
+    const urls = asked.card.photos.map((_photo, at) => photoUrl(of, at, widthAt(at)));
     if (urls.length === 0) {
       return;
     }
@@ -377,11 +454,11 @@ export function PlaceSheet({ slug, place, askedFor, onClose }: PlaceSheetProps) 
       stale = true;
       clearTimeout(ceiling);
     };
-  }, [asked, slug, place.providerPlaceId]);
+  }, [asked, slug, place.providerPlaceId, lookingWith]);
 
   const card = asked.status === "answered" ? asked.card : null;
   const hero = card?.photos[0];
-  const id = place.providerPlaceId ?? "";
+  const pictures: Pictured = { slug, providerPlaceId: place.providerPlaceId ?? "", key: lookingWith };
   const photoCount = card?.photos.length ?? 0;
 
   /**
@@ -488,7 +565,7 @@ export function PlaceSheet({ slug, place, askedFor, onClose }: PlaceSheetProps) 
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={photoUrl(slug, id, 0, HERO_WIDTH)}
+                  src={photoUrl(pictures, 0, HERO_WIDTH)}
                   alt={`${place.name}${hero.by === null ? "" : `, photographed by ${hero.by}`}`}
                   width={hero.width}
                   height={hero.height}
@@ -537,6 +614,32 @@ export function PlaceSheet({ slug, place, askedFor, onClose }: PlaceSheetProps) 
               )}
             </div>
 
+            {candidate === null ? null : (
+              /* The one thing the sheet can do to the trip, and only for a
+                 place that is not on it yet: the whole width, in the accent,
+                 under the name and before anything that takes reading, so it
+                 is there whatever else the provider had to say. */
+              <div className="flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={add}
+                  disabled={adding}
+                  className="flex w-full items-center justify-center gap-2 rounded-pill bg-terracotta px-5 py-[11px] text-body font-semibold text-paper hover:bg-terracotta-600 active:bg-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+                >
+                  <PlusIcon size={15} strokeWidth={3} />
+                  {adding ? `Adding to ${candidate.dayName}` : `Add to ${candidate.dayName}`}
+                </button>
+                {addError === null ? null : (
+                  <p
+                    role="alert"
+                    className="rounded-chip bg-terracotta-200 px-3 py-2 text-meta text-terracotta-900"
+                  >
+                    {addError}
+                  </p>
+                )}
+              </div>
+            )}
+
             {asked.status === "refused" ? (
               <p className="text-meta text-ink-muted">{asked.sentence}</p>
             ) : null}
@@ -565,7 +668,7 @@ export function PlaceSheet({ slug, place, askedFor, onClose }: PlaceSheetProps) 
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={photoUrl(slug, id, index + 1, STRIP_WIDTH)}
+                        src={photoUrl(pictures, index + 1, STRIP_WIDTH)}
                         alt={photo.by === null ? "" : `Photographed by ${photo.by}`}
                         width={photo.width}
                         height={photo.height}
@@ -650,12 +753,12 @@ export function PlaceSheet({ slug, place, askedFor, onClose }: PlaceSheetProps) 
           placeName={place.name}
           photos={card.photos}
           at={viewing}
-          urlFor={(at) => photoUrl(slug, id, at, VIEW_WIDTHS[0])}
+          urlFor={(at) => photoUrl(pictures, at, VIEW_WIDTHS[0])}
           srcSetFor={(at) => {
             const photo = card.photos[at];
-            return photo === undefined ? "" : viewSrcSet(slug, id, at, photo);
+            return photo === undefined ? "" : viewSrcSet(pictures, at, photo);
           }}
-          sheetUrlFor={(at) => photoUrl(slug, id, at, widthAt(at))}
+          sheetUrlFor={(at) => photoUrl(pictures, at, widthAt(at))}
           onStep={setViewing}
           onClose={() => {
             setViewing(null);
