@@ -5,6 +5,7 @@ import { z } from "zod";
 import type { Place, PlaceCard, PlacePhoto, PlaceReview } from "@/core/model/place";
 import {
   ChevronLeftIcon,
+  ChevronRightIcon,
   CloseIcon,
   GlobeIcon,
   PhoneIcon,
@@ -171,11 +172,22 @@ interface PlaceSheetProps {
   /** Set when the place is being looked at before being added, and null for one already on the trip. */
   readonly candidate: Candidate | null;
   /**
-   * Goes up each time this place is asked for, a second time included. A
-   * sheet on its way out and asked for again stays, and this is how it hears
-   * the ask: the thing it is open on has not changed, so nothing else does.
+   * Told to go. The sheet slides off before it is taken down, so it is
+   * told, drawn going, and only then gone. Whoever opened it holds this
+   * rather than the sheet, because the way out is not only on the sheet:
+   * asked for again while going, it is told to stay the same way.
    */
-  readonly askedFor: number;
+  readonly leaving: boolean;
+  /** The sheet's own ways out asking to go: Escape, the close on a phone, the place added. */
+  readonly onLeave: () => void;
+  /**
+   * Put aside: off the map's edge, to see the map whole, and still open on
+   * the same place. It slides off the way it would to go, stays there, and
+   * leaves a tab at the window's edge that brings it back.
+   */
+  readonly aside: boolean;
+  readonly onPutAside: () => void;
+  readonly onBringBack: () => void;
   /** Called once the sheet has gone, not when it was told to go. */
   readonly onClose: () => void;
 }
@@ -257,7 +269,11 @@ export function PlaceSheet({
   place,
   editKey,
   candidate,
-  askedFor,
+  leaving,
+  onLeave,
+  aside,
+  onPutAside,
+  onBringBack,
   onClose,
 }: PlaceSheetProps) {
   /**
@@ -274,14 +290,6 @@ export function PlaceSheet({
   const [pictured, setPictured] = useState(false);
   /** Which picture is open across the window, counted from zero, or none. */
   const [viewing, setViewing] = useState<number | null>(null);
-  /**
-   * On its way out. The sheet slides off to the left before it is taken
-   * down, so it is told to go, drawn going, and only then gone: the caller
-   * hears of it when the movement ends.
-   */
-  const [leaving, setLeaving] = useState(false);
-  /** The ask this sheet last answered, so a new one is told from a re-render. */
-  const [answeredAsk, setAnsweredAsk] = useState(askedFor);
   /** What went wrong putting the place on the day, under the button that tried. */
   const [addError, setAddError] = useState<string | null>(null);
   const [adding, startAdding] = useTransition();
@@ -292,19 +300,8 @@ export function PlaceSheet({
    */
   const lookingWith = candidate === null ? null : editKey;
   const sheet = useRef<HTMLElement | null>(null);
-
-  // Asked for again while on its way out, it stays. Adjusted during the
-  // render that carries the ask rather than in an effect, so it is seen to
-  // stay in the same paint; taking the class off cancels the movement, and
-  // a cancelled animation never ends, so the caller is never told it went.
-  if (answeredAsk !== askedFor) {
-    setAnsweredAsk(askedFor);
-    setLeaving(false);
-  }
-
-  const leave = (): void => {
-    setLeaving(true);
-  };
+  /** The tab at the window's edge while the sheet is put aside. */
+  const back = useRef<HTMLButtonElement | null>(null);
 
   /**
    * Put the place on the day. Once it is there the sheet goes, the way it
@@ -319,7 +316,7 @@ export function PlaceSheet({
       const outcome = await candidate.onAdd();
       setAddError(outcome.error);
       if (outcome.error === null) {
-        leave();
+        onLeave();
       }
     });
   };
@@ -347,6 +344,19 @@ export function PlaceSheet({
   useEffect(() => {
     sheet.current?.focus();
   }, [ready]);
+
+  /**
+   * Put aside, the keyboard goes to the tab that brings the sheet back, which
+   * is the one part of it left on the page; brought back, it goes to the
+   * sheet, as it did when the sheet first opened.
+   */
+  useEffect(() => {
+    if (aside) {
+      back.current?.focus();
+    } else {
+      sheet.current?.focus();
+    }
+  }, [aside]);
 
   /**
    * Closing the viewer puts the keyboard back where it was, which is a
@@ -476,7 +486,7 @@ export function PlaceSheet({
   const close = (
     <button
       type="button"
-      onClick={leave}
+      onClick={onLeave}
       aria-label="Close"
       className="absolute top-3 right-3 grid h-9 w-9 place-items-center rounded-pill bg-paper-raised/90 text-ink shadow-sm hover:bg-paper-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:hidden"
     >
@@ -498,37 +508,47 @@ export function PlaceSheet({
         aria-label={place.name}
         onKeyDown={(event) => {
           if (event.key === "Escape") {
-            leave();
+            onLeave();
           }
         }}
         onAnimationEnd={(event) => {
-          // Only the sheet's own leaving, not a picture's or a child's.
+          // Only the sheet's own going, not a picture's or a child's, and
+          // not the same movement made to put it aside.
           if (event.target === event.currentTarget && leaving) {
             onClose();
           }
         }}
         aria-busy={!ready}
+        // Off the page while put aside, and so out of the keyboard's and the
+        // screen reader's reach too: the tab at the edge is all of it there is.
+        inert={aside}
         /*
          * Clipped on a phone, where it is the window and nothing may scroll
          * but the sheet. Not on a desk, where the tab on its edge sits
          * outside its box; there the scroller under it does the clipping,
          * to the same corners.
+         *
+         * Put aside it makes the movement it makes to go, and stays where
+         * that ends: the animation fills forwards, so the class kept on is
+         * the sheet kept off.
          */
         className={`fixed inset-0 z-50 flex flex-col overflow-hidden bg-paper-raised outline-none lg:absolute lg:inset-auto lg:top-[22px] lg:bottom-[22px] lg:left-3 lg:z-30 lg:w-[400px] lg:overflow-visible lg:rounded-panel lg:border lg:border-rule lg:shadow-md ${
-          leaving ? "place-sheet-leaving" : "place-sheet-arriving"
+          leaving || aside ? "place-sheet-leaving" : "place-sheet-arriving"
         }`}
       >
-        {/* The way out on a desk: a pill astride the sheet's free edge,
-            halfway down, pointing the way the sheet goes. Drawn the way the
-            grip on the planner's edge is, on raised paper behind a hairline
-            with a floating control's shadow, so the two edges of the map
-            carry the same kind of thing and the way out is found the same
-            way the grip is. It is there whatever the sheet is showing. */}
+        {/* Puts the sheet aside on a desk: a pill astride the sheet's free
+            edge, halfway down, pointing the way the sheet goes. Drawn the way
+            the grip on the planner's edge is, on raised paper behind a
+            hairline with a floating control's shadow, so the two edges of
+            the map carry the same kind of thing and this is found the same
+            way the grip is. It is there whatever the sheet is showing. The
+            way out altogether is the cross on the search field, as it is on
+            a map search: the place is what was searched for. */}
         <button
           type="button"
-          onClick={leave}
-          title="Close"
-          aria-label="Close"
+          onClick={onPutAside}
+          title="Hide"
+          aria-label={`Hide ${place.name}`}
           className="absolute top-1/2 left-full hidden h-[40px] w-[18px] -translate-x-1/2 -translate-y-1/2 place-items-center rounded-pill border border-rule bg-paper-raised text-ink-muted shadow-sm hover:border-rule-strong hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:grid"
         >
           <ChevronLeftIcon size={12} strokeWidth={2.75} />
@@ -753,6 +773,24 @@ export function PlaceSheet({
         </div>
         )}
       </section>
+
+      {/* The same tab once the sheet has gone off the edge: at the edge it
+          went to, pointing the way back. On a desk only, like the tab on the
+          sheet, since on a phone the sheet is the window and closes instead.
+          Clear of the edge by the room a pill's own curve needs, rather than
+          astride an edge it cannot straddle. */}
+      {aside ? (
+        <button
+          ref={back}
+          type="button"
+          onClick={onBringBack}
+          title="Show"
+          aria-label={`Show ${place.name}`}
+          className="absolute top-1/2 left-[3px] z-30 hidden h-[40px] w-[18px] -translate-y-1/2 place-items-center rounded-pill border border-rule bg-paper-raised text-ink-muted shadow-sm hover:border-rule-strong hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:grid"
+        >
+          <ChevronRightIcon size={12} strokeWidth={2.75} />
+        </button>
+      ) : null}
 
       {/* Beside the sheet rather than inside it, so the keys it answers to,
           Escape among them, are not also answered by the sheet under it. */}

@@ -179,14 +179,41 @@ export function TripEditor({
    */
   const [opened, setOpened] = useState<Opened | null>(null);
   /**
-   * How many times something has been opened, counting a second ask for the
-   * same thing. The sheet is one instance for as long as it is on one thing,
-   * and it can be put aside; asked for again, it has to know to come back.
+   * Told to go. The sheet slides out and says when it has gone, which is
+   * when what it was on is let go of. Held here rather than in the sheet
+   * because the way out is not only on the sheet: the cross on the search
+   * field is one, and the sheet cannot hear that.
    */
-  const [openings, setOpenings] = useState(0);
+  const [leaving, setLeaving] = useState(false);
+  /**
+   * Put aside: off the map's edge, to see the map whole, and still open on
+   * the same thing. The field keeps the place's name, the map keeps its pin,
+   * and a tab at the window's edge brings the sheet back.
+   */
+  const [aside, setAside] = useState(false);
   const open = (what: Opened): void => {
     setOpened(what);
-    setOpenings((count) => count + 1);
+    // Wanted, whatever it was doing: on its way out it stays, and put aside
+    // it comes back. Set with the ask rather than after it, so a sheet on its
+    // way out is seen to stay in the same paint.
+    setLeaving(false);
+    setAside(false);
+  };
+  /**
+   * Done with the place: the sheet goes, and with it the pin on the map and
+   * the name in the field. One put aside is off the map already, and there
+   * is nothing to watch go.
+   */
+  const dismiss = (): void => {
+    if (opened === null) {
+      return;
+    }
+    if (aside) {
+      setOpened(null);
+      setAside(false);
+      return;
+    }
+    setLeaving(true);
   };
   /**
    * Whether the export dialog is open. While it is, its preview is what the
@@ -245,10 +272,11 @@ export function TripEditor({
   const candidate = opened?.kind === "candidate" ? opened.place : null;
   /**
    * How much of the map's edge the sheet is over, for the map to frame the
-   * day beside it. The sheet is on the page exactly when there is a place
-   * for it, which is the same test the page makes below.
+   * day beside it: none while it is put aside. The sheet is on the page
+   * exactly when there is a place for it, which is the same test the page
+   * makes below.
    */
-  const covered = openedPlace === null ? 0 : SHEET_REACH;
+  const covered = openedPlace === null || aside ? 0 : SHEET_REACH;
 
   const legPaths = useMemo(
     () =>
@@ -342,9 +370,11 @@ export function TripEditor({
                   city={centre}
                   cityName={cityName}
                   onTheTrip={placesOnTheTrip(days.map((day) => day.plan))}
+                  showing={openedPlace?.name ?? null}
                   onChoose={(place) => {
                     open({ kind: "candidate", place });
                   }}
+                  onClear={dismiss}
                   onAdd={(input) => recording(addStopAction({ ...input, editKey }))}
                 />
               </div>
@@ -570,9 +600,18 @@ export function TripEditor({
                 }
               : null
           }
-          askedFor={openings}
+          leaving={leaving}
+          onLeave={dismiss}
+          aside={aside}
+          onPutAside={() => {
+            setAside(true);
+          }}
+          onBringBack={() => {
+            setAside(false);
+          }}
           onClose={() => {
             setOpened(null);
+            setLeaving(false);
           }}
         />
       )}

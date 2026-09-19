@@ -360,9 +360,15 @@ this place** on its row or by pressing its marker on the map. What opens is a sh
 the left edge of the map, 400px wide with the map still in sight beside it, and the
 whole window on a phone. The map frames the day, or the place a search is looking at,
 in what is left of it beside the sheet, so nothing it is showing is under the sheet.
-It slides in from the left and slides back out when closed:
-on a desk by a tab on its free edge, halfway down, pointing the way it goes, and on a
-phone by a close button in the corner. The picture comes first because it answers
+While it is open the search field holds the place's name, as a map search does: the
+place is what was searched for, whether it was found in the field or opened from the
+day, and the cross on the field is what closes the sheet, drops the pin and empties the
+field. It slides in from the left and slides back out the same way. On a desk the tab
+on its free edge, halfway down, pointing the way it goes, puts it aside rather than
+closing it: the map is seen whole, framed again to its full width, and the pin, the
+name in the field and the place stay; the tab waits at the window's edge, pointing
+back, and brings the sheet back, as does opening anything. On a phone a close button in
+the corner closes it, and so does Escape anywhere. The picture comes first because it answers
 fastest; then the name, the kind of place and its rating out of five with a filled
 terracotta star; then the sentence the provider has for it, a strip of more pictures, the
 address and the ways to reach it, and what people say, each with their stars and how

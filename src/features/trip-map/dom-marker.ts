@@ -90,7 +90,7 @@ export function candidateMarkerElement(name: string): HTMLElement {
   for (const [stroke, width] of [
     ["var(--color-paper)", "5.5"],
     ["currentColor", "2.5"],
-  ]) {
+  ] as const) {
     for (const d of PIN_PATHS) {
       const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
       path.setAttribute("d", d);

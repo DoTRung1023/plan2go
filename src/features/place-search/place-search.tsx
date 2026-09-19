@@ -89,10 +89,23 @@ interface PlaceSearchProps {
    */
   readonly onTheTrip: ReadonlySet<string>;
   /**
+   * The name of the place open beside the map, or null. The field holds it,
+   * the way a map search does, so what the map is showing is said in words.
+   * It is not a search: nothing is looked for until something else is typed
+   * over it.
+   */
+  readonly showing: string | null;
+  /**
    * A place chosen and looked up: where it is, to pin it on the map and open
    * it in the sheet, where deciding to add it happens.
    */
   readonly onChoose: (place: Place) => void;
+  /**
+   * The cross pressed. The field empties itself; the place open beside the
+   * map is closed by whoever opened it, since the field was holding its name
+   * and is now holding nothing.
+   */
+  readonly onClear: () => void;
   /**
    * A place put straight on the day from its row, for one the reader already
    * knows. Passed in rather than imported, because a feature may not reach
@@ -153,6 +166,12 @@ async function askAboutCity(city: LatLng): Promise<readonly Suggestion[]> {
  * its row puts it on the day without the look. The row itself still opens
  * the place, so the shorter way is never the one a stray click takes.
  *
+ * While a place is open beside the map the field holds its name, whether it
+ * was found here or opened from the day, and the cross on the field is what
+ * closes it: the same as a map search, where the place is what was searched
+ * for. Focus takes the whole name, so typing starts the next search rather
+ * than adding to it.
+ *
  * Everything transient lives in the panel under the field: the matches, the
  * line saying a search is running, the sentence saying nothing matched, and
  * the line saying a chosen place is being looked up. It hangs over the map
@@ -168,10 +187,14 @@ export function PlaceSearch({
   city,
   cityName,
   onTheTrip,
+  showing,
   onChoose,
+  onClear,
   onAdd,
 }: PlaceSearchProps) {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(showing ?? "");
+  /** The name the field was last given to hold, so a new one is told from a re-render. */
+  const [held, setHeld] = useState(showing);
   const [suggestions, setSuggestions] = useState<readonly Suggestion[]>([]);
   const [active, setActive] = useState(0);
   const [open, setOpen] = useState(false);
@@ -225,13 +248,32 @@ export function PlaceSearch({
    */
   const queue = useRef<Promise<void>>(Promise.resolve());
 
+  // Given a name to hold, the field takes it, and given none it lets go of
+  // the one it had, unless something else has been typed over it since.
+  // Adjusted during the render that carries the change rather than in an
+  // effect, so the field is never painted with the name it has just lost.
+  if (held !== showing) {
+    setHeld(showing);
+    if (showing !== null) {
+      setQuery(showing);
+    } else if (query === held) {
+      setQuery("");
+    }
+  }
+
   const trimmed = query.trim();
-  const searched = trimmed.length >= MINIMUM_LETTERS;
+  /**
+   * What has been typed, as against the name of the open place the field
+   * was given to hold: that is the map's answer, not a question for it.
+   */
+  const typed = showing !== null && trimmed === showing.trim() ? "" : trimmed;
+  const holding = typed === "" && trimmed !== "";
+  const searched = typed.length >= MINIMUM_LETTERS;
   /** Derived, so nothing has to remember to turn it off. */
-  const searching = searched && answered !== trimmed;
+  const searching = searched && answered !== typed;
 
   useEffect(() => {
-    if (trimmed.length < MINIMUM_LETTERS) {
+    if (typed.length < MINIMUM_LETTERS) {
       return;
     }
 
@@ -240,7 +282,7 @@ export function PlaceSearch({
       newest.current = attempt;
       session.current ??= crypto.randomUUID();
 
-      const parameters = new URLSearchParams({ q: trimmed, session: session.current });
+      const parameters = new URLSearchParams({ q: typed, session: session.current });
       if (near !== null) {
         parameters.set("lat", near.lat.toFixed(BIAS_DECIMALS));
         parameters.set("lng", near.lng.toFixed(BIAS_DECIMALS));
@@ -252,7 +294,7 @@ export function PlaceSearch({
         if (attempt !== newest.current) {
           return;
         }
-        setAnswered(trimmed);
+        setAnswered(typed);
         setOpen(true);
         if (!response.ok) {
           const refusal = refusalSchema.safeParse(body);
@@ -276,7 +318,7 @@ export function PlaceSearch({
     return () => {
       clearTimeout(timer);
     };
-  }, [trimmed, near]);
+  }, [typed, near]);
 
   /**
    * Asked when the panel first opens on an empty field, and not on mounting:
@@ -318,8 +360,16 @@ export function PlaceSearch({
     setSuggestions([]);
     setSearchMessage(null);
     setOpen(false);
+    onClear();
     input.current?.focus();
   };
+
+  /**
+   * Whether the next mouseup in the field is the one that follows focus
+   * taking the whole of a held name. Left to the browser it would put the
+   * caret where the click landed and undo the selection focus just made.
+   */
+  const keepWhole = useRef(false);
 
   /**
    * Look a chosen place up, and hand it over to be looked at.
@@ -551,8 +601,21 @@ export function PlaceSearch({
             setLookError(null);
             setOpen(true);
           }}
-          onFocus={() => {
+          onFocus={(event) => {
+            if (holding) {
+              event.currentTarget.select();
+              keepWhole.current = true;
+            }
             setOpen(true);
+          }}
+          onMouseUp={(event) => {
+            if (keepWhole.current) {
+              event.preventDefault();
+              keepWhole.current = false;
+            }
+          }}
+          onBlur={() => {
+            keepWhole.current = false;
           }}
           onKeyDown={onKeyDown}
           className="min-w-0 flex-1 py-[11px] text-body text-ink caret-terracotta outline-none placeholder:text-ink-faint"
