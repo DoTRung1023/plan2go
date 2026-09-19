@@ -22,11 +22,6 @@ const querySchema = z.object({
   session: z.string().min(1).max(64).optional(),
   /** "city" narrows the answers to whole cities, for choosing where a trip is. */
   kind: z.enum(["place", "city"]).default("place"),
-  /** ISO 3166-1 alpha-2, to search inside one country. */
-  country: z
-    .string()
-    .regex(/^[A-Za-z]{2}$/, "That is not a country code.")
-    .optional(),
 });
 
 /**
@@ -70,7 +65,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     );
   }
 
-  const { q, lat, lng, limit: size, session, kind, country } = parsed.data;
+  const { q, lat, lng, limit: size, session, kind } = parsed.data;
   const near = lat === undefined || lng === undefined ? null : { lat, lng };
 
   try {
@@ -81,7 +76,6 @@ export async function GET(request: Request): Promise<NextResponse> {
         limit: size,
         session: session ?? null,
         citiesOnly: kind === "city",
-        countryCode: country ?? null,
       },
       createGooglePlacesProvider({ apiKey }),
     );

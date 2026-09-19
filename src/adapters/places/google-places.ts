@@ -294,9 +294,6 @@ export function createGooglePlacesProvider(options: GooglePlacesOptions): Places
       if (request.citiesOnly) {
         body.includedPrimaryTypes = ["(cities)"];
       }
-      if (request.countryCode !== null) {
-        body.includedRegionCodes = [request.countryCode.toLowerCase()];
-      }
       if (request.session !== null) {
         body.sessionToken = request.session;
       }

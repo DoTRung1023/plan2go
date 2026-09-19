@@ -4,14 +4,7 @@ import Image from "next/image";
 import lockup from "../../../logo/logo-text.png";
 import { CreateTripForm } from "./create-trip-form";
 
-import type { Choice } from "./choice-field";
 import { openingTimeZone, todayIn } from "@/server/trips/time-zones";
-import { countries } from "./countries";
-
-/** Read on the server so the browser is not asked to build the list. */
-function countryChoices(): readonly Choice[] {
-  return countries().map((country) => ({ value: country.code, label: country.name }));
-}
 
 /** Reads a clock, so it is worked out per request rather than at build time. */
 export const dynamic = "force-dynamic";
@@ -57,7 +50,7 @@ export default async function MarketingPage() {
         </p>
       </div>
 
-      <CreateTripForm countries={countryChoices()} today={today} />
+      <CreateTripForm today={today} />
     </div>
   );
 }

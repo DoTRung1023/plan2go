@@ -4,13 +4,7 @@ import type { KeyboardEvent } from "react";
 import { useEffect, useId, useRef, useState } from "react";
 import { z } from "zod";
 import { SearchIcon } from "@/ui/icons";
-import {
-  FIELD_GROUND,
-  FIELD_LABEL,
-  FIELD_SHELL,
-  FIELD_STACK,
-  FIELD_WAITING,
-} from "./field-styles";
+import { FIELD_GROUND, FIELD_LABEL, FIELD_SHELL, FIELD_STACK } from "./field-styles";
 
 /** Long enough that typing does not spend money on every letter. */
 const DEBOUNCE_MS = 250;
@@ -44,21 +38,13 @@ const FIELD = `${FIELD_SHELL} flex items-center gap-3 px-5 focus-within:border-t
  * fields does not say which of them is being answered.
  */
 const LOOKING = "Looking for cities.";
-const NO_MATCH = "No city matches that. Check the spelling, or the country you chose.";
+const NO_MATCH = "No city matches that. Check the spelling.";
 
 interface PlaceFieldProps {
   readonly id: string;
   /** Submitted with the form. What is stored is the provider's own identifier. */
   readonly name: string;
   readonly label: string;
-  /** ISO 3166-1 alpha-2 to search inside. Empty searches everywhere. */
-  readonly countryCode: string;
-  /**
-   * What this field is still waiting on, or null when it can be typed in. The
-   * sentence is shown in the field itself, because a control that is switched
-   * off without saying why reads as one that is broken.
-   */
-  readonly waitingFor: string | null;
   readonly placeholder: string;
   readonly chosen: ChosenPlace | null;
   readonly onChange: (place: ChosenPlace | null) => void;
@@ -69,19 +55,11 @@ interface PlaceFieldProps {
  *
  * A trip needs somewhere real: the map has to open on it, and a search inside
  * the trip has to know which Central Market is meant, neither of which is
- * possible from a line of text. The answers are whole cities in the country
- * already chosen, so "Barcelona" is never a question about which continent.
+ * possible from a line of text. The answers are whole cities, from anywhere:
+ * the country each is in is written under its name, which is the one place
+ * the difference between two Barcelonas matters.
  */
-export function PlaceField({
-  id,
-  name,
-  label,
-  countryCode,
-  waitingFor,
-  placeholder,
-  chosen,
-  onChange,
-}: PlaceFieldProps) {
+export function PlaceField({ id, name, label, placeholder, chosen, onChange }: PlaceFieldProps) {
   const [query, setQuery] = useState("");
   const [found, setFound] = useState<readonly ChosenPlace[]>([]);
   const [active, setActive] = useState(0);
@@ -102,7 +80,7 @@ export function PlaceField({
     // A picked place writes its own name into the field. Searching for that
     // name would answer with the place already chosen and open the list back
     // over the answer, so a name that is already the answer is not a question.
-    if (!searched || waitingFor !== null || chosen?.name === trimmed) {
+    if (!searched || chosen?.name === trimmed) {
       return;
     }
     const timer = setTimeout(() => {
@@ -112,9 +90,6 @@ export function PlaceField({
       // Whole cities, never places inside one: this field answers where a trip
       // is, and the places on it are chosen from inside the trip.
       const parameters = new URLSearchParams({ q: trimmed, kind: "city" });
-      if (countryCode !== "") {
-        parameters.set("country", countryCode);
-      }
 
       const run = async (): Promise<void> => {
         const response = await fetch(`/api/places/search?${parameters.toString()}`);
@@ -146,7 +121,7 @@ export function PlaceField({
     return () => {
       clearTimeout(timer);
     };
-  }, [trimmed, searched, countryCode, waitingFor, chosen]);
+  }, [trimmed, searched, chosen]);
 
   useEffect(() => {
     if (!open) {
@@ -214,7 +189,6 @@ export function PlaceField({
     }
   };
 
-  const waiting = waitingFor !== null;
   const listed = open && found.length > 0;
 
   return (
@@ -224,22 +198,18 @@ export function PlaceField({
       </label>
       <input type="hidden" name={name} value={chosen?.providerPlaceId ?? ""} />
 
-      {/* Waiting on the field above rather than switched off: it loses its
-          ground instead of being faded out, so it reads as a question not yet
-          reachable rather than as a control that is broken. */}
-      <div className={`${FIELD} ${waiting ? FIELD_WAITING : FIELD_GROUND}`}>
+      <div className={`${FIELD} ${FIELD_GROUND}`}>
         <SearchIcon size={18} strokeWidth={2.75} className="shrink-0 text-ink-faint" />
         <input
           id={id}
           type="text"
           role="combobox"
           autoComplete="off"
-          disabled={waiting}
           aria-expanded={listed}
           aria-controls={listId}
           aria-autocomplete="list"
           value={query}
-          placeholder={waitingFor ?? placeholder}
+          placeholder={placeholder}
           onChange={(event) => {
             setQuery(event.target.value);
             onChange(null);
@@ -253,7 +223,7 @@ export function PlaceField({
         />
       </div>
 
-      {open && searched && !waiting ? (
+      {open && searched ? (
         <div className="absolute top-full right-0 left-0 z-30 mt-2 rounded-panel border border-rule bg-paper-raised p-[7px] shadow-md">
           {listed ? (
             <ul id={listId} role="listbox" aria-label={label}>

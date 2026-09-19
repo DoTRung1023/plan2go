@@ -4,8 +4,6 @@ import { useActionState, useState } from "react";
 import { addDays } from "@/core/time/zoned";
 import { DateRangeField } from "@/features/trip-settings/date-range-field";
 import { MAX_TRIP_DAYS } from "@/server/trips/new-trip-input";
-import type { Choice } from "./choice-field";
-import { ChoiceField } from "./choice-field";
 import type { ChosenPlace } from "./place-field";
 import { PlaceField } from "./place-field";
 import { createTripAction } from "./create-trip-action";
@@ -22,12 +20,10 @@ const NO_ERROR: CreateTripFormState = { error: null, field: null };
 const OPENING_SPAN_DAYS = 4;
 
 interface CreateTripFormProps {
-  /** Built on the server, so the browser is not asked to make the list. */
-  readonly countries: readonly Choice[];
   readonly today: string;
 }
 
-export function CreateTripForm({ countries, today }: CreateTripFormProps) {
+export function CreateTripForm({ today }: CreateTripFormProps) {
   const [state, submit, pending] = useActionState(createTripAction, NO_ERROR);
   /**
    * Both ends are held here so the last day can travel with the first. Only the
@@ -36,7 +32,6 @@ export function CreateTripForm({ countries, today }: CreateTripFormProps) {
    */
   const [first, setFirst] = useState(today);
   const [last, setLast] = useState(addDays(today, OPENING_SPAN_DAYS));
-  const [country, setCountry] = useState("");
   const [city, setCity] = useState<ChosenPlace | null>(null);
   /**
    * The answer the city was last changed under. An answer saying the city is
@@ -63,30 +58,10 @@ export function CreateTripForm({ countries, today }: CreateTripFormProps) {
       </p>
 
       <div>
-        <ChoiceField
-          id="country"
-          name="country"
-          label="Country"
-          placeholder="Choose a country"
-          searchLabel="Type a country"
-          choices={countries}
-          value={country}
-          onChange={(picked) => {
-            setCountry(picked);
-            // The city belonged to the country that was chosen before.
-            changeCity(null);
-          }}
-          noMatch="No country matches that. Check the spelling."
-        />
-      </div>
-
-      <div>
         <PlaceField
           id="cityPlaceId"
           name="cityPlaceId"
           label="City"
-          countryCode={country}
-          waitingFor={country === "" ? "Choose a country first" : null}
           placeholder="Type the city"
           chosen={city}
           onChange={changeCity}

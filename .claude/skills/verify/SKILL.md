@@ -33,11 +33,9 @@ const browser = await chromium.launch({ channel: "chrome", headless: true });
 Every dev run writes to the one shared Neon database, so open a fresh trip rather than
 touching one that exists. Front door at `/`:
 
-1. `#country` opens a listbox; fill `input[placeholder="Type a country"]`, click the
-   option in `[role="listbox"][aria-label="Country"]`.
-2. `#cityPlaceId` is a Google backed search; wait for
+1. `#cityPlaceId` is a Google backed search over cities anywhere; fill it, wait for
    `[role="listbox"][aria-label="City"] [role="option"]` and click one.
-3. Dates are prefilled. Click `button[type="submit"]`.
+2. Dates are prefilled. Click `button[type="submit"]`.
 
 It lands on `/t/<slug>/edit/<key>`. The key in the URL is the whole of the edit
 authority, there is no cookie. `/t/<slug>` on its own is the read only share view and
