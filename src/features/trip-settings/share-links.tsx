@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CloseIcon, ShareIcon } from "@/ui/icons";
-import { MENU_ITEM } from "./trip-menu";
+import { ShareIcon } from "@/ui/icons";
+import { MENU_ITEM, useMenuPages } from "./trip-menu";
 
 /** The word at the end of the pill, in the accent, with the pill's own ground under the pointer. */
 const COPY =
@@ -28,17 +28,8 @@ const LINK_FIELD =
 
 /**
  * Which link, over its pill: the interface's own tier, in bold, as a label
- * over a value.
- *
- * Both dialogs that open off the trip menu are named at place and written at
- * small, which is one step of the scale apart and the same step the menu row
- * that opened them is set in. Lead, which they were named at, is what the day
- * a panel is open on is set in, and a panel that asks one question is not
- * that. They are built from three numbers and no others: five between a label and the control it names, because the two
- * are one thing; ten between one block and the next; fourteen around the
- * whole panel. Below that the room around a control starts coming out of the
- * control, and the Copy beside each link is already within a pixel of the
- * smallest a pointer target may be.
+ * over a value. Five between a label and the control it names, because the
+ * two are one thing; ten between one block and the next.
  */
 const LABEL = "mt-[10px] text-small/none font-semibold text-ink";
 
@@ -63,19 +54,18 @@ interface ShareLinksProps {
  * which is why both are shown here, each under its own name, rather than one
  * being quietly copied.
  */
-export function ShareLinks({ slug, editKey }: ShareLinksProps) {
-  const [open, setOpen] = useState(false);
+function SharePage({ slug, editKey }: ShareLinksProps) {
   const [copied, setCopied] = useState<Which | null>(null);
   const [failed, setFailed] = useState(false);
-  const container = useRef<HTMLDivElement | null>(null);
-  const trigger = useRef<HTMLButtonElement | null>(null);
 
   /**
-   * Where the page is served from is only knowable in the browser, and it is
-   * read when the panel opens rather than on the way past. The links are only
-   * ever rendered inside that panel, so they are never built from a guess.
+   * Where the page is served from is only knowable in the browser, and this
+   * is only ever rendered there, once the page is asked for, so the links are
+   * never built from a guess.
    */
-  const [origin, setOrigin] = useState("");
+  const origin = window.location.origin;
+  const viewUrl = `${origin}/t/${slug}`;
+  const editUrl = `${viewUrl}/edit/${editKey}`;
 
   useEffect(() => {
     if (copied === null) {
@@ -88,34 +78,6 @@ export function ShareLinks({ slug, editKey }: ShareLinksProps) {
       clearTimeout(timer);
     };
   }, [copied]);
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    const dismiss = (event: MouseEvent): void => {
-      const target = event.target;
-      const inside =
-        target instanceof Node &&
-        container.current !== null &&
-        container.current.contains(target);
-      if (!inside) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", dismiss);
-    return () => {
-      document.removeEventListener("mousedown", dismiss);
-    };
-  }, [open]);
-
-  const viewUrl = `${origin}/t/${slug}`;
-  const editUrl = `${viewUrl}/edit/${editKey}`;
-
-  const close = (): void => {
-    setOpen(false);
-    trigger.current?.focus();
-  };
 
   const copy = (which: Which, url: string): void => {
     void navigator.clipboard.writeText(url).then(
@@ -156,72 +118,56 @@ export function ShareLinks({ slug, editKey }: ShareLinksProps) {
   );
 
   return (
-    <div className="relative" ref={container}>
-      <button
-        type="button"
-        ref={trigger}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        onClick={() => {
-          if (!open) {
-            setOrigin(window.location.origin);
-          }
-          setOpen(!open);
-        }}
-        className={MENU_ITEM}
-      >
-        <ShareIcon size={15} strokeWidth={2.75} className="shrink-0" />
-        Share
-      </button>
+    <>
+      <p className={LABEL}>Read only</p>
+      {link("view", "Read only link", viewUrl)}
 
-      {open ? (
-        <div
-          role="dialog"
-          aria-label="Share this trip"
-          onKeyDown={(event) => {
-            if (event.key === "Escape") {
-              event.preventDefault();
-              close();
-            }
-          }}
-          className="absolute top-full right-0 z-50 mt-2 w-[min(320px,calc(100vw-2rem))] rounded-panel border border-rule bg-paper-raised p-[14px] text-left shadow-lg"
-        >
-          {/* Named the way the dialog that deletes the trip is named and set
-              in the same panel, heading and tier, with the way out across
-              from the name. */}
-          <div className="flex items-start justify-between gap-3">
-            <p className="font-display text-place text-ink">Share this trip</p>
-            <button
-              type="button"
-              onClick={close}
-              aria-label="Close"
-              // Twenty-four, which is both the smallest a pointer target may
-              // be and about the size of the name beside it. A negative
-              // margin takes it out of the row's height without taking
-              // anything off the button itself, so the target is whole.
-              className="-mt-[2px] -mr-1 grid h-6 w-6 shrink-0 place-items-center rounded-pill text-ink-muted hover:bg-neutral-200 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
-            >
-              <CloseIcon size={14} strokeWidth={2.5} />
-            </button>
-          </div>
+      <p className={LABEL}>Editing</p>
+      {link("edit", "Editing link", editUrl)}
 
-          <p className={LABEL}>Read only</p>
-          {link("view", "Read only link", viewUrl)}
-
-          <p className={LABEL}>Editing</p>
-          {link("edit", "Editing link", editUrl)}
-
-          {failed ? (
-            <p className="mt-3 text-meta/none text-ink-muted">
-              Copying was blocked. Select the link instead.
-            </p>
-          ) : null}
-        </div>
+      {failed ? (
+        <p className="mt-3 text-meta/none text-ink-muted">
+          Copying was blocked. Select the link instead.
+        </p>
       ) : null}
 
       <p aria-live="polite" className="sr-only">
         {copied === null ? "" : `${copied === "view" ? "Read only" : "Editing"} link copied.`}
       </p>
-    </div>
+    </>
+  );
+}
+
+/**
+ * The row in the trip's menu that turns the menu into the page of links,
+ * rather than opening a second panel over it. When the page is left, the
+ * focus comes back here, where it went from.
+ */
+export function ShareLinks({ slug, editKey }: ShareLinksProps) {
+  const pages = useMenuPages();
+  const trigger = useRef<HTMLButtonElement | null>(null);
+
+  return (
+    <button
+      type="button"
+      ref={trigger}
+      aria-haspopup="dialog"
+      // Whichever page is up, this row is hidden under it, so the only state
+      // it is ever read in is the one with no page open.
+      aria-expanded={pages.page !== null}
+      onClick={() => {
+        pages.open({
+          title: "Share this trip",
+          content: <SharePage slug={slug} editKey={editKey} />,
+          onBack: () => {
+            trigger.current?.focus();
+          },
+        });
+      }}
+      className={MENU_ITEM}
+    >
+      <ShareIcon size={15} strokeWidth={2.75} className="shrink-0" />
+      Share
+    </button>
   );
 }
