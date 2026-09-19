@@ -61,7 +61,7 @@ interface PlaceSearchProps {
   /** Travels with the look at a chosen place: only an editor may look before adding. */
   readonly editKey: string;
   readonly dayId: string;
-  /** What the day is called in the tabs, so the field says where a place would go. */
+  /** What the day is called in the tabs, so a row's plus says where a place would go. */
   readonly dayName: string;
   /**
    * The field itself, for whoever else needs to bring the reader here: the
@@ -578,8 +578,11 @@ export function PlaceSearch({
   return (
     <div className="relative" ref={container}>
       <div className={FIELD}>
+        {/* Search, not add: choosing a place opens it, and the plus on its
+            row is what puts it on the day. The label says only what the
+            field does, and the day is named where the adding is. */}
         <label className="sr-only" htmlFor={fieldId}>
-          Add a place to {dayName}
+          Search for a place
         </label>
         <SearchIcon size={16} strokeWidth={2.75} className="shrink-0 text-ink-muted" />
         <input
@@ -588,7 +591,7 @@ export function PlaceSearch({
           type="text"
           role="combobox"
           autoComplete="off"
-          placeholder={`Add a place to ${dayName}`}
+          placeholder="Search for a place"
           aria-expanded={listed}
           aria-controls={listId}
           aria-autocomplete="list"
