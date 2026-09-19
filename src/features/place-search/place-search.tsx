@@ -4,7 +4,7 @@ import type { KeyboardEvent, RefObject } from "react";
 import { useEffect, useId, useRef, useState } from "react";
 import { z } from "zod";
 import type { LatLng, Place } from "@/core/model/place";
-import { CloseIcon, PinIcon, SearchIcon } from "@/ui/icons";
+import { CheckIcon, CloseIcon, PinIcon, PlusIcon, SearchIcon } from "@/ui/icons";
 
 /** Long enough that typing does not spend money on every letter. */
 const DEBOUNCE_MS = 250;
@@ -50,10 +50,16 @@ const previewSchema = z.object({
 
 type Suggestion = z.infer<typeof suggestionSchema>;
 
+export interface AddPlaceOutcome {
+  readonly added: string | null;
+  readonly error: string | null;
+}
+
 interface PlaceSearchProps {
   readonly slug: string;
   /** Travels with the look at a chosen place: only an editor may look before adding. */
   readonly editKey: string;
+  readonly dayId: string;
   /** What the day is called in the tabs, so the field says where a place would go. */
   readonly dayName: string;
   /**
@@ -86,6 +92,17 @@ interface PlaceSearchProps {
    * it in the sheet, where deciding to add it happens.
    */
   readonly onChoose: (place: Place) => void;
+  /**
+   * A place put straight on the day from its row, for one the reader already
+   * knows. Passed in rather than imported, because a feature may not reach
+   * into the route that owns the mutation.
+   */
+  readonly onAdd: (input: {
+    slug: string;
+    dayId: string;
+    providerPlaceId: string;
+    session: string | null;
+  }) => Promise<AddPlaceOutcome>;
 }
 
 /**
@@ -131,6 +148,10 @@ async function askAboutCity(city: LatLng): Promise<readonly Suggestion[]> {
  * join is one button away. A search that added on the spot was a search that
  * put the wrong Central Market on the day and left the reader to find out.
  *
+ * A place the reader already knows has a shorter way: the plus at the end of
+ * its row puts it on the day without the look. The row itself still opens
+ * the place, so the shorter way is never the one a stray click takes.
+ *
  * Everything transient lives in the panel under the field: the matches, the
  * line saying a search is running, the sentence saying nothing matched, and
  * the line saying a chosen place is being looked up. It hangs over the map
@@ -139,6 +160,7 @@ async function askAboutCity(city: LatLng): Promise<readonly Suggestion[]> {
 export function PlaceSearch({
   slug,
   editKey,
+  dayId,
   dayName,
   field,
   near,
@@ -146,6 +168,7 @@ export function PlaceSearch({
   cityName,
   onTheTrip,
   onChoose,
+  onAdd,
 }: PlaceSearchProps) {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<readonly Suggestion[]>([]);
@@ -158,6 +181,19 @@ export function PlaceSearch({
   const [lookingUp, setLookingUp] = useState<string | null>(null);
   /** What went wrong with the last look, until the next search or choice. */
   const [lookError, setLookError] = useState<string | null>(null);
+  /** Places on their way to the day from their rows, by provider identifier. */
+  const [adding, setAdding] = useState<ReadonlySet<string>>(new Set());
+  /**
+   * Places put on the day from their rows since the panel opened, so a row in
+   * a search answer says so rather than offering to add the place twice. A
+   * recommended row leaves the list instead, since the trip is taken out of
+   * the recommendations.
+   */
+  const [added, setAdded] = useState<ReadonlySet<string>>(new Set());
+  /** What went wrong with the last add from a row, under the list. */
+  const [addError, setAddError] = useState<string | null>(null);
+  /** The last place to land, for a reader who cannot see it appear on the day. */
+  const [landed, setLanded] = useState<string | null>(null);
   /**
    * What the city is known for, for the field nobody has typed in yet. Null
    * until the city has answered.
@@ -178,6 +214,14 @@ export function PlaceSearch({
    * way in, only in the answer.
    */
   const askedAboutCity = useRef(false);
+  /**
+   * Adds from rows go one at a time, in the order they were pressed. The way
+   * to a new stop is measured from the stop before it, so the server has to
+   * see them in that order: fired together, two places pressed a moment
+   * apart would both be measured from whatever the day ended with before
+   * either landed.
+   */
+  const queue = useRef<Promise<void>>(Promise.resolve());
 
   const trimmed = query.trim();
   const searched = trimmed.length >= MINIMUM_LETTERS;
@@ -341,6 +385,38 @@ export function PlaceSearch({
       });
     };
     void look();
+  };
+
+  /**
+   * Put a place straight on the day, from its row. The session the typing
+   * was done under goes with it, since the details call it ends is the one
+   * the add makes; the next search starts a new one.
+   */
+  const addNow = (suggestion: Suggestion): void => {
+    const { providerPlaceId, name } = suggestion;
+    const chosenIn = session.current;
+    session.current = null;
+    setAddError(null);
+    setAdding((now) => new Set(now).add(providerPlaceId));
+
+    const add = async (): Promise<void> => {
+      const outcome = await onAdd({ slug, dayId, providerPlaceId, session: chosenIn });
+      setAdding((now) => {
+        const left = new Set(now);
+        left.delete(providerPlaceId);
+        return left;
+      });
+      if (outcome.error !== null) {
+        setAddError(outcome.error);
+        return;
+      }
+      setAdded((soFar) => new Set(soFar).add(providerPlaceId));
+      setLanded(`${outcome.added ?? name} is on ${dayName}.`);
+    };
+    // Behind whatever is already going, and behind it whether that one
+    // landed or was refused: a refusal is this trip answering, not a reason
+    // to stop measuring the next leg from the right place.
+    queue.current = queue.current.then(add, add);
   };
 
   /**
@@ -508,49 +584,103 @@ export function PlaceSearch({
                     recommending ? popularIn : "Places that match"
                   }
                 >
-                  {visible.map((suggestion, index) => (
-                    <li
-                      key={suggestion.providerPlaceId}
-                      id={`${listId}-option-${String(index)}`}
-                      role="option"
-                      aria-selected={index === activeIndex}
-                    >
-                      <button
-                        type="button"
+                  {visible.map((suggestion, index) => {
+                    const onItsWay = adding.has(suggestion.providerPlaceId);
+                    const onTheDay =
+                      added.has(suggestion.providerPlaceId) ||
+                      onTheTrip.has(suggestion.providerPlaceId);
+                    return (
+                      /* The row opens the place; the plus at its end adds it
+                         without the look. Two controls in one option, with the
+                         highlight on the option so it is one row under the
+                         pointer whichever half the pointer is on. */
+                      <li
+                        key={suggestion.providerPlaceId}
+                        id={`${listId}-option-${String(index)}`}
+                        role="option"
+                        aria-selected={index === activeIndex}
                         onMouseEnter={() => {
                           setActive(index);
                         }}
-                        onClick={() => {
-                          choose(suggestion);
-                        }}
-                        className={`flex w-full items-start gap-[10px] rounded-chip px-[11px] py-2 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${
+                        className={`flex items-center gap-1 rounded-chip pr-[5px] ${
                           index === activeIndex ? "bg-terracotta-100" : ""
                         }`}
                       >
-                        <PinIcon
-                          size={15}
-                          strokeWidth={2.75}
-                          className="mt-[2px] shrink-0 text-terracotta"
-                        />
-                        <span className="min-w-0">
-                          <span className="block text-meta font-semibold text-ink">
-                            {suggestion.name}
-                          </span>
-                          {suggestion.address === null ? null : (
-                            <span className="block text-micro text-ink-muted">
-                              {suggestion.address}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            choose(suggestion);
+                          }}
+                          className="flex min-w-0 flex-1 items-start gap-[10px] rounded-chip px-[11px] py-2 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta"
+                        >
+                          <PinIcon
+                            size={15}
+                            strokeWidth={2.75}
+                            className="mt-[2px] shrink-0 text-terracotta"
+                          />
+                          <span className="min-w-0">
+                            <span className="block text-meta font-semibold text-ink">
+                              {suggestion.name}
                             </span>
+                            {suggestion.address === null ? null : (
+                              <span className="block text-micro text-ink-muted">
+                                {suggestion.address}
+                              </span>
+                            )}
+                          </span>
+                        </button>
+                        {/* A tick once it is on the day, so a search answer
+                            that still lists the place says so instead of
+                            offering it again. */}
+                        <button
+                          type="button"
+                          disabled={onItsWay || onTheDay}
+                          aria-busy={onItsWay}
+                          aria-label={
+                            onTheDay
+                              ? `${suggestion.name} is on ${dayName}`
+                              : `Add ${suggestion.name} to ${dayName}`
+                          }
+                          title={onTheDay ? `On ${dayName}` : `Add to ${dayName}`}
+                          onClick={() => {
+                            addNow(suggestion);
+                          }}
+                          className={`grid h-[28px] w-[28px] shrink-0 place-items-center rounded-pill focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
+                            onTheDay
+                              ? "text-sage-700"
+                              : "text-terracotta-700 hover:bg-terracotta-200 hover:text-terracotta-900 disabled:opacity-45"
+                          }`}
+                        >
+                          {onTheDay ? (
+                            <CheckIcon size={15} strokeWidth={3} />
+                          ) : (
+                            <PlusIcon size={15} strokeWidth={3} />
                           )}
-                        </span>
-                      </button>
-                    </li>
-                  ))}
+                        </button>
+                      </li>
+                    );
+                  })}
                 </ul>
               </>
             ) : null}
+
+            {addError === null ? null : (
+              <p
+                role="alert"
+                className="mx-[4px] mt-1 rounded-chip bg-terracotta-200 px-3 py-2 text-meta text-terracotta-900"
+              >
+                {addError}
+              </p>
+            )}
           </div>
         </div>
       ) : null}
+
+      {/* The stop appears in the day beside the map, so the only reader who
+          needs this sentence is the one who cannot see that happen. */}
+      <p aria-live="polite" className="sr-only">
+        {landed ?? ""}
+      </p>
     </div>
   );
 }

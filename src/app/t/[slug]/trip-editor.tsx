@@ -324,6 +324,7 @@ export function TripEditor({
                 <PlaceSearch
                   slug={slug}
                   editKey={editKey}
+                  dayId={selected.plan.id}
                   dayName={`Day ${String(selectedIndex + 1)}`}
                   field={searchField}
                   near={searchBias(
@@ -337,6 +338,7 @@ export function TripEditor({
                   onChoose={(place) => {
                     open({ kind: "candidate", place });
                   }}
+                  onAdd={(input) => recording(addStopAction({ ...input, editKey }))}
                 />
               </div>
             ) : null}

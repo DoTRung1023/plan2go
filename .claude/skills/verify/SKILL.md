@@ -62,7 +62,9 @@ for a screenshot.
 Choosing from the search list does not add. It looks the place up (`/api/places/preview`),
 pins it on the map as `.trip-map-candidate`, pans there, and opens the sheet
 `section[role="dialog"][aria-label="<place name>"]` with `button:has-text("Add to Day N")`
-at the top. Pressing that adds the stop and the sheet slides away. An empty day offers
+at the top. Pressing that adds the stop and the sheet slides away. Each row also ends in
+`button[title="Add to Day N"]`, which adds straight away without the look and becomes a
+tick titled `On Day N` once the place is on the day. An empty day offers
 `button:has-text("Find a place")`, which focuses the search field; a reader without the
 edit key gets no such button.
 
