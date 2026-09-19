@@ -308,9 +308,15 @@ export function TripEditor({
           // Opened, the map covers the planner beside it rather than the
           // window: the browser keeps its own chrome, and getting back is the
           // same button rather than a key nobody was told about.
+          //
+          // The strip's z-index is for the phone, where it stays over the
+          // planner scrolling under it. On a desk it comes off: a grid item
+          // with one is a stacking context of its own, and the search field
+          // in the map's corner has to be able to float over the sheet,
+          // which is laid over the map from outside it.
           expanded
             ? "fixed inset-0 z-40 bg-paper-sunken"
-            : "sticky top-0 z-20 h-[140px] border-b border-rule bg-paper-sunken lg:static lg:h-full lg:min-h-0 lg:border-b-0"
+            : "sticky top-0 z-20 h-[140px] border-b border-rule bg-paper-sunken lg:static lg:z-auto lg:h-full lg:min-h-0 lg:border-b-0"
         }
       >
         <div className="relative h-full w-full">
