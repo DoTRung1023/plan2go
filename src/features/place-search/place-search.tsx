@@ -113,7 +113,7 @@ interface PlaceSearchProps {
 const FIELD =
   "flex items-center gap-[9px] rounded-pill border border-rule bg-paper-raised py-0 pr-2 pl-[15px] shadow-sm focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-terracotta";
 
-const PANEL_LINE = "px-[11px] py-[10px] text-meta text-ink-muted";
+const PANEL_LINE = "px-[7px] py-[10px] text-meta text-ink-muted";
 
 /**
  * What the city is known for, or nothing. Every refusal is a plain one: nobody
@@ -576,13 +576,13 @@ export function PlaceSearch({
               not use. */}
           <div
             ref={watchList}
-            className="scroll-line min-h-0 overflow-x-hidden overflow-y-auto py-[7px] pr-[2px] pl-[7px]"
+            className="scroll-line min-h-0 overflow-x-hidden overflow-y-auto py-[7px] pr-[2px] pl-[3px]"
           >
             {line === null ? null : <p className={PANEL_LINE}>{line}</p>}
 
             {listed ? (
               <>
-                <p className="px-[11px] pt-1 pb-[9px] text-label font-semibold text-ink-muted">
+                <p className="px-[7px] pt-1 pb-[9px] text-label font-semibold text-ink-muted">
                   {recommending ? popularIn : "Matching places"}
                 </p>
                 <ul
@@ -622,7 +622,7 @@ export function PlaceSearch({
                           // Close on its right, so the words run up to the
                           // plus rather than wrapping a word early to leave
                           // room the plus does not need.
-                          className="flex min-w-0 flex-1 items-start gap-[10px] rounded-chip py-2 pr-[6px] pl-[11px] text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta"
+                          className="flex min-w-0 flex-1 items-start gap-[7px] rounded-chip py-2 pr-[6px] pl-[7px] text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta"
                         >
                           <PinIcon
                             size={15}
