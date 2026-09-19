@@ -602,7 +602,7 @@ export function PlaceSearch({
                         onMouseEnter={() => {
                           setActive(index);
                         }}
-                        className={`flex items-center gap-1 rounded-chip pr-[5px] ${
+                        className={`flex items-center rounded-chip pr-[3px] ${
                           index === activeIndex ? "bg-terracotta-100" : ""
                         }`}
                       >
@@ -611,7 +611,10 @@ export function PlaceSearch({
                           onClick={() => {
                             choose(suggestion);
                           }}
-                          className="flex min-w-0 flex-1 items-start gap-[10px] rounded-chip px-[11px] py-2 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta"
+                          // Close on its right, so the words run up to the
+                          // plus rather than wrapping a word early to leave
+                          // room the plus does not need.
+                          className="flex min-w-0 flex-1 items-start gap-[10px] rounded-chip py-2 pr-[6px] pl-[11px] text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta"
                         >
                           <PinIcon
                             size={15}
@@ -645,16 +648,16 @@ export function PlaceSearch({
                           onClick={() => {
                             addNow(suggestion);
                           }}
-                          className={`grid h-[28px] w-[28px] shrink-0 place-items-center rounded-pill focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
+                          className={`grid h-[26px] w-[26px] shrink-0 place-items-center rounded-pill focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
                             onTheDay
                               ? "text-sage-700"
                               : "text-terracotta-700 hover:bg-terracotta-200 hover:text-terracotta-900 disabled:opacity-45"
                           }`}
                         >
                           {onTheDay ? (
-                            <CheckIcon size={15} strokeWidth={3} />
+                            <CheckIcon size={14} strokeWidth={3} />
                           ) : (
-                            <PlusIcon size={15} strokeWidth={3} />
+                            <PlusIcon size={14} strokeWidth={3} />
                           )}
                         </button>
                       </li>
