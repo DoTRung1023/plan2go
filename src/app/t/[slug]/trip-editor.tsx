@@ -365,7 +365,11 @@ export function TripEditor({
               the window and has a close of its own. */}
           <div className="pointer-events-none absolute inset-x-[14px] top-[14px] z-[3] flex items-start gap-2 lg:inset-x-[22px] lg:top-[22px] lg:z-40">
             {editKey !== null && selected !== undefined ? (
-              <div className="pointer-events-auto w-full max-w-[346px] min-w-0">
+              /* As wide as the inside of the sheet: 400px less the 10px the
+                 field stands in from each of its edges, so over the sheet it
+                 sits centred in it, the way a map search sits in the panel
+                 it opened, and over the map alone it is the same field. */
+              <div className="pointer-events-auto w-full max-w-[380px] min-w-0">
                 <PlaceSearch
                   slug={slug}
                   editKey={editKey}
