@@ -124,7 +124,11 @@ interface PlaceSearchProps {
  * step. A pill, like every other small control in this product.
  */
 const FIELD =
-  "flex items-center gap-[9px] rounded-pill border border-rule bg-paper-raised py-0 pr-2 pl-[15px] shadow-sm focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-terracotta";
+  "flex items-center gap-[9px] rounded-pill border border-rule bg-paper-raised px-2 py-0 shadow-sm focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-terracotta";
+
+/** The glass at the front of the field and the cross at its end: the same small pill, either end. */
+const FIELD_BUTTON =
+  "grid h-[26px] w-[26px] shrink-0 place-items-center rounded-pill text-ink-muted hover:bg-neutral-200 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 const PANEL_LINE = "px-[7px] py-[10px] text-meta text-ink-muted";
 
@@ -517,6 +521,21 @@ export function PlaceSearch({
    */
   const activeIndex = active < visible.length ? active : 0;
 
+  /**
+   * The glass at the front of the field, a button as it is on a map search.
+   * Pressed with the matches showing it takes the one picked out, the way
+   * Enter does; otherwise it puts the cursor in the field, which opens the
+   * panel, so it is never a button that does nothing.
+   */
+  const search = (): void => {
+    const chosen = visible[activeIndex];
+    if (open && searched && chosen !== undefined) {
+      choose(chosen);
+      return;
+    }
+    input.current?.focus();
+  };
+
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
     if (event.key === "Escape") {
       setOpen(false);
@@ -584,7 +603,9 @@ export function PlaceSearch({
         <label className="sr-only" htmlFor={fieldId}>
           Search for a place
         </label>
-        <SearchIcon size={16} strokeWidth={2.75} className="shrink-0 text-ink-muted" />
+        <button type="button" onClick={search} title="Search" aria-label="Search" className={FIELD_BUTTON}>
+          <SearchIcon size={16} strokeWidth={2.75} />
+        </button>
         <input
           id={fieldId}
           ref={input}
@@ -627,8 +648,9 @@ export function PlaceSearch({
           <button
             type="button"
             onClick={clear}
+            title="Clear"
             aria-label="Clear the search"
-            className="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-pill text-ink-muted hover:bg-neutral-200 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+            className={FIELD_BUTTON}
           >
             <CloseIcon size={14} strokeWidth={2.75} />
           </button>
