@@ -629,7 +629,11 @@ export function PlaceSearch({
                             strokeWidth={2.75}
                             className="mt-[2px] shrink-0 text-terracotta"
                           />
-                          <span className="min-w-0">
+                          {/* Wrapped greedily rather than prettily: the page
+                              keeps a last line from being one word, which in
+                              a row this narrow moved a word down that fitted
+                              and left the line short beside the plus. */}
+                          <span className="min-w-0 text-wrap">
                             <span className="block text-meta font-semibold text-ink">
                               {suggestion.name}
                             </span>
