@@ -569,7 +569,10 @@ export function PlaceSearch({
 
       {panel ? (
         <div className="absolute top-full right-0 left-0 z-30 mt-2 flex max-h-[330px] flex-col overflow-hidden rounded-panel border border-rule bg-paper-raised shadow-md">
-          <div className="scroll-quiet min-h-0 overflow-x-hidden overflow-y-auto p-[7px]">
+          {/* Less on the right than elsewhere: the rows end in a button, and
+              the room between it and the bar was reading as room the row did
+              not use. */}
+          <div className="scroll-quiet min-h-0 overflow-x-hidden overflow-y-auto py-[7px] pr-[2px] pl-[7px]">
             {line === null ? null : <p className={PANEL_LINE}>{line}</p>}
 
             {listed ? (
@@ -602,7 +605,7 @@ export function PlaceSearch({
                         onMouseEnter={() => {
                           setActive(index);
                         }}
-                        className={`flex items-center rounded-chip pr-[3px] ${
+                        className={`flex items-center rounded-chip pr-px ${
                           index === activeIndex ? "bg-terracotta-100" : ""
                         }`}
                       >
