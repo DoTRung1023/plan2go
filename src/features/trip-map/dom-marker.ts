@@ -61,10 +61,19 @@ export function stopMarkerElement(order: number, name: string): HTMLElement {
   return marker;
 }
 
+/** The pin the search list draws beside each place, and the empty day in its middle. */
+const PIN_PATHS = [
+  "M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z",
+  "M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z",
+];
+
 /**
  * A place being looked at from a search, not on the day yet. The same pin the
- * search list draws beside each place and the empty day draws in its middle,
- * so a place that has come from the list is still the thing from the list.
+ * search list draws beside each place, drawn large and on nothing: not a disc
+ * like a stop, since it has no place in the order, and not ringed, since the
+ * map has just gone to it. Its tip is on the place. The glyph is drawn twice,
+ * a wide stroke of paper under the terracotta one, so it reads over a road
+ * name or a river the way a line with a casing does.
  */
 export function candidateMarkerElement(name: string): HTMLElement {
   const marker = document.createElement("span");
@@ -73,17 +82,22 @@ export function candidateMarkerElement(name: string): HTMLElement {
   const glyph = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   glyph.setAttribute("aria-hidden", "true");
   glyph.setAttribute("viewBox", "0 0 24 24");
-  glyph.setAttribute("width", "17");
-  glyph.setAttribute("height", "17");
+  glyph.setAttribute("width", "40");
+  glyph.setAttribute("height", "40");
   glyph.setAttribute("fill", "none");
-  glyph.setAttribute("stroke", "currentColor");
-  glyph.setAttribute("stroke-width", "2.75");
   glyph.setAttribute("stroke-linecap", "round");
   glyph.setAttribute("stroke-linejoin", "round");
-  for (const d of ["M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z", "M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"]) {
-    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    path.setAttribute("d", d);
-    glyph.append(path);
+  for (const [stroke, width] of [
+    ["var(--color-paper)", "5.5"],
+    ["currentColor", "2.5"],
+  ]) {
+    for (const d of PIN_PATHS) {
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", d);
+      path.setAttribute("stroke", stroke);
+      path.setAttribute("stroke-width", width);
+      glyph.append(path);
+    }
   }
 
   const spoken = document.createElement("span");

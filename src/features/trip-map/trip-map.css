@@ -95,21 +95,18 @@
 }
 
 /*
- * A place being looked at before it is added: a pin rather than a number,
- * since it has no place in the order yet, ringed the way a hovered marker
- * is, since it is the one thing on the map the reader is being shown.
+ * A place being looked at before it is added: the pin from the search list,
+ * large, in the accent, on nothing. Its tip is the point, so it hangs from
+ * the place rather than sitting on it: the glyph's tip is at the foot of its
+ * box, so the box is lifted by its full height.
  */
 .trip-map-candidate {
   z-index: 2;
-  width: 34px;
-  height: 34px;
-  border-radius: var(--radius-pill);
-  border: 2px solid var(--color-paper);
-  background-color: var(--color-terracotta-800);
-  color: var(--color-paper);
-  box-shadow:
-    0 0 0 8px color-mix(in srgb, var(--color-terracotta) 22%, transparent),
-    0 2px 6px color-mix(in srgb, var(--color-neutral-900) 36%, transparent);
+  display: block;
+  width: 40px;
+  height: 40px;
+  transform: translate(-50%, -100%);
+  color: var(--color-terracotta);
 }
 
 /* The full name of the marker, read out but never drawn. */
