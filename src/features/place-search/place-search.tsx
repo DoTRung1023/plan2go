@@ -5,6 +5,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { z } from "zod";
 import type { LatLng, Place } from "@/core/model/place";
 import { CheckIcon, CloseIcon, PinIcon, PlusIcon, SearchIcon } from "@/ui/icons";
+import { useScrollBar } from "@/ui/use-scroll-bar";
 
 /** Long enough that typing does not spend money on every letter. */
 const DEBOUNCE_MS = 250;
@@ -204,6 +205,7 @@ export function PlaceSearch({
   const listId = `${fieldId}-list`;
   const container = useRef<HTMLDivElement | null>(null);
   const input = field;
+  const watchList = useScrollBar("y");
   /** One session covers the typing and the detail lookup that follows it. */
   const session = useRef<string | null>(null);
   /** Answers can arrive out of order, so only the newest is allowed to land. */
@@ -572,7 +574,10 @@ export function PlaceSearch({
           {/* Less on the right than elsewhere: the rows end in a button, and
               the room between it and the bar was reading as room the row did
               not use. */}
-          <div className="scroll-quiet min-h-0 overflow-x-hidden overflow-y-auto py-[7px] pr-[2px] pl-[7px]">
+          <div
+            ref={watchList}
+            className="scroll-line min-h-0 overflow-x-hidden overflow-y-auto py-[7px] pr-[2px] pl-[7px]"
+          >
             {line === null ? null : <p className={PANEL_LINE}>{line}</p>}
 
             {listed ? (
