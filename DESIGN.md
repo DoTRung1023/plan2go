@@ -357,8 +357,9 @@ happening, which is what this product does instead of a skeleton.
 
 A stop, or an end of a day, can be opened to see what its place is like, from **About
 this place** on its row or by pressing its marker on the map. What opens is a sheet over
-the left edge of the map, 400px wide with the map still in sight beside it, and the
-whole window on a phone. The map frames the day, or the place a search is looking at,
+the left edge of the map: a column 400px wide and the height of the window, flush with
+its edge and square like the panes either side of it, with the map still in sight
+beside it, and the whole window on a phone. The map frames the day, or the place a search is looking at,
 in what is left of it beside the sheet, so nothing it is showing is under the sheet.
 The search field stays in the map's corner, floating over the top of the sheet, and
 while the sheet is open it holds the place's name, as a map search does: the place is

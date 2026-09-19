@@ -77,11 +77,11 @@ const PICTURES_WAIT_MS = 8_000;
 
 /**
  * How far in from the map's left edge the sheet reaches on a wide window, in
- * px: the 12px it stands in from the edge and its 400px width, as the classes
- * on it lay it out. Below that width it is the whole window instead. For the
- * map, which frames the day beside the sheet rather than under it.
+ * px: its width, as the classes on it lay it out, since it stands flush with
+ * the edge. Below that width it is the whole window instead. For the map,
+ * which frames the day beside the sheet rather than under it.
  */
-export const SHEET_REACH = 12 + 400;
+export const SHEET_REACH = 400;
 
 /** Which place's pictures, and the key to show them with when the place is not on the trip yet. */
 interface Pictured {
@@ -328,8 +328,7 @@ export function PlaceSheet({
    * are told apart.
    */
   const openedByKey = useRef(false);
-  /** Twelve in from the ends: the sheet's corners are rounded and would clip a thumb run into them. */
-  const watchSheet = useScrollBar("y", { inset: 12 });
+  const watchSheet = useScrollBar("y");
   const watchStrip = useScrollBar("x");
 
   const ready =
@@ -501,10 +500,11 @@ export function PlaceSheet({
        * map is where the place is, and a sheet at its edge keeps the two in
        * sight together; a phone has no room for both, and gets the sheet.
        *
-       * On a desk it stands 12px in from the map's edges, which puts it 10px
-       * behind the search field in the map's corner: the field floats over
-       * the top of the sheet, holding the place's name, as a map search
-       * floats over the panel it opened.
+       * On a desk it is a column the height of the window, flush with its
+       * left edge, with the search field in the map's corner floating over
+       * its top, holding the place's name: a map search and the panel it
+       * opened. Square, like the panes either side of it, and edged only
+       * where it meets the map.
        */}
       <section
         ref={sheet}
@@ -530,14 +530,13 @@ export function PlaceSheet({
         /*
          * Clipped on a phone, where it is the window and nothing may scroll
          * but the sheet. Not on a desk, where the tab on its edge sits
-         * outside its box; there the scroller under it does the clipping,
-         * to the same corners.
+         * outside its box; there the scroller under it does the clipping.
          *
          * Put aside it makes the movement it makes to go, and stays where
          * that ends: the animation fills forwards, so the class kept on is
          * the sheet kept off.
          */
-        className={`fixed inset-0 z-50 flex flex-col overflow-hidden bg-paper-raised outline-none lg:absolute lg:inset-auto lg:inset-y-3 lg:left-3 lg:z-30 lg:w-[400px] lg:overflow-visible lg:rounded-panel lg:border lg:border-rule lg:shadow-md ${
+        className={`fixed inset-0 z-50 flex flex-col overflow-hidden bg-paper-raised outline-none lg:absolute lg:inset-auto lg:inset-y-0 lg:left-0 lg:z-30 lg:w-[400px] lg:overflow-visible lg:border-r lg:border-rule lg:shadow-md ${
           leaving || aside ? "place-sheet-leaving" : "place-sheet-arriving"
         }`}
       >
@@ -569,19 +568,21 @@ export function PlaceSheet({
         ) : (
         <div
           ref={watchSheet}
-          className="scroll-line scroll-shy min-h-0 flex-1 overflow-y-auto lg:rounded-panel"
+          className="scroll-line scroll-shy min-h-0 flex-1 overflow-y-auto"
         >
           {/* The corner is taken: on a phone by the close, on a desk by the
               search field floating over the sheet. Either sits over the
               picture when there is one and over the name when there is not,
               so it is in the same place either way, and a place with no
-              picture holds its name down from the corner instead. */}
+              picture holds its name down from the corner instead: past the
+              close, 36px at 12px in, or the field, 45px at 22px in, and the
+              same 8px under either. */}
           <div className="relative">
             {/* Plain img rather than the framework's: the picture is ours,
                 served from our own table at the width it is drawn, and the
                 framework would only fetch it again to make it smaller. */}
             {hero === undefined ? (
-              <div className="h-[56px]" />
+              <div className="h-[56px] lg:h-[75px]" />
             ) : (
               <button
                 type="button"
