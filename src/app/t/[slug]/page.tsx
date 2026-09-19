@@ -1,6 +1,11 @@
 import { notFound } from "next/navigation";
-import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
 import { TripPage } from "./trip-page";
+import { tripBySlug, tripTitle } from "./trip-lookup";
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  return tripTitle(slug);
+}
 
 /**
  * The plain link: anyone holding it reads the trip and nobody changes it.
@@ -15,7 +20,7 @@ export default async function TripReadPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const trip = await prismaTripRepository.findBySlug(slug);
+  const trip = await tripBySlug(slug);
   if (trip === null) {
     notFound();
   }

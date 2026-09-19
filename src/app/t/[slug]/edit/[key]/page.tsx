@@ -2,6 +2,16 @@ import { notFound } from "next/navigation";
 import { checkEditAccess } from "@/server/ownership/edit-access";
 import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
 import { TripPage } from "../../trip-page";
+import { tripBySlug, tripTitle } from "../../trip-lookup";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string; key: string }>;
+}) {
+  const { slug } = await params;
+  return tripTitle(slug);
+}
 
 /**
  * The edit link: the key in the URL is the whole of the authority.
@@ -22,7 +32,7 @@ export default async function TripEditPage({
   // two go out together rather than one behind the other.
   const [access, trip] = await Promise.all([
     checkEditAccess({ slug, presentedKey: key, repository: prismaTripRepository }),
-    prismaTripRepository.findBySlug(slug),
+    tripBySlug(slug),
   ]);
   if (access.status !== "granted" || trip === null) {
     notFound();
