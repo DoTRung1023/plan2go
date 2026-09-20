@@ -666,21 +666,15 @@ export function PlaceSheet({
                  under the name and before anything that takes reading, so it
                  is there whatever else the provider had to say. The height
                  and type of the pills that add an end to a day in the
-                 planner, since it is the same kind of thing. Adding is the
-                 accent, filled; taking off is the same pill outlined, the
-                 way the cross on a stop's row is, and takes the accent only
-                 under the pointer, so the one that changes the day least is
-                 the one that shouts least. */
+                 planner, since it is the same kind of thing. One pill in the
+                 accent whichever way it goes: the glyph and the words say
+                 which, and a place is as easily put back as taken off. */
               <div className="flex flex-col gap-2">
                 <button
                   type="button"
                   onClick={act}
                   disabled={acting}
-                  className={`flex w-full items-center justify-center gap-[6px] rounded-pill px-4 py-[9px] text-small/none font-semibold whitespace-nowrap disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
-                    action.kind === "add"
-                      ? "bg-terracotta text-paper hover:bg-terracotta-600 active:bg-terracotta-700"
-                      : "border border-rule-strong bg-paper-raised text-ink hover:border-terracotta hover:bg-terracotta hover:text-paper active:bg-terracotta-700"
-                  }`}
+                  className="flex w-full items-center justify-center gap-[6px] rounded-pill bg-terracotta px-4 py-[9px] text-small/none font-semibold whitespace-nowrap text-paper hover:bg-terracotta-600 active:bg-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
                 >
                   {action.kind === "add" ? (
                     <PlusIcon size={13} strokeWidth={3} />
