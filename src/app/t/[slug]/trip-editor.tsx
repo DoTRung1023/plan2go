@@ -265,6 +265,15 @@ export function TripEditor({
    * time anything on the page changed.
    */
   const openedPlace = opened === null ? null : placeOpened(days, opened);
+  /**
+   * Which day the stop the sheet is open on is on, counted from zero, or -1.
+   * Not necessarily the open day: the sheet stays on a stop across the tabs,
+   * and taking the stop off has to name the day it is actually on.
+   */
+  const openedStopDay =
+    opened?.kind === "stop"
+      ? days.findIndex((day) => day.plan.stops.some((stop) => stop.id === opened.stopId))
+      : -1;
   const openStop = (stopId: string): void => {
     open({ kind: "stop", stopId });
   };
@@ -606,25 +615,43 @@ export function TripEditor({
           slug={slug}
           place={openedPlace}
           editKey={editKey}
-          candidate={
-            opened.kind === "candidate" && editKey !== null && selected !== undefined
-              ? {
-                  dayName: `Day ${String(selectedIndex + 1)}`,
-                  onAdd: () =>
-                    recording(
-                      addStopAction({
-                        slug,
-                        editKey,
-                        dayId: selected.plan.id,
-                        providerPlaceId: opened.place.providerPlaceId,
-                        // The look that opened this sheet ended the search
-                        // session and left the place in our own table, which
-                        // is where the add reads it from.
-                        session: null,
-                      }),
-                    ),
-                }
-              : null
+          /* What the sheet can do to the trip: put a place found in a search
+             on the open day, or take a stop off the day it is on. An editor
+             only; a reader looks and nothing more. An end of a day gets
+             nothing, since its own row in the planner is where it is taken
+             off. One expression rather than a function worked out here,
+             because a function called while rendering that builds these
+             closures over `recording` is one the compiler cannot see is not
+             reading a ref as it renders. */
+          action={
+            editKey === null
+              ? null
+              : opened.kind === "candidate" && selected !== undefined
+                ? {
+                    kind: "add",
+                    dayName: `Day ${String(selectedIndex + 1)}`,
+                    run: () =>
+                      recording(
+                        addStopAction({
+                          slug,
+                          editKey,
+                          dayId: selected.plan.id,
+                          providerPlaceId: opened.place.providerPlaceId,
+                          // The look that opened this sheet ended the search
+                          // session and left the place in our own table,
+                          // which is where the add reads it from.
+                          session: null,
+                        }),
+                      ),
+                  }
+                : opened.kind === "stop" && openedStopDay !== -1
+                  ? {
+                      kind: "remove",
+                      dayName: `Day ${String(openedStopDay + 1)}`,
+                      run: () =>
+                        recording(removeStopAction({ slug, editKey, stopId: opened.stopId })),
+                    }
+                  : null
           }
           leaving={leaving}
           onLeave={dismiss}

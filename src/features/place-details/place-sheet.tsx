@@ -148,17 +148,22 @@ type Asked =
   | { readonly status: "refused"; readonly sentence: string };
 
 /**
- * A place opened from a search rather than from the trip: not on the day
- * yet, and the sheet is where deciding that happens.
+ * The one thing the sheet can do to the trip, for an editor: put a place
+ * found in a search on the day, or take a stop off it. Either is decided
+ * here, with the place in front of you, and either way the sheet goes once
+ * it is done: the day beside the map, with the stop on it or without, is
+ * the confirmation.
  */
-export interface Candidate {
-  /** What the day is called in the tabs, so the button says where the place would go. */
+export interface TripAction {
+  /** Whether the place is to go on the day or come off it. */
+  readonly kind: "add" | "remove";
+  /** What the day is called in the tabs, so the button says which day. */
   readonly dayName: string;
   /**
    * Passed in rather than imported, because a feature may not reach into the
    * route that owns the mutation. Answers with what went wrong, or nothing.
    */
-  readonly onAdd: () => Promise<{ readonly error: string | null }>;
+  readonly run: () => Promise<{ readonly error: string | null }>;
 }
 
 interface PlaceSheetProps {
@@ -169,8 +174,12 @@ interface PlaceSheetProps {
    * can only be looked at by an editor, and this is how the look says so.
    */
   readonly editKey: string | null;
-  /** Set when the place is being looked at before being added, and null for one already on the trip. */
-  readonly candidate: Candidate | null;
+  /**
+   * What the button under the name does, or null when there is none: for a
+   * reader, who cannot change the trip, and for an end of a day, which the
+   * planner's own row takes off.
+   */
+  readonly action: TripAction | null;
   /**
    * Told to go. The sheet slides off before it is taken down, so it is
    * told, drawn going, and only then gone. Whoever opened it holds this
@@ -268,7 +277,7 @@ export function PlaceSheet({
   slug,
   place,
   editKey,
-  candidate,
+  action,
   leaving,
   onLeave,
   aside,
@@ -290,31 +299,34 @@ export function PlaceSheet({
   const [pictured, setPictured] = useState(false);
   /** Which picture is open across the window, counted from zero, or none. */
   const [viewing, setViewing] = useState<number | null>(null);
-  /** What went wrong putting the place on the day, under the button that tried. */
-  const [addError, setAddError] = useState<string | null>(null);
-  const [adding, startAdding] = useTransition();
+  /** What went wrong changing the day, under the button that tried. */
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [acting, startActing] = useTransition();
   /**
    * The key the card is asked for with: only a place not on the trip needs
    * one to be looked at, and only an editor has one to give. A value rather
-   * than the candidate itself, which is built afresh each render.
+   * than the action itself, which is built afresh each render.
    */
-  const lookingWith = candidate === null ? null : editKey;
+  const lookingWith = action?.kind === "add" ? editKey : null;
   const sheet = useRef<HTMLElement | null>(null);
   /** The tab at the window's edge while the sheet is put aside. */
   const back = useRef<HTMLButtonElement | null>(null);
 
   /**
-   * Put the place on the day. Once it is there the sheet goes, the way it
-   * would if the stop had been closed: the stop is on the day beside the map,
-   * with its marker, which is the confirmation.
+   * Put the place on the day, or take it off. Once it is done the sheet
+   * goes, the way it would if it had been closed: the day beside the map,
+   * with the stop's marker on it or without, is the confirmation. A stop
+   * taken off leaves the trip, and the sheet with it, before its going has
+   * finished; that is the sheet closing itself on a stop that has gone, as
+   * it does when the stop's own row takes it off.
    */
-  const add = (): void => {
-    if (candidate === null) {
+  const act = (): void => {
+    if (action === null) {
       return;
     }
-    startAdding(async () => {
-      const outcome = await candidate.onAdd();
-      setAddError(outcome.error);
+    startActing(async () => {
+      const outcome = await action.run();
+      setActionError(outcome.error);
       if (outcome.error === null) {
         onLeave();
       }
@@ -649,29 +661,46 @@ export function PlaceSheet({
               )}
             </div>
 
-            {candidate === null ? null : (
-              /* The one thing the sheet can do to the trip, and only for a
-                 place that is not on it yet: the whole width, in the accent,
+            {action === null ? null : (
+              /* The one thing the sheet can do to the trip: the whole width,
                  under the name and before anything that takes reading, so it
                  is there whatever else the provider had to say. The height
                  and type of the pills that add an end to a day in the
-                 planner, since it is the same kind of thing. */
+                 planner, since it is the same kind of thing. Adding is the
+                 accent, filled; taking off is the same pill outlined, the
+                 way the cross on a stop's row is, and takes the accent only
+                 under the pointer, so the one that changes the day least is
+                 the one that shouts least. */
               <div className="flex flex-col gap-2">
                 <button
                   type="button"
-                  onClick={add}
-                  disabled={adding}
-                  className="flex w-full items-center justify-center gap-[6px] rounded-pill bg-terracotta px-4 py-[9px] text-small/none font-semibold whitespace-nowrap text-paper hover:bg-terracotta-600 active:bg-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+                  onClick={act}
+                  disabled={acting}
+                  className={`flex w-full items-center justify-center gap-[6px] rounded-pill px-4 py-[9px] text-small/none font-semibold whitespace-nowrap disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
+                    action.kind === "add"
+                      ? "bg-terracotta text-paper hover:bg-terracotta-600 active:bg-terracotta-700"
+                      : "border border-rule-strong bg-paper-raised text-ink hover:border-terracotta hover:bg-terracotta hover:text-paper active:bg-terracotta-700"
+                  }`}
                 >
-                  <PlusIcon size={13} strokeWidth={3} />
-                  {adding ? `Adding to ${candidate.dayName}` : `Add to ${candidate.dayName}`}
+                  {action.kind === "add" ? (
+                    <PlusIcon size={13} strokeWidth={3} />
+                  ) : (
+                    <CloseIcon size={13} strokeWidth={3} />
+                  )}
+                  {action.kind === "add"
+                    ? acting
+                      ? `Adding to ${action.dayName}`
+                      : `Add to ${action.dayName}`
+                    : acting
+                      ? `Removing from ${action.dayName}`
+                      : `Remove from ${action.dayName}`}
                 </button>
-                {addError === null ? null : (
+                {actionError === null ? null : (
                   <p
                     role="alert"
                     className="rounded-chip bg-terracotta-200 px-3 py-2 text-meta text-terracotta-900"
                   >
-                    {addError}
+                    {actionError}
                   </p>
                 )}
               </div>
