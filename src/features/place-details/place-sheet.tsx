@@ -676,10 +676,15 @@ export function PlaceSheet({
                   disabled={acting}
                   className="flex w-full items-center justify-center gap-[6px] rounded-pill bg-terracotta px-4 py-[9px] text-small/none font-semibold whitespace-nowrap text-paper hover:bg-terracotta-600 active:bg-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
                 >
+                  {/* The X is drawn six to eighteen in its box of twenty-four
+                      where the plus runs five to nineteen, so at the size
+                      the plus is drawn it came out a step smaller and
+                      lighter beside the words. Two up brings its arms to the
+                      plus's reach, as the tools row on a stop card sizes it. */}
                   {action.kind === "add" ? (
                     <PlusIcon size={13} strokeWidth={3} />
                   ) : (
-                    <CloseIcon size={13} strokeWidth={3} />
+                    <CloseIcon size={15} strokeWidth={3} />
                   )}
                   {action.kind === "add"
                     ? acting
