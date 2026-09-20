@@ -659,9 +659,9 @@ export function PlaceSearch({
 
       {panel ? (
         <div className="absolute top-full right-0 left-0 z-30 mt-2 flex max-h-[330px] flex-col overflow-hidden rounded-panel border border-rule bg-paper-raised shadow-md">
-          {/* Less on the right than elsewhere: the rows end in a button, and
-              the room between it and the bar was reading as room the row did
-              not use. */}
+          {/* Only the bar's own width on the right: the room a row leaves
+              beside its plus is the row's, below, so it can match what the
+              plus has on its other side. */}
           <div
             ref={watchList}
             className="scroll-line min-h-0 overflow-x-hidden overflow-y-auto py-[7px] pr-[2px] pl-[3px]"
@@ -698,7 +698,10 @@ export function PlaceSearch({
                         onMouseEnter={() => {
                           setActive(index);
                         }}
-                        className={`flex items-center rounded-chip pr-px ${
+                        // The same room on the far side of the plus as the
+                        // words leave on its near side, so its hover disc sits
+                        // clear of the bar rather than against it.
+                        className={`flex items-center rounded-chip pr-[6px] ${
                           index === activeIndex ? "bg-terracotta-100" : ""
                         }`}
                       >
