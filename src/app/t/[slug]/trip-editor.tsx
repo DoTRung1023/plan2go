@@ -373,14 +373,15 @@ export function TripEditor({
               the field stays put whatever is under it, and the sheet keeps
               its own top clear for it. Not on a phone, where the sheet is
               the window and has a close of its own. */}
-          <div className="pointer-events-none absolute inset-x-[14px] top-[14px] z-[3] flex items-start gap-2 lg:inset-x-[22px] lg:top-[22px] lg:z-40">
+          <div className="pointer-events-none absolute inset-x-[14px] top-[14px] z-[3] flex items-start gap-2 lg:inset-x-[24px] lg:top-[28px] lg:z-40">
             {editKey !== null && selected !== undefined ? (
-              /* As wide as the inside of the sheet: 400px less the 22px the
-                 field stands in from the map's edge, at each side, so over
-                 the sheet it sits centred in it, the way a map search sits
-                 in the panel it opened, and over the map alone it is the
-                 same field. */
-              <div className="pointer-events-auto w-full max-w-[356px] min-w-0">
+              /* Where a map search sits in the panel it opened: 16px in from
+                 the sheet's sides and 20px down from its top, which is 24px
+                 and 28px from the map's corner with the sheet standing 8px
+                 in. As wide as the sheet less the 16px at each side, 376px,
+                 so over the sheet it sits centred in it, and over the map
+                 alone it is the same field in the same place. */
+              <div className="pointer-events-auto w-full max-w-[376px] min-w-0">
                 <PlaceSearch
                   slug={slug}
                   editKey={editKey}

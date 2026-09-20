@@ -357,12 +357,16 @@ happening, which is what this product does instead of a skeleton.
 
 A stop, or an end of a day, can be opened to see what its place is like, from **About
 this place** on its row or by pressing its marker on the map. What opens is a sheet over
-the left edge of the map: a column 400px wide and the height of the window, flush with
-its edge and square like the panes either side of it, with the map still in sight
-beside it, and the whole window on a phone. The map frames the day, or the place a search is looking at,
+the left edge of the map: a card 408px wide, standing 8px in from the map's edge and
+8px short of the top and bottom of the window, rounded at the `panel` radius and edged
+with `rule` under `shadow-md`, with the map still in sight beside it, and the whole
+window on a phone. The map frames the day, or the place a search is looking at,
 in what is left of it beside the sheet, so nothing it is showing is under the sheet.
-The search field stays in the map's corner, floating over the top of the sheet, and
-while the sheet is open it holds the place's name, as a map search does: the place is
+The search field stays in the map's corner, floating over the top of the sheet: a 48px
+pill, 16px in from the sheet's sides and 20px down from its top, so over the sheet it
+sits in it the way a map search sits in the panel it opened, and over the map alone it
+is the same field in the same place. Inside, the sheet keeps 24px at each side. While
+the sheet is open the field holds the place's name, as a map search does: the place is
 what was searched for, whether it was found in the field or opened from the day, and
 the cross on the field is what closes the sheet, drops the pin and empties the field. It slides in from the left and slides back out the same way. On a desk the tab
 on its free edge, halfway down, pointing the way it goes, puts it aside rather than

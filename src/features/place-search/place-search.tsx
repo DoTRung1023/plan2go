@@ -121,14 +121,18 @@ interface PlaceSearchProps {
 
 /**
  * The field floats over the map, so it carries its own surface and an elevation
- * step. A pill, like every other small control in this product.
+ * step. A pill, like every other small control in this product, at the 48px a
+ * map search is drawn at, so that over the sheet it sits in it the way one does.
  */
 const FIELD =
-  "flex items-center gap-[9px] rounded-pill border border-rule bg-paper-raised px-2 py-0 shadow-sm focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-terracotta";
+  "flex h-[48px] items-center gap-[9px] rounded-pill border border-rule bg-paper-raised px-2 shadow-sm focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-terracotta";
 
-/** The glass at the front of the field and the cross at its end: the same small pill, either end. */
+/**
+ * The glass at the front of the field and the cross at its end: the same small
+ * pill, either end, its centre 24px in from the field's edge.
+ */
 const FIELD_BUTTON =
-  "grid h-[26px] w-[26px] shrink-0 place-items-center rounded-pill text-ink-muted hover:bg-neutral-200 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "grid h-[32px] w-[32px] shrink-0 place-items-center rounded-pill text-ink-muted hover:bg-neutral-200 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 const PANEL_LINE = "px-[7px] py-[10px] text-meta text-ink-muted";
 
@@ -604,7 +608,7 @@ export function PlaceSearch({
           Search for a place
         </label>
         <button type="button" onClick={search} title="Search" aria-label="Search" className={FIELD_BUTTON}>
-          <SearchIcon size={16} strokeWidth={2.75} />
+          <SearchIcon size={18} strokeWidth={2.75} />
         </button>
         <input
           id={fieldId}
@@ -642,7 +646,7 @@ export function PlaceSearch({
             keepWhole.current = false;
           }}
           onKeyDown={onKeyDown}
-          className="min-w-0 flex-1 py-[11px] text-body text-ink caret-terracotta outline-none placeholder:text-ink-faint"
+          className="min-w-0 flex-1 self-stretch text-body text-ink caret-terracotta outline-none placeholder:text-ink-faint"
         />
         {query === "" ? null : (
           <button
@@ -652,7 +656,7 @@ export function PlaceSearch({
             aria-label="Clear the search"
             className={FIELD_BUTTON}
           >
-            <CloseIcon size={14} strokeWidth={2.75} />
+            <CloseIcon size={16} strokeWidth={2.75} />
           </button>
         )}
       </div>

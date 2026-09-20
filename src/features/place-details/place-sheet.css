@@ -9,13 +9,13 @@
  * two: the arrival at 200ms easing out, the leaving quicker, at 160ms
  * easing in, because a thing going away does not need to be watched go.
  *
- * The distance is the sheet's own width and the reach of the tab on its
- * edge, so it starts and ends wholly off the window whatever width it has
- * been given.
+ * The distance is the sheet's own width, the 8px it stands in from the
+ * window's edge and the reach of the tab on its edge, so it starts and ends
+ * wholly off the window whatever width it has been given.
  */
 @keyframes place-sheet-in {
   from {
-    transform: translateX(calc(-100% - 12px));
+    transform: translateX(calc(-100% - 20px));
   }
   to {
     transform: none;
@@ -27,7 +27,7 @@
     transform: none;
   }
   to {
-    transform: translateX(calc(-100% - 12px));
+    transform: translateX(calc(-100% - 20px));
   }
 }
 
