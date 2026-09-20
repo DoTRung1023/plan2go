@@ -15,8 +15,15 @@ export const GUTTER = "px-5 lg:px-[26px]";
  * change of surface says so without a heading saying it. Neither clips, since
  * the calendar and the trip's menu hang out of the band over the list.
  */
-/** Eight over the name and seven under, which with its forty pixel line box is a row of fifty-five. */
-export const HEADING_BAND = `border-b border-rule bg-paper-sunken pt-[8px] pb-[7px] ${GUTTER}`;
+/**
+ * Ten over the name and five under, which with its forty pixel line box is a
+ * row of fifty-five. Uneven on purpose: the display face carries a deep
+ * descent, so its letters sit high in their box, six over the capitals and
+ * eleven under the baseline, and padding that was even around the box was
+ * seen as tight over the name and loose under it. Measured to the letters,
+ * the name is now sixteen from either edge of the band.
+ */
+export const HEADING_BAND = `border-b border-rule bg-paper-sunken pt-[10px] pb-[5px] ${GUTTER}`;
 
 /**
  * Six rather than ten over the strip of days: the strip carries four of its
