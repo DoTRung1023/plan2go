@@ -649,18 +649,17 @@ export function PlaceSheet({
 
             {candidate === null ? null : (
               /* The one thing the sheet can do to the trip, and only for a
-                 place that is not on it yet: in the accent, under the name
-                 and before anything that takes reading, so it is there
-                 whatever else the provider had to say. The size and type of
-                 the pills that add an end to a day in the planner, since it
-                 is the same kind of thing, and as wide as its words: a bar
-                 the width of the sheet read as a banner rather than a button. */
-              <div className="flex flex-col items-start gap-2">
+                 place that is not on it yet: the whole width, in the accent,
+                 under the name and before anything that takes reading, so it
+                 is there whatever else the provider had to say. The height
+                 and type of the pills that add an end to a day in the
+                 planner, since it is the same kind of thing. */
+              <div className="flex flex-col gap-2">
                 <button
                   type="button"
                   onClick={add}
                   disabled={adding}
-                  className="inline-flex shrink-0 items-center gap-[6px] rounded-pill bg-terracotta px-4 py-[9px] text-small/none font-semibold whitespace-nowrap text-paper hover:bg-terracotta-600 active:bg-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+                  className="flex w-full items-center justify-center gap-[6px] rounded-pill bg-terracotta px-4 py-[9px] text-small/none font-semibold whitespace-nowrap text-paper hover:bg-terracotta-600 active:bg-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
                 >
                   <PlusIcon size={13} strokeWidth={3} />
                   {adding ? `Adding to ${candidate.dayName}` : `Add to ${candidate.dayName}`}
