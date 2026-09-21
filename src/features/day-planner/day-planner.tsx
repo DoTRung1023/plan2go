@@ -150,9 +150,9 @@ export function DayPlanner({
                   <span className="min-w-0 flex-1 truncate text-meta/none font-medium text-ink-muted">
                     {dayStatus(selected)}
                   </span>
-                  <span className="flex flex-none items-center gap-[6px] text-meta/none font-semibold whitespace-nowrap text-ink-muted">
+                  <span className="flex flex-none items-center gap-2 text-small whitespace-nowrap text-ink-muted">
                     Leave at
-                    <span className="text-small/none text-ink tabular-nums">
+                    <span className="px-2 text-small/none font-semibold text-ink tabular-nums">
                       {formatClock(selected.plan.startAtMinutes)}
                     </span>
                   </span>
