@@ -499,9 +499,9 @@ export function PlaceSheet({
       type="button"
       onClick={onLeave}
       aria-label="Close"
-      className="absolute top-3 right-3 grid h-9 w-9 place-items-center rounded-pill bg-paper-raised/90 text-ink shadow-sm hover:bg-paper-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:hidden"
+      className="absolute top-3 right-3 grid h-8 w-8 place-items-center rounded-pill bg-paper-raised/90 text-ink shadow-sm hover:bg-paper-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:hidden"
     >
-      <CloseIcon size={15} strokeWidth={2.75} />
+      <CloseIcon size={16} strokeWidth={2.75} />
     </button>
   );
 
@@ -589,14 +589,14 @@ export function PlaceSheet({
               picture when there is one and over the name when there is not,
               so it is in the same place either way, and a place with no
               picture holds its name down from the corner instead: past the
-              close, 36px at 12px in, or the field, 48px at 20px in, and the
+              close, 32px at 12px in, or the field, 48px at 20px in, and the
               same 8px under either. */}
           <div className="relative">
             {/* Plain img rather than the framework's: the picture is ours,
                 served from our own table at the width it is drawn, and the
                 framework would only fetch it again to make it smaller. */}
             {hero === undefined ? (
-              <div className="h-[56px] lg:h-[76px]" />
+              <div className="h-[52px] lg:h-[76px]" />
             ) : (
               <button
                 type="button"
@@ -631,7 +631,7 @@ export function PlaceSheet({
                   {card.kind === null ? null : <span>{card.kind}</span>}
                   {card.rating === null ? null : (
                     <span className="flex items-center gap-[5px]">
-                      <StarIcon size={13} className="text-terracotta" />
+                      <StarIcon size={12} className="text-terracotta" />
                       <span className="font-semibold text-ink tabular-nums">
                         {card.rating.toFixed(1)}
                       </span>
@@ -664,9 +664,10 @@ export function PlaceSheet({
             {action === null ? null : (
               /* The one thing the sheet can do to the trip: the whole width,
                  under the name and before anything that takes reading, so it
-                 is there whatever else the provider had to say. The height
-                 and type of the pills that add an end to a day in the
-                 planner, since it is the same kind of thing. One pill in the
+                 is there whatever else the provider had to say. The height,
+                 type and glyph of the pill that adds a place at the end of
+                 the day in the planner, forty tall, since it is the same
+                 kind of thing and the one that leads here. One pill in the
                  accent whichever way it goes: the glyph and the words say
                  which, and a place is as easily put back as taken off. */
               <div className="flex flex-col gap-2">
@@ -674,7 +675,7 @@ export function PlaceSheet({
                   type="button"
                   onClick={act}
                   disabled={acting}
-                  className="flex w-full items-center justify-center gap-[6px] rounded-pill bg-terracotta px-4 py-[9px] text-small/none font-semibold whitespace-nowrap text-paper hover:bg-terracotta-600 active:bg-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+                  className="flex h-10 w-full items-center justify-center gap-2 rounded-pill bg-terracotta px-4 text-small/none font-semibold whitespace-nowrap text-paper hover:bg-terracotta-600 active:bg-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
                 >
                   {/* The X is drawn six to eighteen in its box of twenty-four
                       where the plus runs five to nineteen, so at the size
@@ -682,9 +683,9 @@ export function PlaceSheet({
                       lighter beside the words. Two up brings its arms to the
                       plus's reach, as the tools row on a stop card sizes it. */}
                   {action.kind === "add" ? (
-                    <PlusIcon size={13} strokeWidth={3} />
+                    <PlusIcon size={14} strokeWidth={2.75} />
                   ) : (
-                    <CloseIcon size={15} strokeWidth={3} />
+                    <CloseIcon size={16} strokeWidth={2.75} />
                   )}
                   {action.kind === "add"
                     ? acting

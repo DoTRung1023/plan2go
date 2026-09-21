@@ -163,7 +163,7 @@ function DirectionsLink({ href }: { readonly href: string }) {
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className="mt-[3px] inline-block rounded-pill text-micro font-semibold text-terracotta-700 hover:text-terracotta-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+        className="mt-[3px] inline-block rounded-pill text-meta font-semibold text-terracotta-700 hover:text-terracotta-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
       >
         Live times in Google Maps
       </a>
