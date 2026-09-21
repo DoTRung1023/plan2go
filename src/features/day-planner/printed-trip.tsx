@@ -13,6 +13,7 @@ import type { ExportRequest } from "./export-request";
 import { formatDayDate, formatDayLong } from "./format-day-date";
 import { formatDayTime } from "./format-day-time";
 import { formatDistance } from "./format-distance";
+import { Credit } from "@/ui/credit";
 import { MODE_WORDS } from "./leg-row";
 import { paginate } from "./paginate-sheets";
 import { rideSentence } from "./transit-ride";
@@ -185,13 +186,15 @@ interface SheetNumber {
 /** How tall a sheet is: at least a page, or exactly one, clipping what runs past its foot. */
 type SheetHeight = "at-least-a-page" | "one-page";
 
-/** The foot of every sheet: where it came from, and which sheet it is. */
+/** The foot of every sheet: who made this, as the front door says it, and which sheet it is. */
 function SheetFooter({ sheet }: { readonly sheet: SheetNumber }) {
   return (
     <footer
-      className={`mt-5 flex shrink-0 items-baseline gap-5 border-t pt-[10px] text-micro ${MUTED} ${RULE}`}
+      className={`mt-5 flex shrink-0 items-center gap-5 border-t pt-[10px] text-micro ${MUTED} ${RULE}`}
     >
-      <p className="min-w-0 flex-1">Made with plan2go</p>
+      <p className="min-w-0 flex-1">
+        <Credit />
+      </p>
       <p className="shrink-0 whitespace-nowrap tabular-nums">
         Page {sheet.at} of {sheet.of}
       </p>
