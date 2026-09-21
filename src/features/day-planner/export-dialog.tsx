@@ -284,9 +284,6 @@ export function ExportDialog({
             <h2 id={titleId} className="font-display text-title/[1.15] text-ink">
               Export your plan
             </h2>
-            <p className="mt-1 text-small text-ink-muted">
-              One page a day, ready to print or send.
-            </p>
           </div>
           <button
             type="button"
