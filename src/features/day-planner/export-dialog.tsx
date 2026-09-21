@@ -28,10 +28,6 @@ const CHIP_ON = "border-terracotta-800 bg-terracotta-800 text-paper";
 const CHIP_OFF =
   "border-rule bg-transparent text-ink-muted hover:border-terracotta hover:text-terracotta-700 disabled:hover:border-rule disabled:hover:text-ink-muted";
 
-/** A word that does something, drawn as a link rather than a button, for the second thing on a line. */
-const TEXT_ACTION =
-  "rounded-pill px-[6px] py-[5px] text-small/none font-semibold text-terracotta-700 underline decoration-terracotta-700/40 underline-offset-[3px] hover:text-terracotta-900 hover:decoration-terracotta-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
-
 /**
  * One thing the export can carry or leave off, with a word under it saying
  * what that means on the page. A box with a tick rather than a switch: a
@@ -140,7 +136,6 @@ export function ExportDialog({
   const printable = days.filter((day) => day.plan.stops.length > 0);
   const picked = printable.filter((day) => chosen.has(day.plan.id));
   const allPicked = picked.length === printable.length && printable.length > 0;
-  const opened = days.find((day) => day.plan.id === selectedDayId);
 
   const request: ExportRequest = {
     dayIds: picked.map((day) => day.plan.id),
@@ -253,13 +248,13 @@ export function ExportDialog({
   };
 
   /**
-   * Everything, or back to the one day the dialog opened on: the two ends
-   * anybody choosing days is moving between, one press either way.
+   * Everything, or nothing: the chip for it is drawn chosen while every day
+   * is, whichever way the days came to be chosen, and pressing it then takes
+   * every day off, the way a chip comes off. A day is then chosen from
+   * nothing, which reads as the choice it is; the export waits until one is.
    */
   const toggleAll = (): void => {
-    setChosen(
-      allPicked ? new Set([selectedDayId]) : new Set(printable.map((day) => day.plan.id)),
-    );
+    setChosen(allPicked ? new Set() : new Set(printable.map((day) => day.plan.id)));
   };
 
   const dayWord = picked.length === 1 ? "day" : "days";
@@ -309,6 +304,16 @@ export function ExportDialog({
             <div className="scroll-quiet min-h-0 flex-1 overflow-y-auto px-5 pt-5 pb-[10px]">
               <p className={HEADING}>Which days</p>
               <div className="mt-[11px] flex flex-wrap gap-[7px]">
+                {printable.length > 1 ? (
+                  <button
+                    type="button"
+                    aria-pressed={allPicked}
+                    onClick={toggleAll}
+                    className={`${CHIP} ${allPicked ? CHIP_ON : CHIP_OFF}`}
+                  >
+                    All days
+                  </button>
+                ) : null}
                 {days.map((day, index) => {
                   const on = chosen.has(day.plan.id);
                   const empty = day.plan.stops.length === 0;
@@ -330,18 +335,6 @@ export function ExportDialog({
                   );
                 })}
               </div>
-              {printable.length > 1 ? (
-                <button
-                  type="button"
-                  onClick={toggleAll}
-                  className={`mt-[10px] -ml-[6px] ${TEXT_ACTION}`}
-                >
-                  {allPicked && opened !== undefined
-                    ? `Just ${formatDayTab(opened.plan.date)}`
-                    : `Select all ${String(printable.length)} days`}
-                </button>
-              ) : null}
-
               <div className={DIVIDER} />
 
               <p className={HEADING}>Extra pages</p>
