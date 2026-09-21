@@ -383,8 +383,8 @@ export function ExportDialog({
                   }}
                 />
                 <Option
-                  label="Room to write"
-                  note="A ruled page after each day"
+                  label="Notes page"
+                  note="A blank lined page after each day"
                   on={ruled}
                   onToggle={() => {
                     setRuled(!ruled);
