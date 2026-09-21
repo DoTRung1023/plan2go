@@ -25,7 +25,8 @@ export const MODE_WORDS: Readonly<Record<TravelMode, string>> = {
   transit: "Public transport",
 };
 
-const MODE_ICON: Readonly<Record<TravelMode, typeof WalkIcon>> = {
+/** The mode as a glyph, the same one on screen and on paper. */
+export const MODE_ICON: Readonly<Record<TravelMode, typeof WalkIcon>> = {
   walk: WalkIcon,
   drive: CarIcon,
   transit: TrainIcon,

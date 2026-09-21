@@ -14,7 +14,7 @@ import { formatDayDate, formatDayLong } from "./format-day-date";
 import { formatDayTime } from "./format-day-time";
 import { formatDistance } from "./format-distance";
 import { Credit } from "@/ui/credit";
-import { MODE_WORDS } from "./leg-row";
+import { MODE_ICON, MODE_WORDS } from "./leg-row";
 import { paginate } from "./paginate-sheets";
 import { rideSentence } from "./transit-ride";
 import lockup from "../../../logo/logo-text.png";
@@ -125,6 +125,7 @@ function LegLine({ day, legIndex }: { readonly day: PlannedDay; readonly legInde
   const distance = leg.distanceMeters === null ? null : formatDistance(leg.distanceMeters);
   /** What to catch, which is the one thing about a leg worth having on paper. */
   const rides = leg.mode === "transit" ? (chosen?.rides ?? []) : [];
+  const Icon = MODE_ICON[leg.mode];
 
   return (
     <div className={ROW}>
@@ -136,9 +137,13 @@ function LegLine({ day, legIndex }: { readonly day: PlannedDay; readonly legInde
         {leg.durationMinutes === null ? (
           <p>No way to get there could be worked out.</p>
         ) : (
-          <p>
-            {MODE_WORDS[leg.mode]}
-            {distance === null ? "" : ` · ${distance}`}
+          /* The glyph is drawn in ink, so it prints wherever the word does. */
+          <p className="flex items-center gap-[5px]">
+            <Icon size={13} strokeWidth={2.4} className="shrink-0" />
+            <span>
+              {MODE_WORDS[leg.mode]}
+              {distance === null ? "" : ` · ${distance}`}
+            </span>
           </p>
         )}
         {rides.map((ride, index) => (
