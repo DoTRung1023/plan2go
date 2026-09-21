@@ -75,10 +75,14 @@
   }
 
   /* Full size again, and the page rule's margins rather than the sheet's
-     own. The width goes too: the sheets are laid out at A4's full width on
-     screen, margins and all, which is wider than the page's printable area,
-     and a page wider than the paper is shrunk to fit, text and all. */
-  .export-sheets {
+     own. The width goes too: the sheets are laid out at the paper's full
+     width on screen, margins and all, which is wider than the page's
+     printable area, and a page wider than the paper is shrunk to fit, text
+     and all, which put the foot of every sheet well short of the foot of
+     the page. Said of the sheets' own box, which is what carries the width
+     and the preview's scale, and not only of the box around it. */
+  .export-sheets,
+  .export-sheets .printed-trip {
     zoom: 1 !important;
     width: auto !important;
     margin: 0 !important;
