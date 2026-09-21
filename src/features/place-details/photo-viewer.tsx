@@ -22,12 +22,8 @@ const FRAME_ENDS_PX = 140;
  * on whichever side it reaches first, so a tall one is bounded by the
  * window's height and not its width, and the width it is actually drawn at
  * is what decides which copy is worth fetching.
- *
- * Exported so the sheet can ask for a picture ahead of the viewer in exactly
- * the viewer's terms: the browser keys its choice on these, and a copy asked
- * for under any other terms is a different copy.
  */
-export function sizesFor(photo: PlacePhoto): string {
+function sizesFor(photo: PlacePhoto): string {
   const ratio = photo.width / photo.height;
   return `min(calc(100vw - ${String(FRAME_SIDES_PX)}px), calc((100vh - ${String(FRAME_ENDS_PX)}px) * ${String(ratio)}))`;
 }
@@ -71,14 +67,12 @@ interface PhotoViewerProps {
  * ever, whoever opens it, so a neighbour fetched and not looked at is not
  * wasted, only early.
  *
- * The picture is fetched at this size when it is first opened, or a moment
- * before, when the sheet saw a hand or the keyboard arrive on it; never with
- * the sheet. Until it arrives the sheet's own copy stands in, scaled up from
- * the width the strip drew it at: the browser has that one already, so the
- * picture is there in the frame the press lands in and only sharpens
- * afterwards. A picture soft for a moment is worth more than a line of text
- * saying one is coming, which is what stood here and what DESIGN.md asks for
- * in its place.
+ * The picture is fetched at this size when it is first opened, never before.
+ * Until it arrives the sheet's own copy stands in, scaled up from the width
+ * the strip drew it at: the browser has that one already, so the picture is
+ * there in the frame the press lands in and only sharpens afterwards. A
+ * picture soft for a moment is worth more than a line of text saying one is
+ * coming, which is what stood here and what DESIGN.md asks for in its place.
  */
 export function PhotoViewer({
   placeName,
