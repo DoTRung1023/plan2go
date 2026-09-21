@@ -10,7 +10,7 @@ import { formatClock } from "@/core/time/minutes";
 import { dayStatus } from "./day-status";
 import { GUTTER, HEADING_BAND, HEADING_BODY, HEADING_DAY_LINE } from "./panel-heading";
 import type { DayActions, EditOutcome } from "./day-actions";
-import { formatDateRange } from "@/features/trip-settings/date-range-field";
+import { formatDateRange } from "./format-day-date";
 
 interface DayPlannerProps {
   readonly title: string;

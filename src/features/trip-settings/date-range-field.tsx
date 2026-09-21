@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import type { IsoDate } from "@/core/model/day";
 import { addDays, daysBetween, parseIsoDate, weekdayOf } from "@/core/time/zoned";
 import { ArrowLeftIcon, ArrowRightIcon } from "@/ui/icons";
+import { formatDateRange } from "@/features/day-planner/format-day-date";
 
 const DAYS_IN_WEEK = 7;
 
@@ -33,8 +34,6 @@ const MONTH_AND_YEAR = new Intl.DateTimeFormat("en-AU", {
   year: "numeric",
   timeZone: "UTC",
 });
-
-const DAY_ONLY = new Intl.DateTimeFormat("en-AU", { day: "numeric", timeZone: "UTC" });
 
 const DAY_MONTH = new Intl.DateTimeFormat("en-AU", {
   day: "numeric",
@@ -90,27 +89,6 @@ function gridStart(first: IsoDate): IsoDate {
 function weeksIn(first: IsoDate): number {
   const days = daysBetween(gridStart(first), shiftMonths(first, 1));
   return Math.ceil(days / DAYS_IN_WEEK);
-}
-
-/**
- * The two ends said as shortly as they can be without becoming ambiguous. The
- * month is written once when both ends share it, and the year only appears when
- * the trip crosses one. ISO dates compare as text, so no parsing is needed to
- * order them.
- */
-export function formatDateRange(start: IsoDate, end: IsoDate): string {
-  if (start === end) {
-    return DAY_MONTH.format(asUtc(start));
-  }
-  const from = parseIsoDate(start);
-  const to = parseIsoDate(end);
-  if (from.year !== to.year) {
-    return `${DAY_MONTH_YEAR.format(asUtc(start))} – ${DAY_MONTH_YEAR.format(asUtc(end))}`;
-  }
-  if (from.month !== to.month) {
-    return `${DAY_MONTH.format(asUtc(start))} – ${DAY_MONTH.format(asUtc(end))}`;
-  }
-  return `${DAY_ONLY.format(asUtc(start))}–${DAY_MONTH.format(asUtc(end))}`;
 }
 
 const TRIGGER =

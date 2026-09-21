@@ -8,19 +8,25 @@
  */
 
 /* A sheet as the printer will see it: A4 at screen resolution, with the
-   margins the page rule gives it, on the raised paper a page is made of. Each
-   day is one. */
-.export-sheets .printed-day {
+   margins the page rule gives it, on the raised paper a page is made of. The
+   cover, each day and each ruled page is one. */
+.export-sheets .printed-sheet {
   box-sizing: border-box;
   width: 794px;
   min-height: 1123px;
   padding: 60px;
-  border-radius: 2px;
+  border-radius: 4px;
   background-color: var(--color-paper-raised);
   box-shadow: var(--shadow-md);
 }
 
-.export-sheets .printed-day + .printed-day {
+/* A sheet that is exactly a page, for what would otherwise run past one. */
+.export-sheets .printed-sheet-one-page {
+  height: 1123px;
+  overflow: hidden;
+}
+
+.export-sheets .printed-page + .printed-page {
   margin-top: 24px;
 }
 
@@ -65,7 +71,7 @@
   }
 
   /* The page's height, not the screen sheet's, so the foot stays at the foot. */
-  .export-sheets .printed-day {
+  .export-sheets .printed-sheet {
     width: auto;
     min-height: 264mm;
     padding: 0;
@@ -74,7 +80,11 @@
     box-shadow: none;
   }
 
-  .export-sheets .printed-day + .printed-day {
+  .export-sheets .printed-sheet-one-page {
+    height: 264mm;
+  }
+
+  .export-sheets .printed-page + .printed-page {
     margin-top: 0;
   }
 }

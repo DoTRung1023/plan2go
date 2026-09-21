@@ -489,8 +489,24 @@ Surfaces print as unpainted paper. Backgrounds are removed, hairlines drop to 0.
 neutral 400, and text stays `ink`. Times keep the display face and stay the loudest
 thing on the page.
 
-A footer on every page carries the trip title and the date of the day. The share link
-is printed once, in the footer of the first page.
+A day on paper is read down its times: the trip's name and dates on a line over the
+day's own name, a strip under them saying when it leaves, when it is done, how many
+stops and how long is spent travelling, the map if it was asked for, and then the
+day down a dashed thread with each time in a column of its own on the left, the
+marker beside it, and the place, its address, its hours and the note on it to the
+right. The trip's name, never a city's: a trip's days can be in different cities. A
+cover can go in front of the days, the trip's name and dates and every day at a
+glance, and a ruled sheet after each day for writing on. A footer on every sheet
+carries the trip's name and dates and the sheet's number. The share link is printed
+once, in the footer of the first page.
+
+The export is chosen in a window over the whole page, the deepest shadow's one use:
+the choices down a column on the left, the days as chips with a word that takes all
+of them or just the open one, then what goes on the page as boxes with a line under
+each saying what it means, then the file's name, and the sheets on the right exactly
+as they will print, redrawn as each choice changes, each with its name over it. The
+one format is in the button's own words, Export PDF, because the browser's print
+window is where paper, orientation and the file itself are decided.
 
 Saving the sheets as a PDF is what the browser's own print window is for, and the name
 it offers comes from the document's title, so the document is renamed for as long as

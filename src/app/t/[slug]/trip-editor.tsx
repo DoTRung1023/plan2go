@@ -595,13 +595,15 @@ export function TripEditor({
           key={selected?.plan.id}
           title={title}
           slug={slug}
-          cityName={cityName}
           days={days}
           request={{
             dayIds: selected === undefined ? [] : [selected.plan.id],
+            cover: false,
             map: false,
             notes: true,
-            legDetails: true,
+            legs: true,
+            addresses: true,
+            ruled: false,
           }}
           visible={false}
           onReady={() => {}}

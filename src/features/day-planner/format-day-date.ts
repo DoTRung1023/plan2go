@@ -38,3 +38,44 @@ export function formatDayTab(date: IsoDate): string {
   const { year, month, day } = parseIsoDate(date);
   return TAB_FORMAT.format(new Date(Date.UTC(year, month - 1, day)));
 }
+
+const DAY_ONLY = new Intl.DateTimeFormat("en-AU", { day: "numeric", timeZone: "UTC" });
+
+const DAY_MONTH = new Intl.DateTimeFormat("en-AU", {
+  day: "numeric",
+  month: "short",
+  timeZone: "UTC",
+});
+
+const DAY_MONTH_YEAR = new Intl.DateTimeFormat("en-AU", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+function asUtc(date: IsoDate): Date {
+  const { year, month, day } = parseIsoDate(date);
+  return new Date(Date.UTC(year, month - 1, day));
+}
+
+/**
+ * The two ends of a trip said as shortly as they can be without becoming
+ * ambiguous: "19–23 Sept". The month is written once when both ends share
+ * it, and the year only appears when the trip crosses one. ISO dates compare
+ * as text, so no parsing is needed to order them.
+ */
+export function formatDateRange(start: IsoDate, end: IsoDate): string {
+  if (start === end) {
+    return DAY_MONTH.format(asUtc(start));
+  }
+  const from = parseIsoDate(start);
+  const to = parseIsoDate(end);
+  if (from.year !== to.year) {
+    return `${DAY_MONTH_YEAR.format(asUtc(start))} – ${DAY_MONTH_YEAR.format(asUtc(end))}`;
+  }
+  if (from.month !== to.month) {
+    return `${DAY_MONTH.format(asUtc(start))} – ${DAY_MONTH.format(asUtc(end))}`;
+  }
+  return `${DAY_ONLY.format(asUtc(start))}–${DAY_MONTH.format(asUtc(end))}`;
+}

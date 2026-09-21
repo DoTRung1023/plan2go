@@ -398,16 +398,21 @@
     overflow: visible !important;
   }
 
-  /* Every day after the first starts a sheet of its own, and each is as tall
-     as the sheet, a hair under A4 less its margins so that rounding never
-     spills a blank page, which is what puts the day's foot at the foot of the
-     page. */
-  .printed-day + .printed-day {
+  /* Every sheet after the first starts a page of its own, and each is as
+     tall as the page, a hair under A4 less its margins so that rounding never
+     spills a blank page, which is what puts the sheet's foot at the foot of
+     the page. */
+  .printed-page + .printed-page {
     break-before: page;
   }
 
-  .printed-day {
+  .printed-sheet {
     min-height: 264mm;
+  }
+
+  .printed-sheet-one-page {
+    height: 264mm;
+    overflow: hidden;
   }
 
   /* A stop is never split across two sheets, and a day's name is never
@@ -416,7 +421,7 @@
     break-inside: avoid;
   }
 
-  .printed-day > header {
+  .printed-sheet > header {
     break-after: avoid;
   }
 
