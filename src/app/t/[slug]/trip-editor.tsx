@@ -101,7 +101,7 @@ interface TripEditorProps {
   readonly centre: LatLng | null;
   /** What that city is called, so the search can name it rather than point. */
   readonly cityName: string | null;
-  /** Today's date in the trip's own zone, so the day strip can mark it. */
+  /** Today's date in the trip's own zone, for the calendar the dates are changed on. */
   readonly today: string;
   /**
    * The key out of the edit link, or null for the plain one. It decides both
@@ -447,7 +447,6 @@ export function TripEditor({
         <DayPlanner
           title={title}
           days={days}
-          today={today}
           hoveredStopId={hoveredStopId}
           onHoverStop={setHoveredStopId}
           onOpenStop={openStop}
@@ -519,7 +518,6 @@ export function TripEditor({
                 tabs={
                   <DayTabs
                     days={days.map((day) => day.plan)}
-                    today={today}
                     selectedIndex={selectedIndex}
                     onSelect={setChosenIndex}
                     onAddDay={

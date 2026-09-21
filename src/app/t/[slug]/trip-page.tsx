@@ -30,8 +30,9 @@ export async function TripPage({ trip, editKey }: TripPageProps) {
       days={days}
       centre={trip.centre}
       cityName={trip.cityName}
-      /* Today where the trip is, not where the reader is: a trip in Hanoi read
-         from Adelaide is on its Tuesday, whatever the reader's clock says. */
+      /* Today where the trip is, for the calendar the dates are changed on:
+         the earliest day it offers is the trip's own today. The day strip
+         marks today on the reader's clock instead, and finds that itself. */
       today={todayIn(trip.timeZone)}
       editKey={editKey}
     />

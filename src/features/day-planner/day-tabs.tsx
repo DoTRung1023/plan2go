@@ -7,16 +7,11 @@ import type { DayPlan } from "@/core/model/day";
 import { PlusIcon } from "@/ui/icons";
 import type { EditOutcome } from "./day-actions";
 import { formatDayDate, formatDayTab } from "./format-day-date";
+import { useLocalToday } from "./use-local-today";
 import "./day-tabs.css";
 
 interface DayTabsProps {
   readonly days: readonly DayPlan[];
-  /**
-   * Today in the trip's own zone. It matches no day at all on a trip that has
-   * not started or is over, which is the ordinary case for a trip being
-   * planned, so nothing is marked then.
-   */
-  readonly today: string;
   readonly selectedIndex: number;
   readonly onSelect: (index: number) => void;
   /**
@@ -52,14 +47,14 @@ function stopLine(day: DayPlan): string {
 const TAB =
   "flex shrink-0 items-center rounded-pill border-0 px-[15px] py-[9px] text-small/none font-semibold whitespace-nowrap focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta";
 
-export function DayTabs({
-  days,
-  today,
-  selectedIndex,
-  onSelect,
-  onAddDay,
-}: DayTabsProps) {
+export function DayTabs({ days, selectedIndex, onSelect, onAddDay }: DayTabsProps) {
   const tabs = useRef<(HTMLButtonElement | null)[]>([]);
+  /**
+   * Today on the reader's own clock, which is the day they mean by it. It
+   * matches no day at all on a trip that has not started or is over, which
+   * is the ordinary case for a trip being planned, so nothing is marked then.
+   */
+  const today = useLocalToday();
   const watchStrip = useScrollBar("x");
   const [error, setError] = useState<string | null>(null);
   const [adding, startAdding] = useTransition();
