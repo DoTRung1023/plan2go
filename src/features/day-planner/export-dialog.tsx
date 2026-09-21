@@ -292,7 +292,48 @@ export function ExportDialog({
     setOnPage(current?.dataset["label"] ?? null);
   }, []);
 
-  useEffect(placeOnPage, [placeOnPage, requestKey, sheets]);
+  /**
+   * Where the preview was scrolled to when a choice was made, as a share of
+   * how far it could scroll, so the sheets drawn for the choice open at the
+   * same place rather than at the top. A share rather than a distance,
+   * because a choice can make the sheets taller or shorter, and the same
+   * share is the same part of the export either way. Noted the moment the
+   * choice is made, before the old sheets go, since a scroller with nothing
+   * in it has nowhere to be.
+   */
+  const keptPlace = useRef<number | null>(null);
+
+  const keepPlace = useCallback((): void => {
+    const element = scroller.current;
+    if (element === null) {
+      return;
+    }
+    const range = element.scrollHeight - element.clientHeight;
+    keptPlace.current = range > 0 ? element.scrollTop / range : 0;
+  }, []);
+
+  /** A choice made with the place kept, and a switch flipped the same way. */
+  const choose = useCallback(
+    <T,>(set: (value: T) => void) =>
+      (value: T): void => {
+        keepPlace();
+        set(value);
+      },
+    [keepPlace],
+  );
+  const flip = (set: (on: boolean) => void, on: boolean) => (): void => {
+    keepPlace();
+    set(!on);
+  };
+
+  useEffect(() => {
+    const element = scroller.current;
+    if (element !== null && sheets !== null && keptPlace.current !== null) {
+      element.scrollTop = keptPlace.current * (element.scrollHeight - element.clientHeight);
+      keptPlace.current = null;
+    }
+    placeOnPage();
+  }, [placeOnPage, requestKey, sheets]);
 
   /**
    * Prints once the sheets asked for are whole, and not before.
@@ -330,6 +371,7 @@ export function ExportDialog({
   }, [restoreTitle]);
 
   const toggleDay = (id: string): void => {
+    keepPlace();
     const next = new Set(chosen);
     if (next.has(id)) {
       next.delete(id);
@@ -346,6 +388,7 @@ export function ExportDialog({
    * nothing, which reads as the choice it is; the export waits until one is.
    */
   const toggleAll = (): void => {
+    keepPlace();
     setChosen(allPicked ? new Set() : new Set(printable.map((day) => day.plan.id)));
   };
 
@@ -432,9 +475,7 @@ export function ExportDialog({
                   label="Cover page"
                   note="Name, dates and every day"
                   on={cover}
-                  onToggle={() => {
-                    setCover(!cover);
-                  }}
+                  onToggle={flip(setCover, cover)}
                 />
               </div>
 
@@ -446,49 +487,37 @@ export function ExportDialog({
                   label="Map of the route"
                   note="At the top of each day"
                   on={map}
-                  onToggle={() => {
-                    setMap(!map);
-                  }}
+                  onToggle={flip(setMap, map)}
                 />
                 <Option
                   label="Notes on stops"
                   note="What you wrote"
                   on={notes}
-                  onToggle={() => {
-                    setNotes(!notes);
-                  }}
+                  onToggle={flip(setNotes, notes)}
                 />
                 <Option
                   label="How you get between stops"
                   note="Mode, time and distance"
                   on={legs}
-                  onToggle={() => {
-                    setLegs(!legs);
-                  }}
+                  onToggle={flip(setLegs, legs)}
                 />
                 <Option
                   label="Street addresses"
                   note="In the local language"
                   on={addresses}
-                  onToggle={() => {
-                    setAddresses(!addresses);
-                  }}
+                  onToggle={flip(setAddresses, addresses)}
                 />
                 <Option
                   label="Opening hours"
                   note="When each place is open that day"
                   on={hours}
-                  onToggle={() => {
-                    setHours(!hours);
-                  }}
+                  onToggle={flip(setHours, hours)}
                 />
                 <Option
                   label="Notes page"
                   note="A blank lined page after each day"
                   on={ruled}
-                  onToggle={() => {
-                    setRuled(!ruled);
-                  }}
+                  onToggle={flip(setRuled, ruled)}
                 />
               </div>
 
@@ -503,7 +532,7 @@ export function ExportDialog({
                     { value: "a5", label: "A5" },
                   ]}
                   value={paper}
-                  onChange={setPaper}
+                  onChange={choose(setPaper)}
                 />
                 <Choice
                   label="Way up"
@@ -512,7 +541,7 @@ export function ExportDialog({
                     { value: "landscape", label: "Landscape" },
                   ]}
                   value={orientation}
-                  onChange={setOrientation}
+                  onChange={choose(setOrientation)}
                 />
                 <Choice
                   label="Map size"
@@ -522,7 +551,7 @@ export function ExportDialog({
                     { value: "large", label: "Large" },
                   ]}
                   value={mapSize}
-                  onChange={setMapSize}
+                  onChange={choose(setMapSize)}
                   disabled={!map}
                 />
                 <Choice
@@ -533,7 +562,7 @@ export function ExportDialog({
                     { value: "large", label: "Large" },
                   ]}
                   value={text}
-                  onChange={setText}
+                  onChange={choose(setText)}
                 />
                 <Choice
                   label="Ink"
@@ -542,7 +571,7 @@ export function ExportDialog({
                     { value: "mono", label: "Black and white" },
                   ]}
                   value={ink}
-                  onChange={setInk}
+                  onChange={choose(setInk)}
                 />
               </div>
 
