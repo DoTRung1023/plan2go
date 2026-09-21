@@ -653,7 +653,7 @@ function DayMeasurer({
 /** A page of the export as the preview lists it: what it is, then the sheet. */
 interface Page {
   readonly key: string;
-  /** Over the sheet on screen only: "Day 1", "Cover", "Day 1 · notes". */
+  /** For the preview to say which page is at its top: "Day 1", "Cover", "Day 1 · notes". */
   readonly label: string;
   readonly sheet: (number: SheetNumber) => React.ReactNode;
 }
@@ -812,12 +812,9 @@ export function PrintedTrip({
 
       <div className={`printed-trip ${visible ? "" : "hidden print:block"}`}>
         {pages.map((page, index) => (
-          <div key={page.key} className="printed-page">
-            {/* Over the sheet on the dialog's ground, never on paper: which
-                page of the export this is, for finding it in the preview. */}
-            <p className="mb-[7px] ml-[2px] text-label font-semibold text-ink-faint print:hidden">
-              {page.label}
-            </p>
+          /* Named for the preview, which says over the sheets which one is
+             at the top as they scroll; nothing on the sheet itself. */
+          <div key={page.key} className="printed-page" data-label={page.label}>
             {page.sheet({ at: index + 1, of: pages.length })}
           </div>
         ))}

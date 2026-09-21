@@ -17,12 +17,6 @@
   zoom: var(--sheet-zoom, 1);
 }
 
-/* The name over each sheet is for reading on screen, so it is drawn at its
-   own size however far the sheet under it has been shrunk. */
-.export-sheets .printed-page > p {
-  zoom: calc(1 / var(--sheet-zoom, 1));
-}
-
 /* A sheet as the printer will see it: A4 at screen resolution, with the
    margins the page rule gives it, on the raised paper a page is made of. The
    cover, each day and each ruled page is one. A pixel more at each side than

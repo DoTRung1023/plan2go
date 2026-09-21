@@ -120,6 +120,7 @@ export function ExportDialog({
   const nameId = useId();
   const closeButton = useRef<HTMLButtonElement | null>(null);
   const preview = useRef<HTMLDivElement | null>(null);
+  const scroller = useRef<HTMLDivElement | null>(null);
   const [chosen, setChosen] = useState<ReadonlySet<string>>(() => new Set([selectedDayId]));
   const [cover, setCover] = useState(false);
   const [map, setMap] = useState(true);
@@ -137,6 +138,8 @@ export function ExportDialog({
   );
   /** Export was asked for and is waiting on the sheets, or on the print window. */
   const [printing, setPrinting] = useState(false);
+  /** The name of the page at the top of the preview: "Day 2", "Cover", "Day 2 · notes". */
+  const [onPage, setOnPage] = useState<string | null>(null);
   /** The document's own title, held while the print window borrows it. */
   const wasCalled = useRef<string | null>(null);
 
@@ -208,6 +211,26 @@ export function ExportDialog({
       observer.disconnect();
     };
   }, []);
+
+  /**
+   * Which page is at the top of the preview, to be named over it: the last
+   * one whose top edge has reached the scroller's, read from the sheets as
+   * they stand on screen, so the scale they are drawn at makes no odds.
+   * Named again on every scroll, and once the sheets have been dealt.
+   */
+  const placeOnPage = useCallback((): void => {
+    const element = scroller.current;
+    if (element === null) {
+      return;
+    }
+    const top = element.getBoundingClientRect().top;
+    const pages = [...element.querySelectorAll<HTMLElement>(".printed-page")];
+    const reached = pages.filter((page) => page.getBoundingClientRect().top - top <= 1);
+    const current = reached[reached.length - 1] ?? pages[0];
+    setOnPage(current?.dataset["label"] ?? null);
+  }, []);
+
+  useEffect(placeOnPage, [placeOnPage, requestKey, sheets]);
 
   /**
    * Prints once the sheets asked for are whole, and not before.
@@ -455,18 +478,30 @@ export function ExportDialog({
 
           <div className="export-preview flex min-h-0 min-w-0 flex-1 flex-col bg-paper-sunken">
             {/* Above the sheets rather than among them, so it holds still
-                while they scroll: what this is, and what the export comes to. */}
-            <div className="export-chrome flex shrink-0 items-center gap-[10px] px-6 pt-5 pb-[10px]">
-              <p className={HEADING}>Preview</p>
-              <span aria-hidden="true" className="h-px flex-1 bg-rule-strong/60" />
-              <p className="text-meta/none text-ink-muted">
-                {picked.length === 0
-                  ? "No days chosen"
-                  : `${allPicked && picked.length > 1 ? "All " : ""}${String(picked.length)} ${dayWord}${pageCount === null ? "" : ` · ${pageCount}`}`}
+                while they scroll: what this is, what the export comes to,
+                and which page is under the pointer as the sheets go by. */}
+            <div className="export-chrome shrink-0 px-6 pt-5 pb-[10px]">
+              <div className="flex items-center gap-[10px]">
+                <p className={HEADING}>Preview</p>
+                <span aria-hidden="true" className="h-px flex-1 bg-rule-strong/60" />
+                <p className="text-meta/none text-ink-muted">
+                  {picked.length === 0
+                    ? "No days chosen"
+                    : `${allPicked && picked.length > 1 ? "All " : ""}${String(picked.length)} ${dayWord}${pageCount === null ? "" : ` · ${pageCount}`}`}
+                </p>
+              </div>
+              {/* Its height is kept while there is nothing to say, so the sheets
+                  do not shift when the first name arrives. */}
+              <p className="mt-[10px] ml-[2px] min-h-[10.5px] text-label font-semibold text-ink-faint">
+                {picked.length === 0 ? "" : (onPage ?? "")}
               </p>
             </div>
 
-            <div className="export-scroll scroll-quiet min-h-0 flex-1 overflow-y-auto px-6 pb-7">
+            <div
+              ref={scroller}
+              onScroll={placeOnPage}
+              className="export-scroll scroll-quiet min-h-0 flex-1 overflow-y-auto px-6 pb-7"
+            >
               {picked.length === 0 ? (
                 <p className="py-10 text-center text-small text-ink-muted">
                   Nothing to show until a day is chosen.
