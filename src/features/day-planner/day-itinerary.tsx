@@ -173,14 +173,17 @@ function Anchor({
      * On the stop card's grid, to the pixel: the same marker column, the same
      * gap beside it, the same gutter either side, so the name and address here
      * sit on the same left edge as every stop's and the time and the tools on
-     * the same right edge, with the marker under the discs. Only the card is
-     * missing, and with it a third of the card's height: the ends of a day are
-     * where it passes through, and a box as deep as a stop's gave them the
-     * weight of the places it is for. The row has no border and no ground
-     * until it is pointed at, and then the sunken paper, which is how every
-     * other row here answers the pointer. The marker sits in the middle of
-     * the shorter row rather than at its top, where a disc sits on a card
-     * whose content runs on below it.
+     * the same right edge, with the marker under the discs. A row on paper
+     * inside a hairline rather than a raised card, and a third shorter than
+     * one: the ends of a day are where it passes through, and a card as deep
+     * and as raised as a stop's gave them the weight of the places it is
+     * for. The same row, with the line dashed, is what offers to choose an
+     * end that is not there yet, so the two read as one slot filled and
+     * empty. Under the pointer, here or on the map, it sinks to the ground
+     * the way a stop card does, inside a ring in its own colour, which for
+     * an end of the day is sage, as its ring on the map is. The marker sits
+     * in the middle of the shorter row rather than at its top, where a disc
+     * sits on a card whose content runs on below it.
      */
     <div
       ref={row}
@@ -190,8 +193,8 @@ function Anchor({
       onMouseLeave={() => {
         onHover(null);
       }}
-      className={`group grid grid-cols-[30px_minmax(0,1fr)] gap-x-[13px] rounded-row px-[17px] py-[10px] ${
-        hovered ? "bg-paper-sunken" : ""
+      className={`group grid grid-cols-[30px_minmax(0,1fr)] gap-x-[13px] rounded-row border px-4 py-[9px] ${
+        hovered ? "border-sage-600/55 bg-paper-sunken" : "border-rule bg-paper"
       }`}
     >
       <EndpointMark which={which} />

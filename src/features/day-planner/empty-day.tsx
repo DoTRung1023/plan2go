@@ -31,12 +31,16 @@ export function EmptyDay({ dayName, onFindPlace }: EmptyDayProps) {
         /* The search field is over the map, which on a desk is the other
            pane and on a phone is a strip above this: either way it is not
            where the eye is, so the empty day points at it. */
+        /* The same pill, in the accent, as the one that offers the next place
+           at the end of a day that has some: forty tall, the same type and
+           the same glyph size, since it is the same action in the other
+           state of the day. */
         <button
           type="button"
           onClick={onFindPlace}
-          className="mt-[6px] flex items-center gap-2 rounded-pill bg-terracotta px-5 py-[11px] text-body font-semibold text-paper hover:bg-terracotta-600 active:bg-terracotta-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+          className="mt-[6px] flex h-10 items-center gap-2 rounded-pill bg-terracotta px-5 text-small/none font-semibold text-paper hover:bg-terracotta-600 active:bg-terracotta-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
         >
-          <SearchIcon size={15} strokeWidth={3} />
+          <SearchIcon size={14} strokeWidth={2.75} />
           Find a place
         </button>
       )}

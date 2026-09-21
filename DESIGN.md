@@ -281,9 +281,10 @@ floating control's shadow: its name at the title step, its dates, and its menu, 
 about the whole trip. Under it the days, on one card of paper at the `row` radius: the
 strip of tabs, and beneath them the line naming the open day, what it comes to, and
 when it leaves, the time as words that tint under the pointer. Then the day
-itself: stops on raised cards, legs between them on pills of paper, and the ends of the
-day and the next place, where they are not there yet, as dashed outlines. Three surfaces,
-each a step up from the one it sits on, and nothing drawn edge to edge.
+itself: stops on raised cards, legs between them on pills of paper, the ends of the day
+on shorter rows of paper inside a hairline, dashed where an end is not there yet, and
+the next place, where there is not one yet, as a dashed pill. Three surfaces, each a
+step up from the one it sits on, and nothing drawn edge to edge.
 
 **Mobile, below 1024px.** One column. The map collapses to a sticky strip 140px tall at
 the top of the viewport, with the day tabs stuck directly beneath it. The page is the
