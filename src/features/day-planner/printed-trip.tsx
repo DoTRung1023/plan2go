@@ -17,6 +17,7 @@ import { formatDistance } from "./format-distance";
 import { Credit } from "@/ui/credit";
 import { placeUrl } from "./directions-url";
 import { legDisc, MODE_ICON, MODE_WORDS } from "./leg-row";
+import { legInk } from "@/features/trip-map/route-style";
 import { paginate } from "./paginate-sheets";
 import { rideSentence } from "./transit-ride";
 import lockup from "../../../logo/logo-text.png";
@@ -164,10 +165,11 @@ function LegLine({ day, legIndex }: { readonly day: PlannedDay; readonly legInde
       </p>
       {/* The leg hangs on the thread as it does on screen: its glyph on a disc
           washed with the ink the map draws this leg in, so the line on the
-          map above and the row here are matched by eye. */}
+          map above and the row here are matched by eye. The wash is laid on
+          the paper's own colour, so the thread stops behind the disc. */}
       <MarkColumn thread="through">
         <span
-          style={legDisc(leg.index)}
+          style={legDisc(leg.index, "var(--sheet)")}
           className="mt-[4px] grid h-[19px] w-[19px] place-items-center rounded-pill"
         >
           <Icon size={11} strokeWidth={2.6} />
@@ -177,9 +179,26 @@ function LegLine({ day, legIndex }: { readonly day: PlannedDay; readonly legInde
         {leg.durationMinutes === null ? (
           <p>No way to get there could be worked out.</p>
         ) : (
+          /* The way and how far, opening the journey in Google Maps, where
+             the live times are. In the leg's own ink, the disc's colour, so
+             the words and the disc read as one thing. */
           <p>
-            {MODE_WORDS[leg.mode]}
-            {distance === null ? "" : ` · ${distance}`}
+            {planned.directions === null ? (
+              <>
+                {MODE_WORDS[leg.mode]}
+                {distance === null ? "" : ` · ${distance}`}
+              </>
+            ) : (
+              <a
+                href={planned.directions}
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: `var(${legInk(leg.index)})` }}
+              >
+                {MODE_WORDS[leg.mode]}
+                {distance === null ? "" : ` · ${distance}`}
+              </a>
+            )}
           </p>
         )}
         {rides.map((ride, index) => (

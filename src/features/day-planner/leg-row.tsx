@@ -45,10 +45,17 @@ const DISC_WASH = "16%";
  * next colour along, and this is the same colour on the row that names the
  * leg, so the two are matched by eye across the page. The mode is the glyph
  * and the word, never the colour.
+ *
+ * The wash is laid over nothing, so it takes the colour of whatever the row
+ * is on; a disc that has to hide something behind it, the thread on a
+ * printed sheet, names the paper it is on instead.
  */
-export function legDisc(index: number): { readonly color: string; readonly backgroundColor: string } {
+export function legDisc(
+  index: number,
+  over = "transparent",
+): { readonly color: string; readonly backgroundColor: string } {
   const ink = `var(${legInk(index)})`;
-  return { color: ink, backgroundColor: `color-mix(in srgb, ${ink} ${DISC_WASH}, transparent)` };
+  return { color: ink, backgroundColor: `color-mix(in srgb, ${ink} ${DISC_WASH}, ${over})` };
 }
 
 interface LegRowProps {
