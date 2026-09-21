@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { CheckIcon, CloseIcon } from "@/ui/icons";
+import { CheckIcon, CloseIcon, WarningIcon } from "@/ui/icons";
 import type { PlannedDay } from "./compute-trip";
 import type { ExportRequest } from "./export-request";
 import { exportRequestKey } from "./export-request";
@@ -176,6 +176,8 @@ export function ExportDialog({
     available: printable.length,
   });
   const fileName = (typedName ?? suggestedName).trim() || suggestedName;
+  /** The name has been cleared, so the export would fall back to the suggestion. */
+  const unnamed = typedName !== null && typedName.trim() === "";
 
   const restoreTitle = useCallback((): void => {
     if (wasCalled.current !== null) {
@@ -435,8 +437,11 @@ export function ExportDialog({
                   while it is being typed in, is what says it can be. */}
               <div className="mt-[8px] flex items-baseline text-small">
                 <span className="grid min-w-0 overflow-hidden border-b border-rule-strong pb-[3px] focus-within:border-terracotta">
+                  {/* A space when the name is empty, so the copy still has a
+                      line, and the baseline .pdf sits on does not fall to the
+                      rule below. */}
                   <span aria-hidden="true" className="invisible col-start-1 row-start-1 whitespace-pre">
-                    {typedName ?? suggestedName}
+                    {(typedName ?? suggestedName) || "\u00A0"}
                   </span>
                   <input
                     id={nameId}
@@ -452,6 +457,17 @@ export function ExportDialog({
                 </span>
                 <span className="shrink-0 text-ink-muted">.pdf</span>
               </div>
+              {unnamed ? (
+                <div
+                  role="alert"
+                  className="mt-[10px] flex w-fit max-w-full items-start gap-[7px] rounded-chip bg-terracotta-200 px-[11px] py-[7px]"
+                >
+                  <WarningIcon size={13} className="mt-[2px] shrink-0 text-terracotta-700" />
+                  <p className="text-micro text-terracotta-900">
+                    Give the file a name, or it is saved as {suggestedName}.
+                  </p>
+                </div>
+              ) : null}
             </div>
 
             <div className="shrink-0 border-t border-rule px-6 pt-[14px] pb-[18px]">
