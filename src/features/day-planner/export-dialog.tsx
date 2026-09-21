@@ -20,12 +20,15 @@ const HEADING = "text-label font-semibold text-ink-muted";
 const DIVIDER = "my-[18px] h-px bg-rule";
 
 /**
- * A day, as a pill that is either in the export or not. Every pill is the
- * same width, so the days sit in columns rather than at the ragged widths
- * their labels happen to have.
+ * A day, as a pill that is either in the export or not. The pills are dealt
+ * into as many equal columns as the row has room for, so they are all one
+ * width and fill the row whatever width the column is, rather than sitting
+ * at the ragged widths their labels happen to have.
  */
+const CHIPS = "mt-[11px] grid grid-cols-[repeat(auto-fill,minmax(72px,1fr))] gap-[7px]";
+
 const CHIP =
-  "w-[78px] rounded-pill border-[1.5px] px-2 py-2 text-center text-small/none font-semibold whitespace-nowrap disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "rounded-pill border-[1.5px] px-1 py-2 text-center text-small/none font-semibold whitespace-nowrap disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 const CHIP_ON = "border-terracotta-800 bg-terracotta-800 text-paper";
 
@@ -304,7 +307,7 @@ export function ExportDialog({
           <aside className="export-chrome flex max-h-[55%] shrink-0 flex-col border-b border-rule lg:max-h-none lg:w-[300px] lg:border-r lg:border-b-0">
             <div className="scroll-quiet min-h-0 flex-1 overflow-y-auto px-6 pt-5 pb-[10px]">
               <p className={HEADING}>Which days</p>
-              <div className="mt-[11px] flex flex-wrap gap-[7px]">
+              <div className={CHIPS}>
                 {printable.length > 1 ? (
                   <button
                     type="button"
