@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Conflict } from "@/core/model/conflict";
+import type { Place } from "@/core/model/place";
 import type { StopId } from "@/core/model/stop";
 import type { ClockTime } from "@/core/time/compute-day";
 import { formatClock, formatDuration } from "@/core/time/minutes";
@@ -14,7 +15,8 @@ import { formatDayDate, formatDayLong } from "./format-day-date";
 import { formatDayTime } from "./format-day-time";
 import { formatDistance } from "./format-distance";
 import { Credit } from "@/ui/credit";
-import { MODE_ICON, MODE_WORDS } from "./leg-row";
+import { placeUrl } from "./directions-url";
+import { legDisc, MODE_ICON, MODE_WORDS } from "./leg-row";
 import { paginate } from "./paginate-sheets";
 import { rideSentence } from "./transit-ride";
 import lockup from "../../../logo/logo-text.png";
@@ -106,6 +108,34 @@ function MarkColumn({
   );
 }
 
+/**
+ * A place's name, opening the place in Google Maps for everything the sheet
+ * has no room for. In the colour the map marks the place with, terracotta
+ * for a stop and sage for an end of the day, so the name and its marker are
+ * read as one thing; a printed link keeps the colour and loses nothing else,
+ * since the PDF the print window saves carries the link with it.
+ */
+function PlaceLink({
+  place,
+  tone,
+  name,
+}: {
+  readonly place: Place;
+  readonly tone: "stop" | "end";
+  readonly name: string;
+}) {
+  return (
+    <a
+      href={placeUrl(place)}
+      target="_blank"
+      rel="noreferrer"
+      className={tone === "stop" ? "text-terracotta-700" : "text-sage-700"}
+    >
+      {name}
+    </a>
+  );
+}
+
 /** The time a row happens at, in its own column: read down before anything else. */
 function TimeCell({ time }: { readonly time: ClockTime | null }) {
   return (
@@ -132,18 +162,24 @@ function LegLine({ day, legIndex }: { readonly day: PlannedDay; readonly legInde
       <p className={`pt-[5px] text-right text-meta whitespace-nowrap ${MUTED} tabular-nums`}>
         {leg.durationMinutes === null ? "" : formatDuration(leg.durationMinutes)}
       </p>
-      <MarkColumn thread="through" />
+      {/* The leg hangs on the thread as it does on screen: its glyph on a disc
+          washed with the ink the map draws this leg in, so the line on the
+          map above and the row here are matched by eye. */}
+      <MarkColumn thread="through">
+        <span
+          style={legDisc(leg.index)}
+          className="mt-[4px] grid h-[19px] w-[19px] place-items-center rounded-pill"
+        >
+          <Icon size={11} strokeWidth={2.6} />
+        </span>
+      </MarkColumn>
       <div className={`pt-[5px] pb-[9px] text-meta ${MUTED}`}>
         {leg.durationMinutes === null ? (
           <p>No way to get there could be worked out.</p>
         ) : (
-          /* The glyph is drawn in ink, so it prints wherever the word does. */
-          <p className="flex items-center gap-[5px]">
-            <Icon size={13} strokeWidth={2.4} className="shrink-0" />
-            <span>
-              {MODE_WORDS[leg.mode]}
-              {distance === null ? "" : ` · ${distance}`}
-            </span>
+          <p>
+            {MODE_WORDS[leg.mode]}
+            {distance === null ? "" : ` · ${distance}`}
           </p>
         )}
         {rides.map((ride, index) => (
@@ -458,10 +494,12 @@ function dayUnits({ day, request }: DayContext): readonly Unit[] {
         <div className={ROW}>
           <TimeCell time={computed.begins} />
           <MarkColumn thread="from-centre">
-            <span className="mt-[1px] block h-[19px] w-[19px] rounded-pill border-[1.5px] border-ink bg-(--sheet)" />
+            <span className="mt-[1px] block h-[19px] w-[19px] rounded-pill border-[1.5px] border-sage-600 bg-(--sheet)" />
           </MarkColumn>
           <div className="pb-[10px]">
-            <p className="font-display text-place text-ink">Leave {endpointName(plan.start)}</p>
+            <p className="font-display text-place text-ink">
+              Leave <PlaceLink place={plan.start.place} tone="end" name={endpointName(plan.start)} />
+            </p>
             {request.addresses && plan.start.place.address !== null ? (
               <p className={`mt-[3px] text-small ${MUTED}`}>{plan.start.place.address}</p>
             ) : null}
@@ -485,14 +523,20 @@ function dayUnits({ day, request }: DayContext): readonly Unit[] {
           <div className={ROW}>
             <TimeCell time={stop.arrival} />
             <MarkColumn thread={last ? "to-centre" : "through"}>
-              <span className="mt-[1px] grid h-[19px] w-[19px] place-items-center rounded-pill bg-ink text-label font-semibold text-paper tabular-nums">
+              <span className="mt-[1px] grid h-[19px] w-[19px] place-items-center rounded-pill bg-terracotta text-label font-semibold text-paper tabular-nums">
                 <span aria-hidden="true">{index + 1}</span>
                 <span className="sr-only">Stop {index + 1}</span>
               </span>
             </MarkColumn>
             <div className={`min-w-0 ${last ? "" : "pb-[10px]"}`}>
               <div className="flex flex-wrap items-baseline gap-x-[10px]">
-                <h2 className="min-w-0 font-display text-place text-ink">{stop.placeName}</h2>
+                <h2 className="min-w-0 font-display text-place text-ink">
+                  {place === undefined ? (
+                    stop.placeName
+                  ) : (
+                    <PlaceLink place={place} tone="stop" name={stop.placeName} />
+                  )}
+                </h2>
                 <p className={`shrink-0 text-meta whitespace-nowrap ${MUTED}`}>
                   stay {formatDuration(stop.stayMinutes)}
                   {stop.departure === null ? "" : ` · until ${formatDayTime(stop.departure)}`}
@@ -529,11 +573,12 @@ function dayUnits({ day, request }: DayContext): readonly Unit[] {
           <div className={ROW}>
             <TimeCell time={computed.ends} />
             <MarkColumn thread="to-centre">
-              <span className="mt-[1px] block h-[19px] w-[19px] rounded-pill bg-ink" />
+              <span className="mt-[1px] block h-[19px] w-[19px] rounded-pill bg-sage-600" />
             </MarkColumn>
             <div>
               <p className="font-display text-place text-ink">
-                {sameEnds ? "Back at" : "Finish at"} {endpointName(end)}
+                {sameEnds ? "Back at" : "Finish at"}{" "}
+                <PlaceLink place={end.place} tone="end" name={endpointName(end)} />
               </p>
               {request.addresses && !sameEnds && end.place.address !== null ? (
                 <p className={`mt-[3px] text-small ${MUTED}`}>{end.place.address}</p>

@@ -46,7 +46,7 @@ const DISC_WASH = "16%";
  * leg, so the two are matched by eye across the page. The mode is the glyph
  * and the word, never the colour.
  */
-function legDisc(index: number): { readonly color: string; readonly backgroundColor: string } {
+export function legDisc(index: number): { readonly color: string; readonly backgroundColor: string } {
   const ink = `var(${legInk(index)})`;
   return { color: ink, backgroundColor: `color-mix(in srgb, ${ink} ${DISC_WASH}, transparent)` };
 }

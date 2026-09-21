@@ -40,3 +40,20 @@ export function directionsUrl(from: Place, to: Place, mode: TravelMode): string 
   }
   return `${DIRECTIONS_URL}?${parameters.toString()}`;
 }
+
+/** The same API's search, which opens one place rather than a way between two. */
+const PLACE_URL = "https://www.google.com/maps/search/";
+
+/**
+ * A place handed to Google Maps, for everything it knows about it that a
+ * sheet of paper has no room for. Its identifier where we have one, so what
+ * opens is the place itself and not whatever is nearest the pin; the
+ * coordinates regardless, since the identifier is only honoured beside them.
+ */
+export function placeUrl(place: Place): string {
+  const parameters = new URLSearchParams({ api: "1", query: point(place.position) });
+  if (place.providerPlaceId !== null) {
+    parameters.set("query_place_id", place.providerPlaceId);
+  }
+  return `${PLACE_URL}?${parameters.toString()}`;
+}
