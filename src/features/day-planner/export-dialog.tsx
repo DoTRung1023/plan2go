@@ -425,10 +425,13 @@ export function ExportDialog({
               >
                 {printing ? "Preparing the pages" : "Export PDF"}
               </button>
-              <p aria-live="polite" className="mt-[10px] text-center text-meta text-ink-muted">
-                {printing && !ready
-                  ? "Waiting for the maps to arrive."
-                  : `${fileName}.pdf${pageCount === null ? "" : ` · ${pageCount}`}`}
+              {/* Always in the DOM so the announcement lands; empty (and so
+                  without height) until an export is waiting on its maps. */}
+              <p
+                aria-live="polite"
+                className={`text-center text-meta text-ink-muted ${printing && !ready ? "mt-[10px]" : ""}`}
+              >
+                {printing && !ready ? "Waiting for the maps to arrive." : null}
               </p>
             </div>
           </aside>
