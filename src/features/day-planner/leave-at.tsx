@@ -139,7 +139,7 @@ export function LeaveAt({ value, onChoose }: LeaveAtProps) {
           }}
           columns={[
             {
-              unit: null,
+              unit: "hr",
               values: HOURS,
               chosen: hour,
               format: twoDigits,
@@ -148,7 +148,7 @@ export function LeaveAt({ value, onChoose }: LeaveAtProps) {
               },
             },
             {
-              unit: null,
+              unit: "min",
               values: MINUTES,
               chosen: minute,
               format: twoDigits,

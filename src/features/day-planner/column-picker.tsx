@@ -19,12 +19,12 @@ const ROW_CHOSEN = "bg-terracotta-800 text-paper hover:bg-terracotta-800";
 
 export interface PickerColumn {
   /**
-   * The unit over the column, in the word a duration is written with, or
-   * nothing: a clock's two columns need no heading, since 09 and 05 side by
-   * side are a time to anyone, where 1 and 30 side by side are not yet a
-   * duration.
+   * The unit over the column, in the word a duration is written with: "hr",
+   * "min". Over a clock's columns as much as a duration's, so every picker
+   * in the product opens the same way and a column is never a bare list of
+   * numbers to work out the meaning of.
    */
-  readonly unit: string | null;
+  readonly unit: string;
   readonly values: readonly number[];
   readonly chosen: number;
   readonly format: (value: number) => string;
@@ -83,11 +83,9 @@ export function ColumnPicker({ label, columns, align, onEscape }: ColumnPickerPr
     >
       {columns.map((column, index) => (
         <div key={index} className="flex flex-col">
-          {column.unit === null ? null : (
-            <p className="pt-[3px] pb-[5px] text-center text-label font-semibold text-ink-muted">
-              {column.unit}
-            </p>
-          )}
+          <p className="pt-[3px] pb-[5px] text-center text-label font-semibold text-ink-muted">
+            {column.unit}
+          </p>
           <div className={LIST}>
             {column.values.map((value) => {
               const chosen = value === column.chosen;
