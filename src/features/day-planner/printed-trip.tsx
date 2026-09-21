@@ -458,7 +458,8 @@ function DayStats({ day, request }: DayContext) {
  * drawn at, held before the picture arrives, so the room it takes on the
  * sheet is known without waiting for it. Without anyone to tell when it
  * has arrived, for measuring, the frame alone. As wide as the rows unless
- * the paper is short, when it gives up width to leave the day its room.
+ * the paper is short or a smaller map was asked for, and then in the middle
+ * of them, so the day's own margin is the same on either side of it.
  */
 function DayMap({
   day,
@@ -476,7 +477,7 @@ function DayMap({
   return (
     <figure
       style={{ width: size.width, height: size.height }}
-      className={`mt-4 shrink-0 overflow-hidden rounded-[5px] border ${RULE}`}
+      className={`mx-auto mt-4 shrink-0 overflow-hidden rounded-[5px] border ${RULE}`}
     >
       {onSettled === undefined ? null : (
         /* Plain img rather than the framework's: the picture is ours, drawn
