@@ -12,21 +12,22 @@
    scale: the copy of each day that is measured to deal them sits beside
    them at the size it prints. */
 .export-sheets .printed-trip {
-  width: 794px;
+  width: var(--sheet-w, 794px);
   margin: 0 auto;
   zoom: var(--sheet-zoom, 1);
 }
 
-/* A sheet as the printer will see it: A4 at screen resolution, with the
-   margins the page rule gives it, on the raised paper a page is made of. The
-   cover, each day and each ruled page is one. A pixel more at each side than
-   at the top and foot, so its rows are as wide as the page's, 672px, and
-   wrap where they wrap on paper. */
+/* A sheet as the printer will see it: the paper chosen, at screen
+   resolution, with the margins the page rule gives it, on the raised paper
+   a page is made of. The cover, each day and each ruled page is one. Its
+   size and margins come from the sheets themselves, which know the paper;
+   the margins are set so its rows are as wide as the page's and wrap where
+   they wrap on paper. */
 .export-sheets .printed-sheet {
   box-sizing: border-box;
-  width: 794px;
-  min-height: 1123px;
-  padding: 60px 61px;
+  width: var(--sheet-w, 794px);
+  min-height: var(--sheet-h, 1123px);
+  padding: var(--sheet-top, 60px) var(--sheet-side, 61px);
   border-radius: 4px;
   background-color: var(--color-paper-raised);
   box-shadow: var(--shadow-md);
@@ -34,7 +35,7 @@
 
 /* A sheet that is exactly a page, for what would otherwise run past one. */
 .export-sheets .printed-sheet-one-page {
-  height: 1123px;
+  height: var(--sheet-h, 1123px);
   overflow: hidden;
 }
 
@@ -86,7 +87,7 @@
   /* The page's height, not the screen sheet's, so the foot stays at the foot. */
   .export-sheets .printed-sheet {
     width: auto;
-    min-height: 264mm;
+    min-height: var(--page-room, 264mm);
     padding: 0;
     border-radius: 0;
     background: transparent;
@@ -94,7 +95,7 @@
   }
 
   .export-sheets .printed-sheet-one-page {
-    height: 264mm;
+    height: var(--page-room, 264mm);
   }
 
   .export-sheets .printed-page + .printed-page {

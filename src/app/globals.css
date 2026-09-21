@@ -374,6 +374,52 @@
   --sheet: var(--color-paper-raised);
 }
 
+/* The words on a sheet at a size other than the planner's, for eyes or for
+   small paper: every step of the scale, from the sizes DESIGN.md gives them,
+   by one factor, so the sheet keeps its proportions. Spelled out rather than
+   taken from the scale's own variables, which a variable cannot be defined
+   from itself. Applied to the sheets and to the copy of each day that is
+   measured to deal them, so what is measured is what is drawn. */
+.printed-text-small {
+  --sheet-text: 0.9;
+}
+
+.printed-text-large {
+  --sheet-text: 1.15;
+}
+
+.printed-text-small,
+.printed-text-large {
+  --text-headline: calc(32px * var(--sheet-text));
+  --text-title: calc(23px * var(--sheet-text));
+  --text-lead: calc(20px * var(--sheet-text));
+  --text-place: calc(16px * var(--sheet-text));
+  --text-time: calc(14.5px * var(--sheet-text));
+  --text-body: calc(14px * var(--sheet-text));
+  --text-small: calc(13px * var(--sheet-text));
+  --text-meta: calc(12px * var(--sheet-text));
+  --text-micro: calc(11.5px * var(--sheet-text));
+  --text-label: calc(10.5px * var(--sheet-text));
+  --text-tick: calc(9.5px * var(--sheet-text));
+}
+
+/* A sheet for a printer with no colour in it: everything the map's colours
+   picked out is in ink, and the map itself is grey. Where a wash of a leg's
+   ink lay under its glyph there is a wash of ink. */
+.printed-mono {
+  --color-terracotta: var(--color-ink);
+  --color-terracotta-700: var(--color-ink);
+  --color-terracotta-800: var(--color-ink);
+  --color-terracotta-900: var(--color-ink);
+  --color-sage-600: var(--color-ink);
+  --color-sage-700: var(--color-ink);
+  --color-neutral-700: var(--color-ink);
+}
+
+.printed-mono img {
+  filter: grayscale(1);
+}
+
 /* Each day laid out once at a sheet's width, to be measured and dealt onto
    sheets. Laid out, so it has heights, and never seen: no size of its own,
    nothing drawn, nothing it can be pointed at, and off the page it prints. */
@@ -381,7 +427,7 @@
   position: absolute;
   top: 0;
   left: 0;
-  width: 672px;
+  width: var(--sheet-content, 672px);
   height: 0;
   overflow: hidden;
   visibility: hidden;
@@ -426,11 +472,11 @@
   }
 
   .printed-sheet {
-    min-height: 264mm;
+    min-height: var(--page-room, 264mm);
   }
 
   .printed-sheet-one-page {
-    height: 264mm;
+    height: var(--page-room, 264mm);
     overflow: hidden;
   }
 

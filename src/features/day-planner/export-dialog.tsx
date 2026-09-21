@@ -4,14 +4,13 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { CheckIcon, CloseIcon, WarningIcon } from "@/ui/icons";
 import type { PlannedDay } from "./compute-trip";
 import type { ExportRequest } from "./export-request";
-import { exportRequestKey } from "./export-request";
+import { DEFAULT_EXPORT, exportRequestKey } from "./export-request";
 import { formatDayTab } from "./format-day-date";
 import { exportFileName } from "./export-name";
+import type { Ink, Orientation, PaperSize, TextSize } from "./paper";
+import { sheetGeometry } from "./paper";
 import { PrintedTrip } from "./printed-trip";
 import "./export-dialog.css";
-
-/** An A4 sheet at screen resolution, which the preview is scaled down from. */
-const SHEET_WIDTH = 794;
 
 /** The heading over each group of choices. Sentence case, as every label here is. */
 const HEADING = "text-label font-semibold text-ink-muted";
@@ -76,6 +75,49 @@ function Option({
   );
 }
 
+/**
+ * One thing about the paper that is one of a few, as a row of pills with the
+ * one in force filled, under a word saying what the row is. A row of radio
+ * buttons to a screen reader, which is what it is.
+ */
+function Choice<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  readonly label: string;
+  readonly options: readonly { readonly value: T; readonly label: string }[];
+  readonly value: T;
+  readonly onChange: (value: T) => void;
+}) {
+  return (
+    <div>
+      <p className="text-micro font-semibold text-ink-muted">{label}</p>
+      <div
+        role="radiogroup"
+        aria-label={label}
+        className="mt-[6px] grid auto-cols-fr grid-flow-col gap-[7px]"
+      >
+        {options.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            role="radio"
+            aria-checked={option.value === value}
+            onClick={() => {
+              onChange(option.value);
+            }}
+            className={`${CHIP} ${option.value === value ? CHIP_ON : CHIP_OFF}`}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 interface ExportDialogProps {
   readonly title: string;
   readonly slug: string;
@@ -128,6 +170,11 @@ export function ExportDialog({
   const [legs, setLegs] = useState(true);
   const [addresses, setAddresses] = useState(true);
   const [ruled, setRuled] = useState(false);
+  const [hours, setHours] = useState(DEFAULT_EXPORT.hours);
+  const [paper, setPaper] = useState<PaperSize>(DEFAULT_EXPORT.paper);
+  const [orientation, setOrientation] = useState<Orientation>(DEFAULT_EXPORT.orientation);
+  const [text, setText] = useState<TextSize>(DEFAULT_EXPORT.text);
+  const [ink, setInk] = useState<Ink>(DEFAULT_EXPORT.ink);
   /** A name typed over the one the trip suggests, or null while the suggestion stands. */
   const [typedName, setTypedName] = useState<string | null>(null);
   /** Which request's pictures have all arrived, so it is safe to print. */
@@ -155,8 +202,15 @@ export function ExportDialog({
     legs,
     addresses,
     ruled,
+    hours,
+    paper,
+    orientation,
+    text,
+    ink,
   };
   const requestKey = exportRequestKey(request);
+  /** How wide a sheet is drawn, which is what the preview scales down from. */
+  const sheetWidth = sheetGeometry(paper, orientation).widthPx;
   const ready = readyFor === requestKey;
   const sheets = sheetsFor?.key === requestKey ? sheetsFor.count : null;
 
@@ -205,14 +259,14 @@ export function ExportDialog({
     const observer = new ResizeObserver((entries) => {
       const width = entries[0]?.contentRect.width;
       if (width !== undefined && width > 0) {
-        element.style.setProperty("--sheet-zoom", String(Math.min(1, width / SHEET_WIDTH)));
+        element.style.setProperty("--sheet-zoom", String(Math.min(1, width / sheetWidth)));
       }
     });
     observer.observe(element);
     return () => {
       observer.disconnect();
     };
-  }, []);
+  }, [sheetWidth]);
 
   /**
    * Which page is at the top of the preview, to be named over it: the last
@@ -415,12 +469,63 @@ export function ExportDialog({
                   }}
                 />
                 <Option
+                  label="Opening hours"
+                  note="When each place is open that day"
+                  on={hours}
+                  onToggle={() => {
+                    setHours(!hours);
+                  }}
+                />
+                <Option
                   label="Notes page"
                   note="A blank lined page after each day"
                   on={ruled}
                   onToggle={() => {
                     setRuled(!ruled);
                   }}
+                />
+              </div>
+
+              <div className={DIVIDER} />
+
+              <p className={HEADING}>Paper</p>
+              <div className="mt-[11px] flex flex-col gap-[14px]">
+                <Choice
+                  label="Size"
+                  options={[
+                    { value: "a4", label: "A4" },
+                    { value: "a5", label: "A5" },
+                  ]}
+                  value={paper}
+                  onChange={setPaper}
+                />
+                <Choice
+                  label="Way up"
+                  options={[
+                    { value: "portrait", label: "Portrait" },
+                    { value: "landscape", label: "Landscape" },
+                  ]}
+                  value={orientation}
+                  onChange={setOrientation}
+                />
+                <Choice
+                  label="Text size"
+                  options={[
+                    { value: "small", label: "Small" },
+                    { value: "medium", label: "Medium" },
+                    { value: "large", label: "Large" },
+                  ]}
+                  value={text}
+                  onChange={setText}
+                />
+                <Choice
+                  label="Ink"
+                  options={[
+                    { value: "colour", label: "Colour" },
+                    { value: "mono", label: "Black and white" },
+                  ]}
+                  value={ink}
+                  onChange={setInk}
                 />
               </div>
 

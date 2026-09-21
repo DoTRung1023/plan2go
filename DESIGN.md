@@ -505,10 +505,14 @@ plan2go and which sheet it is of how many, counting every sheet.
 The export is chosen in a window over the whole page, the deepest shadow's one use:
 the choices down a column on the left, the days as chips with a word that takes all
 of them or just the open one, then what goes on the page as boxes with a line under
-each saying what it means, then the file's name, and the sheets on the right exactly
-as they will print, redrawn as each choice changes, each with its name over it. The
-one format is in the button's own words, Export PDF, because the browser's print
-window is where paper, orientation and the file itself are decided.
+each saying what it means, then the paper as rows of pills, its size, which way up,
+how big the words are and whether it is in the map's colours or in ink alone, then
+the file's name, and the sheets on the right exactly as they will print, redrawn as
+each choice changes, with the name of the one at the top held over them. The sheets
+are drawn at the paper's own size and the print window is told the same size and way
+up, so what is chosen here is what comes out and nothing is shrunk or turned to fit.
+The one format is in the button's own words, Export PDF, because the browser's print
+window is where the file itself is decided.
 
 Saving the sheets as a PDF is what the browser's own print window is for, and the name
 it offers comes from the document's title, so the document is renamed for as long as

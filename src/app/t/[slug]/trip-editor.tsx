@@ -10,6 +10,7 @@ import { PlaceSearch } from "@/features/place-search/place-search";
 import { DayTabs } from "@/features/day-planner/day-tabs";
 import { dayStatus } from "@/features/day-planner/day-status";
 import { ExportDialog } from "@/features/day-planner/export-dialog";
+import { DEFAULT_EXPORT } from "@/features/day-planner/export-request";
 import { PaneHandle } from "./pane-handle";
 import { LeaveAt } from "@/features/day-planner/leave-at";
 import { PrintedTrip } from "@/features/day-planner/printed-trip";
@@ -597,13 +598,9 @@ export function TripEditor({
           slug={slug}
           days={days}
           request={{
+            ...DEFAULT_EXPORT,
             dayIds: selected === undefined ? [] : [selected.plan.id],
-            cover: false,
             map: false,
-            notes: true,
-            legs: true,
-            addresses: true,
-            ruled: false,
           }}
           visible={false}
           onReady={() => {}}

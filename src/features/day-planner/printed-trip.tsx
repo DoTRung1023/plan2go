@@ -19,17 +19,10 @@ import { placeUrl } from "./directions-url";
 import { legDisc, MODE_ICON, MODE_WORDS } from "./leg-row";
 import { legInk } from "@/features/trip-map/route-style";
 import { paginate } from "./paginate-sheets";
+import { mapSize, sheetGeometry } from "./paper";
+import type { SheetGeometry } from "./paper";
 import { rideSentence } from "./transit-ride";
 import lockup from "../../../logo/logo-text.png";
-
-/**
- * How much of a sheet a day may fill, in px: an A4 sheet on screen less its
- * margins, and a little under that, so that what fits here fits the page
- * too. A page is A4 less the 16mm the page rule keeps on every side, which
- * is within three pixels of the screen sheet's room, and the rows are laid
- * out at the same width on both, so what is measured here is what prints.
- */
-const SHEET_ROOM = 1123 - 2 * 60 - 12;
 
 /**
  * A row of the day on paper: the time in a column of its own on the left,
@@ -384,6 +377,8 @@ interface DayContext {
   readonly range: string;
   readonly slug: string;
   readonly request: ExportRequest;
+  /** The paper the sheet is made for, which is how big the map may be. */
+  readonly sheet: SheetGeometry;
 }
 
 /**
@@ -449,20 +444,26 @@ function DayStats({ day, request }: DayContext) {
  * The map of the day, in a frame two wide by one high: the shape the map is
  * drawn at, held before the picture arrives, so the room it takes on the
  * sheet is known without waiting for it. Without anyone to tell when it
- * has arrived, for measuring, the frame alone.
+ * has arrived, for measuring, the frame alone. As wide as the rows unless
+ * the paper is short, when it gives up width to leave the day its room.
  */
 function DayMap({
   day,
   number,
   slug,
+  sheet,
   onSettled,
 }: DayContext & { readonly onSettled?: () => void }) {
   const [failed, setFailed] = useState(false);
   if (failed) {
     return null;
   }
+  const size = mapSize(sheet);
   return (
-    <figure className={`mt-4 aspect-[2/1] shrink-0 overflow-hidden rounded-[5px] border ${RULE}`}>
+    <figure
+      style={{ width: size.width, height: size.height }}
+      className={`mt-4 shrink-0 overflow-hidden rounded-[5px] border ${RULE}`}
+    >
       {onSettled === undefined ? null : (
         /* Plain img rather than the framework's: the picture is ours, drawn
            once per day and cached, and it is loaded for its arrival to be
@@ -564,7 +565,9 @@ function dayUnits({ day, request }: DayContext): readonly Unit[] {
               {request.addresses && place?.address ? (
                 <p className={`mt-[3px] text-small ${MUTED}`}>{place.address}</p>
               ) : null}
-              {hours === null ? null : <p className={`mt-[3px] text-small ${MUTED}`}>{hours}</p>}
+              {request.hours && hours !== null ? (
+                <p className={`mt-[3px] text-small ${MUTED}`}>{hours}</p>
+              ) : null}
               {request.notes && note !== null ? (
                 <p className={`mt-[7px] max-w-[60ch] border-l-2 pl-[9px] text-small text-ink ${RULE}`}>
                   {note}
@@ -788,8 +791,17 @@ export function PrintedTrip({
     );
   }, []);
 
+  const sheet = sheetGeometry(request.paper, request.orientation);
   const contexts = chosen.map(
-    (day): DayContext => ({ day, number: days.indexOf(day) + 1, title, range, slug, request }),
+    (day): DayContext => ({
+      day,
+      number: days.indexOf(day) + 1,
+      title,
+      range,
+      slug,
+      request,
+      sheet,
+    }),
   );
   const unitsOf = contexts.map((context) => dayUnits(context));
   const allMeasured = contexts.every((context) => measures[context.day.plan.id] !== undefined);
@@ -811,8 +823,8 @@ export function PrintedTrip({
       }
       const dealt = paginate(
         measure.units,
-        SHEET_ROOM - measure.first - measure.foot,
-        SHEET_ROOM - measure.later - measure.foot,
+        sheet.roomPx - measure.first - measure.foot,
+        sheet.roomPx - measure.later - measure.foot,
       );
       const dayLabel = `Day ${String(context.number)}`;
       dealt.forEach((indices, part) => {
@@ -858,12 +870,32 @@ export function PrintedTrip({
     }
   }, [count, onSheets]);
 
+  /** The words at the size asked for, on the sheets and on what is measured to deal them. */
+  const textClass = request.text === "medium" ? "" : `printed-text-${request.text}`;
+
   return (
     <>
+      {/* The paper, told to the page rule and to the sheets in one place:
+          the print window is asked for this size and way up, the sheets on
+          screen are drawn at it, and the copy of each day that is measured
+          is laid out at its width. One style for the one set of sheets on
+          the page. */}
+      <style>{`
+        @page { size: ${sheet.pageSize}; }
+        .printed-trip, .printed-measure {
+          --sheet-w: ${String(sheet.widthPx)}px;
+          --sheet-h: ${String(sheet.heightPx)}px;
+          --sheet-side: ${String(sheet.sidePaddingPx)}px;
+          --sheet-top: ${String(sheet.topPaddingPx)}px;
+          --sheet-content: ${String(sheet.contentWidthPx)}px;
+          --page-room: ${String(sheet.pageRoomMm)}mm;
+        }
+      `}</style>
+
       {/* Laid out but never seen, and never printed: the days at the sheet's
           width, for their heights. Kept out of the sheets' own box, which
           the preview scales, so the heights are read at the size they print. */}
-      <div className="printed-measure" aria-hidden="true">
+      <div className={`printed-measure ${textClass}`} aria-hidden="true">
         {contexts.map((context, at) => (
           <DayMeasurer
             key={context.day.plan.id}
@@ -874,7 +906,9 @@ export function PrintedTrip({
         ))}
       </div>
 
-      <div className={`printed-trip ${visible ? "" : "hidden print:block"}`}>
+      <div
+        className={`printed-trip ${textClass} ${request.ink === "mono" ? "printed-mono" : ""} ${visible ? "" : "hidden print:block"}`}
+      >
         {pages.map((page, index) => (
           /* Named for the preview, which says over the sheets which one is
              at the top as they scroll; nothing on the sheet itself. */

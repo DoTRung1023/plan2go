@@ -1,3 +1,5 @@
+import type { Ink, Orientation, PaperSize, TextSize } from "./paper";
+
 /**
  * What the traveller asked to take away on paper. The format is not in here
  * because there is one: the browser's print window, where saving as a PDF is.
@@ -17,7 +19,31 @@ export interface ExportRequest {
   readonly addresses: boolean;
   /** A ruled sheet after each day, for writing on. */
   readonly ruled: boolean;
+  /** When each place is open, under its address. */
+  readonly hours: boolean;
+  /** The paper the sheets are made for, and which way up. */
+  readonly paper: PaperSize;
+  readonly orientation: Orientation;
+  /** How big the words are, for eyes and for paper that is small. */
+  readonly text: TextSize;
+  /** In the map's colours, or in ink alone for a printer without any. */
+  readonly ink: Ink;
 }
+
+/** What the export is until anything is chosen. */
+export const DEFAULT_EXPORT: Omit<ExportRequest, "dayIds"> = {
+  cover: false,
+  map: true,
+  notes: true,
+  legs: true,
+  addresses: true,
+  ruled: false,
+  hours: true,
+  paper: "a4",
+  orientation: "portrait",
+  text: "medium",
+  ink: "colour",
+};
 
 /** One string per distinct request, for telling one set of sheets from the next. */
 export function exportRequestKey(request: ExportRequest): string {
@@ -29,5 +55,10 @@ export function exportRequestKey(request: ExportRequest): string {
     request.legs ? "legs" : "",
     request.addresses ? "addresses" : "",
     request.ruled ? "ruled" : "",
+    request.hours ? "hours" : "",
+    request.paper,
+    request.orientation,
+    request.text,
+    request.ink,
   ].join("|");
 }
