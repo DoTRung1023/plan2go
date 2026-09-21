@@ -338,7 +338,7 @@ export function ExportDialog({
               <div className="-mx-[10px] mt-[6px]">
                 <Option
                   label="Cover page"
-                  note="The trip's name, its dates and every day at a glance"
+                  note="Name, dates and every day"
                   on={cover}
                   onToggle={() => {
                     setCover(!cover);
@@ -352,7 +352,7 @@ export function ExportDialog({
               <div className="-mx-[10px] mt-[6px] flex flex-col gap-px">
                 <Option
                   label="Map of the route"
-                  note="A picture of the day at the top"
+                  note="At the top of each day"
                   on={map}
                   onToggle={() => {
                     setMap(!map);
@@ -360,7 +360,7 @@ export function ExportDialog({
                 />
                 <Option
                   label="Notes on stops"
-                  note="What you wrote on each stop"
+                  note="What you wrote"
                   on={notes}
                   onToggle={() => {
                     setNotes(!notes);
@@ -368,7 +368,7 @@ export function ExportDialog({
                 />
                 <Option
                   label="How you get between stops"
-                  note="The way, how long and how far"
+                  note="Mode, time and distance"
                   on={legs}
                   onToggle={() => {
                     setLegs(!legs);
@@ -376,7 +376,7 @@ export function ExportDialog({
                 />
                 <Option
                   label="Street addresses"
-                  note="In the local language, to show a driver"
+                  note="In the local language"
                   on={addresses}
                   onToggle={() => {
                     setAddresses(!addresses);
