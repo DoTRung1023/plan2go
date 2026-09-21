@@ -57,7 +57,8 @@
 
   .export-frame,
   .export-body,
-  .export-preview {
+  .export-preview,
+  .export-scroll {
     position: static !important;
     display: block !important;
     height: auto !important;

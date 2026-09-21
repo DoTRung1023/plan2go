@@ -433,10 +433,10 @@ export function ExportDialog({
             </div>
           </aside>
 
-          <div className="export-preview scroll-quiet min-h-0 flex-1 overflow-y-auto bg-paper-sunken px-6 pt-[14px] pb-7">
-            {/* Kept at the top of the preview as it scrolls: what it is,
-                and what the export comes to. */}
-            <div className="export-chrome sticky -top-[14px] z-[2] -mt-[14px] flex items-center gap-[10px] bg-paper-sunken pt-[22px] pb-[10px]">
+          <div className="export-preview flex min-h-0 min-w-0 flex-1 flex-col bg-paper-sunken">
+            {/* Above the sheets rather than among them, so it holds still
+                while they scroll: what this is, and what the export comes to. */}
+            <div className="export-chrome flex shrink-0 items-center gap-[10px] px-6 pt-5 pb-[10px]">
               <p className={HEADING}>Preview</p>
               <span aria-hidden="true" className="h-px flex-1 bg-rule-strong/60" />
               <p className="text-meta/none text-ink-muted">
@@ -446,28 +446,30 @@ export function ExportDialog({
               </p>
             </div>
 
-            {picked.length === 0 ? (
-              <p className="py-10 text-center text-small text-ink-muted">
-                Nothing to show until a day is chosen.
-              </p>
-            ) : (
-              <div ref={preview} className="export-sheets relative">
-                <PrintedTrip
-                  key={requestKey}
-                  title={title}
-                  slug={slug}
-                  days={days}
-                  request={request}
-                  visible={true}
-                  onReady={() => {
-                    setReadyFor(requestKey);
-                  }}
-                  onSheets={(count) => {
-                    setSheetsFor({ key: requestKey, count });
-                  }}
-                />
-              </div>
-            )}
+            <div className="export-scroll scroll-quiet min-h-0 flex-1 overflow-y-auto px-6 pb-7">
+              {picked.length === 0 ? (
+                <p className="py-10 text-center text-small text-ink-muted">
+                  Nothing to show until a day is chosen.
+                </p>
+              ) : (
+                <div ref={preview} className="export-sheets relative">
+                  <PrintedTrip
+                    key={requestKey}
+                    title={title}
+                    slug={slug}
+                    days={days}
+                    request={request}
+                    visible={true}
+                    onReady={() => {
+                      setReadyFor(requestKey);
+                    }}
+                    onSheets={(count) => {
+                      setSheetsFor({ key: requestKey, count });
+                    }}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
