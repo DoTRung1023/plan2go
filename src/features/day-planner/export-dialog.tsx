@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { CheckIcon, CloseIcon, WarningIcon } from "@/ui/icons";
 import type { PlannedDay } from "./compute-trip";
 import type { ExportRequest } from "./export-request";
@@ -326,7 +326,10 @@ export function ExportDialog({
     set(!on);
   };
 
-  useEffect(() => {
+  /* Before the browser paints, so the sheets are never seen anywhere but
+     where they were: the sheets are dealt, the count is said and the place
+     put back all in the one frame. */
+  useLayoutEffect(() => {
     const element = scroller.current;
     if (element !== null && sheets !== null && keptPlace.current !== null) {
       element.scrollTop = keptPlace.current * (element.scrollHeight - element.clientHeight);

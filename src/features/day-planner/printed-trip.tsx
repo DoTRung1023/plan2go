@@ -487,6 +487,10 @@ function DayMap({
         <img
           src={`/api/map/static?slug=${encodeURIComponent(slug)}&day=${encodeURIComponent(day.plan.id)}`}
           alt={`Map of day ${String(number)}: ${stopCount(day.plan.stops.length)}`}
+          /* Decoded with the rest of the sheet rather than a frame after it,
+             so a picture that is already to hand, as it is whenever a choice
+             redraws the sheets, does not blink out and back. */
+          decoding="sync"
           onLoad={onSettled}
           onError={() => {
             setFailed(true);
@@ -875,10 +879,15 @@ export function PrintedTrip({
     });
   }
 
-  /** How many sheets were last said, so a count is said once, and again only when it changes. */
+  /**
+   * How many sheets were last said, so a count is said once, and again only
+   * when it changes. Said before the browser paints, so whoever is told can
+   * put the sheets where they were in the same frame they appear in, rather
+   * than a frame later, when the eye has already seen them jump.
+   */
   const said = useRef<number | null>(null);
   const count = allMeasured ? pages.length : null;
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (count !== null && count !== said.current && onSheets !== undefined) {
       said.current = count;
       onSheets(count);
