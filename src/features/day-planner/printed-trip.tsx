@@ -15,6 +15,7 @@ import { formatDayDate, formatDayLong } from "./format-day-date";
 import { formatDayTime } from "./format-day-time";
 import { formatDistance } from "./format-distance";
 import { Credit } from "@/ui/credit";
+import { ClockIcon } from "@/ui/icons";
 import { placeUrl } from "./directions-url";
 import { legDisc, MODE_ICON, MODE_WORDS } from "./leg-row";
 import { legInk } from "@/features/trip-map/route-style";
@@ -584,8 +585,14 @@ function dayUnits({ day, request }: DayContext): readonly Unit[] {
               {request.addresses && place?.address ? (
                 <p className={`mt-[3px] text-small ${MUTED}`}>{place.address}</p>
               ) : null}
+              {/* A step smaller than the address and behind a clock, as the
+                  card draws it, so the two lines under a name are told apart
+                  at a glance: where it is, then when it is open. */}
               {request.hours && hours !== null ? (
-                <p className={`mt-[3px] text-small ${MUTED}`}>{hours}</p>
+                <p className={`mt-[4px] flex items-center gap-[5px] text-meta ${MUTED} tabular-nums`}>
+                  <ClockIcon size={12} strokeWidth={2.4} className="shrink-0" />
+                  <span>{hours}</span>
+                </p>
               ) : null}
               {request.notes && note !== null ? (
                 <p className={`mt-[7px] max-w-[60ch] border-l-2 pl-[9px] text-small text-ink ${RULE}`}>
