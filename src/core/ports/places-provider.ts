@@ -76,8 +76,15 @@ export interface PlacesProvider {
   photo(name: string, maxWidthPx: number): Promise<PlaceImage | null>;
 }
 
-/** A picture as it is served: the bytes and what they are. */
+/**
+ * A picture as it is served: its bytes as they arrive, what they are, and
+ * how many there will be when the source said. A stream and not a buffer,
+ * so whoever is waiting for the picture can be given it as it comes rather
+ * than once all of it has.
+ */
 export interface PlaceImage {
-  readonly bytes: Uint8Array<ArrayBuffer>;
+  readonly body: ReadableStream<Uint8Array>;
   readonly contentType: string;
+  /** How many bytes the body comes to, or null when the source did not say. */
+  readonly byteLength: number | null;
 }

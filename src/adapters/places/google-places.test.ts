@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { toWeeklyOpeningHours } from "./google-places";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { createGooglePlacesProvider, declaredLength, toWeeklyOpeningHours } from "./google-places";
 
 describe("toWeeklyOpeningHours", () => {
   it("says nothing when the provider gave no hours", () => {
@@ -47,5 +47,81 @@ describe("toWeeklyOpeningHours", () => {
       { opensAt: 540, closesAt: 720 },
       { opensAt: 780, closesAt: 1020 },
     ]);
+  });
+});
+
+describe("declaredLength", () => {
+  it("reads a plain byte count", () => {
+    expect(declaredLength(new Headers({ "content-length": "1325275" }))).toBe(1325275);
+  });
+
+  it("says nothing when the answer did not", () => {
+    expect(declaredLength(new Headers())).toBeNull();
+  });
+
+  it("does not trust a count of a body that arrived compressed", () => {
+    expect(
+      declaredLength(new Headers({ "content-length": "4096", "content-encoding": "gzip" })),
+    ).toBeNull();
+  });
+
+  it("does not trust a count that is not a number", () => {
+    expect(declaredLength(new Headers({ "content-length": "many" }))).toBeNull();
+  });
+});
+
+describe("photo", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("hands the picture on as a stream, with its length, without reading it first", async () => {
+    let pulled = 0;
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        pulled += 1;
+        if (pulled > 3) {
+          controller.close();
+          return;
+        }
+        controller.enqueue(new Uint8Array([pulled, pulled, pulled]));
+      },
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(body, {
+          status: 200,
+          headers: { "content-type": "image/jpeg", "content-length": "9" },
+        }),
+      ),
+    );
+
+    const image = await createGooglePlacesProvider({ apiKey: "k" }).photo("places/p/photos/x", 3200);
+
+    expect(image).not.toBeNull();
+    expect(image?.contentType).toBe("image/jpeg");
+    expect(image?.byteLength).toBe(9);
+    // Nothing has been read on our account: the reader downstream drives it.
+    expect(pulled).toBeLessThanOrEqual(1);
+    const bytes = new Uint8Array(await new Response(image?.body).arrayBuffer());
+    expect(Array.from(bytes)).toEqual([1, 1, 1, 2, 2, 2, 3, 3, 3]);
+  });
+
+  it("asks for the picture no wider than the sheet draws it", async () => {
+    const fetched = vi.fn(async () => new Response(new Uint8Array([0]), { status: 200 }));
+    vi.stubGlobal("fetch", fetched);
+
+    await createGooglePlacesProvider({ apiKey: "k" }).photo("places/p/photos/x", 1600);
+
+    const [url] = fetched.mock.calls[0] as unknown as [URL];
+    expect(url.pathname).toBe("/v1/places/p/photos/x/media");
+    expect(url.searchParams.get("maxWidthPx")).toBe("1600");
+  });
+
+  it("says a picture the provider no longer has is gone", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status: 404 })));
+
+    await expect(createGooglePlacesProvider({ apiKey: "k" }).photo("places/p/photos/x", 800)).resolves.toBeNull();
   });
 });

@@ -14,7 +14,7 @@ import {
   StarIcon,
 } from "@/ui/icons";
 import { useScrollBar } from "@/ui/use-scroll-bar";
-import { PhotoViewer } from "./photo-viewer";
+import { PhotoViewer, sizesFor } from "./photo-viewer";
 import "./place-sheet.css";
 
 const cardSchema = z.object({
@@ -60,7 +60,8 @@ const STRIP_WIDTH = 320;
  * for a large screen of that kind where even the second falls short. The
  * browser picks, from what it knows about the screen and the room the
  * picture will have on it, so the largest is fetched only where it can be
- * seen. Fetched only then, never with the sheet.
+ * seen. Fetched when a picture is opened, or when a hand or the keyboard
+ * arrives on one and is about to open it; never with the sheet.
  */
 const VIEW_WIDTHS = [1600, 3200, 4800] as const;
 
@@ -491,6 +492,31 @@ export function PlaceSheet({
   const photoCount = card?.photos.length ?? 0;
 
   /**
+   * Which pictures have been asked for at the viewer's size, so a hand that
+   * crosses the strip and comes back asks for each one once.
+   */
+  const warmed = useRef(new Set<number>());
+  /**
+   * A hand or the keyboard arriving on a picture is most of the way to
+   * opening it, and the copy the viewer draws takes a second or two to come
+   * on its first opening. So it is asked for then, behind whatever else the
+   * page is fetching, in exactly the terms the viewer will ask in, so what
+   * the viewer asks for is already here or already on its way.
+   */
+  const warm = (at: number): void => {
+    const photo = card?.photos[at];
+    if (photo === undefined || warmed.current.has(at)) {
+      return;
+    }
+    warmed.current.add(at);
+    const picture = new Image();
+    picture.fetchPriority = "low";
+    picture.sizes = sizesFor(photo);
+    picture.srcset = viewSrcSet(pictures, at, photo);
+    picture.src = photoUrl(pictures, at, VIEW_WIDTHS[0]);
+  };
+
+  /**
    * The way out on a phone, where the sheet is the whole window and has no
    * edge to hang anything on: the corner, over the picture or over the name.
    */
@@ -602,6 +628,12 @@ export function PlaceSheet({
                 type="button"
                 data-photo={0}
                 aria-label={`Open photo 1 of ${String(photoCount)}`}
+                onPointerEnter={() => {
+                  warm(0);
+                }}
+                onFocus={() => {
+                  warm(0);
+                }}
                 onClick={(event) => {
                   openedByKey.current = event.detail === 0;
                   setViewing(0);
@@ -726,6 +758,12 @@ export function PlaceSheet({
                       data-photo={index + 1}
                       aria-label={`Open photo ${String(index + 2)} of ${String(photoCount)}`}
                       title={photo.by === null ? undefined : `Photo by ${photo.by}`}
+                      onPointerEnter={() => {
+                        warm(index + 1);
+                      }}
+                      onFocus={() => {
+                        warm(index + 1);
+                      }}
                       onClick={(event) => {
                         openedByKey.current = event.detail === 0;
                         setViewing(index + 1);

@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { z } from "zod";
 import { createGooglePlacesProvider } from "@/adapters/places/google-places";
 import { checkEditAccess } from "@/server/ownership/edit-access";
@@ -38,6 +38,13 @@ const querySchema = z.object({
  * keeps it for the month the terms allow, so a picture is paid for once
  * however many times the place is opened. A place not on the trip is shown
  * to whoever holds the edit key, as its card is.
+ *
+ * The bytes go out as they come in. A picture at the viewer's size is over a
+ * megabyte and the provider hands it over slowly, and the person waiting is
+ * looking at a soft copy until the last of it lands, so nothing here holds
+ * the stream: not reading it whole first, and not the copy for our own
+ * table, which is filled off the same stream and finished after the answer
+ * has gone.
  */
 export async function GET(request: Request): Promise<Response> {
   const limit = await consumeRateLimit(ROUTE, request.headers, POLICY);
@@ -71,16 +78,25 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   try {
-    const image = await placePhotoFor(id, at, width, createGooglePlacesProvider({ apiKey }));
-    if (image === null) {
+    const served = await placePhotoFor(id, at, width, createGooglePlacesProvider({ apiKey }));
+    if (served === null) {
       return new Response(null, { status: 404 });
     }
-    return new Response(image.bytes, {
-      headers: {
-        "Content-Type": image.contentType,
-        "Cache-Control": "private, max-age=86400",
-      },
+    if (served.kept !== null) {
+      // Already under way; this only keeps the process alive until it is
+      // done, which on a platform that stops a function at its last byte
+      // is the difference between a copy kept and a copy paid for again.
+      after(served.kept);
+    }
+    const headers = new Headers({
+      "Content-Type": served.image.contentType,
+      "Cache-Control": "private, max-age=86400",
     });
+    if (served.image.byteLength !== null) {
+      // So the browser knows how far along a picture it is drawing softly is.
+      headers.set("Content-Length", String(served.image.byteLength));
+    }
+    return new Response(served.image.body, { headers });
   } catch (cause) {
     console.error("Place photo failed", cause);
     return NextResponse.json({ error: "Could not reach the place service." }, { status: 502 });

@@ -429,10 +429,33 @@ export function createGooglePlacesProvider(options: GooglePlacesOptions): Places
           `Google Places answered ${String(response.status)} for a picture. ${reason.slice(0, REASON_LENGTH)}`.trim(),
         );
       }
+      if (response.body === null) {
+        throw new Error("Google Places answered for a picture with nothing in it.");
+      }
+      // Handed on as it arrives, not once it has: a picture at the viewer's
+      // size is over a megabyte, and the person waiting is looking at a
+      // soft copy of it until the last byte lands.
       return {
-        bytes: new Uint8Array(await response.arrayBuffer()),
+        body: response.body,
         contentType: response.headers.get("content-type") ?? "image/jpeg",
+        byteLength: declaredLength(response.headers),
       };
     },
   };
+}
+
+/**
+ * How long the body is, when the answer said and the count can be trusted.
+ * A body that arrived compressed is counted as sent and read as unpacked, and
+ * the two are not the same number, so that count is not passed on.
+ */
+export function declaredLength(headers: Headers): number | null {
+  if (headers.get("content-encoding") !== null) {
+    return null;
+  }
+  const length = headers.get("content-length");
+  if (length === null || !/^\d+$/.test(length)) {
+    return null;
+  }
+  return Number(length);
 }
