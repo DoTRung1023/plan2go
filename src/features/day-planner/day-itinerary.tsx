@@ -8,7 +8,7 @@ import type { StopId } from "@/core/model/stop";
 import type { ComputedDay, ComputedStop } from "@/core/time/compute-day";
 import { formatClock } from "@/core/time/minutes";
 import { weekdayOf } from "@/core/time/zoned";
-import { ClockIcon, CloseIcon, FlagIcon, HomeIcon, PencilIcon } from "@/ui/icons";
+import { ClockIcon, CloseIcon, FlagIcon, HomeIcon, PencilIcon, PlusIcon } from "@/ui/icons";
 import type { PlannedDay } from "./compute-trip";
 import type { DayActions } from "./day-actions";
 import { EmptyDay } from "./empty-day";
@@ -108,6 +108,22 @@ const MARKS = {
 } as const;
 
 /**
+ * The marker for an end of the day, as the map draws it: a sage square with
+ * one corner cut, at the size the map draws a stop, carrying the glyph for
+ * the end it is. One element for the row that has the place and the row that
+ * offers to find one, so an end of the day is one shape wherever it is seen,
+ * and the row offering it shows the shape it will get.
+ */
+function EndpointMark({ which }: { readonly which: keyof typeof MARKS }) {
+  const Mark = MARKS[which];
+  return (
+    <span className="grid h-[30px] w-[30px] shrink-0 place-items-center self-center rounded-[13px_13px_13px_4px] bg-sage-600 text-paper">
+      <Mark size={15} strokeWidth={2.75} />
+    </span>
+  );
+}
+
+/**
  * Where the day starts and where it ends. A different shape from a stop, not
  * merely a different colour: a rounded square in sage with one corner cut,
  * against the numbered terracotta discs of the stops between them.
@@ -144,7 +160,6 @@ function Anchor({
   readonly onOpen: () => void;
 }) {
   const row = useRef<HTMLDivElement | null>(null);
-  const Mark = MARKS[which];
 
   /** Brought into view when the map points at it, the way a card is. */
   useEffect(() => {
@@ -179,9 +194,7 @@ function Anchor({
         hovered ? "bg-paper-sunken" : ""
       }`}
     >
-      <span className="grid h-[30px] w-[30px] shrink-0 place-items-center self-center rounded-[13px_13px_13px_4px] bg-sage-600 text-paper">
-        <Mark size={15} strokeWidth={2.75} />
-      </span>
+      <EndpointMark which={which} />
 
       <div className="flex items-start gap-[10px]">
         <div className="min-w-0 flex-1">
@@ -218,13 +231,31 @@ function Anchor({
   );
 }
 
-const ENDPOINT_BUTTON =
-  "inline-flex shrink-0 items-center rounded-pill border-[1.5px] border-dashed border-rule-strong bg-transparent px-4 py-[9px] text-small/none font-semibold whitespace-nowrap text-ink-faint hover:border-terracotta hover:text-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+/**
+ * An end of the day nobody has set yet: the anchor's row, drawn as an outline
+ * where the row has no place to stand on yet, with the marker the end will
+ * get, the name of the end and what goes there, and a plus at the end of the
+ * row. On the anchor's grid, so the marker and the words stand where the
+ * place's will once there is one. The outline's 1.5px comes off the gutter
+ * and off the height, so the marker lands on the anchor's 17px and the row
+ * is as deep as the anchor is, to the pixel.
+ */
+const ADD_ENDPOINT =
+  "group grid w-full grid-cols-[30px_minmax(0,1fr)_auto] items-center gap-x-[13px] rounded-row border-[1.5px] border-dashed border-rule-strong px-[15.5px] py-[8.5px] text-left hover:border-terracotta disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+
+/**
+ * The next place, where it would go: after the last stop, before the end of
+ * the day. The same outline as an end of the day that is not there yet, as a
+ * pill, because it is a button and not a row with a shape to show.
+ */
+const ADD_PLACE =
+  "flex w-full items-center justify-center gap-[6px] rounded-pill border-[1.5px] border-dashed border-rule-strong py-[12px] text-body/none font-semibold text-ink hover:border-terracotta hover:text-terracotta-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 /** What each end of the day is called, wherever it has to be said out loud. */
 const ENDS = {
   start: {
     add: "Add start point",
+    hint: "Hotel, home or pickup, wherever the day begins",
     label: "Where the day starts",
     placeholder: "Hotel, station, wherever the day begins",
     change: "Change where the day starts",
@@ -232,6 +263,7 @@ const ENDS = {
   },
   end: {
     add: "Add end point",
+    hint: "Hotel, station or airport, wherever the day finishes",
     label: "Where the day ends",
     placeholder: "Hotel, station, wherever the day finishes",
     change: "Change where the day ends",
@@ -358,21 +390,32 @@ function EndpointSlot({
       ) : null}
 
       {/* The one case with nothing to show: an end nobody has set yet. The
-          button says which end it is, because on a day with neither set the
-          two of them are otherwise the same word twice. */}
+          row says which end it is, because on a day with neither set the two
+          of them are otherwise the same word twice, and under it what kind of
+          place goes there. The name and the line under it sit where the
+          place's name and address will. */}
       {endpoint === null && !picking && actions !== null ? (
-        <p className="py-2">
+        <div className="py-2">
           <button
             type="button"
             disabled={saving}
             onClick={() => {
               setPicking(true);
             }}
-            className={ENDPOINT_BUTTON}
+            className={ADD_ENDPOINT}
           >
-            {words.add}
+            <EndpointMark which={which} />
+            <span className="min-w-0">
+              <span className="block font-display text-place text-ink">{words.add}</span>
+              <span className="mt-[3px] block text-meta text-ink-faint">{words.hint}</span>
+            </span>
+            <PlusIcon
+              size={16}
+              strokeWidth={2.75}
+              className="text-ink-muted group-hover:text-terracotta-700"
+            />
           </button>
-        </p>
+        </div>
       ) : null}
 
       {error === null ? null : (
@@ -530,6 +573,20 @@ export function DayItinerary({
 
       {moving ? (
         <p className="mt-2 px-[10px] text-micro text-ink-muted">Working out the new times.</p>
+      ) : null}
+
+      {/* Where the next place goes, after the last stop and before the end of
+          the day. The search field is over the map, which is the other pane
+          on a desk and a strip above this on a phone, so this points at it
+          the way the empty day does; a day with no stops has that instead,
+          and a reader who cannot edit has neither. */}
+      {onFindPlace !== null && day.stops.length > 0 ? (
+        <div className="pt-2">
+          <button type="button" onClick={onFindPlace} className={ADD_PLACE}>
+            <PlusIcon size={15} strokeWidth={3} />
+            Add a place
+          </button>
+        </div>
       ) : null}
 
       <EndpointSlot
