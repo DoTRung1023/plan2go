@@ -1,4 +1,4 @@
-import type { Ink, Orientation, PaperSize, TextSize } from "./paper";
+import type { Ink, MapSize, Orientation, PaperSize, TextSize } from "./paper";
 
 /**
  * What the traveller asked to take away on paper. The format is not in here
@@ -11,6 +11,8 @@ export interface ExportRequest {
   readonly cover: boolean;
   /** A map of each day above its list. */
   readonly map: boolean;
+  /** How much of the sheet the map takes. */
+  readonly mapSize: MapSize;
   /** The note written on each stop. */
   readonly notes: boolean;
   /** How each stop is reached from the one before: the way, how long, how far. */
@@ -34,6 +36,7 @@ export interface ExportRequest {
 export const DEFAULT_EXPORT: Omit<ExportRequest, "dayIds"> = {
   cover: false,
   map: true,
+  mapSize: "large",
   notes: true,
   legs: true,
   addresses: true,
@@ -50,7 +53,7 @@ export function exportRequestKey(request: ExportRequest): string {
   return [
     request.dayIds.join(","),
     request.cover ? "cover" : "",
-    request.map ? "map" : "",
+    request.map ? `map-${request.mapSize}` : "",
     request.notes ? "notes" : "",
     request.legs ? "legs" : "",
     request.addresses ? "addresses" : "",

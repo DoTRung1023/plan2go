@@ -7,7 +7,7 @@ import type { ExportRequest } from "./export-request";
 import { DEFAULT_EXPORT, exportRequestKey } from "./export-request";
 import { formatDayTab } from "./format-day-date";
 import { exportFileName } from "./export-name";
-import type { Ink, Orientation, PaperSize, TextSize } from "./paper";
+import type { Ink, MapSize, Orientation, PaperSize, TextSize } from "./paper";
 import { sheetGeometry } from "./paper";
 import { PrintedTrip } from "./printed-trip";
 import "./export-dialog.css";
@@ -85,14 +85,17 @@ function Choice<T extends string>({
   options,
   value,
   onChange,
+  disabled = false,
 }: {
   readonly label: string;
   readonly options: readonly { readonly value: T; readonly label: string }[];
   readonly value: T;
   readonly onChange: (value: T) => void;
+  /** Of no consequence for now, and drawn faded to say so. */
+  readonly disabled?: boolean;
 }) {
   return (
-    <div>
+    <div className={disabled ? "opacity-45" : ""}>
       <p className="text-micro font-semibold text-ink-muted">{label}</p>
       <div
         role="radiogroup"
@@ -105,6 +108,7 @@ function Choice<T extends string>({
             type="button"
             role="radio"
             aria-checked={option.value === value}
+            disabled={disabled}
             onClick={() => {
               onChange(option.value);
             }}
@@ -166,6 +170,7 @@ export function ExportDialog({
   const [chosen, setChosen] = useState<ReadonlySet<string>>(() => new Set([selectedDayId]));
   const [cover, setCover] = useState(false);
   const [map, setMap] = useState(true);
+  const [mapSize, setMapSize] = useState<MapSize>(DEFAULT_EXPORT.mapSize);
   const [notes, setNotes] = useState(true);
   const [legs, setLegs] = useState(true);
   const [addresses, setAddresses] = useState(true);
@@ -198,6 +203,7 @@ export function ExportDialog({
     dayIds: picked.map((day) => day.plan.id),
     cover,
     map,
+    mapSize,
     notes,
     legs,
     addresses,
@@ -507,6 +513,17 @@ export function ExportDialog({
                   ]}
                   value={orientation}
                   onChange={setOrientation}
+                />
+                <Choice
+                  label="Map size"
+                  options={[
+                    { value: "small", label: "Small" },
+                    { value: "medium", label: "Medium" },
+                    { value: "large", label: "Large" },
+                  ]}
+                  value={mapSize}
+                  onChange={setMapSize}
+                  disabled={!map}
                 />
                 <Choice
                   label="Text size"

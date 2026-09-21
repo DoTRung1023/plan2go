@@ -103,6 +103,19 @@ function MarkColumn({
 }
 
 /**
+ * The lockup the front door wears, and a way back to it: the page a trip is
+ * started on, so whoever is handed the sheets can start their own. A link
+ * the PDF keeps, as it keeps every other.
+ */
+function Lockup({ className }: { readonly className: string }) {
+  return (
+    <a href="/" target="_blank" rel="noreferrer" className={className}>
+      <Image src={lockup} alt="plan2go" className="h-9 w-auto" />
+    </a>
+  );
+}
+
+/**
  * A place's name, opening the place in Google Maps for everything the sheet
  * has no room for. In the colour the map marks the place with, terracotta
  * for a stop and sage for an end of the day, so the name and its marker are
@@ -300,7 +313,7 @@ function CoverSheet({
   return (
     <Sheet sheet={sheet}>
       <div className="flex flex-1 flex-col">
-        <Image src={lockup} alt="plan2go" className="h-9 w-auto self-start" />
+        <Lockup className="self-start" />
         <div className="pt-12 pb-9">
           <p className={`text-label font-semibold ${MUTED}`}>Itinerary</p>
           <h1 className="mt-3 font-display text-headline text-ink">{title}</h1>
@@ -408,7 +421,7 @@ function DayHead({
           </p>
         </div>
       </div>
-      <Image src={lockup} alt="plan2go" className="h-9 w-auto shrink-0" />
+      <Lockup className="shrink-0" />
     </header>
   );
 }
@@ -453,12 +466,13 @@ function DayMap({
   slug,
   sheet,
   onSettled,
+  request,
 }: DayContext & { readonly onSettled?: () => void }) {
   const [failed, setFailed] = useState(false);
   if (failed) {
     return null;
   }
-  const size = mapSize(sheet);
+  const size = mapSize(sheet, request.mapSize);
   return (
     <figure
       style={{ width: size.width, height: size.height }}

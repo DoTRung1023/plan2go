@@ -11,6 +11,7 @@ export type PaperSize = "a4" | "a5";
 export type Orientation = "portrait" | "landscape";
 export type TextSize = "small" | "medium" | "large";
 export type Ink = "colour" | "mono";
+export type MapSize = "small" | "medium" | "large";
 
 /** The two sides of each paper, in millimetres. */
 const SIDES_MM: Readonly<Record<PaperSize, { readonly short: number; readonly long: number }>> = {
@@ -69,14 +70,20 @@ export function sheetGeometry(paper: PaperSize, orientation: Orientation): Sheet
   };
 }
 
+/** How much of the rows' width the map takes at each size. */
+const MAP_SHARE: Readonly<Record<MapSize, number>> = { small: 0.5, medium: 0.72, large: 1 };
+
 /**
- * How big the map at the top of a day is drawn: as wide as the rows, two
- * wide by one high, unless that would take more of the sheet than a picture
- * should, which it would on paper turned on its side; then as tall as that
- * share allows, and as wide as its shape makes it.
+ * How big the map at the top of a day is drawn: two wide by one high, and
+ * at its largest as wide as the rows, unless that would take more of the
+ * sheet than a picture should, which it would on paper turned on its side;
+ * then as tall as that share allows, and as wide as its shape makes it.
  */
-export function mapSize(geometry: SheetGeometry): { readonly width: number; readonly height: number } {
+export function mapSize(
+  geometry: SheetGeometry,
+  size: MapSize,
+): { readonly width: number; readonly height: number } {
   const tallest = Math.floor(geometry.roomPx * 0.42);
-  const width = Math.min(geometry.contentWidthPx, tallest * 2);
+  const width = Math.min(Math.round(geometry.contentWidthPx * MAP_SHARE[size]), tallest * 2);
   return { width, height: Math.round(width / 2) };
 }

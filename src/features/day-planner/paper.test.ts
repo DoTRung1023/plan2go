@@ -36,12 +36,24 @@ describe("sheetGeometry", () => {
 });
 
 describe("mapSize", () => {
-  it("is as wide as the rows on paper standing up", () => {
-    expect(mapSize(sheetGeometry("a4", "portrait"))).toEqual({ width: 672, height: 336 });
+  it("is as wide as the rows at its largest on paper standing up", () => {
+    expect(mapSize(sheetGeometry("a4", "portrait"), "large")).toEqual({ width: 672, height: 336 });
+  });
+
+  it("keeps its shape at every size, each a step smaller than the last", () => {
+    const sheet = sheetGeometry("a4", "portrait");
+    const large = mapSize(sheet, "large");
+    const medium = mapSize(sheet, "medium");
+    const small = mapSize(sheet, "small");
+    expect(small.width).toBeLessThan(medium.width);
+    expect(medium.width).toBeLessThan(large.width);
+    for (const size of [small, medium, large]) {
+      expect(size.height).toBe(Math.round(size.width / 2));
+    }
   });
 
   it("gives up width rather than the day on paper on its side", () => {
-    const size = mapSize(sheetGeometry("a4", "landscape"));
+    const size = mapSize(sheetGeometry("a4", "landscape"), "large");
     expect(size.height).toBeLessThanOrEqual(Math.floor(sheetGeometry("a4", "landscape").roomPx * 0.42));
     expect(size.width).toBe(size.height * 2);
   });

@@ -506,7 +506,8 @@ The export is chosen in a window over the whole page, the deepest shadow's one u
 the choices down a column on the left, the days as chips with a word that takes all
 of them or just the open one, then what goes on the page as boxes with a line under
 each saying what it means, then the paper as rows of pills, its size, which way up,
-how big the words are and whether it is in the map's colours or in ink alone, then
+how much of it the map takes, how big the words are and whether it is in the map's
+colours or in ink alone, then
 the file's name, and the sheets on the right exactly as they will print, redrawn as
 each choice changes, with the name of the one at the top held over them. The sheets
 are drawn at the paper's own size and the print window is told the same size and way
