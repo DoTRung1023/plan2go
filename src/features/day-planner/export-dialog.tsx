@@ -348,7 +348,7 @@ export function ExportDialog({
 
               <div className={DIVIDER} />
 
-              <p className={HEADING}>What goes on the page</p>
+              <p className={HEADING}>Details</p>
               <div className="-mx-[10px] mt-[6px] flex flex-col gap-px">
                 <Option
                   label="Map of the route"
