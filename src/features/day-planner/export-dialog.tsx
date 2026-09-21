@@ -19,9 +19,13 @@ const HEADING = "text-label font-semibold text-ink-muted";
 /** The line between one group of choices and the next. */
 const DIVIDER = "my-[18px] h-px bg-rule";
 
-/** A day, as a pill that is either in the export or not. */
+/**
+ * A day, as a pill that is either in the export or not. Every pill is the
+ * same width, so the days sit in columns rather than at the ragged widths
+ * their labels happen to have.
+ */
 const CHIP =
-  "rounded-pill border-[1.5px] px-[14px] py-2 text-small/none font-semibold whitespace-nowrap disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "w-[78px] rounded-pill border-[1.5px] px-2 py-2 text-center text-small/none font-semibold whitespace-nowrap disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 const CHIP_ON = "border-terracotta-800 bg-terracotta-800 text-paper";
 
