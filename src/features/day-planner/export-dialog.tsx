@@ -4,7 +4,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { CheckIcon, CloseIcon } from "@/ui/icons";
 import type { PlannedDay } from "./compute-trip";
 import type { ExportRequest } from "./export-request";
-import { exportRequestKey, sheetCount } from "./export-request";
+import { exportRequestKey } from "./export-request";
 import { formatDayTab } from "./format-day-date";
 import { exportFileName } from "./export-name";
 import { PrintedTrip } from "./printed-trip";
@@ -12,9 +12,6 @@ import "./export-dialog.css";
 
 /** An A4 sheet at screen resolution, which the preview is scaled down from. */
 const SHEET_WIDTH = 794;
-
-/** How long "Link copied" stays on the button before it says what it does again. */
-const COPIED_MS = 2000;
 
 /** The heading over each group of choices. Sentence case, as every label here is. */
 const HEADING = "text-label font-semibold text-ink-muted";
@@ -129,14 +126,14 @@ export function ExportDialog({
   const [ruled, setRuled] = useState(false);
   /** A name typed over the one the trip suggests, or null while the suggestion stands. */
   const [typedName, setTypedName] = useState<string | null>(null);
-  /** The sheet the preview is scaled to fit, as a fraction of the real thing. */
-  const [zoom, setZoom] = useState(1);
   /** Which request's pictures have all arrived, so it is safe to print. */
   const [readyFor, setReadyFor] = useState<string | null>(null);
+  /** How many sheets the request came to once laid out, by which request; null until then. */
+  const [sheetsFor, setSheetsFor] = useState<{ readonly key: string; readonly count: number } | null>(
+    null,
+  );
   /** Export was asked for and is waiting on the sheets, or on the print window. */
   const [printing, setPrinting] = useState(false);
-  /** The link was copied a moment ago, or copying it failed. */
-  const [copied, setCopied] = useState<"done" | "failed" | null>(null);
   /** The document's own title, held while the print window borrows it. */
   const wasCalled = useRef<string | null>(null);
 
@@ -156,7 +153,7 @@ export function ExportDialog({
   };
   const requestKey = exportRequestKey(request);
   const ready = readyFor === requestKey;
-  const sheets = sheetCount(request);
+  const sheets = sheetsFor?.key === requestKey ? sheetsFor.count : null;
 
   /**
    * What the print window will offer to save the file as: the trip's name
@@ -187,7 +184,12 @@ export function ExportDialog({
     closeButton.current?.focus();
   }, []);
 
-  /** The sheets are drawn at A4 and shrunk to whatever width the preview has. */
+  /**
+   * The sheets are drawn at A4 and shrunk to whatever width the preview has.
+   * Said to the stylesheet rather than held as state, since only the sheets
+   * shrink: the copy of each day that is measured to deal the sheets stays
+   * at the size it prints, in the same box.
+   */
   useEffect(() => {
     const element = preview.current;
     if (element === null) {
@@ -196,7 +198,7 @@ export function ExportDialog({
     const observer = new ResizeObserver((entries) => {
       const width = entries[0]?.contentRect.width;
       if (width !== undefined && width > 0) {
-        setZoom(Math.min(1, width / SHEET_WIDTH));
+        element.style.setProperty("--sheet-zoom", String(Math.min(1, width / SHEET_WIDTH)));
       }
     });
     observer.observe(element);
@@ -240,19 +242,6 @@ export function ExportDialog({
     };
   }, [restoreTitle]);
 
-  /** "Link copied" gives way to the offer again after a moment. */
-  useEffect(() => {
-    if (copied !== "done") {
-      return;
-    }
-    const timer = setTimeout(() => {
-      setCopied(null);
-    }, COPIED_MS);
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [copied]);
-
   const toggleDay = (id: string): void => {
     const next = new Set(chosen);
     if (next.has(id)) {
@@ -273,25 +262,10 @@ export function ExportDialog({
     );
   };
 
-  /**
-   * The other way to hand the trip over: the read-only link, which is what
-   * the people travelling get when paper is not the point. Copied from here
-   * so that somebody who came to send the plan does not have to go and find
-   * the menu it lives in.
-   */
-  const shareLink = (): void => {
-    void navigator.clipboard.writeText(`${window.location.origin}/t/${slug}`).then(
-      () => {
-        setCopied("done");
-      },
-      () => {
-        setCopied("failed");
-      },
-    );
-  };
-
   const dayWord = picked.length === 1 ? "day" : "days";
-  const sheetWord = sheets === 1 ? "page" : "pages";
+  const pageWord = sheets === 1 ? "page" : "pages";
+  /** "3 pages", once the sheets have been dealt; nothing to say before. */
+  const pageCount = sheets === null ? null : `${String(sheets)} ${pageWord}`;
 
   return (
     <div
@@ -458,19 +432,10 @@ export function ExportDialog({
               >
                 {printing ? "Preparing the pages" : "Export PDF"}
               </button>
-              <button
-                type="button"
-                onClick={shareLink}
-                className="mt-[7px] h-9 w-full rounded-pill text-small/none font-semibold text-terracotta-700 hover:bg-terracotta-100 hover:text-terracotta-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
-              >
-                {copied === "done" ? "Link copied" : "Share as a link instead"}
-              </button>
-              <p aria-live="polite" className="mt-[9px] text-center text-meta text-ink-muted">
-                {copied === "failed"
-                  ? "Could not copy the link. Share is in the trip's menu."
-                  : printing && !ready
-                    ? "Waiting for the maps to arrive."
-                    : `${fileName}.pdf · ${String(sheets)} ${sheetWord}`}
+              <p aria-live="polite" className="mt-[10px] text-center text-meta text-ink-muted">
+                {printing && !ready
+                  ? "Waiting for the maps to arrive."
+                  : `${fileName}.pdf${pageCount === null ? "" : ` · ${pageCount}`}`}
               </p>
             </div>
           </aside>
@@ -484,7 +449,7 @@ export function ExportDialog({
               <p className="text-meta/none text-ink-muted">
                 {picked.length === 0
                   ? "No days chosen"
-                  : `${allPicked && picked.length > 1 ? "All " : ""}${String(picked.length)} ${dayWord} · ${String(sheets)} ${sheetWord}`}
+                  : `${allPicked && picked.length > 1 ? "All " : ""}${String(picked.length)} ${dayWord}${pageCount === null ? "" : ` · ${pageCount}`}`}
               </p>
             </div>
 
@@ -493,20 +458,21 @@ export function ExportDialog({
                 Nothing to show until a day is chosen.
               </p>
             ) : (
-              <div ref={preview}>
-                <div className="export-sheets mx-auto w-[794px]" style={{ zoom }}>
-                  <PrintedTrip
-                    key={requestKey}
-                    title={title}
-                    slug={slug}
-                    days={days}
-                    request={request}
-                    visible={true}
-                    onReady={() => {
-                      setReadyFor(requestKey);
-                    }}
-                  />
-                </div>
+              <div ref={preview} className="export-sheets relative">
+                <PrintedTrip
+                  key={requestKey}
+                  title={title}
+                  slug={slug}
+                  days={days}
+                  request={request}
+                  visible={true}
+                  onReady={() => {
+                    setReadyFor(requestKey);
+                  }}
+                  onSheets={(count) => {
+                    setSheetsFor({ key: requestKey, count });
+                  }}
+                />
               </div>
             )}
           </div>

@@ -7,14 +7,26 @@
  * is not already a token, except the size of an A4 sheet.
  */
 
+/* The sheets, scaled to the width the preview has, and centred in it. The
+   scale comes from the dialog, which measures the preview. Only the sheets
+   scale: the copy of each day that is measured to deal them sits beside
+   them at the size it prints. */
+.export-sheets .printed-trip {
+  width: 794px;
+  margin: 0 auto;
+  zoom: var(--sheet-zoom, 1);
+}
+
 /* A sheet as the printer will see it: A4 at screen resolution, with the
    margins the page rule gives it, on the raised paper a page is made of. The
-   cover, each day and each ruled page is one. */
+   cover, each day and each ruled page is one. A pixel more at each side than
+   at the top and foot, so its rows are as wide as the page's, 672px, and
+   wrap where they wrap on paper. */
 .export-sheets .printed-sheet {
   box-sizing: border-box;
   width: 794px;
   min-height: 1123px;
-  padding: 60px;
+  padding: 60px 61px;
   border-radius: 4px;
   background-color: var(--color-paper-raised);
   box-shadow: var(--shadow-md);

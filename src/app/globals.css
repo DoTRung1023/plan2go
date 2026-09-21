@@ -369,11 +369,30 @@
  */
 /* What a sheet is drawn on, for anything on it that has to hide the thread
    behind it: the raised paper on screen, and white paper when printed. */
-.printed-trip {
+.printed-trip,
+.printed-measure {
   --sheet: var(--color-paper-raised);
 }
 
+/* Each day laid out once at a sheet's width, to be measured and dealt onto
+   sheets. Laid out, so it has heights, and never seen: no size of its own,
+   nothing drawn, nothing it can be pointed at, and off the page it prints. */
+.printed-measure {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 672px;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  pointer-events: none;
+}
+
 @media print {
+  .printed-measure {
+    display: none;
+  }
+
   @page {
     size: A4;
     margin: 16mm;

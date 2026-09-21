@@ -31,8 +31,3 @@ export function exportRequestKey(request: ExportRequest): string {
     request.ruled ? "ruled" : "",
   ].join("|");
 }
-
-/** How many sheets the request comes to: the cover, then one or two a day. */
-export function sheetCount(request: ExportRequest): number {
-  return (request.cover ? 1 : 0) + request.dayIds.length * (request.ruled ? 2 : 1);
-}

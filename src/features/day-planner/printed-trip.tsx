@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Conflict } from "@/core/model/conflict";
 import type { StopId } from "@/core/model/stop";
 import type { ClockTime } from "@/core/time/compute-day";
@@ -14,8 +14,18 @@ import { formatDayDate, formatDayLong } from "./format-day-date";
 import { formatDayTime } from "./format-day-time";
 import { formatDistance } from "./format-distance";
 import { MODE_WORDS } from "./leg-row";
+import { paginate } from "./paginate-sheets";
 import { rideSentence } from "./transit-ride";
 import lockup from "../../../logo/logo-text.png";
+
+/**
+ * How much of a sheet a day may fill, in px: an A4 sheet on screen less its
+ * margins, and a little under that, so that what fits here fits the page
+ * too. A page is A4 less the 16mm the page rule keeps on every side, which
+ * is within three pixels of the screen sheet's room, and the rows are laid
+ * out at the same width on both, so what is measured here is what prints.
+ */
+const SHEET_ROOM = 1123 - 2 * 60 - 12;
 
 /**
  * A row of the day on paper: the time in a column of its own on the left,
@@ -76,14 +86,13 @@ function MarkColumn({
   thread,
   children,
 }: {
-  readonly thread: "from-centre" | "through" | "to-centre" | "none";
+  readonly thread: "from-centre" | "through" | "to-centre";
   readonly children?: React.ReactNode;
 }) {
   const extent = {
     "from-centre": "top-[10px] bottom-0",
     through: "top-0 bottom-0",
     "to-centre": "top-0 h-[10px]",
-    none: "hidden",
   }[thread];
   return (
     <div className="relative flex w-[20px] justify-center self-stretch">
@@ -167,45 +176,50 @@ function metresOnFoot(day: PlannedDay): number | null {
   return any ? total : null;
 }
 
-interface SheetProps {
-  /** The trip's name and its dates, on every sheet, so a loose page still says whose it is. */
-  readonly title: string;
-  readonly range: string;
-  /** Which sheet this is of those printed, for the corner of the footer. */
-  readonly sheet: { readonly at: number; readonly of: number };
+/** Which sheet this is of those printed, for the corner of the footer. */
+interface SheetNumber {
+  readonly at: number;
+  readonly of: number;
 }
 
 /** How tall a sheet is: at least a page, or exactly one, clipping what runs past its foot. */
 type SheetHeight = "at-least-a-page" | "one-page";
 
+/** The foot of every sheet: where it came from, and which sheet it is. */
+function SheetFooter({ sheet }: { readonly sheet: SheetNumber }) {
+  return (
+    <footer
+      className={`mt-5 flex shrink-0 items-baseline gap-5 border-t pt-[10px] text-micro ${MUTED} ${RULE}`}
+    >
+      <p className="min-w-0 flex-1">Made with plan2go</p>
+      <p className="shrink-0 whitespace-nowrap tabular-nums">
+        Page {sheet.at} of {sheet.of}
+      </p>
+    </footer>
+  );
+}
+
 /**
  * The frame every kind of page shares: a column with the page's own content
  * taking whatever height the sheet has to spare, so the foot sits at the foot
  * of the sheet rather than wherever the content happened to end, and the
- * same footer on each: the trip, and the sheet's number.
+ * same footer on each.
  */
 function Sheet({
-  title,
-  range,
   sheet,
   height = "at-least-a-page",
   children,
-}: SheetProps & { readonly height?: SheetHeight; readonly children: React.ReactNode }) {
+}: {
+  readonly sheet: SheetNumber;
+  readonly height?: SheetHeight;
+  readonly children: React.ReactNode;
+}) {
   return (
     <article
       className={`printed-sheet flex flex-col ${height === "one-page" ? "printed-sheet-one-page" : ""}`}
     >
       {children}
-      <footer
-        className={`mt-5 flex shrink-0 items-baseline gap-5 border-t pt-[10px] text-micro ${MUTED} ${RULE}`}
-      >
-        <p className="min-w-0 flex-1 truncate">
-          {title} · {range} · made with plan2go
-        </p>
-        <p className="shrink-0 whitespace-nowrap tabular-nums">
-          Page {sheet.at} of {sheet.of}
-        </p>
-      </footer>
+      <SheetFooter sheet={sheet} />
     </article>
   );
 }
@@ -217,18 +231,25 @@ function Sheet({
  * is at the trip.
  */
 function CoverSheet({
+  title,
+  range,
   days,
-  ...frame
-}: SheetProps & { readonly days: readonly PlannedDay[] }) {
+  sheet,
+}: {
+  readonly title: string;
+  readonly range: string;
+  readonly days: readonly PlannedDay[];
+  readonly sheet: SheetNumber;
+}) {
   return (
-    <Sheet {...frame}>
+    <Sheet sheet={sheet}>
       <div className="flex flex-1 flex-col">
         <Image src={lockup} alt="plan2go" className="h-9 w-auto self-start" />
         <div className="pt-12 pb-9">
           <p className={`text-label font-semibold ${MUTED}`}>Itinerary</p>
-          <h1 className="mt-3 font-display text-headline text-ink">{frame.title}</h1>
+          <h1 className="mt-3 font-display text-headline text-ink">{title}</h1>
           <p className={`mt-2 text-body ${MUTED}`}>
-            {frame.range} · {String(days.length)} {days.length === 1 ? "day" : "days"}
+            {range} · {String(days.length)} {days.length === 1 ? "day" : "days"}
           </p>
         </div>
         <ul className="border-t-[1.5px] border-ink">
@@ -260,12 +281,16 @@ function CoverSheet({
 function RuledSheet({
   day,
   number,
-  ...frame
-}: SheetProps & { readonly day: PlannedDay; readonly number: number }) {
+  sheet,
+}: {
+  readonly day: PlannedDay;
+  readonly number: number;
+  readonly sheet: SheetNumber;
+}) {
   return (
     /* Exactly a page: the rows below are more than a page holds, and it is
        the sheet's foot that ends them rather than a page of their own. */
-    <Sheet {...frame} height="one-page">
+    <Sheet sheet={sheet} height="one-page">
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="flex flex-wrap items-baseline gap-x-[10px]">
           <h1 className={SHEET_HEADING}>Notes</h1>
@@ -278,7 +303,7 @@ function RuledSheet({
             foot, rather than one gradient repeated down the box: a printer
             can be told to keep a background and still leave a gradient
             off the page, where a border is ink and always printed. */}
-        <div aria-hidden="true" className="printed-lines mt-[10px] min-h-[240px] flex-1 overflow-hidden">
+        <div aria-hidden="true" className="mt-[10px] min-h-[240px] flex-1 overflow-hidden">
           {RULED_ROWS.map((row) => (
             <span key={row} className={`block h-[28px] border-b ${RULE}`} />
           ))}
@@ -288,26 +313,126 @@ function RuledSheet({
   );
 }
 
-interface DaySheetProps extends SheetProps {
+interface DayContext {
   readonly day: PlannedDay;
   /** Counted from one, as the tabs count. */
   readonly number: number;
+  readonly title: string;
+  readonly range: string;
   readonly slug: string;
   readonly request: ExportRequest;
-  /** Said once the map has arrived, or failed to. */
-  readonly onMapSettled: () => void;
 }
 
 /**
- * One day on paper: the trip and the day named at the top, what the day
- * comes to on a strip under them, the map under that if asked for, and the
- * day itself down a dashed thread with its times in a column of their own.
- *
- * Everything prints as ink on unpainted paper. The only fills are the discs
- * the stops hang on, which are ink with the paper's colour for the number.
+ * The top of every sheet of a day: the trip and the day named, and the
+ * lockup the front door wears, as tall as the two lines beside it. Any sheet
+ * after the first says it carries on, since a sheet on its own with a day's
+ * name over it reads as the whole day.
  */
-function DaySheet({ day, number, slug, request, onMapSettled, ...frame }: DaySheetProps) {
-  const [mapFailed, setMapFailed] = useState(false);
+function DayHead({
+  day,
+  number,
+  title,
+  range,
+  continued,
+}: DayContext & { readonly continued: boolean }) {
+  return (
+    <header className="flex shrink-0 items-start gap-6">
+      <div className="min-w-0 flex-1">
+        <p className={`text-label font-semibold ${MUTED}`}>
+          {title} · {range}
+        </p>
+        <div className="mt-[9px] flex flex-wrap items-baseline gap-x-[10px]">
+          <h1 className={SHEET_HEADING}>Day {number}</h1>
+          <p className={`text-body ${MUTED}`}>
+            {formatDayLong(day.plan.date)}
+            {continued ? " · continued" : ""}
+          </p>
+        </div>
+      </div>
+      <Image src={lockup} alt="plan2go" className="h-9 w-auto shrink-0" />
+    </header>
+  );
+}
+
+/**
+ * What the day comes to, in a strip under its name, so the shape of the day
+ * is read before the day is.
+ */
+function DayStats({ day, request }: DayContext) {
+  const { plan, computed } = day;
+  const lastStop = computed.stops[computed.stops.length - 1];
+  /** When the day is over: back where it ends, or done at the last stop. */
+  const doneBy = computed.ends ?? lastStop?.departure ?? null;
+  const onFoot = request.legs ? metresOnFoot(day) : null;
+  const travel = computed.totals.travelMinutes;
+  return (
+    <div
+      className={`mt-4 flex shrink-0 flex-wrap gap-x-[22px] gap-y-[10px] border-t-[1.5px] border-b border-t-ink py-[11px] ${RULE}`}
+    >
+      <Stat label="Leave" value={formatClock(plan.startAtMinutes)} />
+      <Stat
+        label={plan.end === null ? "Done by" : "Back by"}
+        value={doneBy === null ? "Not known" : formatDayTime(doneBy)}
+      />
+      <Stat label="Stops" value={String(plan.stops.length)} />
+      {travel === null ? null : <Stat label="Travelling" value={formatDuration(travel)} />}
+      {onFoot === null ? null : <Stat label="On foot" value={formatDistance(onFoot)} />}
+    </div>
+  );
+}
+
+/**
+ * The map of the day, in a frame two wide by one high: the shape the map is
+ * drawn at, held before the picture arrives, so the room it takes on the
+ * sheet is known without waiting for it. Without anyone to tell when it
+ * has arrived, for measuring, the frame alone.
+ */
+function DayMap({
+  day,
+  number,
+  slug,
+  onSettled,
+}: DayContext & { readonly onSettled?: () => void }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) {
+    return null;
+  }
+  return (
+    <figure className={`mt-4 aspect-[2/1] shrink-0 overflow-hidden rounded-[5px] border ${RULE}`}>
+      {onSettled === undefined ? null : (
+        /* Plain img rather than the framework's: the picture is ours, drawn
+           once per day and cached, and it is loaded for its arrival to be
+           waited on before the print window opens. */
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img
+          src={`/api/map/static?slug=${encodeURIComponent(slug)}&day=${encodeURIComponent(day.plan.id)}`}
+          alt={`Map of day ${String(number)}: ${stopCount(day.plan.stops.length)}`}
+          onLoad={onSettled}
+          onError={() => {
+            setFailed(true);
+            onSettled();
+          }}
+          className="block h-full w-full object-cover"
+        />
+      )}
+    </figure>
+  );
+}
+
+/** One row of the day, or a leg and the row it leads to, which are never parted by a sheet's edge. */
+interface Unit {
+  readonly key: string;
+  readonly node: React.ReactNode;
+}
+
+/**
+ * The day as rows: where it leaves from, each stop with the leg that reaches
+ * it, and where it ends with the leg to it. Everything prints as ink on
+ * unpainted paper; the only fills are the discs the stops hang on, which are
+ * ink with the paper's colour for the number.
+ */
+function dayUnits({ day, request }: DayContext): readonly Unit[] {
   const { plan, computed } = day;
   const notes = new Map(plan.stops.map((stop) => [stop.id, stop.note]));
   const places = new Map(plan.stops.map((stop) => [stop.id, stop.place]));
@@ -316,148 +441,204 @@ function DaySheet({ day, number, slug, request, onMapSettled, ...frame }: DayShe
   const legToEnd = plan.end === null ? undefined : computed.legs[computed.legs.length - 1];
   const sameEnds =
     plan.start !== null && plan.end !== null && plan.start.place.id === plan.end.place.id;
-  const lastStop = computed.stops[computed.stops.length - 1];
-  /** When the day is over: back where it ends, or done at the last stop. */
-  const doneBy = computed.ends ?? lastStop?.departure ?? null;
-  const onFoot = request.legs ? metresOnFoot(day) : null;
-  const travel = computed.totals.travelMinutes;
+  const units: Unit[] = [];
 
-  return (
-    <Sheet {...frame}>
-      <header className="flex shrink-0 items-start gap-6">
-        <div className="min-w-0 flex-1">
-          <p className={`text-label font-semibold ${MUTED}`}>
-            {frame.title} · {frame.range}
-          </p>
-          <div className="mt-[9px] flex flex-wrap items-baseline gap-x-[10px]">
-            <h1 className={SHEET_HEADING}>Day {number}</h1>
-            <p className={`text-body ${MUTED}`}>{formatDayLong(plan.date)}</p>
+  if (plan.start !== null) {
+    units.push({
+      key: "start",
+      node: (
+        <div className={ROW}>
+          <TimeCell time={computed.begins} />
+          <MarkColumn thread="from-centre">
+            <span className="mt-[1px] block h-[19px] w-[19px] rounded-pill border-[1.5px] border-ink bg-(--sheet)" />
+          </MarkColumn>
+          <div className="pb-[10px]">
+            <p className="font-display text-place text-ink">Leave {endpointName(plan.start)}</p>
+            {request.addresses && plan.start.place.address !== null ? (
+              <p className={`mt-[3px] text-micro ${MUTED}`}>{plan.start.place.address}</p>
+            ) : null}
           </div>
         </div>
-        {/* The lockup the front door wears, as tall as the two lines beside it. */}
-        <Image src={lockup} alt="plan2go" className="h-9 w-auto shrink-0" />
-      </header>
+      ),
+    });
+  }
 
-      {/* What the day comes to, in a strip under its name, so the shape of
-          the day is read before the day is. */}
-      <div
-        className={`mt-4 flex shrink-0 flex-wrap gap-x-[22px] gap-y-[10px] border-t-[1.5px] border-b border-t-ink py-[11px] ${RULE}`}
-      >
-        <Stat label="Leave" value={formatClock(plan.startAtMinutes)} />
-        <Stat
-          label={plan.end === null ? "Done by" : "Back by"}
-          value={doneBy === null ? "Not known" : formatDayTime(doneBy)}
-        />
-        <Stat label="Stops" value={String(plan.stops.length)} />
-        {travel === null ? null : <Stat label="Travelling" value={formatDuration(travel)} />}
-        {onFoot === null ? null : <Stat label="On foot" value={formatDistance(onFoot)} />}
-      </div>
-
-      {request.map && !mapFailed ? (
-        <figure className={`mt-4 shrink-0 overflow-hidden rounded-[5px] border ${RULE}`}>
-          {/* Plain img rather than the framework's: the picture is ours, drawn
-              once per day and cached, and it is loaded for its arrival to be
-              waited on before the print window opens. */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={`/api/map/static?slug=${encodeURIComponent(slug)}&day=${encodeURIComponent(plan.id)}`}
-            alt={`Map of day ${String(number)}: ${stopCount(plan.stops.length)}`}
-            onLoad={onMapSettled}
-            onError={() => {
-              setMapFailed(true);
-              onMapSettled();
-            }}
-            className="block h-auto w-full"
-          />
-        </figure>
-      ) : null}
-
-      <section className="mt-[18px] flex-1">
-        {plan.start === null ? null : (
+  computed.stops.forEach((stop, index) => {
+    const legIndex = index + legOffset;
+    const place = places.get(stop.stopId);
+    const hours = place === undefined ? null : hoursOn(place, plan);
+    const note = notes.get(stop.stopId) ?? null;
+    const last = index === computed.stops.length - 1 && plan.end === null;
+    units.push({
+      key: stop.stopId,
+      node: (
+        <>
+          {legIndex < 0 || !request.legs ? null : <LegLine day={day} legIndex={legIndex} />}
           <div className={ROW}>
-            <TimeCell time={computed.begins} />
-            <MarkColumn thread="from-centre">
-              <span className="mt-[1px] block h-[19px] w-[19px] rounded-pill border-[1.5px] border-ink bg-(--sheet)" />
+            <TimeCell time={stop.arrival} />
+            <MarkColumn thread={last ? "to-centre" : "through"}>
+              <span className="mt-[1px] grid h-[19px] w-[19px] place-items-center rounded-pill bg-ink text-label font-semibold text-paper tabular-nums">
+                <span aria-hidden="true">{index + 1}</span>
+                <span className="sr-only">Stop {index + 1}</span>
+              </span>
             </MarkColumn>
-            <div className="pb-[10px]">
-              <p className="font-display text-place text-ink">Leave {endpointName(plan.start)}</p>
-              {request.addresses && plan.start.place.address !== null ? (
-                <p className={`mt-[3px] text-micro ${MUTED}`}>{plan.start.place.address}</p>
+            <div className={`min-w-0 ${last ? "" : "pb-[10px]"}`}>
+              <div className="flex items-baseline gap-x-[10px]">
+                <h2 className="min-w-0 flex-1 font-display text-place text-ink">{stop.placeName}</h2>
+                <p className={`shrink-0 text-micro whitespace-nowrap ${MUTED}`}>
+                  stay {formatDuration(stop.stayMinutes)}
+                  {stop.departure === null ? "" : ` · until ${formatDayTime(stop.departure)}`}
+                </p>
+              </div>
+              {request.addresses && place?.address ? (
+                <p className={`mt-[3px] text-micro ${MUTED}`}>{place.address}</p>
+              ) : null}
+              {hours === null ? null : <p className={`mt-[3px] text-micro ${MUTED}`}>{hours}</p>}
+              {request.notes && note !== null ? (
+                <p className={`mt-[7px] max-w-[60ch] border-l-2 pl-[9px] text-small text-ink ${RULE}`}>
+                  {note}
+                </p>
+              ) : null}
+              {conflictsAtStop(computed.conflicts, stop.stopId).map((conflict, at) => (
+                <p key={`${conflict.kind}-${String(at)}`} className="mt-[6px] text-small text-ink">
+                  {conflictSentence(conflict)}
+                </p>
+              ))}
+            </div>
+          </div>
+        </>
+      ),
+    });
+  });
+
+  if (plan.end !== null && legToEnd !== undefined) {
+    const end = plan.end;
+    units.push({
+      key: "end",
+      node: (
+        <>
+          {request.legs ? <LegLine day={day} legIndex={legToEnd.index} /> : null}
+          <div className={ROW}>
+            <TimeCell time={computed.ends} />
+            <MarkColumn thread="to-centre">
+              <span className="mt-[1px] block h-[19px] w-[19px] rounded-pill bg-ink" />
+            </MarkColumn>
+            <div>
+              <p className="font-display text-place text-ink">
+                {sameEnds ? "Back at" : "Finish at"} {endpointName(end)}
+              </p>
+              {request.addresses && !sameEnds && end.place.address !== null ? (
+                <p className={`mt-[3px] text-micro ${MUTED}`}>{end.place.address}</p>
               ) : null}
             </div>
           </div>
-        )}
+        </>
+      ),
+    });
+  }
 
-        {computed.stops.map((stop, index) => {
-          const legIndex = index + legOffset;
-          const place = places.get(stop.stopId);
-          const hours = place === undefined ? null : hoursOn(place, plan);
-          const note = notes.get(stop.stopId) ?? null;
-          const last = index === computed.stops.length - 1 && plan.end === null;
-          return (
-            <div key={stop.stopId}>
-              {legIndex < 0 || !request.legs ? null : <LegLine day={day} legIndex={legIndex} />}
-              <div className={`printed-stop ${ROW}`}>
-                <TimeCell time={stop.arrival} />
-                <MarkColumn thread={last ? "to-centre" : "through"}>
-                  <span className="mt-[1px] grid h-[19px] w-[19px] place-items-center rounded-pill bg-ink text-label font-semibold text-paper tabular-nums">
-                    <span aria-hidden="true">{index + 1}</span>
-                    <span className="sr-only">Stop {index + 1}</span>
-                  </span>
-                </MarkColumn>
-                <div className={`min-w-0 ${last ? "" : "pb-[10px]"}`}>
-                  <div className="flex items-baseline gap-x-[10px]">
-                    <h2 className="min-w-0 flex-1 font-display text-place text-ink">{stop.placeName}</h2>
-                    <p className={`shrink-0 text-micro whitespace-nowrap ${MUTED}`}>
-                      stay {formatDuration(stop.stayMinutes)}
-                      {stop.departure === null ? "" : ` · until ${formatDayTime(stop.departure)}`}
-                    </p>
-                  </div>
-                  {request.addresses && place?.address ? (
-                    <p className={`mt-[3px] text-micro ${MUTED}`}>{place.address}</p>
-                  ) : null}
-                  {hours === null ? null : (
-                    <p className={`mt-[3px] text-micro ${MUTED}`}>{hours}</p>
-                  )}
-                  {request.notes && note !== null ? (
-                    <p
-                      className={`mt-[7px] max-w-[60ch] border-l-2 pl-[9px] text-small text-ink ${RULE}`}
-                    >
-                      {note}
-                    </p>
-                  ) : null}
-                  {conflictsAtStop(computed.conflicts, stop.stopId).map((conflict, at) => (
-                    <p key={`${conflict.kind}-${String(at)}`} className="mt-[6px] text-small text-ink">
-                      {conflictSentence(conflict)}
-                    </p>
-                  ))}
-                </div>
-              </div>
-            </div>
-          );
-        })}
+  return units;
+}
 
-        {plan.end === null || legToEnd === undefined ? null : (
-          <>
-            {request.legs ? <LegLine day={day} legIndex={legToEnd.index} /> : null}
-            <div className={ROW}>
-              <TimeCell time={computed.ends} />
-              <MarkColumn thread="to-centre">
-                <span className="mt-[1px] block h-[19px] w-[19px] rounded-pill bg-ink" />
-              </MarkColumn>
-              <div>
-                <p className="font-display text-place text-ink">
-                  {sameEnds ? "Back at" : "Finish at"} {endpointName(plan.end)}
-                </p>
-                {request.addresses && !sameEnds && plan.end.place.address !== null ? (
-                  <p className={`mt-[3px] text-micro ${MUTED}`}>{plan.end.place.address}</p>
-                ) : null}
-              </div>
-            </div>
-          </>
-        )}
-      </section>
-    </Sheet>
+/** How tall the parts of a day are, in px, as laid out at the sheet's width. */
+interface DayMeasure {
+  /** The name, the numbers and the map, which the first sheet carries. */
+  readonly first: number;
+  /** The name alone, which every later sheet carries. */
+  readonly later: number;
+  /** The foot, which every sheet carries. */
+  readonly foot: number;
+  /** Each row, in the order the day reads. */
+  readonly units: readonly number[];
+}
+
+function sameMeasure(a: DayMeasure | undefined, b: DayMeasure): boolean {
+  return (
+    a !== undefined &&
+    a.first === b.first &&
+    a.later === b.later &&
+    a.foot === b.foot &&
+    a.units.length === b.units.length &&
+    a.units.every((height, index) => height === b.units[index])
+  );
+}
+
+/**
+ * The day laid out once, unseen, to find out how tall each part of it is.
+ * Every part is drawn exactly as the sheets draw it, at the sheet's width,
+ * so what is measured here is what the sheets will hold. Read after layout
+ * and before paint, so the sheets are dealt from these heights in the same
+ * frame and nothing is seen twice.
+ */
+function DayMeasurer({
+  context,
+  units,
+  onMeasured,
+}: {
+  readonly context: DayContext;
+  readonly units: readonly Unit[];
+  readonly onMeasured: (dayId: string, measure: DayMeasure) => void;
+}) {
+  const box = useRef<HTMLDivElement | null>(null);
+  /** What was last reported, so the same heights are never reported twice. */
+  const reported = useRef<DayMeasure | null>(null);
+  const { day, request } = context;
+  const dayId = day.plan.id;
+  const unitKeys = units.map((unit) => unit.key).join(",");
+
+  useLayoutEffect(() => {
+    const element = box.current;
+    if (element === null) {
+      return;
+    }
+    const heightOf = (part: string): number =>
+      element.querySelector<HTMLElement>(`[data-part="${part}"]`)?.offsetHeight ?? 0;
+    const unitHeights = [...element.querySelectorAll<HTMLElement>("[data-unit]")].map(
+      (unit) => unit.offsetHeight,
+    );
+    const measure: DayMeasure = {
+      first: heightOf("first"),
+      later: heightOf("later"),
+      foot: heightOf("foot"),
+      units: unitHeights,
+    };
+    // Measured again whenever the day or what goes on the page is given
+    // again, which the planner does on every render of its own, and
+    // reported only when a height has changed: a report is a state change
+    // in the sheets, and one on every render of the planner, inside its
+    // own commit, is a chain of updates that has no end.
+    if (sameMeasure(reported.current ?? undefined, measure)) {
+      return;
+    }
+    reported.current = measure;
+    onMeasured(dayId, measure);
+  }, [day, dayId, request, unitKeys, onMeasured]);
+
+  return (
+    /* Each part in a column of its own: a column holds its children's
+       margins inside its own height where a plain box lets them fall out
+       of it, and the room a part takes on the sheet is its margins too,
+       the gap over the day's rows and the gap over the foot among them. */
+    <div ref={box} aria-hidden="true">
+      <div data-part="first" className="flex flex-col">
+        <DayHead {...context} continued={false} />
+        <DayStats {...context} />
+        {request.map ? <DayMap {...context} /> : null}
+        <div className="mt-[18px]" />
+      </div>
+      <div data-part="later" className="flex flex-col">
+        <DayHead {...context} continued={true} />
+        <div className="mt-[18px]" />
+      </div>
+      <div data-part="foot" className="flex flex-col">
+        <SheetFooter sheet={{ at: 1, of: 1 }} />
+      </div>
+      {units.map((unit) => (
+        <div key={unit.key} data-unit="" className="flex flex-col">
+          {unit.node}
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -466,7 +647,7 @@ interface Page {
   readonly key: string;
   /** Over the sheet on screen only: "Day 1", "Cover", "Day 1 · notes". */
   readonly label: string;
-  readonly sheet: (at: number, of: number) => React.ReactNode;
+  readonly sheet: (number: SheetNumber) => React.ReactNode;
 }
 
 interface PrintedTripProps {
@@ -485,19 +666,38 @@ interface PrintedTripProps {
    * moment the print window can open on finished pages rather than blank ones.
    */
   readonly onReady: () => void;
+  /** Said with how many sheets the export comes to, once they are laid out, and again if that changes. */
+  readonly onSheets?: (count: number) => void;
 }
 
 /**
  * The trip on paper: the cover if asked for, then the days that were asked
- * for, one after another, each starting on a sheet of its own, each followed
- * by a sheet to write on if asked for.
+ * for, one after another, each starting on a sheet of its own and running
+ * on to as many as it needs, each followed by a sheet to write on if asked
+ * for.
+ *
+ * A day is dealt onto sheets by measuring its rows: every day is laid out
+ * once unseen, at the sheet's width, and the rows go onto the first sheet
+ * under the day's name, numbers and map until the next would not fit, then
+ * onto a sheet that carries on under the name alone, and so on. The sheets
+ * are drawn only once every day has been measured, so the numbering across
+ * them is right the first time it is seen.
  */
-export function PrintedTrip({ title, slug, days, request, visible, onReady }: PrintedTripProps) {
+export function PrintedTrip({
+  title,
+  slug,
+  days,
+  request,
+  visible,
+  onReady,
+  onSheets,
+}: PrintedTripProps) {
   const chosen = days.filter((day) => request.dayIds.includes(day.plan.id));
   const range = rangeOf(days);
   const awaited = request.map ? chosen.length : 0;
   const [settled, setSettled] = useState(0);
   const announced = useRef(false);
+  const [measures, setMeasures] = useState<Readonly<Record<string, DayMeasure>>>({});
 
   useEffect(() => {
     if (settled >= awaited && !announced.current) {
@@ -510,55 +710,110 @@ export function PrintedTrip({ title, slug, days, request, visible, onReady }: Pr
     setSettled((count) => count + 1);
   };
 
+  const measured = useCallback((dayId: string, measure: DayMeasure): void => {
+    setMeasures((known) =>
+      sameMeasure(known[dayId], measure) ? known : { ...known, [dayId]: measure },
+    );
+  }, []);
+
+  const contexts = chosen.map(
+    (day): DayContext => ({ day, number: days.indexOf(day) + 1, title, range, slug, request }),
+  );
+  const unitsOf = contexts.map((context) => dayUnits(context));
+  const allMeasured = contexts.every((context) => measures[context.day.plan.id] !== undefined);
+
   const pages: Page[] = [];
-  if (request.cover) {
-    pages.push({
-      key: "cover",
-      label: "Cover",
-      sheet: (at, of) => <CoverSheet title={title} range={range} sheet={{ at, of }} days={days} />,
-    });
-  }
-  for (const day of chosen) {
-    const number = days.indexOf(day) + 1;
-    pages.push({
-      key: day.plan.id,
-      label: `Day ${String(number)}`,
-      sheet: (at, of) => (
-        <DaySheet
-          title={title}
-          range={range}
-          sheet={{ at, of }}
-          day={day}
-          number={number}
-          slug={slug}
-          request={request}
-          onMapSettled={settle}
-        />
-      ),
-    });
-    if (request.ruled) {
+  if (allMeasured) {
+    if (request.cover) {
       pages.push({
-        key: `${day.plan.id}-notes`,
-        label: `Day ${String(number)} · notes`,
-        sheet: (at, of) => (
-          <RuledSheet title={title} range={range} sheet={{ at, of }} day={day} number={number} />
-        ),
+        key: "cover",
+        label: "Cover",
+        sheet: (sheet) => <CoverSheet title={title} range={range} days={days} sheet={sheet} />,
       });
     }
+    contexts.forEach((context, at) => {
+      const units = unitsOf[at] ?? [];
+      const measure = measures[context.day.plan.id];
+      if (measure === undefined) {
+        return;
+      }
+      const dealt = paginate(
+        measure.units,
+        SHEET_ROOM - measure.first - measure.foot,
+        SHEET_ROOM - measure.later - measure.foot,
+      );
+      const dayLabel = `Day ${String(context.number)}`;
+      dealt.forEach((indices, part) => {
+        pages.push({
+          key: `${context.day.plan.id}-${String(part)}`,
+          label: part === 0 ? dayLabel : `${dayLabel} · continued`,
+          sheet: (sheet) => (
+            <Sheet sheet={sheet}>
+              <DayHead {...context} continued={part > 0} />
+              {part === 0 ? <DayStats {...context} /> : null}
+              {part === 0 && request.map ? <DayMap {...context} onSettled={settle} /> : null}
+              <section className="mt-[18px] flex-1">
+                {indices.map((index) => {
+                  const unit = units[index];
+                  return unit === undefined ? null : (
+                    <div key={unit.key} className="printed-stop">
+                      {unit.node}
+                    </div>
+                  );
+                })}
+              </section>
+            </Sheet>
+          ),
+        });
+      });
+      if (request.ruled) {
+        pages.push({
+          key: `${context.day.plan.id}-notes`,
+          label: `${dayLabel} · notes`,
+          sheet: (sheet) => <RuledSheet day={context.day} number={context.number} sheet={sheet} />,
+        });
+      }
+    });
   }
 
+  /** How many sheets were last said, so a count is said once, and again only when it changes. */
+  const said = useRef<number | null>(null);
+  const count = allMeasured ? pages.length : null;
+  useEffect(() => {
+    if (count !== null && count !== said.current && onSheets !== undefined) {
+      said.current = count;
+      onSheets(count);
+    }
+  }, [count, onSheets]);
+
   return (
-    <div className={`printed-trip ${visible ? "" : "hidden print:block"}`}>
-      {pages.map((page, index) => (
-        <div key={page.key} className="printed-page">
-          {/* Over the sheet on the dialog's ground, never on paper: which
-              page of the export this is, for finding it in the preview. */}
-          <p className="printed-label mb-[7px] ml-[2px] text-label font-semibold text-ink-faint print:hidden">
-            {page.label}
-          </p>
-          {page.sheet(index + 1, pages.length)}
-        </div>
-      ))}
-    </div>
+    <>
+      {/* Laid out but never seen, and never printed: the days at the sheet's
+          width, for their heights. Kept out of the sheets' own box, which
+          the preview scales, so the heights are read at the size they print. */}
+      <div className="printed-measure" aria-hidden="true">
+        {contexts.map((context, at) => (
+          <DayMeasurer
+            key={context.day.plan.id}
+            context={context}
+            units={unitsOf[at] ?? []}
+            onMeasured={measured}
+          />
+        ))}
+      </div>
+
+      <div className={`printed-trip ${visible ? "" : "hidden print:block"}`}>
+        {pages.map((page, index) => (
+          <div key={page.key} className="printed-page">
+            {/* Over the sheet on the dialog's ground, never on paper: which
+                page of the export this is, for finding it in the preview. */}
+            <p className="mb-[7px] ml-[2px] text-label font-semibold text-ink-faint print:hidden">
+              {page.label}
+            </p>
+            {page.sheet({ at: index + 1, of: pages.length })}
+          </div>
+        ))}
+      </div>
+    </>
   );
 }

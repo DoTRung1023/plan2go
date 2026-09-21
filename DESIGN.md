@@ -495,10 +495,12 @@ stops and how long is spent travelling, the map if it was asked for, and then th
 day down a dashed thread with each time in a column of its own on the left, the
 marker beside it, and the place, its address, its hours and the note on it to the
 right. The trip's name, never a city's: a trip's days can be in different cities. A
-cover can go in front of the days, the trip's name and dates and every day at a
-glance, and a ruled sheet after each day for writing on. A footer on every sheet
-carries the trip's name and dates and the sheet's number. The share link is printed
-once, in the footer of the first page.
+day longer than a sheet runs on to the next under its name, marked continued, with
+its numbers and map on the first alone; the rows are measured and dealt so that a
+sheet is never fuller than a page, and a row is never cut in two. A cover can go in
+front of the days, the trip's name and dates and every day at a glance, and a ruled
+sheet after each day for writing on. A footer on every sheet says it was made with
+plan2go and which sheet it is of how many, counting every sheet.
 
 The export is chosen in a window over the whole page, the deepest shadow's one use:
 the choices down a column on the left, the days as chips with a word that takes all
