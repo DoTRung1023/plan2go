@@ -23,12 +23,14 @@ const UNSAVED: TripSettingsOutcome = { saved: false, error: null, field: null };
 const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
- * The name is the heading of the whole panel, so it is set at the headline
- * step, over every other heading on it. The dates and the actions beside it
+ * The name is the heading of the whole panel, so it is set at the title
+ * step, over every other heading on it: a step under the headline it once
+ * was, since it sits on one pill with its dates and its menu now and a name
+ * at the headline step outgrew the pill. The dates and the actions beside it
  * are sized to its line box rather than the other way round, so the row is
  * still one height with the name the tallest thing in it.
  *
- * That height is stated, forty, rather than left to the line height: Firefox
+ * That height is stated, thirty, rather than left to the line height: Firefox
  * sets a field's line at the face's own height whatever it is told, which
  * made the row a dozen pixels taller there than anywhere else.
  *
@@ -36,7 +38,7 @@ const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/;
  * width a trip name still reads at, below which the row wraps instead.
  */
 const NAME_FIELD =
-  "h-[40px] min-w-0 flex-1 border-0 bg-transparent px-0 py-0 font-display text-headline tracking-[-0.01em] text-ink caret-terracotta outline-none placeholder:text-ink-faint aria-invalid:text-terracotta-700 focus-visible:rounded-[6px] focus-visible:outline-2 focus-visible:outline-offset-[4px] focus-visible:outline-terracotta";
+  "h-[30px] min-w-0 flex-1 border-0 bg-transparent px-0 py-0 font-display text-title tracking-[-0.01em] text-ink caret-terracotta outline-none placeholder:text-ink-faint aria-invalid:text-terracotta-700 focus-visible:rounded-[6px] focus-visible:outline-2 focus-visible:outline-offset-[4px] focus-visible:outline-terracotta";
 
 interface TripSettingsProps {
   readonly slug: string;
@@ -199,7 +201,7 @@ export function TripSettings({
       <label className="sr-only" htmlFor={`${fieldId}-title`}>
         Trip name
       </label>
-      <div className={`${HEADING_BAND} relative flex items-center gap-[10px]`}>
+      <div className={`${HEADING_BAND} relative`}>
         {/* Not `required`. requestSubmit runs the browser's own validation, and
             a field marked required stops there and puts up a grey system
             bubble reading "Please fill out this field", in a typeface this

@@ -149,12 +149,11 @@ export function TripMenu({ label, children }: TripMenuProps) {
             setOpen(true);
           }
         }}
-        // Thirty-four, under what the row it sits on comes to without it: the
-        // trip's name is 32px over a line box of 40. Taller than that and
-        // this one button would set the height of the whole name row, so the
-        // block at the top of the list was a few pixels deep in nothing but
-        // the room around a glyph.
-        className={`grid h-[34px] w-[34px] place-items-center rounded-pill border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
+        // Thirty-two, a little over the name's line of thirty, so it sits in
+        // the round end of the pill the row is with a pixel of the pill's
+        // padding either side of it. Taller and this one button would set
+        // the height of the whole name row.
+        className={`grid h-8 w-8 place-items-center rounded-pill border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
           open
             ? "border-terracotta-800 bg-terracotta-800 text-paper"
             : "border-rule bg-transparent text-ink-muted hover:bg-neutral-200 hover:text-ink"

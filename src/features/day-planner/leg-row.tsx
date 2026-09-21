@@ -271,11 +271,13 @@ export function LegRow({
   );
 
   /**
-   * One line inside a hairline, whoever is reading it. Under the pointer,
-   * here or on the map, the line darkens and the row sits on the well.
+   * One line on a pill of paper inside a hairline, whoever is reading it: a
+   * step under the raised cards either side of it, since it is what happens
+   * between two stops rather than a thing in itself. Under the pointer, here
+   * or on the map, the line darkens and the pill sinks to the ground.
    */
   const rowShape =
-    "flex w-full flex-wrap items-center gap-x-[10px] gap-y-[6px] rounded-row border pt-2 pr-[14px] pb-[9px] pl-3 text-left";
+    "flex w-full flex-wrap items-center gap-x-[10px] gap-y-[6px] rounded-pill border py-[7px] pr-3 pl-2 text-left";
 
   return (
     /*
@@ -310,7 +312,7 @@ export function LegRow({
         {onChange === null ? (
           <div
             className={`${rowShape} ${
-              hovered ? "border-rule-strong bg-paper-sunken" : "border-rule bg-transparent"
+              hovered ? "border-rule-strong bg-paper-sunken" : "border-rule bg-paper"
             }`}
           >
             {summary}
@@ -371,16 +373,16 @@ export function LegRow({
             className={`group ${rowShape} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
               hovered
                 ? "border-rule-strong bg-paper-sunken"
-                : "border-rule bg-transparent hover:border-rule-strong hover:bg-neutral-200"
+                : "border-rule bg-paper hover:border-rule-strong hover:bg-paper-sunken"
             }`}
           >
             {summary}
-            {/* Quiet, and the same quiet as the Collapse that takes its place
-                once the row is open: the way to change the leg should not
-                outrank what there is to change. The whole row is the button
-                and darkens under the pointer, and the word darkens with it.
-                The chevron points the way the row is about to go. */}
-            <span className="ml-auto flex items-center gap-[5px] text-micro/none font-semibold whitespace-nowrap text-ink-muted group-hover:text-ink">
+            {/* In the accent, a shade down for text at this size, the way
+                the link under the row is: the one thing on the line that
+                does something rather than says something. The whole row is
+                the button and sinks under the pointer, and the word deepens
+                with it. The chevron points the way the row is about to go. */}
+            <span className="ml-auto flex items-center gap-[5px] text-micro/none font-semibold whitespace-nowrap text-terracotta-700 group-hover:text-terracotta-900">
               Change
               <ChevronDownIcon size={13} strokeWidth={2.75} />
             </span>

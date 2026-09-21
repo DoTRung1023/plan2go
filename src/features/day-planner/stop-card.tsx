@@ -86,14 +86,16 @@ const STAY_STEP = 15;
 /**
  * The little round button either side of the stay.
  *
- * Drawn in ink on a stronger rule than the quiet controls elsewhere on the
- * card. Those sit at the edge of a row and wait to be looked for; these two
- * are the whole of how long you spend somewhere, which is the one number on
- * the card a person actually sets, and in the muted colour on a sunken pill
- * they read as switched off.
+ * A disc of raised paper on the well, with no line round it: the well is
+ * the edge, and the disc standing up out of it is what says it is pressed.
+ * Drawn in ink rather than in the muted colour of the quiet controls
+ * elsewhere on the card. Those sit at the edge of a row and wait to be
+ * looked for; these two are the whole of how long you spend somewhere,
+ * which is the one number on the card a person actually sets. The glyph
+ * takes the accent under the pointer.
  */
 const STAY_STEPPER =
-  "grid h-6 w-6 shrink-0 place-items-center rounded-pill border border-rule-strong bg-paper-raised text-ink hover:border-terracotta hover:bg-terracotta hover:text-paper disabled:opacity-40 disabled:hover:border-rule-strong disabled:hover:bg-paper-raised disabled:hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "grid h-[26px] w-[26px] shrink-0 place-items-center rounded-pill bg-paper-raised text-ink hover:text-terracotta-700 disabled:opacity-40 disabled:hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 interface StopCardProps {
   /** Its number in the day, counted from one. */
@@ -425,7 +427,7 @@ export function StopCard({
             /* The two buttons and the number they move are one control, so
                they sit in one well rather than as three things in a row with
                the card's own paper showing between them. */
-            <span className="flex items-center gap-1 rounded-pill bg-neutral-200 p-[3px] text-meta/none text-ink">
+            <span className="flex items-center gap-[2px] rounded-pill bg-neutral-200 p-[3px] text-meta/none text-ink">
               <button
                 type="button"
                 disabled={busy === "stay" || stop.stayMinutes <= STAY_STEP}

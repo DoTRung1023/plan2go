@@ -232,32 +232,29 @@ function Anchor({
 }
 
 /**
- * An end of the day nobody has set yet: the anchor's row, drawn as an outline
- * where the row has no place to stand on yet, with the marker the end will
- * get, the name of the end and what goes there, and a plus at the end of the
- * row. On the anchor's grid, so the marker and the words stand where the
- * place's will once there is one, and the hairline comes off the gutter and
- * the height as it does on a card, so the marker lands on the anchor's 17px
- * and the row is as deep as the anchor is, to the pixel.
- *
- * Drawn the way the closed leg row is, since that is the one row here that
- * is a button rather than a place: a hairline, no ground of its own, and
- * the neutral wash under the pointer with the words darkening in it. Dashed,
- * because there is nothing here yet, in the ink the design file gives a
- * dashed line. Quiet at rest, like the tools on a card: an offer to add
- * should not outrank the places already on the day.
+ * An end of the day nobody has set yet: the anchor's row, drawn as a dashed
+ * outline on paper where the row has no place to stand on yet, with the
+ * marker the end will get, the name of the end and what goes there, and a
+ * plus at the end of the row. On the anchor's grid, so the marker and the
+ * words stand where the place's will once there is one; the dash is a
+ * pixel and a half, and that much comes off the gutter and off the height,
+ * so the marker lands on the anchor's 17px and the row is as deep as the
+ * anchor is, to the pixel. On paper, a step under the raised cards the
+ * stops are on and level with a leg, since it is an offer rather than a
+ * place. The dash takes the accent under the pointer and the paper lifts.
  */
 const ADD_ENDPOINT =
-  "group grid w-full grid-cols-[30px_minmax(0,1fr)_auto] items-center gap-x-[13px] rounded-row border border-dashed border-rule-strong bg-transparent px-4 py-[9px] text-left hover:bg-neutral-200 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "group grid w-full grid-cols-[30px_minmax(0,1fr)_auto] items-center gap-x-[13px] rounded-row border-[1.5px] border-dashed border-rule-strong bg-paper px-[15.5px] py-[8.5px] text-left hover:border-terracotta hover:bg-paper-raised disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 /**
  * The next place, where it would go: after the last stop, before the end of
- * the day. The same line, ground and words as an end of the day that is not
- * there yet, as a pill, because it is a button and not a row with a shape to
- * show; the label at the step the leg's Change and the tab labels are set in.
+ * the day. The same dash as an end of the day that is not there yet, on
+ * nothing, as a pill, because it is a button and not a row with a shape to
+ * show; the label at the step the tab labels are set in, and the accent
+ * under the pointer.
  */
 const ADD_PLACE =
-  "flex w-full items-center justify-center gap-[6px] rounded-pill border border-dashed border-rule-strong bg-transparent py-[10px] text-small/none font-semibold text-ink-muted hover:bg-neutral-200 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "flex w-full items-center justify-center gap-2 rounded-pill border-[1.5px] border-dashed border-rule-strong bg-transparent py-[12px] text-small/none font-semibold text-ink-muted hover:border-terracotta hover:text-terracotta-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 /** What each end of the day is called, wherever it has to be said out loud. */
 const ENDS = {
@@ -403,7 +400,10 @@ function EndpointSlot({
           place goes there. The name and the line under it sit where the
           place's name and address will. */}
       {endpoint === null && !picking && actions !== null ? (
-        <div className="py-2">
+        /* Twelve from what is next to it on the day's side, the room every
+           block on the panel keeps from the next; the panel's own padding
+           is on the other side. */
+        <div className={which === "start" ? "pb-3" : "pt-3"}>
           <button
             type="button"
             disabled={saving}
@@ -413,16 +413,17 @@ function EndpointSlot({
             className={ADD_ENDPOINT}
           >
             <EndpointMark which={which} />
+            {/* The body face, not the display one a place's name is set in:
+                this is an offer, and the display face is for what is on the
+                day. */}
             <span className="min-w-0">
-              <span className="block font-display text-place text-ink-muted group-hover:text-ink">
-                {words.add}
-              </span>
-              <span className="mt-[3px] block text-meta text-ink-faint">{words.hint}</span>
+              <span className="block text-small/[1.15] font-semibold text-ink">{words.add}</span>
+              <span className="mt-[3px] block text-micro/[1.25] text-ink-muted">{words.hint}</span>
             </span>
             {/* Where a card keeps its tools, in a tool's box, so the plus
                 stands in the column the info glyph on the cards does. */}
-            <span className="-mr-1 grid h-[22px] w-[22px] place-items-center text-ink-muted group-hover:text-ink">
-              <PlusIcon size={TOOL_GLYPH.info} strokeWidth={TOOL_GLYPH.stroke} />
+            <span className="-mr-1 grid h-[22px] w-[22px] place-items-center text-ink-faint group-hover:text-terracotta-700">
+              <PlusIcon size={15} strokeWidth={TOOL_GLYPH.stroke} />
             </span>
           </button>
         </div>
@@ -591,7 +592,7 @@ export function DayItinerary({
           the way the empty day does; a day with no stops has that instead,
           and a reader who cannot edit has neither. */}
       {onFindPlace !== null && day.stops.length > 0 ? (
-        <div className="pt-2">
+        <div className="pt-3">
           <button type="button" onClick={onFindPlace} className={ADD_PLACE}>
             <PlusIcon size={TOOL_GLYPH.info} strokeWidth={TOOL_GLYPH.stroke} />
             Add a place

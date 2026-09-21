@@ -49,7 +49,7 @@ export function SavedNote({ at }: SavedNoteProps) {
           middle of. */}
       <p
         aria-hidden="true"
-        className={`pointer-events-none absolute right-5 bottom-4 z-20 flex items-center gap-[4px] rounded-pill bg-sage-600 px-[10px] py-[4px] text-label font-semibold text-paper shadow-sm transition-opacity lg:right-[26px] ${
+        className={`pointer-events-none absolute right-[14px] bottom-4 z-20 flex items-center gap-[4px] rounded-pill bg-sage-600 px-[10px] py-[4px] text-label font-semibold text-paper shadow-sm transition-opacity ${
           showing ? "opacity-100" : "opacity-0"
         }`}
       >

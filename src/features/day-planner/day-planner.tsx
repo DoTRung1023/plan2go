@@ -6,9 +6,11 @@ import type { PlannedDay } from "./compute-trip";
 import type { EndpointRef } from "./day-itinerary";
 import { DayItinerary } from "./day-itinerary";
 import { DayTabs } from "./day-tabs";
-import { GUTTER, HEADING_BAND, HEADING_BODY } from "./panel-heading";
+import { formatClock } from "@/core/time/minutes";
+import { dayStatus } from "./day-status";
+import { GUTTER, HEADING_BAND, HEADING_BODY, HEADING_DAY_LINE } from "./panel-heading";
 import type { DayActions, EditOutcome } from "./day-actions";
-import { formatDayDate } from "./format-day-date";
+import { formatDateRange } from "@/features/trip-settings/date-range-field";
 
 interface DayPlannerProps {
   readonly title: string;
@@ -56,17 +58,18 @@ interface DayPlannerProps {
   readonly actions: DayActions | null;
 }
 
-/** The panel's own gutter. Wider on a desktop, where the panel is wider. */
+/**
+ * Both ends of the trip on the name's row, as short as an editor's dates
+ * read there: the row is one line, and two dates written out in full with
+ * their weekdays took most of it.
+ */
 function dateRange(days: readonly PlannedDay[]): string | null {
   const first = days[0];
   const last = days[days.length - 1];
   if (first === undefined || last === undefined) {
     return null;
   }
-  if (first.plan.id === last.plan.id) {
-    return formatDayDate(first.plan.date);
-  }
-  return `${formatDayDate(first.plan.date)} to ${formatDayDate(last.plan.date)}`;
+  return formatDateRange(first.plan.date, last.plan.date);
 }
 
 /**
@@ -109,23 +112,23 @@ export function DayPlanner({
           day's line are part of it. A reader who cannot edit gets the heading
           and the strip on their own.
 
-          Edge to edge across the panel, its two surfaces closed by rules, so
-          the block reads as one thing and its bottom edge is where the day
-          starts scrolling. Without an edge the day's line and the first row
-          of the day sat either side of a stretch of bare paper that read as a
-          gap rather than as two things: the heading, then its list. */}
-      <div className="relative z-20 shrink-0">
+          Two things laid on the panel's sunken ground, the trip's pill and
+          the day's card, in from the edge by the gutter and standing above
+          the day, which scrolls under them. */}
+      <div className={`relative z-20 shrink-0 pt-[14px] ${GUTTER}`}>
         {settings ?? (
           <>
-            <div className={`${HEADING_BAND} flex items-center gap-[10px]`}>
-              <div className="min-w-0 flex-1">
-                <h1 className="font-display text-headline tracking-[-0.01em] text-ink">
-                  {title}
-                </h1>
-                {range === null ? null : (
-                  <p className="mt-1 text-meta text-ink-muted">{range}</p>
-                )}
-              </div>
+            <div className={HEADING_BAND}>
+              <h1 className="min-w-0 flex-1 truncate font-display text-title/[1.3] tracking-[-0.01em] text-ink">
+                {title}
+              </h1>
+              {/* On the name's row rather than under it, the way an editor's
+                  dates are: a fact about the trip beside its name. */}
+              {range === null ? null : (
+                <p className="shrink-0 text-small/none font-semibold whitespace-nowrap text-ink-muted tabular-nums">
+                  {range}
+                </p>
+              )}
               {exporting}
             </div>
             <div className={HEADING_BODY}>
@@ -136,6 +139,25 @@ export function DayPlanner({
                 onSelect={onSelect}
                 onAddDay={onAddDay}
               />
+              {/* The same line an editor's card carries, read rather than
+                  set: which day is open and what it comes to, and when it
+                  leaves, which every time down the day follows from. */}
+              {selected === undefined ? null : (
+                <div className={HEADING_DAY_LINE}>
+                  <span className="font-display text-lead/none text-ink">
+                    Day {selectedIndex + 1}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-meta/none font-medium text-ink-muted">
+                    {dayStatus(selected)}
+                  </span>
+                  <span className="flex flex-none items-center gap-[6px] text-meta/none font-semibold whitespace-nowrap text-ink-muted">
+                    Leave at
+                    <span className="text-small/none text-ink tabular-nums">
+                      {formatClock(selected.plan.startAtMinutes)}
+                    </span>
+                  </span>
+                </div>
+              )}
             </div>
           </>
         )}
@@ -161,7 +183,7 @@ export function DayPlanner({
            * where it was and the panel opens downwards, where it was clicked.
            */
           ref={watchList}
-          className={`scroll-line [--bar-width:6px] min-h-0 flex-1 overflow-x-hidden overflow-y-auto pt-1 pb-[26px] [overflow-anchor:none] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${GUTTER}`}
+          className={`scroll-line [--bar-width:6px] min-h-0 flex-1 overflow-x-hidden overflow-y-auto pt-3 pb-5 [overflow-anchor:none] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${GUTTER}`}
         >
           <DayItinerary
             day={selected.plan}

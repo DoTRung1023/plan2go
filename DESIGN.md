@@ -177,9 +177,11 @@ wants to tell you about itself, which in this product means a conflict. Sage is 
 second voice and it carries the ends of a day and today in the strip. Everything else is
 paper and ink.
 
-- **paper:** the page, and the ground the whole product sits on.
-- **paper-raised:** stop cards, floating controls, inputs, the search panel.
-- **paper-sunken:** wells, the map gutter, a hovered control.
+- **paper:** the page, the day's card on the planner, a leg, and an end of the day
+  still to be chosen.
+- **paper-raised:** stop cards, the trip's row, floating controls, inputs, the search
+  panel.
+- **paper-sunken:** the planner's ground, wells, the map gutter, a hovered control.
 - **rule:** hairlines and card borders, drawn as ink at low opacity so one value works
   over all three surfaces.
 - **rule-strong:** the border of a control under the pointer, and dashed outlines.
@@ -272,6 +274,16 @@ grid-template-columns: minmax(0, 1fr) clamp(520px, 40%, 660px);
 The map fills its pane edge to edge, with no frame of its own. The list pane is a
 column the height of the viewport: the trip name and the day tabs are fixed at the top,
 and only the day itself scrolls, so what is being read is always named above it.
+
+The list pane stands on sunken paper, and everything on it is laid on that ground 14px
+in from the edge, 12px apart. The trip comes first, on a pill of raised paper under a
+floating control's shadow: its name at the title step, its dates, and its menu, one row
+about the whole trip. Under it the days, on one card of paper at the `row` radius: the
+strip of tabs, and beneath them the line naming the open day, what it comes to, and
+when it leaves, the time on a small pill of raised paper with a clock. Then the day
+itself: stops on raised cards, legs between them on pills of paper, and the ends of the
+day and the next place, where they are not there yet, as dashed outlines. Three surfaces,
+each a step up from the one it sits on, and nothing drawn edge to edge.
 
 **Mobile, below 1024px.** One column. The map collapses to a sticky strip 140px tall at
 the top of the viewport, with the day tabs stuck directly beneath it. The page is the

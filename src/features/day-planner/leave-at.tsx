@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, useTransition } from "react";
+import { ClockIcon } from "@/ui/icons";
 import type { EditOutcome } from "./day-actions";
 import "./leave-at.css";
 
@@ -23,12 +24,14 @@ const ROW =
 const ROW_CHOSEN = "bg-terracotta-800 text-paper hover:bg-terracotta-800";
 
 /**
- * The time as words on the line rather than as a box, the way the dates are
- * on the row that names the trip: it tints under the pointer to say it can be
- * changed, and stays tinted while its picker is open.
+ * The time on a small pill of raised paper with a clock after it, the one
+ * boxed control on the day's card: it is the one thing on the line that is
+ * set rather than read, and the box says so where the words either side of
+ * it are plain. The edge takes the accent under the pointer and keeps it
+ * while the picker is open.
  */
 const TRIGGER =
-  "rounded-pill px-2 py-[5px] text-small/none font-semibold tabular-nums hover:bg-terracotta-100 hover:text-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "flex items-center gap-[6px] rounded-pill border bg-paper-raised py-[6px] pr-[9px] pl-[11px] text-small/none font-semibold text-ink tabular-nums hover:border-terracotta disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 /** Minutes from midnight on the clock: "09:05". */
 function toClock(minutes: number): string {
@@ -136,7 +139,7 @@ export function LeaveAt({ value, onChoose }: LeaveAtProps) {
 
   return (
     <div ref={container} className="relative flex flex-none items-center gap-2">
-      <label htmlFor={id} className="text-small whitespace-nowrap text-ink-muted">
+      <label htmlFor={id} className="text-meta/none font-semibold whitespace-nowrap text-ink-muted">
         Leave at
       </label>
 
@@ -154,9 +157,10 @@ export function LeaveAt({ value, onChoose }: LeaveAtProps) {
           }
           setOpen(true);
         }}
-        className={`${TRIGGER} ${open ? "bg-terracotta-100 text-terracotta-700" : "text-ink"}`}
+        className={`${TRIGGER} ${open ? "border-terracotta" : "border-rule"}`}
       >
         {toClock(draft)}
+        <ClockIcon size={13} strokeWidth={2.5} className="shrink-0 text-ink-muted" />
       </button>
 
       {open ? (

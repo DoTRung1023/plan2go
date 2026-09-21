@@ -1,41 +1,43 @@
 /**
  * The panel's gutter: what its edge keeps clear on either side, at the top and
- * down the list alike, so the trip's name and the cards under it line up.
+ * down the list alike, so the trip's row, the day's card and the stops under
+ * them all stand on one left edge and one right. Fourteen, the room a card
+ * needs from the edge of the sunken ground to read as laid on it.
  */
-export const GUTTER = "px-5 lg:px-[26px]";
+export const GUTTER = "px-[14px]";
 
 /**
- * The two surfaces of the block at the top of the panel, shared by the form an
- * editor gets and the plain heading a reader gets, so the two are drawn alike.
+ * The block at the top of the panel, shared by the form an editor gets and
+ * the plain heading a reader gets, so the two are drawn alike. Two things
+ * laid on the panel's sunken ground, one under the other, with the room the
+ * gutter gives at the top and between them.
  *
- * Each runs the full width of the panel: the row that names the trip on a
- * sunken band across the top, under a rule, and the days and the open day's
- * line on raised paper beneath, closed by another. The band is the one thing
- * on the panel that is about the whole trip rather than a day in it, and the
- * change of surface says so without a heading saying it. Neither clips, since
- * the calendar and the trip's menu hang out of the band over the list.
+ * The first is the trip itself: its name, its dates and what can be done to
+ * it, on one pill of raised paper. A pill rather than a band across the top,
+ * because it is one row about one thing and a floating control is what this
+ * product draws that as; the shadow is the floating control's. Padded to the
+ * name's line, which at the title step is thirty, so the row is fifty with
+ * the name the tallest thing in it and the controls beside it sized under
+ * that. Eighteen in from the left edge to the name and twelve to the button
+ * at the right, so the name sits in from the pill's curve and the round
+ * button sits in its end. It does not clip, since the calendar and the trip's
+ * menu hang out of it over the day.
  */
-/**
- * Ten over the name and five under, which with its forty pixel line box is a
- * row of fifty-five. Uneven on purpose: the display face carries a deep
- * descent, so its letters sit high in their box, six over the capitals and
- * eleven under the baseline, and padding that was even around the box was
- * seen as tight over the name and loose under it. Measured to the letters,
- * the name is now sixteen from either edge of the band.
- */
-export const HEADING_BAND = `border-b border-rule bg-paper-sunken pt-[10px] pb-[5px] ${GUTTER}`;
+export const HEADING_BAND =
+  "flex items-center gap-[10px] rounded-pill border border-rule bg-paper-raised py-[10px] pr-3 pl-[18px] shadow-sm";
 
 /**
- * Six rather than ten over the strip of days: the strip carries four of its
- * own, as room for a focus ring, so the pills sit ten under the rule.
+ * The second is the day: the strip of days and the line naming the open one,
+ * on one card of paper, a step up from the ground and a step under the
+ * raised cards the stops are on. Seven over the strip, which carries four of
+ * its own as room for a focus ring, so the pills sit eleven under the edge.
  */
-export const HEADING_BODY = `border-b border-rule bg-paper-raised pt-[6px] pb-[8px] ${GUTTER}`;
+export const HEADING_BODY =
+  "mt-3 rounded-row border border-rule bg-paper px-[14px] pt-[7px] pb-[13px]";
 
 /**
- * The line naming the open day, closed off from the strip above it by a rule
- * inset to the gutter. Three under the strip, so the line the strip draws as
- * its scrollbar, when it draws one, sits just over the rule rather than
- * floating between the pills and it.
+ * The line naming the open day, under the strip. Four under it, which with
+ * the seven the strip keeps below its pills is eleven, the same as over them.
+ * No rule between: the card's edge is what closes the two off from the day.
  */
-export const HEADING_DAY_LINE =
-  "mt-[3px] flex items-center gap-[22px] border-t border-rule pt-[8px]";
+export const HEADING_DAY_LINE = "mt-[4px] flex items-center gap-[9px]";

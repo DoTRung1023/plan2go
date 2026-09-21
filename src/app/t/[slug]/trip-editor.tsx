@@ -427,13 +427,16 @@ export function TripEditor({
         </div>
       </section>
 
-      <section className="relative flex min-h-0 flex-col border-rule lg:h-full lg:min-h-0 lg:border-l">
+      {/* Sunken paper: the ground the trip's pill, the day's card and the
+          stops are laid on, each a step or two up from it. */}
+      <section className="relative flex min-h-0 flex-col border-rule bg-paper-sunken lg:h-full lg:min-h-0 lg:border-l">
         <PaneHandle shell={shell} />
 
         {/* A reader who cannot edit has no actions to put on the name's row,
-            so what they get instead is the reason why. */}
+            so what they get instead is the reason why. Over the pill, on
+            the gutter, and close enough to it to read as its caption. */}
         {editKey === null ? (
-          <p className="shrink-0 px-5 pt-4 text-meta text-ink-muted lg:px-[26px]">
+          <p className="-mb-[6px] shrink-0 px-[18px] pt-3 text-meta text-ink-muted">
             Shared with you, read only
           </p>
         ) : null}
@@ -531,7 +534,7 @@ export function TripEditor({
                       <span className="font-display text-lead/none text-ink">
                         Day {selectedIndex + 1}
                       </span>
-                      <span className="text-small/[1.3] text-ink-faint">
+                      <span className="min-w-0 truncate text-meta/none font-medium text-ink-muted">
                         {dayStatus(selected)}
                       </span>
                     </>
