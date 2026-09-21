@@ -62,8 +62,8 @@ function Option({
         {on ? <CheckIcon size={12} strokeWidth={3.2} /> : null}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-small/[1.3] font-semibold text-ink">{label}</span>
-        <span className="mt-[2px] block text-micro/[1.4] text-ink-muted">{note}</span>
+        <span className="block text-small font-semibold text-ink">{label}</span>
+        <span className="mt-[2px] block text-micro text-ink-muted">{note}</span>
       </span>
     </button>
   );
@@ -281,7 +281,7 @@ export function ExportDialog({
       <div className="export-frame relative flex w-full max-w-[1120px] flex-col overflow-hidden bg-paper-raised shadow-lg lg:rounded-panel">
         <header className="export-chrome flex shrink-0 items-center gap-4 px-6 pt-5 pb-[18px]">
           <div className="min-w-0 flex-1">
-            <h2 id={titleId} className="font-display text-title/[1.15] text-ink">
+            <h2 id={titleId} className="font-display text-title text-ink">
               Export your plan
             </h2>
           </div>
@@ -298,7 +298,7 @@ export function ExportDialog({
 
         <div className="export-body flex min-h-0 flex-1 flex-col border-t border-rule lg:flex-row">
           <aside className="export-chrome flex max-h-[55%] shrink-0 flex-col border-b border-rule lg:max-h-none lg:w-[300px] lg:border-r lg:border-b-0">
-            <div className="scroll-quiet min-h-0 flex-1 overflow-y-auto px-5 pt-5 pb-[10px]">
+            <div className="scroll-quiet min-h-0 flex-1 overflow-y-auto px-6 pt-5 pb-[10px]">
               <p className={HEADING}>Which days</p>
               <div className="mt-[11px] flex flex-wrap gap-[7px]">
                 {printable.length > 1 ? (
@@ -411,14 +411,14 @@ export function ExportDialog({
               </div>
             </div>
 
-            <div className="shrink-0 border-t border-rule px-5 pt-[14px] pb-[18px]">
+            <div className="shrink-0 border-t border-rule px-6 pt-[14px] pb-[18px]">
               <button
                 type="button"
                 disabled={picked.length === 0 || printing}
                 onClick={() => {
                   setPrinting(true);
                 }}
-                className="h-11 w-full rounded-pill bg-terracotta px-5 font-display text-body/none font-semibold text-paper hover:bg-terracotta-600 active:bg-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+                className="h-10 w-full rounded-pill bg-terracotta px-5 text-small/none font-semibold text-paper hover:bg-terracotta-600 active:bg-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
               >
                 {printing ? "Preparing the pages" : "Export PDF"}
               </button>
