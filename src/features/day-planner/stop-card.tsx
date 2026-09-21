@@ -5,22 +5,11 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import type { Conflict } from "@/core/model/conflict";
 import type { ComputedStop } from "@/core/time/compute-day";
 import { formatDuration } from "@/core/time/minutes";
-import {
-  ArrowRightIcon,
-  ClockIcon,
-  CloseIcon,
-  GripIcon,
-  InfoIcon,
-  MinusIcon,
-  PlusIcon,
-} from "@/ui/icons";
+import { ArrowRightIcon, ClockIcon, CloseIcon, GripIcon, InfoIcon, PlusIcon } from "@/ui/icons";
 import type { DayActions } from "./day-actions";
 import { ConflictNotice } from "./conflict-notice";
 import { formatDayTime } from "./format-day-time";
-import { formatStay } from "./format-stay";
-
-/** The server's own limit, repeated because that module may not reach the browser. */
-const MAX_STAY_MINUTES = 99 * 60 + 59;
+import { StayPicker } from "./stay-picker";
 
 /** The one thing about this stop that is currently being written down. */
 type Busy = "stay" | "note" | "remove" | null;
@@ -81,22 +70,6 @@ export const TOOL_GLYPH = {
 } as const;
 
 /** A quarter of an hour: the smallest amount of time worth naming on a day. */
-const STAY_STEP = 15;
-
-/**
- * The little round button either side of the stay.
- *
- * A disc of raised paper on the well, with no line round it: the well is
- * the edge, and the disc standing up out of it is what says it is pressed.
- * Drawn in ink rather than in the muted colour of the quiet controls
- * elsewhere on the card. Those sit at the edge of a row and wait to be
- * looked for; these two are the whole of how long you spend somewhere,
- * which is the one number on the card a person actually sets. The glyph
- * takes the accent under the pointer.
- */
-const STAY_STEPPER =
-  "grid h-[26px] w-[26px] shrink-0 place-items-center rounded-pill bg-paper-raised text-ink hover:text-terracotta-700 disabled:opacity-40 disabled:hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
-
 interface StopCardProps {
   /** Its number in the day, counted from one. */
   readonly position: number;
@@ -197,22 +170,6 @@ export function StopCard({
       setError((await change()).error);
       setBusy(null);
     });
-  };
-
-  /**
-   * Never below one step, and never past what storage will take: a stop nobody
-   * stays at is a stop to remove, and a stay longer than the server's limit is
-   * a write that would be refused after the fact.
-   */
-  const stepStay = (by: number): void => {
-    if (actions === null) {
-      return;
-    }
-    const minutes = Math.min(MAX_STAY_MINUTES, Math.max(STAY_STEP, stop.stayMinutes + by));
-    if (minutes === stop.stayMinutes) {
-      return;
-    }
-    run("stay", () => actions.setStay({ stopId: stop.stopId, stayMinutes: minutes }));
   };
 
   const commitNote = (value: string): void => {
@@ -416,45 +373,22 @@ export function StopCard({
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          {/* Fifteen minutes a press. A stay is a rough intention, not a
-              measurement, and two number fields asked for a precision nobody
-              planning a morning actually has. */}
+          {/* How long the stop lasts: words for a reader, and for an editor
+              the pill that opens the hours and minutes, which is the one
+              number on the card a person actually sets. */}
           {actions === null ? (
             <span className="text-meta/none text-ink-muted">
               Stay for {formatDuration(stop.stayMinutes)}
             </span>
           ) : (
-            /* The two buttons and the number they move are one control, so
-               they sit in one well rather than as three things in a row with
-               the card's own paper showing between them. */
-            <span className="flex items-center gap-[2px] rounded-pill bg-neutral-200 p-[3px] text-meta/none text-ink">
-              <button
-                type="button"
-                disabled={busy === "stay" || stop.stayMinutes <= STAY_STEP}
-                aria-label={`Less time at ${stop.placeName}`}
-                onClick={() => {
-                  stepStay(-STAY_STEP);
-                }}
-                className={STAY_STEPPER}
-              >
-                <MinusIcon size={12} strokeWidth={3} />
-              </button>
-              <span className="min-w-[58px] text-center font-semibold tabular-nums">
-                <span aria-hidden="true">{formatStay(stop.stayMinutes)}</span>
-                <span className="sr-only">{formatDuration(stop.stayMinutes)}</span>
-              </span>
-              <button
-                type="button"
-                disabled={busy === "stay" || stop.stayMinutes >= MAX_STAY_MINUTES}
-                aria-label={`More time at ${stop.placeName}`}
-                onClick={() => {
-                  stepStay(STAY_STEP);
-                }}
-                className={STAY_STEPPER}
-              >
-                <PlusIcon size={12} strokeWidth={3} />
-              </button>
-            </span>
+            <StayPicker
+              placeName={stop.placeName}
+              value={stop.stayMinutes}
+              disabled={busy === "stay"}
+              onChoose={(minutes) => {
+                run("stay", () => actions.setStay({ stopId: stop.stopId, stayMinutes: minutes }));
+              }}
+            />
           )}
 
           {openingHours === null ? null : (

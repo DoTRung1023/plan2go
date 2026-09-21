@@ -350,9 +350,10 @@ the name runs on beneath the times as far as the tools reach, which are narrower
 the times, rather than stopping at the name's width: a street and a suburb that broke
 early against the times mostly read on one line. The tools are drawn at 55 percent
 until the pointer is over the card and never hidden, since half the people using this
-have no pointer to hover with. How long the stop lasts is a stepper in a
-pill, the opening hours sit beside it in words, and the note is either a field or the
-one line offering to start one. Removing is immediate: a stop is a search away from
+have no pointer to hover with. How long the stop lasts is a pill with a clock on it
+that opens two columns, hours and minutes, the same columns the day's leaving time
+opens, and writes when it closes; the opening hours sit beside it in words, and the
+note is either a field or the one line offering to start one. Removing is immediate: a stop is a search away from
 coming back, and a dialog asking twice would be a modal over something editable in
 place.
 

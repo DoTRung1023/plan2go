@@ -1,5 +1,5 @@
 /*
- * The columns of the picker under the time. Styled here rather than with
+ * The columns of a picker under a control. Styled here rather than with
  * utility classes because a scrollbar is a pseudo-element, and nothing in this
  * file introduces a value that is not already a token.
  *
@@ -7,10 +7,10 @@
  * The rows themselves are the whole of the affordance: a column that opens on
  * the chosen value with more above and below it says it scrolls.
  */
-.leave-at-list {
+.column-picker-list {
   scrollbar-width: none;
 }
 
-.leave-at-list::-webkit-scrollbar {
+.column-picker-list::-webkit-scrollbar {
   display: none;
 }
