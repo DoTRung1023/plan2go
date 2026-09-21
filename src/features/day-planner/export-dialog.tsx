@@ -404,17 +404,30 @@ export function ExportDialog({
               <label htmlFor={nameId} className={`block ${HEADING}`}>
                 File name
               </label>
-              <div className="mt-[10px] flex items-center gap-2">
-                <input
-                  id={nameId}
-                  type="text"
-                  value={typedName ?? suggestedName}
-                  onChange={(event) => {
-                    setTypedName(event.target.value);
-                  }}
-                  className="h-10 min-w-0 flex-1 rounded-pill border border-rule bg-paper px-[14px] text-small text-ink caret-terracotta outline-none placeholder:text-ink-faint focus-visible:border-terracotta"
-                />
-                <span className="shrink-0 text-small/none text-ink-faint">.pdf</span>
+              {/* The name as a line of text with .pdf on the end of it, edited
+                  in place. The field is as wide as what is in it: a copy of
+                  the name, laid under it and never seen, gives it its width,
+                  so the extension stays on the end of the name rather than at
+                  the far side of a box. A rule under the name, terracotta
+                  while it is being typed in, is what says it can be. */}
+              <div className="mt-[8px] flex items-baseline text-small">
+                <span className="grid min-w-0 overflow-hidden border-b border-rule-strong pb-[3px] focus-within:border-terracotta">
+                  <span aria-hidden="true" className="invisible col-start-1 row-start-1 whitespace-pre">
+                    {typedName ?? suggestedName}
+                  </span>
+                  <input
+                    id={nameId}
+                    type="text"
+                    /* One character of its own width, so the copy alone decides it. */
+                    size={1}
+                    value={typedName ?? suggestedName}
+                    onChange={(event) => {
+                      setTypedName(event.target.value);
+                    }}
+                    className="col-start-1 row-start-1 w-full min-w-[2ch] border-0 bg-transparent p-0 text-small text-ink caret-terracotta outline-none"
+                  />
+                </span>
+                <span className="shrink-0 text-ink-muted">.pdf</span>
               </div>
             </div>
 
