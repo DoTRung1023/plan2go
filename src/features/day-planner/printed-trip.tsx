@@ -109,7 +109,7 @@ function MarkColumn({
 /** The time a row happens at, in its own column: read down before anything else. */
 function TimeCell({ time }: { readonly time: ClockTime | null }) {
   return (
-    <p className="pt-[2px] text-right text-small/[1.35] font-semibold whitespace-nowrap text-ink tabular-nums">
+    <p className="pt-[3px] text-right font-display text-time whitespace-nowrap text-ink tabular-nums">
       {time === null ? "" : formatDayTime(time)}
     </p>
   );
@@ -129,11 +129,11 @@ function LegLine({ day, legIndex }: { readonly day: PlannedDay; readonly legInde
 
   return (
     <div className={ROW}>
-      <p className={`pt-[5px] text-right text-micro/[1.3] whitespace-nowrap ${MUTED} tabular-nums`}>
+      <p className={`pt-[5px] text-right text-meta whitespace-nowrap ${MUTED} tabular-nums`}>
         {leg.durationMinutes === null ? "" : formatDuration(leg.durationMinutes)}
       </p>
       <MarkColumn thread="through" />
-      <div className={`pt-[5px] pb-[9px] text-micro/[1.4] ${MUTED}`}>
+      <div className={`pt-[5px] pb-[9px] text-meta ${MUTED}`}>
         {leg.durationMinutes === null ? (
           <p>No way to get there could be worked out.</p>
         ) : (
@@ -164,7 +164,7 @@ function Stat({ label, value }: { readonly label: string; readonly value: string
   return (
     <div>
       <p className={`text-label font-semibold ${MUTED}`}>{label}</p>
-      <p className="mt-[5px] text-body/none font-semibold text-ink tabular-nums">{value}</p>
+      <p className="mt-[5px] font-display text-time text-ink tabular-nums">{value}</p>
     </div>
   );
 }
@@ -195,7 +195,7 @@ type SheetHeight = "at-least-a-page" | "one-page";
 function SheetFooter({ sheet }: { readonly sheet: SheetNumber }) {
   return (
     <footer
-      className={`mt-5 flex shrink-0 items-center gap-5 border-t pt-[10px] text-micro ${MUTED} ${RULE}`}
+      className={`mt-5 flex shrink-0 items-center gap-5 border-t pt-[10px] text-meta ${MUTED} ${RULE}`}
     >
       <p className="min-w-0 flex-1">
         <Credit />
@@ -268,9 +268,9 @@ function CoverSheet({
                 key={day.plan.id}
                 className={`grid grid-cols-[64px_150px_minmax(0,1fr)] gap-x-3 border-b py-[9px] ${RULE}`}
               >
-                <p className="text-small/[1.35] font-semibold text-ink">Day {index + 1}</p>
-                <p className={`text-small/[1.35] ${MUTED}`}>{formatDayDate(day.plan.date)}</p>
-                <p className={`text-small/[1.35] ${names.length === 0 ? MUTED : "text-ink"}`}>
+                <p className="text-small font-semibold text-ink">Day {index + 1}</p>
+                <p className={`text-small ${MUTED}`}>{formatDayDate(day.plan.date)}</p>
+                <p className={`text-small ${names.length === 0 ? MUTED : "text-ink"}`}>
                   {names.length === 0 ? "Nothing planned yet" : names.join(", ")}
                 </p>
               </li>
@@ -347,7 +347,7 @@ function DayHead({
   return (
     <header className="flex shrink-0 items-start gap-6">
       <div className="min-w-0 flex-1">
-        <p className={`text-label font-semibold ${MUTED}`}>
+        <p className={`text-meta font-semibold ${MUTED}`}>
           {title} · {range}
         </p>
         <div className="mt-[9px] flex flex-wrap items-baseline gap-x-[10px]">
@@ -463,7 +463,7 @@ function dayUnits({ day, request }: DayContext): readonly Unit[] {
           <div className="pb-[10px]">
             <p className="font-display text-place text-ink">Leave {endpointName(plan.start)}</p>
             {request.addresses && plan.start.place.address !== null ? (
-              <p className={`mt-[3px] text-micro ${MUTED}`}>{plan.start.place.address}</p>
+              <p className={`mt-[3px] text-small ${MUTED}`}>{plan.start.place.address}</p>
             ) : null}
           </div>
         </div>
@@ -491,17 +491,17 @@ function dayUnits({ day, request }: DayContext): readonly Unit[] {
               </span>
             </MarkColumn>
             <div className={`min-w-0 ${last ? "" : "pb-[10px]"}`}>
-              <div className="flex items-baseline gap-x-[10px]">
-                <h2 className="min-w-0 flex-1 font-display text-place text-ink">{stop.placeName}</h2>
-                <p className={`shrink-0 text-micro whitespace-nowrap ${MUTED}`}>
+              <div className="flex flex-wrap items-baseline gap-x-[10px]">
+                <h2 className="min-w-0 font-display text-place text-ink">{stop.placeName}</h2>
+                <p className={`shrink-0 text-meta whitespace-nowrap ${MUTED}`}>
                   stay {formatDuration(stop.stayMinutes)}
                   {stop.departure === null ? "" : ` · until ${formatDayTime(stop.departure)}`}
                 </p>
               </div>
               {request.addresses && place?.address ? (
-                <p className={`mt-[3px] text-micro ${MUTED}`}>{place.address}</p>
+                <p className={`mt-[3px] text-small ${MUTED}`}>{place.address}</p>
               ) : null}
-              {hours === null ? null : <p className={`mt-[3px] text-micro ${MUTED}`}>{hours}</p>}
+              {hours === null ? null : <p className={`mt-[3px] text-small ${MUTED}`}>{hours}</p>}
               {request.notes && note !== null ? (
                 <p className={`mt-[7px] max-w-[60ch] border-l-2 pl-[9px] text-small text-ink ${RULE}`}>
                   {note}
@@ -536,7 +536,7 @@ function dayUnits({ day, request }: DayContext): readonly Unit[] {
                 {sameEnds ? "Back at" : "Finish at"} {endpointName(end)}
               </p>
               {request.addresses && !sameEnds && end.place.address !== null ? (
-                <p className={`mt-[3px] text-micro ${MUTED}`}>{end.place.address}</p>
+                <p className={`mt-[3px] text-small ${MUTED}`}>{end.place.address}</p>
               ) : null}
             </div>
           </div>
