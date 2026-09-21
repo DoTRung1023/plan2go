@@ -236,20 +236,28 @@ function Anchor({
  * where the row has no place to stand on yet, with the marker the end will
  * get, the name of the end and what goes there, and a plus at the end of the
  * row. On the anchor's grid, so the marker and the words stand where the
- * place's will once there is one. The outline's 1.5px comes off the gutter
- * and off the height, so the marker lands on the anchor's 17px and the row
- * is as deep as the anchor is, to the pixel.
+ * place's will once there is one, and the hairline comes off the gutter and
+ * the height as it does on a card, so the marker lands on the anchor's 17px
+ * and the row is as deep as the anchor is, to the pixel.
+ *
+ * Drawn the way the closed leg row is, since that is the one row here that
+ * is a button rather than a place: a hairline, no ground of its own, and
+ * the neutral wash under the pointer with the words darkening in it. Dashed,
+ * because there is nothing here yet, in the ink the design file gives a
+ * dashed line. Quiet at rest, like the tools on a card: an offer to add
+ * should not outrank the places already on the day.
  */
 const ADD_ENDPOINT =
-  "group grid w-full grid-cols-[30px_minmax(0,1fr)_auto] items-center gap-x-[13px] rounded-row border-[1.5px] border-dashed border-rule-strong px-[15.5px] py-[8.5px] text-left hover:border-terracotta disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "group grid w-full grid-cols-[30px_minmax(0,1fr)_auto] items-center gap-x-[13px] rounded-row border border-dashed border-rule-strong bg-transparent px-4 py-[9px] text-left hover:bg-neutral-200 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 /**
  * The next place, where it would go: after the last stop, before the end of
- * the day. The same outline as an end of the day that is not there yet, as a
- * pill, because it is a button and not a row with a shape to show.
+ * the day. The same line, ground and words as an end of the day that is not
+ * there yet, as a pill, because it is a button and not a row with a shape to
+ * show; the label at the step the leg's Change and the tab labels are set in.
  */
 const ADD_PLACE =
-  "flex w-full items-center justify-center gap-[6px] rounded-pill border-[1.5px] border-dashed border-rule-strong py-[12px] text-body/none font-semibold text-ink hover:border-terracotta hover:text-terracotta-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "flex w-full items-center justify-center gap-[6px] rounded-pill border border-dashed border-rule-strong bg-transparent py-[10px] text-small/none font-semibold text-ink-muted hover:bg-neutral-200 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 /** What each end of the day is called, wherever it has to be said out loud. */
 const ENDS = {
@@ -406,14 +414,16 @@ function EndpointSlot({
           >
             <EndpointMark which={which} />
             <span className="min-w-0">
-              <span className="block font-display text-place text-ink">{words.add}</span>
+              <span className="block font-display text-place text-ink-muted group-hover:text-ink">
+                {words.add}
+              </span>
               <span className="mt-[3px] block text-meta text-ink-faint">{words.hint}</span>
             </span>
-            <PlusIcon
-              size={16}
-              strokeWidth={2.75}
-              className="text-ink-muted group-hover:text-terracotta-700"
-            />
+            {/* Where a card keeps its tools, in a tool's box, so the plus
+                stands in the column the info glyph on the cards does. */}
+            <span className="-mr-1 grid h-[22px] w-[22px] place-items-center text-ink-muted group-hover:text-ink">
+              <PlusIcon size={TOOL_GLYPH.info} strokeWidth={TOOL_GLYPH.stroke} />
+            </span>
           </button>
         </div>
       ) : null}
@@ -583,7 +593,7 @@ export function DayItinerary({
       {onFindPlace !== null && day.stops.length > 0 ? (
         <div className="pt-2">
           <button type="button" onClick={onFindPlace} className={ADD_PLACE}>
-            <PlusIcon size={15} strokeWidth={3} />
+            <PlusIcon size={TOOL_GLYPH.info} strokeWidth={TOOL_GLYPH.stroke} />
             Add a place
           </button>
         </div>
