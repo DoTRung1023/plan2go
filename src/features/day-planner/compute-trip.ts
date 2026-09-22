@@ -29,9 +29,10 @@ export interface PlannedLeg {
   readonly options: readonly LegOption[];
   /**
    * The same two places and the chosen way between them, handed to Google
-   * Maps, where the live times and the minute the next service leaves are.
-   * Null only for a leg whose ends could not be paired, which the day's own
-   * running order rules out.
+   * Maps with "depart at" set to the moment the day sets out on the leg, so
+   * what opens is this journey on the day it is made, with the minute each
+   * service leaves. Null only for a leg whose ends could not be paired, which
+   * the day's own running order rules out.
    */
   readonly directions: string | null;
 }
@@ -111,18 +112,30 @@ async function computeOneDay(plan: DayPlan, travel: TravelProvider): Promise<Pla
     resolved.push(answers[TRAVEL_MODES.indexOf(request.mode)] ?? UNRESOLVED);
   }
 
+  const computed = computeDay({ day: plan, legs: resolved });
   const legs = requests.map((request, index) => {
     const answers = answersPerLeg[index] ?? [];
     const end = ends[index];
+    const departure = computed.legs[index]?.departure ?? null;
     return {
       target: targets[index] ?? { kind: "day-end" as const },
       chosen: request.mode,
       options: TRAVEL_MODES.map((mode, at) => toOption(mode, answers[at] ?? UNRESOLVED)),
-      directions: end === undefined ? null : directionsUrl(end.from, end.to, request.mode),
+      directions:
+        end === undefined
+          ? null
+          : directionsUrl(
+              end.from,
+              end.to,
+              request.mode,
+              departure === null
+                ? null
+                : { epochMinutes: departure.epochMinutes, timeZone: plan.timeZone },
+            ),
     };
   });
 
-  return { plan, computed: computeDay({ day: plan, legs: resolved }), legs };
+  return { plan, computed, legs };
 }
 
 /**

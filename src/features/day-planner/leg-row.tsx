@@ -161,9 +161,10 @@ function Option({
  * The leg is timed for the moment the day plans to set out on it, but the
  * minute a service leaves and the traffic on the road are not here. The link
  * is where they live: the same two places and the same way between them,
- * opened in Google Maps for the moment the traveller is actually leaving. The
+ * opened in Google Maps with "depart at" already set to that moment, so the
  * timetable for public transport, the traffic for a drive, and for a walk the
- * same route with turn by turn directions on it.
+ * same route with turn by turn directions on it are all for the day planned
+ * rather than for now.
  */
 function DirectionsLink({ href }: { readonly href: string }) {
   return (
