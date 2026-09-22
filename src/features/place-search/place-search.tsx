@@ -2,7 +2,8 @@
 
 import type { KeyboardEvent, RefObject } from "react";
 import { useEffect, useId, useRef, useState } from "react";
-import { z } from "zod";
+import type { infer as Infer } from "zod/mini";
+import { array, nullable, number, object, optional, safeParse, string } from "zod/mini";
 import type { LatLng, Place } from "@/core/model/place";
 import { CheckIcon, CloseIcon, PinIcon, PlusIcon, SearchIcon } from "@/ui/icons";
 import { useScrollBar } from "@/ui/use-scroll-bar";
@@ -30,27 +31,27 @@ const RECOMMENDED_SHOWN = 6;
  */
 const RECOMMENDED_ASKED = 20;
 
-const suggestionSchema = z.object({
-  providerPlaceId: z.string(),
-  name: z.string(),
-  address: z.string().nullable(),
+const suggestionSchema = object({
+  providerPlaceId: string(),
+  name: string(),
+  address: nullable(string()),
 });
 
-const searchResponseSchema = z.object({ suggestions: z.array(suggestionSchema) });
+const searchResponseSchema = object({ suggestions: array(suggestionSchema) });
 
-const refusalSchema = z.object({ error: z.string(), action: z.string().optional() });
+const refusalSchema = object({ error: string(), action: optional(string()) });
 
 /** Where a chosen place is and what it is called, as the preview answers. */
-const previewSchema = z.object({
-  place: z.object({
-    providerPlaceId: z.string(),
-    name: z.string(),
-    address: z.string().nullable(),
-    position: z.object({ lat: z.number(), lng: z.number() }),
+const previewSchema = object({
+  place: object({
+    providerPlaceId: string(),
+    name: string(),
+    address: nullable(string()),
+    position: object({ lat: number(), lng: number() }),
   }),
 });
 
-type Suggestion = z.infer<typeof suggestionSchema>;
+type Suggestion = Infer<typeof suggestionSchema>;
 
 interface AddPlaceOutcome {
   readonly added: string | null;
@@ -154,7 +155,7 @@ async function askAboutCity(city: LatLng): Promise<readonly Suggestion[]> {
       return [];
     }
     const body: unknown = await response.json();
-    const parsed = searchResponseSchema.safeParse(body);
+    const parsed = safeParse(searchResponseSchema, body);
     return parsed.success ? parsed.data.suggestions : [];
   } catch {
     return [];
@@ -306,7 +307,7 @@ export function PlaceSearch({
         setAnswered(typed);
         setOpen(true);
         if (!response.ok) {
-          const refusal = refusalSchema.safeParse(body);
+          const refusal = safeParse(refusalSchema, body);
           setSuggestions([]);
           setSearchMessage(
             refusal.success
@@ -315,7 +316,7 @@ export function PlaceSearch({
           );
           return;
         }
-        const parsed = searchResponseSchema.safeParse(body);
+        const parsed = safeParse(searchResponseSchema, body);
         setSuggestions(parsed.success ? parsed.data.suggestions : []);
         setActive(0);
         setSearchMessage(null);
@@ -424,9 +425,9 @@ export function PlaceSearch({
         return;
       }
       setLookingUp(null);
-      const parsed = ok ? previewSchema.safeParse(body) : null;
+      const parsed = ok ? safeParse(previewSchema, body) : null;
       if (parsed === null || !parsed.success) {
-        const refusal = refusalSchema.safeParse(body);
+        const refusal = safeParse(refusalSchema, body);
         setLookError(
           refusal.success
             ? [refusal.data.error, refusal.data.action].filter(Boolean).join(" ")

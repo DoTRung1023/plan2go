@@ -1,6 +1,6 @@
 import type { SettingsUpdated, TripRepository } from "../repositories/trip-repository";
 import { DEFAULT_START_AT_MINUTES } from "./day-start";
-import { MAX_TRIP_DAYS } from "./new-trip-input";
+import { MAX_TRIP_DAYS } from "@/core/model/trip";
 
 export interface AddDayRequest {
   readonly slug: string;

@@ -2,7 +2,8 @@
 
 import type { KeyboardEvent } from "react";
 import { useEffect, useId, useRef, useState } from "react";
-import { z } from "zod";
+import type { infer as Infer } from "zod/mini";
+import { array, nullable, object, safeParse, string } from "zod/mini";
 import type { LatLng } from "@/core/model/place";
 import { SearchIcon } from "@/ui/icons";
 
@@ -14,15 +15,15 @@ const MINIMUM_LETTERS = 2;
 /** Degrees kept on the bias point. Any more is spurious and misses the cache. */
 const BIAS_DECIMALS = 4;
 
-const suggestionSchema = z.object({
-  providerPlaceId: z.string(),
-  name: z.string(),
-  address: z.string().nullable(),
+const suggestionSchema = object({
+  providerPlaceId: string(),
+  name: string(),
+  address: nullable(string()),
 });
 
-const responseSchema = z.object({ suggestions: z.array(suggestionSchema) });
+const responseSchema = object({ suggestions: array(suggestionSchema) });
 
-type Suggestion = z.infer<typeof suggestionSchema>;
+type Suggestion = Infer<typeof suggestionSchema>;
 
 interface EndpointPickerProps {
   /** Read out to anyone who cannot see which end of the day this is. */
@@ -96,7 +97,7 @@ export function EndpointPicker({
           setMessage("Could not reach the place search service. Try again in a moment.");
           return;
         }
-        const parsed = responseSchema.safeParse(body);
+        const parsed = safeParse(responseSchema, body);
         setSuggestions(parsed.success ? parsed.data.suggestions : []);
         setActive(0);
         setMessage(null);

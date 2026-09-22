@@ -6,7 +6,7 @@ import type { DayMapSources } from "@/features/day-planner/day-map-source";
 import { parseExportRequest } from "@/features/day-planner/export-query";
 import type { ExportRequest } from "@/features/day-planner/export-request";
 import { dayMapImage, inlineImage } from "../day-map-image";
-import { travelProvider } from "../travel";
+import { tripTravelProvider } from "../travel";
 import { tripBySlug } from "../trip-lookup";
 import { PrintSheets } from "./print-sheets";
 
@@ -75,7 +75,7 @@ export default async function PrintPage({ params, searchParams }: PrintPageProps
   if (trip === null) {
     notFound();
   }
-  const days = await computeTrip(trip, travelProvider());
+  const days = await computeTrip(trip, await tripTravelProvider(trip));
   const chosen = chosenDays(days, request);
   if (chosen.length === 0) {
     notFound();

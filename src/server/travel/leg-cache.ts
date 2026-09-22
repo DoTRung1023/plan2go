@@ -108,11 +108,179 @@ function keyFor(point: LatLng): string {
   return `${point.lat.toFixed(KEY_DECIMALS)},${point.lng.toFixed(KEY_DECIMALS)}`;
 }
 
-const DB_MODE: Readonly<Record<TravelMode, "WALK" | "DRIVE" | "TRANSIT">> = {
+type DbMode = "WALK" | "DRIVE" | "TRANSIT";
+
+const DB_MODE: Readonly<Record<TravelMode, DbMode>> = {
   walk: "WALK",
   drive: "DRIVE",
   transit: "TRANSIT",
 };
+
+/** The two ends of a leg, as the cache tells one leg from another. */
+interface PairKey {
+  readonly originKey: string;
+  readonly destinationKey: string;
+}
+
+/** Exactly the four things that determine an answer. */
+interface LegKey extends PairKey {
+  readonly mode: DbMode;
+  readonly timeBucket: string;
+}
+
+/** A leg's answer as the cache holds it, whichever way it arrived. */
+interface RememberedLeg {
+  readonly durationMinutes: number;
+  readonly distanceMeters: number;
+  readonly source: string;
+  readonly path: readonly LatLng[] | null;
+  readonly rides: readonly TransitRide[] | null;
+  readonly expiresAt: Date;
+}
+
+/** A leg by the two points it runs between, for asking about it before it is asked for. */
+export interface LegPair {
+  readonly from: LatLng;
+  readonly to: LatLng;
+}
+
+/**
+ * Where the rows live. Prisma answers in production, and a test answers from
+ * a Map, so the remembering above the rows can be checked without a database.
+ */
+export interface LegRows {
+  one(key: LegKey): Promise<RememberedLeg | null>;
+  /** Every row not yet expired at `now` for any of these pairs, whatever its mode or moment. */
+  forPairs(pairs: readonly PairKey[], now: Date): Promise<readonly (RememberedLeg & LegKey)[]>;
+  put(key: LegKey, leg: RememberedLeg): Promise<void>;
+}
+
+function pairKeyOf(key: PairKey): string {
+  return `${key.originKey}|${key.destinationKey}`;
+}
+
+function rowKeyOf(key: LegKey): string {
+  return `${pairKeyOf(key)}|${key.mode}|${key.timeBucket}`;
+}
+
+function remembered(row: {
+  readonly durationMinutes: number;
+  readonly distanceMeters: number;
+  readonly source: string;
+  readonly path: unknown;
+  readonly rides: unknown;
+  readonly expiresAt: Date;
+}): RememberedLeg {
+  return {
+    durationMinutes: row.durationMinutes,
+    distanceMeters: row.distanceMeters,
+    source: row.source,
+    path: storedPath(row.path),
+    rides: storedRides(row.rides),
+    expiresAt: row.expiresAt,
+  };
+}
+
+export const prismaLegRows: LegRows = {
+  async one(key) {
+    const row = await db.legCache.findUnique({
+      where: { originKey_destinationKey_mode_timeBucket: key },
+    });
+    return row === null ? null : remembered(row);
+  },
+
+  async forPairs(pairs, now) {
+    const rows = await db.legCache.findMany({
+      where: {
+        expiresAt: { gt: now },
+        OR: pairs.map((pair) => ({
+          originKey: pair.originKey,
+          destinationKey: pair.destinationKey,
+        })),
+      },
+    });
+    return rows.map((row) => ({
+      ...remembered(row),
+      originKey: row.originKey,
+      destinationKey: row.destinationKey,
+      mode: row.mode,
+      timeBucket: row.timeBucket,
+    }));
+  },
+
+  async put(key, leg) {
+    const row = {
+      ...key,
+      durationMinutes: leg.durationMinutes,
+      distanceMeters: leg.distanceMeters,
+      source: leg.source,
+      path: pathToJson(leg.path),
+      rides: ridesToJson(leg.rides),
+      expiresAt: leg.expiresAt,
+    };
+    await db.legCache.upsert({
+      where: { originKey_destinationKey_mode_timeBucket: key },
+      create: row,
+      update: row,
+    });
+  },
+};
+
+/**
+ * Every cached answer for a set of legs, read in one go and held for the
+ * length of one render.
+ *
+ * A trip is drawn by asking for its legs one after another, because a leg's
+ * moment depends on the answer before it, and every one of those asks was a
+ * round trip to the database. The pairs of places, though, are known before
+ * anything is asked, and this is every row for every pair, whatever its mode
+ * or moment, read once. A pair that was read and is not here was not there.
+ */
+export interface LegCacheMemory {
+  readonly rows: Map<string, RememberedLeg>;
+  /** The pairs the rows were read for: a miss on one of these is a real miss. */
+  readonly warmed: ReadonlySet<string>;
+}
+
+export async function warmLegCache(
+  pairs: readonly LegPair[],
+  rows: LegRows = prismaLegRows,
+): Promise<LegCacheMemory> {
+  const wanted = new Map<string, PairKey>();
+  for (const pair of pairs) {
+    const key = { originKey: keyFor(pair.from), destinationKey: keyFor(pair.to) };
+    wanted.set(pairKeyOf(key), key);
+  }
+  if (wanted.size === 0) {
+    return { rows: new Map(), warmed: new Set() };
+  }
+
+  const found = await rows.forPairs([...wanted.values()], new Date());
+  return {
+    rows: new Map(found.map((row) => [rowKeyOf(row), row])),
+    warmed: new Set(wanted.keys()),
+  };
+}
+
+function resolved(mode: TravelMode, leg: RememberedLeg): LegResolution {
+  return {
+    status: "resolved",
+    estimate: {
+      mode,
+      durationMinutes: leg.durationMinutes,
+      distanceMeters: leg.distanceMeters,
+      source: leg.source === "google-routes" ? "google-routes" : "haversine",
+      path: leg.path,
+      rides: leg.rides,
+    },
+  };
+}
+
+export interface LegCacheOptions {
+  /** Answers already read for this render, so a leg among them costs no round trip. */
+  readonly memory?: LegCacheMemory;
+  readonly rows?: LegRows;
+}
 
 /**
  * The same question is never paid for twice.
@@ -131,34 +299,43 @@ const DB_MODE: Readonly<Record<TravelMode, "WALK" | "DRIVE" | "TRANSIT">> = {
  * A leg the provider could not answer is not cached either. An unreachable
  * island is cheap to ask about again, and a provider that was merely down for a
  * minute must not be remembered as a permanent no.
+ *
+ * Given a memory, a leg whose pair was read into it is answered from it, hit
+ * or miss, without asking the database again; a pair it was not read for is
+ * asked about one row at a time, as without one. What the provider answers is
+ * written into the memory as well as the table, so the next mode of the same
+ * leg, asked a moment later in the same render, finds it.
  */
-export function withLegCache(inner: TravelProvider): TravelProvider {
+export function withLegCache(inner: TravelProvider, options: LegCacheOptions = {}): TravelProvider {
+  const rows = options.rows ?? prismaLegRows;
+  const memory = options.memory;
+
+  async function recall(key: LegKey): Promise<RememberedLeg | null> {
+    if (memory === undefined) {
+      return rows.one(key);
+    }
+    const held = memory.rows.get(rowKeyOf(key));
+    if (held !== undefined) {
+      return held;
+    }
+    return memory.warmed.has(pairKeyOf(key)) ? null : rows.one(key);
+  }
+
   return {
     name: `${inner.name}+cache`,
 
     async estimate(request: TravelRequest): Promise<LegResolution> {
       const timeBucket = timeBucketFor(request);
-      const key = {
+      const key: LegKey = {
         originKey: keyFor(request.from),
         destinationKey: keyFor(request.to),
         mode: DB_MODE[request.mode],
         timeBucket,
       };
-      const where = { originKey_destinationKey_mode_timeBucket: key };
 
-      const cached = await db.legCache.findUnique({ where });
+      const cached = await recall(key);
       if (cached !== null && cached.expiresAt > new Date()) {
-        return {
-          status: "resolved",
-          estimate: {
-            mode: request.mode,
-            durationMinutes: cached.durationMinutes,
-            distanceMeters: cached.distanceMeters,
-            source: cached.source === "google-routes" ? "google-routes" : "haversine",
-            path: storedPath(cached.path),
-            rides: storedRides(cached.rides),
-          },
-        };
+        return resolved(request.mode, cached);
       }
 
       const answer = await inner.estimate(request);
@@ -170,18 +347,18 @@ export function withLegCache(inner: TravelProvider): TravelProvider {
       // was asked and had no route, and that ask is billed. So the answer is
       // kept whatever its source, and the same empty question is asked once.
 
-      const row = {
-        ...key,
+      const leg: RememberedLeg = {
         durationMinutes: answer.estimate.durationMinutes,
         distanceMeters: answer.estimate.distanceMeters,
         source: answer.estimate.source,
-        path: pathToJson(answer.estimate.path),
-        rides: ridesToJson(answer.estimate.rides),
+        path: answer.estimate.path,
+        rides: answer.estimate.rides,
         expiresAt: new Date(
           Date.now() + (timeBucket === ANY_TIME ? KEEP_FOR[request.mode] : KEEP_TIMED_TRANSIT_FOR),
         ),
       };
-      await db.legCache.upsert({ where, create: row, update: row });
+      await rows.put(key, leg);
+      memory?.rows.set(rowKeyOf(key), leg);
 
       return answer;
     },

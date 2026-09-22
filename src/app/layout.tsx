@@ -13,8 +13,11 @@ import "./globals.css";
  * undersized and sitting in the wrong place.
  *
  * The subsets are named rather than left to default, and vietnamese is one of
- * them. Next downloads each subset as its own file with its own unicode-range,
- * so a reader who never opens a Vietnamese trip never fetches those glyphs.
+ * them. Next cuts each subset as its own file with its own unicode-range, and
+ * preloads every one of them on every page, so the cost of a subset is paid by
+ * every reader, not only the ones whose trip needs it. That is why the list of
+ * weights below is the list actually used and nothing more: each weight is
+ * another file per subset, and a weight nobody set is bytes on every page.
  *
  * The list is written out twice rather than shared between the two calls. Next
  * reads these arguments at build time by looking at the source, so a name
@@ -36,11 +39,14 @@ const display = Baloo_2({
  * Drawn Vietnamese first, which is the whole reason for it: the tone marks have
  * forms of their own for sitting over a circumflex rather than being stacked
  * and hoped for.
+ *
+ * Not a variable font, so every weight is a file of its own per subset. Four
+ * weights, upright only: the product sets nothing lighter than 400 and never
+ * italicises, so those files would be fetched and never drawn.
  */
 const body = Be_Vietnam_Pro({
   subsets: ["latin", "latin-ext", "vietnamese"],
-  weight: ["300", "400", "500", "600", "700"],
-  style: ["normal", "italic"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-be-vietnam-pro",
   display: "swap",
 });

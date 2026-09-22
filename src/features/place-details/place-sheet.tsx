@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { z } from "zod";
+import { array, int, nullable, number, object, optional, safeParse, string } from "zod/mini";
 import type { Place, PlaceCard, PlacePhoto, PlaceReview } from "@/core/model/place";
 import {
   ChevronLeftIcon,
@@ -18,38 +18,38 @@ import { PhotoViewer } from "./photo-viewer";
 import "./place-sheet.css";
 import { Notice } from "@/ui/notice";
 
-const cardSchema = z.object({
-  card: z.object({
-    rating: z.number().nullable(),
-    ratingCount: z.number().int().nullable(),
-    priceLevel: z.number().int().nullable(),
-    summary: z.string().nullable(),
-    kind: z.string().nullable(),
-    website: z.string().nullable(),
-    phone: z.string().nullable(),
-    mapsUrl: z.string().nullable(),
-    photos: z.array(
-      z.object({
-        name: z.string(),
-        width: z.number().int(),
-        height: z.number().int(),
-        by: z.string().nullable(),
-        byUrl: z.string().nullable(),
+const cardSchema = object({
+  card: object({
+    rating: nullable(number()),
+    ratingCount: nullable(int()),
+    priceLevel: nullable(int()),
+    summary: nullable(string()),
+    kind: nullable(string()),
+    website: nullable(string()),
+    phone: nullable(string()),
+    mapsUrl: nullable(string()),
+    photos: array(
+      object({
+        name: string(),
+        width: int(),
+        height: int(),
+        by: nullable(string()),
+        byUrl: nullable(string()),
       }),
     ),
-    reviews: z.array(
-      z.object({
-        author: z.string(),
-        authorUrl: z.string().nullable(),
-        rating: z.number().int(),
-        when: z.string(),
-        text: z.string().nullable(),
+    reviews: array(
+      object({
+        author: string(),
+        authorUrl: nullable(string()),
+        rating: int(),
+        when: string(),
+        text: nullable(string()),
       }),
     ),
   }),
 });
 
-const refusalSchema = z.object({ error: z.string(), action: z.string().optional() });
+const refusalSchema = object({ error: string(), action: optional(string()) });
 
 /** The picture across the top and the strip under it, in the widths the photo route serves. */
 const HERO_WIDTH = 800;
@@ -418,7 +418,7 @@ export function PlaceSheet({
           return;
         }
         if (!response.ok) {
-          const refusal = refusalSchema.safeParse(body);
+          const refusal = safeParse(refusalSchema, body);
           setAsked({
             status: "refused",
             sentence: refusal.success
@@ -427,7 +427,7 @@ export function PlaceSheet({
           });
           return;
         }
-        const parsed = cardSchema.safeParse(body);
+        const parsed = safeParse(cardSchema, body);
         setAsked(
           parsed.success
             ? { status: "answered", card: parsed.data.card }

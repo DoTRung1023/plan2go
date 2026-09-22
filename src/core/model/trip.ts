@@ -3,6 +3,16 @@ import type { LatLng } from "./place";
 
 export type TripId = string;
 
+/**
+ * A year. Long enough for anything anyone would plan a day at a time.
+ *
+ * Here rather than beside the input schema that enforces it, because the
+ * form on the front door shows it too, and a client component that imports a
+ * server module for one number takes that module's whole import tree into
+ * the browser with it.
+ */
+export const MAX_TRIP_DAYS = 365;
+
 export interface Trip {
   readonly id: TripId;
   /** Random, unguessable, and the only thing in the URL. */

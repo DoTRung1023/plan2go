@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { z } from "zod";
+import { object, optional, safeParse, string } from "zod/mini";
 import { CheckIcon, CloseIcon } from "@/ui/icons";
 import { Notice } from "@/ui/notice";
 import type { PlannedDay } from "./compute-trip";
@@ -23,7 +23,7 @@ const HEADING = "text-label font-semibold text-ink-muted";
 const DIVIDER = "my-[18px] h-px bg-rule";
 
 /** What the export route says when it will not, or cannot, draw the file. */
-const refusalSchema = z.object({ error: z.string(), action: z.string().optional() });
+const refusalSchema = object({ error: string(), action: optional(string()) });
 
 /** What is said when the route could not be reached at all. */
 const UNREACHABLE = "Could not reach the server. Check your connection and export again.";
@@ -373,7 +373,7 @@ export function ExportDialog({
       query.set("name", fileName);
       const response = await fetch(`/api/export?${query.toString()}`);
       if (!response.ok) {
-        const refusal = refusalSchema.safeParse(await response.json().catch(() => null));
+        const refusal = safeParse(refusalSchema, await response.json().catch(() => null));
         setExportError(
           refusal.success
             ? [refusal.data.error, refusal.data.action].filter(Boolean).join(" ")

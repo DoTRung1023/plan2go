@@ -5,7 +5,7 @@ import { z } from "zod";
 import { EDIT_KEY_PATTERN, hashEditKey } from "@/server/ownership/edit-key";
 import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
 import { addDay } from "@/server/trips/add-day";
-import { MAX_TRIP_DAYS } from "@/server/trips/new-trip-input";
+import { MAX_TRIP_DAYS } from "@/core/model/trip";
 
 export interface AddDayState {
   readonly error: string | null;

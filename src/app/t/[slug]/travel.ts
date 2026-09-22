@@ -1,8 +1,11 @@
 import { createGoogleRoutesProvider, transitDepartureFor } from "@/adapters/travel/google-routes";
 import { createHaversineTravelProvider } from "@/adapters/travel/haversine";
+import type { Trip } from "@/core/model/trip";
 import type { TravelProvider } from "@/core/ports/travel-provider";
+import { legEnds } from "@/core/time/day-points";
 import { googleMapsApiKey } from "@/server/places/google-key";
-import { withLegCache } from "@/server/travel/leg-cache";
+import type { LegCacheMemory } from "@/server/travel/leg-cache";
+import { warmLegCache, withLegCache } from "@/server/travel/leg-cache";
 
 /**
  * Google first, and the line between the two ends where Google has nothing.
@@ -61,6 +64,18 @@ function withoutIgnoredDepartures(inner: TravelProvider): TravelProvider {
   };
 }
 
+function composed(apiKey: string, memory?: LegCacheMemory): TravelProvider {
+  return withoutIgnoredDepartures(
+    withLegCache(
+      withStraightLineFallback(
+        createGoogleRoutesProvider({ apiKey }),
+        createHaversineTravelProvider(),
+      ),
+      { memory },
+    ),
+  );
+}
+
 /**
  * The provider every path in this route uses, composed in one place so a page
  * render, a stop being added and a day being reordered all get their times from
@@ -81,12 +96,31 @@ export function travelProvider(): TravelProvider {
   if (apiKey === null) {
     return createHaversineTravelProvider();
   }
-  return withoutIgnoredDepartures(
-    withLegCache(
-      withStraightLineFallback(
-        createGoogleRoutesProvider({ apiKey }),
-        createHaversineTravelProvider(),
-      ),
+  return composed(apiKey);
+}
+
+/**
+ * The same provider for a whole trip about to be drawn, with every cached
+ * answer for every leg of it read first, in one go.
+ *
+ * A trip's legs are asked for one after another, so on the way through
+ * travelProvider each is its own round trip to the database, and a day of
+ * ten stops is ten of them in a row before the page can be sent. The pairs
+ * of places are known before any of that starts, and reading their rows
+ * together turns those round trips into one. An action changing one leg
+ * still uses travelProvider: it asks about one leg, and warming for one is
+ * the same round trip with more words.
+ */
+export async function tripTravelProvider(trip: Trip): Promise<TravelProvider> {
+  const apiKey = googleMapsApiKey();
+
+  if (apiKey === null) {
+    return createHaversineTravelProvider();
+  }
+  const memory = await warmLegCache(
+    trip.days.flatMap((day) =>
+      legEnds(day).map(({ from, to }) => ({ from: from.position, to: to.position })),
     ),
   );
+  return composed(apiKey, memory);
 }

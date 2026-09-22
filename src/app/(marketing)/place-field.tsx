@@ -2,7 +2,9 @@
 
 import type { KeyboardEvent } from "react";
 import { useEffect, useId, useRef, useState } from "react";
-import { z } from "zod";
+// zod/mini, by name: this file reaches the browser, and the classic import
+// carries every locale zod has with it. See export-query.ts.
+import { array, nullable, object, optional, safeParse, string } from "zod/mini";
 import { SearchIcon } from "@/ui/icons";
 import { FIELD_GROUND, FIELD_LABEL, FIELD_SHELL, FIELD_STACK } from "./field-styles";
 
@@ -11,15 +13,15 @@ const DEBOUNCE_MS = 250;
 
 const MINIMUM_LETTERS = 2;
 
-const suggestionSchema = z.object({
-  providerPlaceId: z.string(),
-  name: z.string(),
-  address: z.string().nullable(),
+const suggestionSchema = object({
+  providerPlaceId: string(),
+  name: string(),
+  address: nullable(string()),
 });
 
-const responseSchema = z.object({ suggestions: z.array(suggestionSchema) });
+const responseSchema = object({ suggestions: array(suggestionSchema) });
 
-const refusalSchema = z.object({ error: z.string(), action: z.string().optional() });
+const refusalSchema = object({ error: string(), action: optional(string()) });
 
 /** A place the traveller has picked out of the list, whatever it is a place of. */
 export interface ChosenPlace {
@@ -100,7 +102,7 @@ export function PlaceField({ id, name, label, placeholder, chosen, onChange }: P
         setAnswered(trimmed);
         setOpen(true);
         if (!response.ok) {
-          const refusal = refusalSchema.safeParse(body);
+          const refusal = safeParse(refusalSchema, body);
           setFound([]);
           setMessage(
             refusal.success
@@ -109,7 +111,7 @@ export function PlaceField({ id, name, label, placeholder, chosen, onChange }: P
           );
           return;
         }
-        const parsed = responseSchema.safeParse(body);
+        const parsed = safeParse(responseSchema, body);
         setFound(parsed.success ? parsed.data.suggestions : []);
         setActive(0);
         setMessage(null);

@@ -9,7 +9,6 @@ import { DayPlanner } from "@/features/day-planner/day-planner";
 import { PlaceSearch } from "@/features/place-search/place-search";
 import { DayTabs } from "@/features/day-planner/day-tabs";
 import { dayStatus } from "@/features/day-planner/day-status";
-import { ExportDialog } from "@/features/day-planner/export-dialog";
 import { DEFAULT_EXPORT } from "@/features/day-planner/export-request";
 import { PaneHandle } from "./pane-handle";
 import { LeaveAt } from "@/features/day-planner/leave-at";
@@ -36,6 +35,28 @@ import { setDayEndpointAction } from "./set-day-endpoint-action";
 import { setDayStartAction } from "./set-day-start-action";
 import { setLegModeAction } from "./set-leg-mode-action";
 import { updateTripAction } from "./update-trip-action";
+
+/**
+ * Fetched when the export is first opened, not with the page. The dialog is a
+ * screen of its own, with its own stylesheet and a preview of every sheet, and
+ * most readers of a trip never open it. What is drawn while it arrives is the
+ * scrim and frame it will draw itself a moment later, so the click shows the
+ * dialog beginning rather than nothing.
+ */
+const ExportDialog = dynamic(
+  async () => {
+    const loaded = await import("@/features/day-planner/export-dialog");
+    return loaded.ExportDialog;
+  },
+  {
+    loading: () => (
+      <div className="fixed inset-0 z-50 flex items-stretch justify-center lg:p-7">
+        <div aria-hidden="true" className="absolute inset-0 bg-ink/40" />
+        <div className="relative w-full max-w-[1120px] bg-paper-raised shadow-lg lg:rounded-panel" />
+      </div>
+    ),
+  },
+);
 
 /** The Maps script reaches for the document as it runs, so it never renders on the server. */
 const TripMap = dynamic(

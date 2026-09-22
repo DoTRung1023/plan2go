@@ -1,9 +1,7 @@
 import { z } from "zod";
+import { MAX_TRIP_DAYS } from "@/core/model/trip";
 import { daysBetween } from "@/core/time/zoned";
 import { calendarDate } from "./calendar-date";
-
-/** A year. Long enough for anything anyone would plan a day at a time. */
-export const MAX_TRIP_DAYS = 365;
 
 /** Both ends counted, so a trip that starts and ends on one day is one day long. */
 function daysAcross(startDate: string, endDate: string): number {

@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 import { addDays } from "@/core/time/zoned";
 import { DateRangeField } from "@/features/trip-settings/date-range-field";
 import { useLocalToday } from "@/ui/use-local-today";
-import { MAX_TRIP_DAYS } from "@/server/trips/new-trip-input";
+import { MAX_TRIP_DAYS } from "@/core/model/trip";
 import type { ChosenPlace } from "./place-field";
 import { PlaceField } from "./place-field";
 import { createTripAction } from "./create-trip-action";

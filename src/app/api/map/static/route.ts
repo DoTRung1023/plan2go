@@ -5,7 +5,7 @@ import { consumeRateLimit } from "@/server/rate-limit/ip-rate-limit";
 import type { RateLimitPolicy } from "@/server/rate-limit/window";
 import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
 import { dayMapImage } from "@/app/t/[slug]/day-map-image";
-import { travelProvider } from "@/app/t/[slug]/travel";
+import { tripTravelProvider } from "@/app/t/[slug]/travel";
 
 /**
  * An open endpoint in front of a metered API. A trip exported whole asks for
@@ -50,7 +50,7 @@ export async function GET(request: Request): Promise<NextResponse> {
   }
 
   const trip = await prismaTripRepository.findBySlug(parsed.data.slug);
-  const days = trip === null ? [] : await computeTrip(trip, travelProvider());
+  const days = trip === null ? [] : await computeTrip(trip, await tripTravelProvider(trip));
   const day = days.find((candidate) => candidate.plan.id === parsed.data.day);
   if (day === undefined) {
     return NextResponse.json(

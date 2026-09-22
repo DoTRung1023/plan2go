@@ -4,6 +4,11 @@
 
 generator client {
   provider = "prisma-client-js"
+  /// No native query engine. The default is an 18 MB binary that every cold
+  /// start of a serverless function has to read and wake before the first
+  /// query, and this is the same query planning as a small WebAssembly module
+  /// instead, with the database spoken to by the adapter in src/server/db.ts.
+  engineType = "client"
   /// A trip is read with its days, its stops and their places in one go. Without
   /// this Prisma asks for each level separately, which is a round trip per level.
   previewFeatures = ["relationJoins"]
