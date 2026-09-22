@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import type { Conflict } from "@/core/model/conflict";
 import type { TravelMode } from "@/core/model/leg";
 import type { ComputedLeg } from "@/core/time/compute-day";
 import { formatDuration } from "@/core/time/minutes";
@@ -15,7 +14,6 @@ import {
 } from "@/ui/icons";
 import { legInk } from "@/features/trip-map/route-style";
 import type { LegOption, PlannedLeg } from "./compute-trip";
-import { ConflictNotice } from "./conflict-notice";
 import type { DayActions } from "./day-actions";
 import { formatDistance } from "./format-distance";
 
@@ -63,7 +61,6 @@ interface LegRowProps {
   readonly leg: ComputedLeg;
   /** Every way of covering this leg, and which one the day is using. */
   readonly planned: PlannedLeg;
-  readonly conflicts: readonly Conflict[];
   /** Whether the pointer is on this leg, here or on the route on the map. */
   readonly hovered: boolean;
   readonly onHover: (legIndex: number | null) => void;
@@ -201,7 +198,6 @@ function DirectionsLink({ href }: { readonly href: string }) {
 export function LegRow({
   leg,
   planned,
-  conflicts,
   hovered,
   onHover,
   onChange,
@@ -425,12 +421,6 @@ export function LegRow({
         ) : null}
 
         {directions}
-
-        {conflicts.map((conflict, index) => (
-          <div key={`${conflict.kind}-${String(index)}`} className="mt-2">
-            <ConflictNotice conflict={conflict} />
-          </div>
-        ))}
       </div>
     </div>
   );

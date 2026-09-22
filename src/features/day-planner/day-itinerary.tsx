@@ -73,12 +73,6 @@ function movedWithin<T>(list: readonly T[], from: number, to: number): readonly 
   return moved;
 }
 
-function conflictsOnLeg(conflicts: readonly Conflict[], legIndex: number): readonly Conflict[] {
-  return conflicts.filter(
-    (conflict) => conflict.kind === "unresolved-leg" && conflict.legIndex === legIndex,
-  );
-}
-
 /** What the place says about itself on the day being read. */
 export function hoursOn(place: Place, day: DayPlan): string | null {
   if (place.openingHours === null) {
@@ -542,7 +536,6 @@ export function DayItinerary({
                 <LegRow
                   leg={leg}
                   planned={planned}
-                  conflicts={conflictsOnLeg(computed.conflicts, leg.index)}
                   hovered={hoveredLegIndex === leg.index}
                   onHover={onHoverLeg}
                   onChange={actions === null ? null : actions.changeLegMode}
@@ -577,7 +570,6 @@ export function DayItinerary({
           <LegRow
             leg={legToEnd}
             planned={plannedToEnd}
-            conflicts={conflictsOnLeg(computed.conflicts, legToEnd.index)}
             hovered={hoveredLegIndex === legToEnd.index}
             onHover={onHoverLeg}
             onChange={actions === null ? null : actions.changeLegMode}

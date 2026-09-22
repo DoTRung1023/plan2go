@@ -47,12 +47,6 @@ function conflictsAtStop(conflicts: readonly Conflict[], stopId: StopId): readon
   return conflicts.filter((conflict) => "stopId" in conflict && conflict.stopId === stopId);
 }
 
-function conflictsOnLeg(conflicts: readonly Conflict[], legIndex: number): readonly Conflict[] {
-  return conflicts.filter(
-    (conflict) => conflict.kind === "unresolved-leg" && conflict.legIndex === legIndex,
-  );
-}
-
 /** The date range of the trip, for the line above every day's name and the cover. */
 function rangeOf(days: readonly PlannedDay[]): string {
   const first = days[0];
@@ -214,11 +208,6 @@ function LegLine({ day, legIndex }: { readonly day: PlannedDay; readonly legInde
         )}
         {rides.map((ride, index) => (
           <p key={String(index)}>{rideSentence(ride)}</p>
-        ))}
-        {conflictsOnLeg(day.computed.conflicts, leg.index).map((conflict, index) => (
-          <p key={`${conflict.kind}-${String(index)}`} className="mt-1 text-ink">
-            {conflictSentence(conflict)}
-          </p>
         ))}
       </div>
     </div>
