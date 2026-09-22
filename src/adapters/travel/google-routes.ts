@@ -48,6 +48,8 @@ const stepSchema = z.object({
         .object({
           departureStop: z.object({ name: z.string().optional() }).optional(),
           arrivalStop: z.object({ name: z.string().optional() }).optional(),
+          /** When the vehicle leaves, as an RFC 3339 instant. */
+          departureTime: z.string().optional(),
         })
         .optional(),
       transitLine: z
@@ -176,6 +178,40 @@ export function transitDepartureFor(request: TravelRequest, now: Date): string |
 }
 
 /**
+ * The longest a traveller is taken to wait for the first vehicle before the
+ * way is called no way at all. Asked for a bus on a Saturday afternoon where
+ * the next one is Sunday morning, Google answers with that bus and a journey
+ * of eighteen hours, which is an itinerary but not a way of getting there
+ * that day. Two hours takes in a service every hour or so, which is a wait a
+ * person can plan around, and nothing that is really tomorrow.
+ */
+const TRANSIT_WAIT_LIMIT_MINUTES = 120;
+
+/**
+ * How long the itinerary waits for its first vehicle after the moment asked
+ * for, in minutes, or null when either is unknown: a request with no moment,
+ * or steps with no vehicle on them.
+ */
+export function transitWaitMinutes(
+  steps: readonly RouteStep[],
+  departAt: number | null,
+): number | null {
+  if (departAt === null) {
+    return null;
+  }
+  const first = steps.find((step) => step.transitDetails?.stopDetails?.departureTime !== undefined);
+  const leaves = first?.transitDetails?.stopDetails?.departureTime;
+  if (leaves === undefined) {
+    return null;
+  }
+  const leavesAt = new Date(leaves).getTime();
+  if (Number.isNaN(leavesAt)) {
+    return null;
+  }
+  return Math.round(leavesAt / MILLIS_PER_MINUTE - departAt);
+}
+
+/**
  * Real routes from Google, called from the server only. The key is passed in
  * rather than read from the environment here, so this file has no opinion about
  * where secrets live.
@@ -246,6 +282,15 @@ export function createGoogleRoutesProvider(options: GoogleRoutesOptions): Travel
       if (route === undefined) {
         return NO_ROUTE;
       }
+      const steps = route.legs?.flatMap((leg) => leg.steps ?? []) ?? [];
+
+      // A vehicle that leaves hours after the moment asked for is the next
+      // day's service, or as good as, and that is no way of getting there at
+      // this time rather than a very long one.
+      const wait = transit ? transitWaitMinutes(steps, request.departAt) : null;
+      if (wait !== null && wait > TRANSIT_WAIT_LIMIT_MINUTES) {
+        return NO_ROUTE;
+      }
 
       return {
         status: "resolved",
@@ -258,9 +303,7 @@ export function createGoogleRoutesProvider(options: GoogleRoutesOptions): Travel
             route.polyline === undefined
               ? null
               : decodePolyline(route.polyline.encodedPolyline),
-          rides: transit
-            ? ridesFromSteps(route.legs?.flatMap((leg) => leg.steps ?? []) ?? [])
-            : null,
+          rides: transit ? ridesFromSteps(steps) : null,
         },
       };
     },

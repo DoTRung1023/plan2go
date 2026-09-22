@@ -188,7 +188,7 @@ function LegLine({ day, legIndex }: { readonly day: PlannedDay; readonly legInde
       </MarkColumn>
       <div className={`pt-[5px] pb-[9px] text-meta ${MUTED}`}>
         {leg.durationMinutes === null ? (
-          <p>No way to get there could be worked out.</p>
+          <p>No {MODE_WORDS[leg.mode].toLowerCase()} at this time.</p>
         ) : (
           /* The way and how far, opening the journey in Google Maps, where
              the live times are. In the leg's own ink, the disc's colour, so

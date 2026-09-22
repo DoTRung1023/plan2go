@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { TravelRequest } from "@/core/model/leg";
-import { minutesFromDuration, ridesFromSteps, transitDepartureFor } from "./google-routes";
+import {
+  minutesFromDuration,
+  ridesFromSteps,
+  transitDepartureFor,
+  transitWaitMinutes,
+} from "./google-routes";
 
 describe("minutesFromDuration", () => {
   it("reads the seconds Google answers with", () => {
@@ -93,5 +98,26 @@ describe("transitDepartureFor", () => {
     expect(transitDepartureFor(leg("transit", minutesAt("2027-01-15T00:00:00Z")), now)).toBeNull();
     expect(transitDepartureFor(leg("transit", minutesAt("2026-09-16T00:00:00Z")), now)).not.toBeNull();
     expect(transitDepartureFor(leg("transit", minutesAt("2026-12-30T00:00:00Z")), now)).not.toBeNull();
+  });
+});
+
+describe("transitWaitMinutes", () => {
+  const askedFor = new Date("2026-09-19T06:26:00Z").getTime() / 60_000;
+  const ride = (departureTime: string) => ({
+    transitDetails: { stopDetails: { departureTime }, transitLine: { name: "Bus 32" } },
+  });
+
+  it("is how long the first vehicle is waited for", () => {
+    const steps = [{ staticDuration: "300s" }, ride("2026-09-19T06:41:00Z"), ride("2026-09-19T07:30:00Z")];
+    expect(transitWaitMinutes(steps, askedFor)).toBe(15);
+  });
+
+  it("counts a vehicle that leaves the next morning as the wait it is", () => {
+    expect(transitWaitMinutes([ride("2026-09-19T22:15:00Z")], askedFor)).toBe(949);
+  });
+
+  it("is unknown without a moment asked for, or without a vehicle", () => {
+    expect(transitWaitMinutes([ride("2026-09-19T06:41:00Z")], null)).toBeNull();
+    expect(transitWaitMinutes([{ staticDuration: "300s" }], askedFor)).toBeNull();
   });
 });

@@ -282,7 +282,12 @@ export function LegRow({
     </>
   ) : (
     <span className="text-small/none text-ink-muted">
-      {anyWay ? "No way chosen to get there yet" : "No way to get there"}
+      {/* What was looked for and not found, then what to do: the way the
+          day has stored for this leg does not run at this time, and the
+          panel under it offers the ones that do. */}
+      {anyWay
+        ? `No ${MODE_WORDS[leg.mode].toLowerCase()} at this time.${onChange === null ? "" : " Choose another way."}`
+        : "No way to get there"}
     </span>
   );
 

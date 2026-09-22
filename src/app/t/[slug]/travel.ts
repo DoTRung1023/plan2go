@@ -7,10 +7,10 @@ import { withLegCache } from "@/server/travel/leg-cache";
 /**
  * Google first, and the line between the two ends where Google has nothing.
  *
- * Only for a leg Google looked at and found no route for. A provider that is
- * down is a different thing entirely, and guessing through an outage would
- * quietly replace every real number on the page with a rough one without
- * saying so.
+ * Only for a leg Google looked at and found no route for, and only on foot
+ * or by road. A provider that is down is a different thing entirely, and
+ * guessing through an outage would quietly replace every real number on the
+ * page with a rough one without saying so.
  *
  * The Routes API is not the Google Maps app and does not cover the same
  * ground. It was cycling that showed this up worst, and that mode is gone
@@ -18,6 +18,12 @@ import { withLegCache } from "@/server/travel/leg-cache";
  * app will happily draw that the API answers nothing for, and "Unavailable"
  * for a journey somebody could obviously make is worse than a rough number
  * that says it is rough.
+ *
+ * Public transport is the other way round. A leg Google has no bus or train
+ * for at the moment asked is a leg with no bus or train, not a gap in a map:
+ * nobody can walk a straight line at the speed of a bus that is not
+ * running, so a guess there is a number nobody can act on, and the honest
+ * answer is that there is no way this way at this time.
  */
 function withStraightLineFallback(
   primary: TravelProvider,
@@ -27,7 +33,11 @@ function withStraightLineFallback(
     name: `${primary.name}-or-${fallback.name}`,
     async estimate(request) {
       const answer = await primary.estimate(request);
-      if (answer.status === "resolved" || answer.reason !== "no-route") {
+      if (
+        answer.status === "resolved" ||
+        answer.reason !== "no-route" ||
+        request.mode === "transit"
+      ) {
         return answer;
       }
       return fallback.estimate(request);
