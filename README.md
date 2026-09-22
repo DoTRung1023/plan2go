@@ -44,6 +44,7 @@ pnpm dev
 | `DATABASE_URL` | Pooled Postgres, the `-pooler` host, with `pgbouncer=true` |
 | `DIRECT_URL` | Same host, no pooler, no `pgbouncer` |
 | `GOOGLE_MAPS_API_KEY` | Places API (New) enabled. Server side only, never `NEXT_PUBLIC_` |
+| `PDF_CHROME_PATH` | Optional. A Chrome or Chromium to print the PDF export with in development. Unset, the Chrome in `/Applications` is used on a Mac, and the packed Chromium on Linux |
 
 > [!NOTE]
 > The file is `.env`, not `.env.local`, because the Prisma CLI reads only `.env`.
@@ -83,6 +84,14 @@ Vercel, from `main`.
 
 The build does not run migrations. Apply them to production before shipping a schema
 change.
+
+The PDF export, `/api/export`, starts a Chromium inside the function and prints
+`/t/[slug]/print`, a page of the sheets alone, on the same deployment. It asks for a
+minute (`maxDuration`) and about a gigabyte, which Fluid compute's standard function
+has, and the packed browser is named in `next.config.ts` so it ships with the route.
+A Preview deployment behind Vercel Authentication cannot export, because the browser
+inside the function is turned away at the door like any other visitor; Production is
+open and exports.
 
 ## Architecture
 

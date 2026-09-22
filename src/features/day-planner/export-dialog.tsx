@@ -1,9 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { z } from "zod";
 import { CheckIcon, CloseIcon } from "@/ui/icons";
 import { Notice } from "@/ui/notice";
 import type { PlannedDay } from "./compute-trip";
+import { dayMapSources } from "./day-map-source";
+import { exportRequestQuery } from "./export-query";
 import type { ExportRequest } from "./export-request";
 import { DEFAULT_EXPORT, exportRequestKey } from "./export-request";
 import { formatDayTab } from "./format-day-date";
@@ -18,6 +21,28 @@ const HEADING = "text-label font-semibold text-ink-muted";
 
 /** The line between one group of choices and the next. */
 const DIVIDER = "my-[18px] h-px bg-rule";
+
+/** What the export route says when it will not, or cannot, draw the file. */
+const refusalSchema = z.object({ error: z.string(), action: z.string().optional() });
+
+/** What is said when the route could not be reached at all. */
+const UNREACHABLE = "Could not reach the server. Check your connection and export again.";
+
+/**
+ * The file, saved: a link to it made, followed and taken away again in one
+ * breath, which is how a page saves a file it holds under a name of its own.
+ * The address is let go a moment later, once the browser has begun the save.
+ */
+function saveFile(blob: Blob, fileName: string): void {
+  const address = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = address;
+  link.download = fileName;
+  link.click();
+  setTimeout(() => {
+    URL.revokeObjectURL(address);
+  }, 60_000);
+}
 
 /**
  * A day, as a pill that is either in the export or not. The pills are dealt
@@ -143,14 +168,15 @@ interface ExportDialogProps {
  * all can be chosen, so one day, a run of days and the whole trip are the
  * same control rather than three; a cover in front of them; what goes on
  * each sheet; a sheet to write on after each day; and what the file is
- * called. There is one format, because the sheets are printed by the browser
- * and saving them as a PDF is what its print window is for, so the button
- * names the format and nothing asks for it.
+ * called. There is one format, so the button names it and nothing asks.
  *
- * The preview is the print. When the print window opens, everything here but
- * the sheets falls away and they go to the printer at full size, so what was
- * looked at and what comes out are one thing. The browser's own print command
- * does the same while the dialog is open.
+ * The preview is the file. The export is sent to the server, where a browser
+ * of our own draws the same sheets with the same stylesheet and prints them,
+ * and the file comes back as a download under the name chosen here, so what
+ * was looked at and what comes out are one thing, and nothing of a print
+ * window is in it. The browser's own print command still prints the preview
+ * while the dialog is open: everything here but the sheets falls away and
+ * they go to the printer at full size.
  *
  * A day with nothing on it cannot be chosen: a blank sheet is worse than no
  * sheet. Escape closes the dialog, as does the scrim around it.
@@ -183,18 +209,16 @@ export function ExportDialog({
   const [ink, setInk] = useState<Ink>(DEFAULT_EXPORT.ink);
   /** A name typed over the one the trip suggests, or null while the suggestion stands. */
   const [typedName, setTypedName] = useState<string | null>(null);
-  /** Which request's pictures have all arrived, so it is safe to print. */
-  const [readyFor, setReadyFor] = useState<string | null>(null);
   /** How many sheets the request came to once laid out, by which request; null until then. */
   const [sheetsFor, setSheetsFor] = useState<{ readonly key: string; readonly count: number } | null>(
     null,
   );
-  /** Export was asked for and is waiting on the sheets, or on the print window. */
-  const [printing, setPrinting] = useState(false);
+  /** The file was asked for and the server is drawing it. */
+  const [exporting, setExporting] = useState(false);
+  /** Why the last export came back without a file, or null while there is nothing to say. */
+  const [exportError, setExportError] = useState<string | null>(null);
   /** The name of the page at the top of the preview: "Day 2", "Cover", "Day 2 · notes". */
   const [onPage, setOnPage] = useState<string | null>(null);
-  /** The document's own title, held while the print window borrows it. */
-  const wasCalled = useRef<string | null>(null);
 
   const printable = days.filter((day) => day.plan.stops.length > 0);
   const picked = printable.filter((day) => chosen.has(day.plan.id));
@@ -218,12 +242,13 @@ export function ExportDialog({
   const requestKey = exportRequestKey(request);
   /** How wide a sheet is drawn, which is what the preview scales down from. */
   const sheetWidth = sheetGeometry(paper, orientation).widthPx;
-  const ready = readyFor === requestKey;
   const sheets = sheetsFor?.key === requestKey ? sheetsFor.count : null;
+  /** Where the preview fetches each day's map from: our own map route. */
+  const maps = useMemo(() => dayMapSources(slug, days), [slug, days]);
 
   /**
-   * What the print window will offer to save the file as: the trip's name
-   * and which days are in the file, unless a name has been typed over it.
+   * What the file is saved as: the trip's name and which days are in the
+   * file, unless a name has been typed over it.
    * The days are numbered from the whole trip rather than from the days
    * that can be printed, so an empty day between two full ones does not
    * shift the numbers away from the ones the tabs show.
@@ -239,13 +264,6 @@ export function ExportDialog({
   const fileName = (typedName ?? suggestedName).trim() || suggestedName;
   /** The name has been cleared, so the export would fall back to the suggestion. */
   const unnamed = typedName !== null && typedName.trim() === "";
-
-  const restoreTitle = useCallback((): void => {
-    if (wasCalled.current !== null) {
-      document.title = wasCalled.current;
-      wasCalled.current = null;
-    }
-  }, []);
 
   /** Starts on the way out, so the keyboard lands on the way out too. */
   useEffect(() => {
@@ -340,39 +358,36 @@ export function ExportDialog({
   }, [placeOnPage, requestKey, sheets]);
 
   /**
-   * Prints once the sheets asked for are whole, and not before.
-   *
-   * The document is renamed for as long as the print window is open, because
-   * that is where the name it offers to save the file under comes from. Every
-   * page here is called plan2go, so a trip saved as a PDF arrived in the
-   * downloads folder under that name and the next one after it as a
-   * duplicate. Put back the moment the window closes: the tab is not the file.
+   * The file, asked for and saved. The request is spelled out in the
+   * address, the same way the server's browser is then told it, and the
+   * name goes with it so the file arrives called what the field says. What
+   * comes back is either the file or a sentence about why not, which is
+   * said under the button.
    */
-  useEffect(() => {
-    if (!printing || !ready) {
-      return;
+  const exportPdf = async (): Promise<void> => {
+    setExporting(true);
+    setExportError(null);
+    try {
+      const query = exportRequestQuery(request);
+      query.set("slug", slug);
+      query.set("name", fileName);
+      const response = await fetch(`/api/export?${query.toString()}`);
+      if (!response.ok) {
+        const refusal = refusalSchema.safeParse(await response.json().catch(() => null));
+        setExportError(
+          refusal.success
+            ? [refusal.data.error, refusal.data.action].filter(Boolean).join(" ")
+            : UNREACHABLE,
+        );
+        return;
+      }
+      saveFile(await response.blob(), `${fileName}.pdf`);
+    } catch {
+      setExportError(UNREACHABLE);
+    } finally {
+      setExporting(false);
     }
-    wasCalled.current = document.title;
-    document.title = fileName;
-    window.print();
-    // Safari and Firefox return from print() with the window already closed,
-    // so afterprint may have been and gone. Named back either way, and the
-    // handler below finds nothing left to do.
-    restoreTitle();
-  }, [printing, ready, fileName, restoreTitle]);
-
-  /** However the print window closed, the export is over. */
-  useEffect(() => {
-    const done = (): void => {
-      restoreTitle();
-      setPrinting(false);
-    };
-    window.addEventListener("afterprint", done);
-    return () => {
-      window.removeEventListener("afterprint", done);
-      restoreTitle();
-    };
-  }, [restoreTitle]);
+  };
 
   const toggleDay = (id: string): void => {
     keepPlace();
@@ -622,22 +637,27 @@ export function ExportDialog({
             <div className="shrink-0 border-t border-rule px-6 pt-[14px] pb-[18px]">
               <button
                 type="button"
-                disabled={picked.length === 0 || printing}
+                disabled={picked.length === 0 || exporting}
                 onClick={() => {
-                  setPrinting(true);
+                  void exportPdf();
                 }}
                 className="h-10 w-full rounded-pill bg-terracotta px-5 text-small/none font-semibold text-paper hover:bg-terracotta-600 active:bg-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
               >
-                {printing ? "Preparing the pages" : "Export PDF"}
+                {exporting ? "Drawing the pages" : "Export PDF"}
               </button>
-              {/* Always in the DOM so the announcement lands; empty (and so
-                  without height) until an export is waiting on its maps. */}
+              {/* Always in the DOM so the announcement lands; empty, and so
+                  without height, until the server is drawing the file. */}
               <p
                 aria-live="polite"
-                className={`text-center text-meta text-ink-muted ${printing && !ready ? "mt-[10px]" : ""}`}
+                className={`text-center text-meta text-ink-muted ${exporting ? "mt-[10px]" : ""}`}
               >
-                {printing && !ready ? "Waiting for the maps to arrive." : null}
+                {exporting ? "This takes a few seconds." : null}
               </p>
+              {exportError === null ? null : (
+                <Notice role="alert" shape="note" className="mt-[10px]">
+                  {exportError}
+                </Notice>
+              )}
             </div>
           </aside>
 
@@ -676,13 +696,10 @@ export function ExportDialog({
                   <PrintedTrip
                     key={requestKey}
                     title={title}
-                    slug={slug}
                     days={days}
+                    maps={maps}
                     request={request}
                     visible={true}
-                    onReady={() => {
-                      setReadyFor(requestKey);
-                    }}
                     onSheets={(count) => {
                       setSheetsFor({ key: requestKey, count });
                     }}

@@ -8,6 +8,7 @@ import type { ClockTime } from "@/core/time/compute-day";
 import { formatClock, formatDuration } from "@/core/time/minutes";
 import type { PlannedDay } from "./compute-trip";
 import { conflictSentence } from "./conflict-sentence";
+import type { DayMapSources } from "./day-map-source";
 import { endpointName, hoursOn } from "./day-itinerary";
 import type { ExportRequest } from "./export-request";
 import { formatDayDate, formatDayLong } from "./format-day-date";
@@ -373,7 +374,8 @@ interface DayContext {
   readonly number: number;
   readonly title: string;
   readonly range: string;
-  readonly slug: string;
+  /** Where the picture of each day's map is, by day. */
+  readonly maps: DayMapSources;
   readonly request: ExportRequest;
   /** The paper the sheet is made for, which is how big the map may be. */
   readonly sheet: SheetGeometry;
@@ -449,13 +451,16 @@ function DayStats({ day, request }: DayContext) {
 function DayMap({
   day,
   number,
-  slug,
+  maps,
   sheet,
   onSettled,
   request,
 }: DayContext & { readonly onSettled?: () => void }) {
   const [failed, setFailed] = useState(false);
-  if (failed) {
+  const src = maps[day.plan.id];
+  /* A day with no picture to be had takes no room for one, on the sheet and
+     in what is measured to deal it alike. */
+  if (failed || src === undefined) {
     return null;
   }
   const size = mapSize(sheet, request.mapSize);
@@ -470,7 +475,7 @@ function DayMap({
            waited on before the print window opens. */
         /* eslint-disable-next-line @next/next/no-img-element */
         <img
-          src={`/api/map/static?slug=${encodeURIComponent(slug)}&day=${encodeURIComponent(day.plan.id)}`}
+          src={src}
           alt={`Map of day ${String(number)}: ${formatStops(day.plan.stops.length)}`}
           /* Decoded with the rest of the sheet rather than a frame after it,
              so a picture that is already to hand, as it is whenever a choice
@@ -737,8 +742,13 @@ interface Page {
 
 interface PrintedTripProps {
   readonly title: string;
-  readonly slug: string;
   readonly days: readonly PlannedDay[];
+  /**
+   * Where the picture of each day's map is, by day: our own map route on
+   * screen, and the picture itself, already drawn, on the server's browser.
+   * A day with no entry gets no map.
+   */
+  readonly maps: DayMapSources;
   readonly request: ExportRequest;
   /**
    * Shown on screen, as the export dialog's preview, or kept for the printer
@@ -748,9 +758,9 @@ interface PrintedTripProps {
   readonly visible: boolean;
   /**
    * Said once every picture on the sheets has arrived or failed, which is the
-   * moment the print window can open on finished pages rather than blank ones.
+   * moment the sheets can be printed as finished pages rather than blank ones.
    */
-  readonly onReady: () => void;
+  readonly onReady?: () => void;
   /** Said with how many sheets the export comes to, once they are laid out, and again if that changes. */
   readonly onSheets?: (count: number) => void;
 }
@@ -770,8 +780,8 @@ interface PrintedTripProps {
  */
 export function PrintedTrip({
   title,
-  slug,
   days,
+  maps,
   request,
   visible,
   onReady,
@@ -779,7 +789,8 @@ export function PrintedTrip({
 }: PrintedTripProps) {
   const chosen = days.filter((day) => request.dayIds.includes(day.plan.id));
   const range = rangeOf(days);
-  const awaited = request.map ? chosen.length : 0;
+  /** How many pictures there are to wait for: one per day that has one to show. */
+  const awaited = request.map ? chosen.filter((day) => maps[day.plan.id] !== undefined).length : 0;
   const [settled, setSettled] = useState(0);
   const announced = useRef(false);
   const [measures, setMeasures] = useState<Readonly<Record<string, DayMeasure>>>({});
@@ -787,7 +798,7 @@ export function PrintedTrip({
   useEffect(() => {
     if (settled >= awaited && !announced.current) {
       announced.current = true;
-      onReady();
+      onReady?.();
     }
   }, [settled, awaited, onReady]);
 
@@ -808,7 +819,7 @@ export function PrintedTrip({
       number: days.indexOf(day) + 1,
       title,
       range,
-      slug,
+      maps,
       request,
       sheet,
     }),

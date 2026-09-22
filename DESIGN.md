@@ -510,15 +510,20 @@ how much of it the map takes, how big the words are and whether it is in the map
 colours or in ink alone, then
 the file's name, and the sheets on the right exactly as they will print, redrawn as
 each choice changes, with the name of the one at the top held over them. The sheets
-are drawn at the paper's own size and the print window is told the same size and way
-up, so what is chosen here is what comes out and nothing is shrunk or turned to fit.
-The one format is in the button's own words, Export PDF, because the browser's print
-window is where the file itself is decided.
+are drawn at the paper's own size and the page rule is told the same size and way up,
+so what is chosen here is what comes out and nothing is shrunk or turned to fit. The
+one format is in the button's own words, Export PDF.
 
-Saving the sheets as a PDF is what the browser's own print window is for, and the name
-it offers comes from the document's title, so the document is renamed for as long as
-that window is open: the trip, and which of its days are in the file. Named back the
-moment it closes, because the tab is not the file.
+The file is drawn on the server. The export is spelled out in the address of a page
+that holds the sheets and nothing else, a browser of our own opens that page, waits
+for the sheets to be dealt and every map to arrive, and prints it with the same
+stylesheet the preview is drawn with. The file comes back as a download under the name
+in the field, so what was looked at and what comes out are one thing, the same on
+every reader's machine, and nothing of a print window, no header, no date, no address,
+is in it. While it is drawn the button says so, and a file that could not be drawn is
+a sentence under the button saying what happened and what to do. The browser's own
+print command still prints the preview while the dialog is open, and the open day
+while it is not.
 
 ## Banned in this product
 

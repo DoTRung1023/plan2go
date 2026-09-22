@@ -19,8 +19,12 @@ const SIDES_MM: Readonly<Record<PaperSize, { readonly short: number; readonly lo
   a5: { short: 148, long: 210 },
 };
 
-/** What the page rule keeps clear on every side. */
-const MARGIN_MM = 16;
+/**
+ * What the page rule keeps clear on every side. Told to the browser that
+ * draws the PDF as well, so the page it makes has the margins the sheets
+ * were dealt for.
+ */
+export const PAGE_MARGIN_MM = 16;
 
 const PX_PER_MM = 96 / 25.4;
 
@@ -55,9 +59,9 @@ export function sheetGeometry(paper: PaperSize, orientation: Orientation): Sheet
   const heightPx = Math.round(heightMm * PX_PER_MM);
   // Rounded down, so the rows here are never wider than the page's and a
   // line that fits on screen fits on paper.
-  const printable = Math.floor((widthMm - 2 * MARGIN_MM) * PX_PER_MM);
+  const printable = Math.floor((widthMm - 2 * PAGE_MARGIN_MM) * PX_PER_MM);
   const sidePaddingPx = Math.round((widthPx - printable) / 2);
-  const topPaddingPx = Math.round(MARGIN_MM * PX_PER_MM);
+  const topPaddingPx = Math.round(PAGE_MARGIN_MM * PX_PER_MM);
   return {
     widthPx,
     heightPx,
@@ -65,7 +69,7 @@ export function sheetGeometry(paper: PaperSize, orientation: Orientation): Sheet
     topPaddingPx,
     contentWidthPx: widthPx - 2 * sidePaddingPx,
     roomPx: heightPx - 2 * topPaddingPx - SLACK_PX,
-    pageRoomMm: heightMm - 2 * MARGIN_MM - 1,
+    pageRoomMm: heightMm - 2 * PAGE_MARGIN_MM - 1,
     pageSize: `${paper.toUpperCase()} ${orientation}`,
   };
 }

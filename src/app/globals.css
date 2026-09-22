@@ -434,6 +434,14 @@
   pointer-events: none;
 }
 
+/* The page the server's own browser prints: the sheets at the width they
+   print and nothing else, so what it lays out on screen is what it lays on
+   paper, and a sheet opened by hand reads as one. */
+.print-page .printed-trip {
+  width: var(--sheet-content, 672px);
+  margin: 0 auto;
+}
+
 @media print {
   .printed-measure {
     display: none;

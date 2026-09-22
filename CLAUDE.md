@@ -67,7 +67,9 @@ the one whose answer does not move with the moment, so neither is sent one.
 `core` imports nothing internal. This is enforced by lint, not by good intentions.
 
 **Sharing.** The share artifact is a read-only web page first and a print stylesheet
-second. No PDF library.
+second. No PDF library: the PDF is that print stylesheet, rendered by a Chromium of our
+own on the server (`puppeteer-core` and `@sparticuz/chromium`, in `src/server/pdf`),
+so the sheets are written once and the file is the preview.
 
 **Design.** `DESIGN.md` is the source of truth for anything under `src/app/t/`,
 `src/features/`, or `src/ui/`, and it overrides the vendored `design-taste-frontend`

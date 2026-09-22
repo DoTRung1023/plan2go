@@ -589,15 +589,14 @@ export function TripEditor({
         <PrintedTrip
           key={selected?.plan.id}
           title={title}
-          slug={slug}
           days={days}
+          maps={{}}
           request={{
             ...DEFAULT_EXPORT,
             dayIds: selected === undefined ? [] : [selected.plan.id],
             map: false,
           }}
           visible={false}
-          onReady={() => {}}
         />
       )}
 
