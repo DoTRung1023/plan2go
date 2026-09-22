@@ -11,6 +11,7 @@ import {
   ChevronUpIcon,
   TrainIcon,
   WalkIcon,
+  WarningIcon,
 } from "@/ui/icons";
 import { legInk } from "@/features/trip-map/route-style";
 import type { LegOption, PlannedLeg } from "./compute-trip";
@@ -144,7 +145,9 @@ function Option({
           stated because a step with its leading turned off loses the weight
           the scale gives it. */}
       <span className="font-display text-place/none font-semibold tracking-[-0.01em] text-ink tabular-nums [overflow-wrap:anywhere]">
-        {unavailable ? "Unavailable" : formatDuration(option.durationMinutes ?? 0)}
+        {unavailable
+          ? "Unavailable"
+          : `${option.rough ? "about " : ""}${formatDuration(option.durationMinutes ?? 0)}`}
       </span>
       {option.distanceMeters === null ? null : (
         <span className="text-meta/[1.2] text-ink-muted tabular-nums">
@@ -239,6 +242,8 @@ export function LegRow({
    */
   const covered = leg.durationMinutes !== null;
   const anyWay = planned.options.some((option) => option.durationMinutes !== null);
+  /** The way in use was not found by the provider, so its time is a guess from the distance. */
+  const rough = planned.options.some((option) => option.mode === leg.mode && option.rough);
 
   /**
    * Outside the row's button rather than inside it, because it is a link and
@@ -266,6 +271,7 @@ export function LegRow({
           day is built out of and the one number worth reading the row for.
           How far follows it quietly. */}
       <span className="font-display text-time whitespace-nowrap text-ink tabular-nums">
+        {rough ? "about " : ""}
         {formatDuration(leg.durationMinutes ?? 0)}
       </span>
       {leg.distanceMeters === null ? null : (
@@ -398,6 +404,20 @@ export function LegRow({
             </span>
           </button>
         )}
+
+        {/* Said under the row, as a conflict is, so a guess is never read as a
+            timetable: what was not found, then what the number is instead. */}
+        {covered && rough ? (
+          <div className="mt-2">
+            <div className="flex w-fit max-w-full items-start gap-[7px] rounded-chip bg-terracotta-200 px-[11px] py-[7px]">
+              <WarningIcon size={13} className="mt-[2px] shrink-0 text-terracotta-700" />
+              <p className="text-micro text-terracotta-900">
+                No {MODE_WORDS[leg.mode].toLowerCase()} route was found here. The time is a
+                guess from the distance.
+              </p>
+            </div>
+          </div>
+        ) : null}
 
         {directions}
 

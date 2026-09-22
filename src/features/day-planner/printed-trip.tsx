@@ -161,6 +161,8 @@ function LegLine({ day, legIndex }: { readonly day: PlannedDay; readonly legInde
   }
   const chosen = planned.options.find((option) => option.mode === planned.chosen);
   const distance = leg.distanceMeters === null ? null : formatDistance(leg.distanceMeters);
+  /** No route was found this way, so the time is a guess from the distance and says so. */
+  const rough = chosen?.rough ?? false;
   /** What to catch, which is the one thing about a leg worth having on paper. */
   const rides = leg.mode === "transit" ? (chosen?.rides ?? []) : [];
   const Icon = MODE_ICON[leg.mode];
@@ -168,7 +170,9 @@ function LegLine({ day, legIndex }: { readonly day: PlannedDay; readonly legInde
   return (
     <div className={ROW}>
       <p className={`pt-[5px] text-right text-meta whitespace-nowrap ${MUTED} tabular-nums`}>
-        {leg.durationMinutes === null ? "" : formatDuration(leg.durationMinutes)}
+        {leg.durationMinutes === null
+          ? ""
+          : `${rough ? "about " : ""}${formatDuration(leg.durationMinutes)}`}
       </p>
       {/* The leg hangs on the thread as it does on screen: its glyph on a disc
           washed with the ink the map draws this leg in, so the line on the

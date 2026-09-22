@@ -16,6 +16,13 @@ export interface LegOption {
   readonly mode: TravelMode;
   readonly durationMinutes: number | null;
   readonly distanceMeters: number | null;
+  /**
+   * The provider found no route this way, so the time is a guess from the
+   * straight line between the two ends, and is said to be one. A number
+   * that says it is rough rather than "Unavailable" for a journey somebody
+   * could obviously make, and never a rough number passed off as a real one.
+   */
+  readonly rough: boolean;
   /** The shape of the route, for the map. Null when the provider has none. */
   readonly path: readonly LatLng[] | null;
   /** What is ridden, for public transport the provider broke into vehicles. */
@@ -50,12 +57,20 @@ const UNRESOLVED: LegResolution = { status: "unresolved", reason: "not-requested
 
 function toOption(mode: TravelMode, resolution: LegResolution): LegOption {
   if (resolution.status === "unresolved") {
-    return { mode, durationMinutes: null, distanceMeters: null, path: null, rides: null };
+    return {
+      mode,
+      durationMinutes: null,
+      distanceMeters: null,
+      rough: false,
+      path: null,
+      rides: null,
+    };
   }
   return {
     mode,
     durationMinutes: resolution.estimate.durationMinutes,
     distanceMeters: resolution.estimate.distanceMeters,
+    rough: resolution.estimate.source === "haversine",
     path: resolution.estimate.path,
     rides: resolution.estimate.rides,
   };
