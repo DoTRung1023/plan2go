@@ -2,9 +2,8 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import type { Conflict } from "@/core/model/conflict";
+import { conflictsAtStop } from "@/core/model/conflict";
 import type { Place } from "@/core/model/place";
-import type { StopId } from "@/core/model/stop";
 import type { ClockTime } from "@/core/time/compute-day";
 import { formatClock, formatDuration } from "@/core/time/minutes";
 import type { PlannedDay } from "./compute-trip";
@@ -14,6 +13,7 @@ import type { ExportRequest } from "./export-request";
 import { formatDayDate, formatDayLong } from "./format-day-date";
 import { formatDayTime } from "./format-day-time";
 import { formatDistance } from "./format-distance";
+import { formatStops } from "./format-stops";
 import { Credit } from "@/ui/credit";
 import { ClockIcon } from "@/ui/icons";
 import { placeUrl } from "./directions-url";
@@ -43,10 +43,6 @@ const SHEET_HEADING = "font-display text-title text-ink";
 /** More ruled rows than a sheet can hold, so the lines run to its foot whatever is over them. */
 const RULED_ROWS = Array.from({ length: 40 }, (_unused, row) => row);
 
-function conflictsAtStop(conflicts: readonly Conflict[], stopId: StopId): readonly Conflict[] {
-  return conflicts.filter((conflict) => "stopId" in conflict && conflict.stopId === stopId);
-}
-
 /** The date range of the trip, for the line above every day's name and the cover. */
 function rangeOf(days: readonly PlannedDay[]): string {
   const first = days[0];
@@ -58,11 +54,6 @@ function rangeOf(days: readonly PlannedDay[]): string {
     return formatDayDate(first.plan.date);
   }
   return `${formatDayDate(first.plan.date)} to ${formatDayDate(last.plan.date)}`;
-}
-
-/** "3 stops", "1 stop". */
-function stopCount(count: number): string {
-  return `${String(count)} ${count === 1 ? "stop" : "stops"}`;
 }
 
 /**
@@ -480,7 +471,7 @@ function DayMap({
         /* eslint-disable-next-line @next/next/no-img-element */
         <img
           src={`/api/map/static?slug=${encodeURIComponent(slug)}&day=${encodeURIComponent(day.plan.id)}`}
-          alt={`Map of day ${String(number)}: ${stopCount(day.plan.stops.length)}`}
+          alt={`Map of day ${String(number)}: ${formatStops(day.plan.stops.length)}`}
           /* Decoded with the rest of the sheet rather than a frame after it,
              so a picture that is already to hand, as it is whenever a choice
              redraws the sheets, does not blink out and back. */

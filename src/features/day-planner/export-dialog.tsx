@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
-import { CheckIcon, CloseIcon, WarningIcon } from "@/ui/icons";
+import { CheckIcon, CloseIcon } from "@/ui/icons";
+import { Notice } from "@/ui/notice";
 import type { PlannedDay } from "./compute-trip";
 import type { ExportRequest } from "./export-request";
 import { DEFAULT_EXPORT, exportRequestKey } from "./export-request";
@@ -612,15 +613,9 @@ export function ExportDialog({
                 <span className="shrink-0 text-ink-muted">.pdf</span>
               </div>
               {unnamed ? (
-                <div
-                  role="alert"
-                  className="mt-[10px] flex w-fit max-w-full items-start gap-[7px] rounded-chip bg-terracotta-200 px-[11px] py-[7px]"
-                >
-                  <WarningIcon size={13} className="mt-[2px] shrink-0 text-terracotta-700" />
-                  <p className="text-micro text-terracotta-900">
-                    Give the file a name, or it is saved as {suggestedName}.
-                  </p>
-                </div>
+                <Notice role="alert" shape="note" className="mt-[10px]">
+                  Give the file a name, or it is saved as {suggestedName}.
+                </Notice>
               ) : null}
             </div>
 

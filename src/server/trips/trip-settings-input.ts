@@ -1,12 +1,6 @@
 import { z } from "zod";
-import { addDays, daysBetween } from "@/core/time/zoned";
-
-function calendarDate(missing: string): z.ZodType<string> {
-  return z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, missing)
-    .refine((value) => addDays(value, 0) === value, "That date does not exist. Check it.");
-}
+import { daysBetween } from "@/core/time/zoned";
+import { calendarDate } from "./calendar-date";
 
 /**
  * What a traveller may change about a trip once it is open. A trip is not one

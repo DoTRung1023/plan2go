@@ -9,6 +9,7 @@ import type { ChosenPlace } from "./place-field";
 import { PlaceField } from "./place-field";
 import { createTripAction } from "./create-trip-action";
 import type { CreateTripFormState } from "./create-trip-action";
+import { Notice } from "@/ui/notice";
 
 // Lives here, not beside the action: a "use server" file may export only async
 // functions, so the starting state cannot sit next to it.
@@ -91,12 +92,9 @@ export function CreateTripForm({ today }: CreateTripFormProps) {
       </div>
 
       {error === null ? null : (
-        <p
-          role="alert"
-          className="rounded-chip bg-terracotta-200 px-3 py-2 text-meta text-terracotta-900"
-        >
-          {error}
-        </p>
+        <Notice role="alert" size="meta">
+            {error}
+        </Notice>
       )}
 
       <button

@@ -1,9 +1,7 @@
 import type { IsoDate } from "../model/day";
 import type { Weekday } from "../model/place";
-import { MINUTES_PER_DAY } from "./minutes";
+import { MILLIS_PER_DAY, MILLIS_PER_MINUTE, MINUTES_PER_DAY } from "./minutes";
 
-const MILLIS_PER_MINUTE = 60_000;
-const MILLIS_PER_DAY = 86_400_000;
 
 /** A wall clock reading in some time zone: which local day, and how far into it. */
 export interface WallClock {
@@ -42,6 +40,12 @@ interface CalendarDate {
  * A malformed date is a bug upstream, not a plan the engine can reason about, so
  * this is the one place in the engine that throws. Zod keeps it from happening.
  */
+/** A calendar date as the instant it begins in UTC, for a formatter told to read UTC: it is a date, not a moment. */
+export function isoDateAsUtc(date: IsoDate): Date {
+  const { year, month, day } = parseIsoDate(date);
+  return new Date(Date.UTC(year, month - 1, day));
+}
+
 export function parseIsoDate(date: IsoDate): CalendarDate {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
   if (match === null) {

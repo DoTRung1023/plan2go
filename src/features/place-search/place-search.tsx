@@ -6,6 +6,7 @@ import { z } from "zod";
 import type { LatLng, Place } from "@/core/model/place";
 import { CheckIcon, CloseIcon, PinIcon, PlusIcon, SearchIcon } from "@/ui/icons";
 import { useScrollBar } from "@/ui/use-scroll-bar";
+import { Notice } from "@/ui/notice";
 
 /** Long enough that typing does not spend money on every letter. */
 const DEBOUNCE_MS = 250;
@@ -51,7 +52,7 @@ const previewSchema = z.object({
 
 type Suggestion = z.infer<typeof suggestionSchema>;
 
-export interface AddPlaceOutcome {
+interface AddPlaceOutcome {
   readonly added: string | null;
   readonly error: string | null;
 }
@@ -775,12 +776,9 @@ export function PlaceSearch({
             ) : null}
 
             {addError === null ? null : (
-              <p
-                role="alert"
-                className="mx-[4px] mt-1 rounded-chip bg-terracotta-200 px-3 py-2 text-meta text-terracotta-900"
-              >
-                {addError}
-              </p>
+              <Notice role="alert" size="meta" className="mx-[4px] mt-1">
+                  {addError}
+              </Notice>
             )}
           </div>
         </div>

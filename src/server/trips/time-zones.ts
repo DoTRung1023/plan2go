@@ -1,7 +1,6 @@
 import type { IsoDate } from "@/core/model/day";
 import { epochMinutesToWallClock } from "@/core/time/zoned";
-
-const MILLIS_PER_MINUTE = 60_000;
+import { MILLIS_PER_MINUTE } from "@/core/time/minutes";
 
 /** Built once. The table behind Intl.supportedValuesOf is walked on every call. */
 const supported = new Set(Intl.supportedValuesOf("timeZone"));

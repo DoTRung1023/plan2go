@@ -1,15 +1,9 @@
 import { z } from "zod";
-import { addDays, daysBetween } from "@/core/time/zoned";
+import { daysBetween } from "@/core/time/zoned";
+import { calendarDate } from "./calendar-date";
 
 /** A year. Long enough for anything anyone would plan a day at a time. */
 export const MAX_TRIP_DAYS = 365;
-
-function calendarDate(missing: string): z.ZodType<string> {
-  return z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, missing)
-    .refine((value) => addDays(value, 0) === value, "That date does not exist. Check it.");
-}
 
 /** Both ends counted, so a trip that starts and ends on one day is one day long. */
 function daysAcross(startDate: string, endDate: string): number {

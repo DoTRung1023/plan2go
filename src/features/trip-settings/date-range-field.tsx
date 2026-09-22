@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import type { IsoDate } from "@/core/model/day";
-import { addDays, daysBetween, parseIsoDate, weekdayOf } from "@/core/time/zoned";
+import { addDays, daysBetween, isoDateAsUtc, parseIsoDate, weekdayOf } from "@/core/time/zoned";
 import { ArrowLeftIcon, ArrowRightIcon } from "@/ui/icons";
 import { formatDateRange } from "@/features/day-planner/format-day-date";
 
@@ -55,12 +55,6 @@ const READABLE = new Intl.DateTimeFormat("en-AU", {
   year: "numeric",
   timeZone: "UTC",
 });
-
-/** A calendar date is read in UTC, because it is a date and not an instant. */
-function asUtc(date: IsoDate): Date {
-  const { year, month, day } = parseIsoDate(date);
-  return new Date(Date.UTC(year, month - 1, day));
-}
 
 function iso(year: number, month: number, day: number): IsoDate {
   const pad = (value: number, width: number): string =>
@@ -175,7 +169,7 @@ interface DateRangeFieldProps {
  * weekday goes first, then the year, and the pill measures itself to decide.
  */
 function End({ name, date }: { readonly name: string; readonly date: IsoDate }) {
-  const day = asUtc(date);
+  const day = isoDateAsUtc(date);
   return (
     <span className="flex min-w-0 flex-1 flex-col gap-[5px]">
       <span className="text-[13px] leading-none font-semibold text-ink-muted">{name}</span>
@@ -439,7 +433,7 @@ export function DateRangeField({
           <div className="flex items-center justify-between gap-3">
             <button
               type="button"
-              aria-label={`Go to ${MONTH_AND_YEAR.format(asUtc(before))}`}
+              aria-label={`Go to ${MONTH_AND_YEAR.format(isoDateAsUtc(before))}`}
               onClick={() => {
                 setLeftMonth(before);
               }}
@@ -452,7 +446,7 @@ export function DateRangeField({
             </p>
             <button
               type="button"
-              aria-label={`Go to ${MONTH_AND_YEAR.format(asUtc(after))}`}
+              aria-label={`Go to ${MONTH_AND_YEAR.format(isoDateAsUtc(after))}`}
               onClick={() => {
                 setLeftMonth(shiftMonths(leftMonth, 1));
               }}
@@ -466,8 +460,8 @@ export function DateRangeField({
               clicked, so the day itself is read out here. */}
           <p aria-live="polite" className="sr-only">
             {drawingFrom === null
-              ? `${READABLE.format(asUtc(start))} to ${READABLE.format(asUtc(end))}`
-              : `${READABLE.format(asUtc(drawingFrom))} chosen.`}
+              ? `${READABLE.format(isoDateAsUtc(start))} to ${READABLE.format(isoDateAsUtc(end))}`
+              : `${READABLE.format(isoDateAsUtc(drawingFrom))} chosen.`}
           </p>
 
           <div
@@ -488,10 +482,10 @@ export function DateRangeField({
               return (
                 <div key={month}>
                   <p className="text-center font-display text-place/none font-bold text-ink">
-                    {MONTH_AND_YEAR.format(asUtc(month))}
+                    {MONTH_AND_YEAR.format(isoDateAsUtc(month))}
                   </p>
 
-                  <div role="grid" aria-label={MONTH_AND_YEAR.format(asUtc(month))} className="mt-3">
+                  <div role="grid" aria-label={MONTH_AND_YEAR.format(isoDateAsUtc(month))} className="mt-3">
                     <div role="row" className="grid grid-cols-7">
                       {WEEKDAYS.map((weekday, index) => (
                         <span
@@ -571,7 +565,7 @@ export function DateRangeField({
                                 >
                                   <span aria-hidden="true">{parseIsoDate(date).day}</span>
                                   <span className="sr-only">
-                                    {READABLE.format(asUtc(date))}
+                                    {READABLE.format(isoDateAsUtc(date))}
                                     {date === today ? ", today" : ""}
                                   </span>
                                 </button>

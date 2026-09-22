@@ -95,7 +95,7 @@ export function pointName(point: DayPoint): string {
   return point.endpoint.label ?? point.endpoint.place.name;
 }
 
-export function pointPlace(point: DayPoint): Place {
+function pointPlace(point: DayPoint): Place {
   return point.kind === "stop" ? point.stop.place : point.endpoint.place;
 }
 

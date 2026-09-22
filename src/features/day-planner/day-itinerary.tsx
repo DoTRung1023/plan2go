@@ -1,10 +1,9 @@
 "use client";
 
 import { Fragment, useEffect, useOptimistic, useRef, useState, useTransition } from "react";
-import type { Conflict } from "@/core/model/conflict";
+import { conflictsAtStop } from "@/core/model/conflict";
 import type { DayEndpoint, DayId, DayPlan } from "@/core/model/day";
 import type { LatLng, Place, PlaceId } from "@/core/model/place";
-import type { StopId } from "@/core/model/stop";
 import type { ComputedDay, ComputedStop } from "@/core/time/compute-day";
 import { formatClock } from "@/core/time/minutes";
 import { weekdayOf } from "@/core/time/zoned";
@@ -17,6 +16,7 @@ import { formatDayDate } from "./format-day-date";
 import { formatOpeningHours } from "./format-opening-hours";
 import { LegRow } from "./leg-row";
 import { AboutPlaceButton, StopCard, TOOL, TOOL_GLYPH } from "./stop-card";
+import { Notice } from "@/ui/notice";
 
 /**
  * One end of one day, said well enough to be found again after the trip has
@@ -56,10 +56,6 @@ interface DayItineraryProps {
   readonly actions: DayActions | null;
   /** Takes the reader to the search field, from a day with nothing on it. Null for a reader who cannot edit. */
   readonly onFindPlace: (() => void) | null;
-}
-
-function conflictsAtStop(conflicts: readonly Conflict[], stopId: StopId): readonly Conflict[] {
-  return conflicts.filter((conflict) => "stopId" in conflict && conflict.stopId === stopId);
 }
 
 /** The list with one entry carried from one place to another, the rest closing up. */
@@ -427,12 +423,9 @@ function EndpointSlot({
       ) : null}
 
       {error === null ? null : (
-        <p
-          role="alert"
-          className="mt-1 mb-2 rounded-chip bg-terracotta-200 px-3 py-2 text-micro text-terracotta-900"
-        >
-          {error}
-        </p>
+        <Notice role="alert" className="mt-1 mb-2">
+            {error}
+        </Notice>
       )}
     </div>
   );
@@ -609,12 +602,9 @@ export function DayItinerary({
       />
 
       {moveError === null ? null : (
-        <p
-          role="alert"
-          className="mt-3 rounded-chip bg-terracotta-200 px-3 py-2 text-micro text-terracotta-900"
-        >
-          {moveError}
-        </p>
+        <Notice role="alert" className="mt-3">
+            {moveError}
+        </Notice>
       )}
     </div>
   );

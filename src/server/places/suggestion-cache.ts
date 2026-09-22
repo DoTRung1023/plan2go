@@ -2,14 +2,13 @@ import { z } from "zod";
 import type { LatLng } from "@/core/model/place";
 import type { PlaceSuggestion } from "@/core/ports/places-provider";
 import { db } from "../db";
+import { MILLIS_PER_HOUR } from "@/core/time/minutes";
 
 /**
  * How long an answer is reused. Short, because the provider's terms allow us to
  * keep place identifiers but not to hold on to the rest.
  */
 const CACHE_HOURS = 24;
-
-const MILLIS_PER_HOUR = 3_600_000;
 
 /** Coarse on purpose. A key the caller can vary freely is not a cache key. */
 const BIAS_DECIMALS = 2;

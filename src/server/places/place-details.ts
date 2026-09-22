@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { PlaceDetails, PlacesProvider } from "@/core/ports/places-provider";
 import { db } from "../db";
 import { openingHoursToJson, parseOpeningHours } from "./opening-hours";
+import { MILLIS_PER_HOUR } from "@/core/time/minutes";
 
 /**
  * How long a place is remembered. The same day as a search, and for the same
@@ -9,8 +10,6 @@ import { openingHoursToJson, parseOpeningHours } from "./opening-hours";
  * hold on to the rest.
  */
 const CACHE_HOURS = 24;
-
-const MILLIS_PER_HOUR = 3_600_000;
 
 /** A place as it is stored. Parsed on the way out, never trusted. */
 const storedSchema = z.object({

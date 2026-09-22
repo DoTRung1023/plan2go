@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { db } from "../db";
+import { MILLIS_PER_DAY } from "@/core/time/minutes";
 
 /**
  * How long a drawn map is kept. The provider's terms allow a static map to be
@@ -7,8 +8,6 @@ import { db } from "../db";
  * the same picture, so a sheet printed twice in a month is paid for once.
  */
 const CACHE_DAYS = 30;
-
-const MILLIS_PER_DAY = 86_400_000;
 
 /** A drawn map: the bytes and what they are. */
 export interface MapImage {

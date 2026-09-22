@@ -16,6 +16,7 @@ import {
 import { useScrollBar } from "@/ui/use-scroll-bar";
 import { PhotoViewer } from "./photo-viewer";
 import "./place-sheet.css";
+import { Notice } from "@/ui/notice";
 
 const cardSchema = z.object({
   card: z.object({
@@ -154,7 +155,7 @@ type Asked =
  * it is done: the day beside the map, with the stop on it or without, is
  * the confirmation.
  */
-export interface TripAction {
+interface TripAction {
   /** Whether the place is to go on the day or come off it. */
   readonly kind: "add" | "remove";
   /** What the day is called in the tabs, so the button says which day. */
@@ -696,12 +697,9 @@ export function PlaceSheet({
                       : `Remove from ${action.dayName}`}
                 </button>
                 {actionError === null ? null : (
-                  <p
-                    role="alert"
-                    className="rounded-chip bg-terracotta-200 px-3 py-2 text-meta text-terracotta-900"
-                  >
-                    {actionError}
-                  </p>
+                  <Notice role="alert" size="meta">
+                      {actionError}
+                  </Notice>
                 )}
               </div>
             )}

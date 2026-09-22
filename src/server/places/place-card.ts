@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { PlaceCard } from "@/core/model/place";
 import type { PlacesProvider } from "@/core/ports/places-provider";
 import { db } from "../db";
+import { MILLIS_PER_HOUR } from "@/core/time/minutes";
 
 /**
  * How long a card is kept. A day: the rating and the reviews are other
@@ -9,8 +10,6 @@ import { db } from "../db";
  * identifiers but not to hold on to the rest.
  */
 const CACHE_HOURS = 24;
-
-const MILLIS_PER_HOUR = 3_600_000;
 
 /** A card as it is stored. Parsed on the way out, never trusted. */
 const storedSchema = z.object({

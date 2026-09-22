@@ -1,3 +1,5 @@
+import { MILLIS_PER_SECOND } from "@/core/time/minutes";
+
 /** How long a window lasts and how many requests fit in it. */
 export interface RateLimitPolicy {
   readonly windowSeconds: number;
@@ -10,8 +12,6 @@ export interface RateLimitDecision {
   /** Seconds until the window resets. Zero when the request was allowed. */
   readonly retryAfterSeconds: number;
 }
-
-const MILLIS_PER_SECOND = 1000;
 
 /**
  * The start of the fixed window a moment falls in. Windows are aligned to the

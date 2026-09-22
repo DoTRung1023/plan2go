@@ -1,5 +1,5 @@
 import type { IsoDate } from "@/core/model/day";
-import { parseIsoDate } from "@/core/time/zoned";
+import { isoDateAsUtc, parseIsoDate } from "@/core/time/zoned";
 
 const DAY_FORMAT = new Intl.DateTimeFormat("en-AU", {
   weekday: "short",
@@ -54,11 +54,6 @@ const DAY_MONTH_YEAR = new Intl.DateTimeFormat("en-AU", {
   timeZone: "UTC",
 });
 
-function asUtc(date: IsoDate): Date {
-  const { year, month, day } = parseIsoDate(date);
-  return new Date(Date.UTC(year, month - 1, day));
-}
-
 /**
  * The two ends of a trip said as shortly as they can be without becoming
  * ambiguous: "19–23 Sept". The month is written once when both ends share
@@ -67,15 +62,15 @@ function asUtc(date: IsoDate): Date {
  */
 export function formatDateRange(start: IsoDate, end: IsoDate): string {
   if (start === end) {
-    return DAY_MONTH.format(asUtc(start));
+    return DAY_MONTH.format(isoDateAsUtc(start));
   }
   const from = parseIsoDate(start);
   const to = parseIsoDate(end);
   if (from.year !== to.year) {
-    return `${DAY_MONTH_YEAR.format(asUtc(start))} – ${DAY_MONTH_YEAR.format(asUtc(end))}`;
+    return `${DAY_MONTH_YEAR.format(isoDateAsUtc(start))} – ${DAY_MONTH_YEAR.format(isoDateAsUtc(end))}`;
   }
   if (from.month !== to.month) {
-    return `${DAY_MONTH.format(asUtc(start))} – ${DAY_MONTH.format(asUtc(end))}`;
+    return `${DAY_MONTH.format(isoDateAsUtc(start))} – ${DAY_MONTH.format(isoDateAsUtc(end))}`;
   }
-  return `${DAY_ONLY.format(asUtc(start))}–${DAY_MONTH.format(asUtc(end))}`;
+  return `${DAY_ONLY.format(isoDateAsUtc(start))}–${DAY_MONTH.format(isoDateAsUtc(end))}`;
 }

@@ -10,12 +10,12 @@ import {
   ChevronUpIcon,
   TrainIcon,
   WalkIcon,
-  WarningIcon,
 } from "@/ui/icons";
 import { legInk } from "@/features/trip-map/route-style";
 import type { LegOption, PlannedLeg } from "./compute-trip";
 import type { DayActions } from "./day-actions";
 import { formatDistance } from "./format-distance";
+import { Notice } from "@/ui/notice";
 
 /** The mode in words, so the map's stroke pattern is never the only source. */
 export const MODE_WORDS: Readonly<Record<TravelMode, string>> = {
@@ -372,12 +372,9 @@ export function LegRow({
               <p className="mt-2 text-micro text-ink-muted">Working out the new times.</p>
             ) : null}
             {error === null ? null : (
-              <p
-                role="alert"
-                className="mt-2 rounded-chip bg-terracotta-200 px-3 py-2 text-micro text-terracotta-900"
-              >
-                {error}
-              </p>
+              <Notice role="alert" className="mt-2">
+                  {error}
+              </Notice>
             )}
           </div>
         ) : (
@@ -409,15 +406,10 @@ export function LegRow({
         {/* Said under the row, as a conflict is, so a guess is never read as a
             timetable: what was not found, then what the number is instead. */}
         {covered && rough ? (
-          <div className="mt-2">
-            <div className="flex w-fit max-w-full items-start gap-[7px] rounded-chip bg-terracotta-200 px-[11px] py-[7px]">
-              <WarningIcon size={13} className="mt-[2px] shrink-0 text-terracotta-700" />
-              <p className="text-micro text-terracotta-900">
-                No {MODE_WORDS[leg.mode].toLowerCase()} route was found here. The time is a
-                guess from the distance.
-              </p>
-            </div>
-          </div>
+          <Notice shape="note" className="mt-2">
+            No {MODE_WORDS[leg.mode].toLowerCase()} route was found here. The time is a guess
+            from the distance.
+          </Notice>
         ) : null}
 
         {directions}

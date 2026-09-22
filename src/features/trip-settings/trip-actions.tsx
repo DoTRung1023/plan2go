@@ -5,9 +5,10 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { PlusIcon, TrashIcon } from "@/ui/icons";
 import { MENU_ITEM, MENU_RULE } from "./trip-menu";
+import { Notice } from "@/ui/notice";
 
 /** Deleting this trip either happened or it did not. */
-export interface DeleteTripOutcome {
+interface DeleteTripOutcome {
   readonly error: string | null;
 }
 
@@ -199,12 +200,9 @@ export function TripActions({
         : null}
 
       {message === null ? null : (
-        <p
-          role="alert"
-          className="mt-2 rounded-chip bg-terracotta-200 px-3 py-2 text-meta text-terracotta-900"
-        >
-          {message}
-        </p>
+        <Notice role="alert" size="meta" className="mt-2">
+            {message}
+        </Notice>
       )}
     </div>
   );

@@ -49,3 +49,8 @@ export type Conflict =
       /** Index into the day's legs, in travel order. */
       readonly legIndex: number;
     };
+
+/** The conflicts about one place: every kind but an unanswered leg names its stop. */
+export function conflictsAtStop(conflicts: readonly Conflict[], stopId: StopId): readonly Conflict[] {
+  return conflicts.filter((conflict) => "stopId" in conflict && conflict.stopId === stopId);
+}

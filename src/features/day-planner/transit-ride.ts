@@ -1,5 +1,6 @@
 import type { TransitRide, TransitVehicle } from "@/core/model/leg";
 import { formatDuration } from "@/core/time/minutes";
+import { formatStops } from "./format-stops";
 
 /** The vehicle in the words a traveller would use at the stop. */
 const VEHICLE_WORDS: Readonly<Record<TransitVehicle, string>> = {
@@ -31,7 +32,7 @@ export function rideSentence(ride: TransitRide): string {
   return [
     catching.join(" "),
     between,
-    ride.stops === null ? null : `${String(ride.stops)} ${ride.stops === 1 ? "stop" : "stops"}`,
+    ride.stops === null ? null : formatStops(ride.stops),
     formatDuration(ride.durationMinutes),
   ]
     .filter((part) => part !== null)

@@ -1,10 +1,9 @@
 import { z } from "zod";
 import type { LatLng } from "@/core/model/place";
 import type { TimeZoneProvider } from "@/core/ports/time-zone-provider";
+import { MILLIS_PER_SECOND } from "@/core/time/minutes";
 
 const TIME_ZONE_URL = "https://maps.googleapis.com/maps/api/timezone/json";
-
-const MILLIS_PER_SECOND = 1000;
 
 /** Anything but OK means no answer, and the message says why in the log. */
 const answerSchema = z.object({

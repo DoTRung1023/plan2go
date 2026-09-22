@@ -5,6 +5,7 @@ import { TRANSIT_VEHICLES } from "@/core/model/leg";
 import type { LatLng } from "@/core/model/place";
 import type { TravelProvider } from "@/core/ports/travel-provider";
 import { db } from "../db";
+import { MILLIS_PER_DAY, MILLIS_PER_HOUR } from "@/core/time/minutes";
 
 /**
  * How long an answer is kept, by what the answer actually depends on.
@@ -17,10 +18,6 @@ import { db } from "../db";
  * no moment at all is the service running when it was asked, and is kept
  * long enough to cover the re-renders of one sitting and no longer.
  */
-const MILLIS_PER_HOUR = 3_600_000;
-
-const MILLIS_PER_DAY = 24 * MILLIS_PER_HOUR;
-
 const KEEP_FOR: Readonly<Record<TravelMode, number>> = {
   drive: 30 * MILLIS_PER_DAY,
   walk: 30 * MILLIS_PER_DAY,

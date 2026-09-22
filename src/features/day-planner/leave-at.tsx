@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { ColumnPicker } from "./column-picker";
 import type { EditOutcome } from "./day-actions";
+import { Notice } from "@/ui/notice";
 
 const HOURS = Array.from({ length: 24 }, (_unused, hour) => hour);
 
@@ -163,12 +164,9 @@ export function LeaveAt({ value, onChoose }: LeaveAtProps) {
       {/* Hangs off the control, over what is under it rather than in the row
           with it, the way the name and the dates say what went wrong. */}
       {error === null ? null : (
-        <p
-          role="alert"
-          className="absolute top-full right-0 z-20 mt-[5px] max-w-[260px] rounded-chip bg-terracotta-200 px-[11px] py-[6px] text-micro font-semibold text-terracotta-900 shadow-md"
-        >
-          {error}
-        </p>
+        <Notice role="alert" shape="bubble" className="right-0 max-w-[260px]">
+            {error}
+        </Notice>
       )}
     </div>
   );

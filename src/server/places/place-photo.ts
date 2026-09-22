@@ -1,6 +1,7 @@
 import type { PlaceImage, PlacesProvider } from "@/core/ports/places-provider";
 import { db } from "../db";
 import { placeCardFor } from "./place-card";
+import { MILLIS_PER_DAY } from "@/core/time/minutes";
 
 /**
  * How long a picture is kept. The provider's terms allow a picture to be
@@ -8,8 +9,6 @@ import { placeCardFor } from "./place-card";
  * inside a month, so the dearest part of opening a place is paid for once.
  */
 const CACHE_DAYS = 30;
-
-const MILLIS_PER_DAY = 86_400_000;
 
 /** A picture to serve, and the work of keeping it that the picture need not wait on. */
 export interface ServedPhoto {

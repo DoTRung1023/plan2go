@@ -1,5 +1,6 @@
 import type { PlannedDay } from "./compute-trip";
 import { formatDayDate } from "./format-day-date";
+import { formatStops } from "./format-stops";
 
 /**
  * What the open day amounts to, in one line: which day of the week it is and
@@ -21,6 +22,6 @@ export function dayStatus(day: PlannedDay): string {
   if (stops === 0) {
     return when;
   }
-  return `${when} · ${String(stops)} ${stops === 1 ? "stop" : "stops"}`;
+  return `${when} · ${formatStops(stops)}`;
 }
 

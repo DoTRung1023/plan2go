@@ -7,8 +7,10 @@ import type { DayPlan } from "@/core/model/day";
 import { PlusIcon } from "@/ui/icons";
 import type { EditOutcome } from "./day-actions";
 import { formatDayDate, formatDayTab } from "./format-day-date";
+import { formatStops } from "./format-stops";
 import { useLocalToday } from "@/ui/use-local-today";
 import "./day-tabs.css";
+import { Notice } from "@/ui/notice";
 
 interface DayTabsProps {
   readonly days: readonly DayPlan[];
@@ -34,7 +36,7 @@ interface DayTabsProps {
 function stopLine(day: DayPlan): string {
   const stops = day.stops.length;
   if (stops > 0) {
-    return `${String(stops)} ${stops === 1 ? "stop" : "stops"}`;
+    return formatStops(stops);
   }
   return day.stops.length === 0 ? "empty" : "passing through";
 }
@@ -195,12 +197,9 @@ export function DayTabs({ days, selectedIndex, onSelect, onAddDay }: DayTabsProp
       </div>
 
       {error === null ? null : (
-        <p
-          role="alert"
-          className="mb-[10px] rounded-chip bg-terracotta-200 px-3 py-2 text-micro text-terracotta-900"
-        >
-          {error}
-        </p>
+        <Notice role="alert" className="mb-[10px]">
+            {error}
+        </Notice>
       )}
     </div>
   );

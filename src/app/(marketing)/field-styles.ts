@@ -20,9 +20,6 @@
 export const FIELD_SHELL =
   "w-full rounded-pill border border-rule text-[16px] leading-[1.2] text-ink";
 
-/** A field that is only a field. */
-export const FIELD_PAD = "px-5 py-[17px]";
-
 export const FIELD_GROUND = "bg-paper-raised";
 
 export const FIELD_LABEL = "text-[14px] leading-none font-semibold text-ink-muted";

@@ -17,7 +17,7 @@ const ROW =
 
 const ROW_CHOSEN = "bg-terracotta-800 text-paper hover:bg-terracotta-800";
 
-export interface PickerColumn {
+interface PickerColumn {
   /**
    * The unit over the column, in the word a duration is written with: "hr",
    * "min". Over a clock's columns as much as a duration's, so every picker

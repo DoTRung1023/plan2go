@@ -1,6 +1,7 @@
 import type { TravelMode } from "@/core/model/leg";
 import type { LatLng, Place } from "@/core/model/place";
 import { epochMinutesToWallClock, parseIsoDate } from "@/core/time/zoned";
+import { SECONDS_PER_MINUTE } from "@/core/time/minutes";
 
 /** The Maps URLs API, which opens the app where there is one and the site where there is not. */
 const DIRECTIONS_URL = "https://www.google.com/maps/dir/";
@@ -26,8 +27,6 @@ const DATA_MODE: Readonly<Record<TravelMode, string>> = {
   walk: "2",
   transit: "3",
 };
-
-const SECONDS_PER_MINUTE = 60;
 
 /** A moment on the day, as the engine reads it: an instant, and the zone to read it in. */
 export interface Departure {

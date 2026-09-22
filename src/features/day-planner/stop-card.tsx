@@ -10,6 +10,7 @@ import type { DayActions } from "./day-actions";
 import { ConflictNotice } from "./conflict-notice";
 import { formatDayTime } from "./format-day-time";
 import { StayPicker } from "./stay-picker";
+import { Notice } from "@/ui/notice";
 
 /** The one thing about this stop that is currently being written down. */
 type Busy = "stay" | "note" | "remove" | null;
@@ -435,12 +436,9 @@ export function StopCard({
         )}
 
         {error === null ? null : (
-          <p
-            role="alert"
-            className="rounded-chip bg-terracotta-200 px-3 py-2 text-micro text-terracotta-900"
-          >
-            {error}
-          </p>
+          <Notice role="alert">
+              {error}
+          </Notice>
         )}
       </div>
     </article>

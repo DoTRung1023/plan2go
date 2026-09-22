@@ -20,7 +20,7 @@ const SIDES_MM: Readonly<Record<PaperSize, { readonly short: number; readonly lo
 };
 
 /** What the page rule keeps clear on every side. */
-export const MARGIN_MM = 16;
+const MARGIN_MM = 16;
 
 const PX_PER_MM = 96 / 25.4;
 

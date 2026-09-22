@@ -10,8 +10,9 @@ import {
 } from "@/features/day-planner/panel-heading";
 import { useLocalToday } from "@/ui/use-local-today";
 import { DateRangeField } from "./date-range-field";
+import { Notice } from "@/ui/notice";
 
-export interface TripSettingsOutcome {
+interface TripSettingsOutcome {
   readonly saved: boolean;
   readonly error: string | null;
   /** Which field the message is about, or null when it is about the form. */
@@ -248,12 +249,9 @@ export function TripSettings({
         {actions}
 
         {span === null ? (
-          <p
-            role="alert"
-            className="absolute top-full right-0 z-20 mt-[5px] max-w-full rounded-chip bg-terracotta-200 px-[11px] py-[6px] text-micro font-semibold text-terracotta-900 shadow-md"
-          >
-            The last day is before the first day.
-          </p>
+          <Notice role="alert" shape="bubble" className="right-0 max-w-full">
+              The last day is before the first day.
+          </Notice>
         ) : null}
 
         {/* Hangs off the field, where the browser would have put its own bubble,
@@ -261,12 +259,9 @@ export function TripSettings({
             flow it would push the dates and the whole day down the moment it
             appeared, so saying what is wrong would rearrange the panel. */}
         {nameRefused && state.error !== null ? (
-          <p
-            role="alert"
-            className="absolute top-full left-0 z-20 mt-[5px] max-w-full rounded-chip bg-terracotta-200 px-[11px] py-[6px] text-micro font-semibold text-terracotta-900 shadow-md"
-          >
-            {state.error}
-          </p>
+          <Notice role="alert" shape="bubble" className="left-0 max-w-full">
+              {state.error}
+          </Notice>
         ) : null}
       </div>
 
@@ -283,12 +278,9 @@ export function TripSettings({
         </div>
 
         {state.error === null || state.field !== null ? null : (
-          <p
-            role="alert"
-            className="mt-3 rounded-chip bg-terracotta-200 px-3 py-2 text-meta text-terracotta-900"
-          >
-            {state.error}
-          </p>
+          <Notice role="alert" size="meta" className="mt-3">
+              {state.error}
+          </Notice>
         )}
       </div>
     </form>

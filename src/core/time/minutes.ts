@@ -1,5 +1,16 @@
 export const MINUTES_PER_HOUR = 60;
 export const MINUTES_PER_DAY = 1440;
+export const SECONDS_PER_MINUTE = 60;
+
+/**
+ * The clock's units in milliseconds, for the edges that read one: caches
+ * deciding how long to keep an answer, providers given an instant. Nothing
+ * in the domain is a millisecond; a duration is whole minutes.
+ */
+export const MILLIS_PER_SECOND = 1000;
+export const MILLIS_PER_MINUTE = 60_000;
+export const MILLIS_PER_HOUR = 3_600_000;
+export const MILLIS_PER_DAY = 86_400_000;
 
 /**
  * Round a measured duration to whole minutes. Providers call this before they

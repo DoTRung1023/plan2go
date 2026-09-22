@@ -7,7 +7,7 @@ import type {
   TravelRequest,
 } from "@/core/model/leg";
 import type { TravelProvider } from "@/core/ports/travel-provider";
-import { wholeMinutes } from "@/core/time/minutes";
+import { MILLIS_PER_MINUTE, MINUTES_PER_DAY, SECONDS_PER_MINUTE, wholeMinutes } from "@/core/time/minutes";
 import { decodePolyline } from "./polyline";
 
 const COMPUTE_ROUTES_URL = "https://routes.googleapis.com/directions/v2:computeRoutes";
@@ -25,8 +25,6 @@ const ROUTE_FIELDS =
  * dearer tier, and a walk or a drive has no vehicle to describe.
  */
 const TRANSIT_FIELDS = "routes.legs.steps.staticDuration,routes.legs.steps.transitDetails";
-
-const SECONDS_PER_MINUTE = 60;
 
 /** What each of our modes is called over there. */
 const ROUTES_MODE: Readonly<Record<TravelMode, string>> = {
@@ -145,9 +143,6 @@ const UNAVAILABLE: LegResolution = {
   status: "unresolved",
   reason: "provider-unavailable",
 };
-
-const MILLIS_PER_MINUTE = 60_000;
-const MINUTES_PER_DAY = 1440;
 
 /**
  * How far from now Google will look up a timetable: seven days back and a
