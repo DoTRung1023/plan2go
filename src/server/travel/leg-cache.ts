@@ -305,10 +305,18 @@ export interface LegCacheOptions {
  * asked about one row at a time, as without one. What the provider answers is
  * written into the memory as well as the table, so the next mode of the same
  * leg, asked a moment later in the same render, finds it.
+ *
+ * The same question asked twice at once is asked of the provider once. The
+ * days of a trip are worked out side by side, and two of them setting out
+ * from the same hotel to the same first stop both miss the cache in the same
+ * moment, before either answer is back to be kept. The second waits for the
+ * first's answer rather than paying for its own.
  */
 export function withLegCache(inner: TravelProvider, options: LegCacheOptions = {}): TravelProvider {
   const rows = options.rows ?? prismaLegRows;
   const memory = options.memory;
+  /** Provider asks under way, by the row they will be kept as. */
+  const pending = new Map<string, Promise<LegResolution>>();
 
   async function recall(key: LegKey): Promise<RememberedLeg | null> {
     if (memory === undefined) {
@@ -338,29 +346,46 @@ export function withLegCache(inner: TravelProvider, options: LegCacheOptions = {
         return resolved(request.mode, cached);
       }
 
-      const answer = await inner.estimate(request);
-      if (answer.status === "unresolved") {
-        return answer;
+      const rowKey = rowKeyOf(key);
+      const underWay = pending.get(rowKey);
+      if (underWay !== undefined) {
+        return underWay;
       }
-
-      // A straight line costs nothing to work out, but reaching one means Google
-      // was asked and had no route, and that ask is billed. So the answer is
-      // kept whatever its source, and the same empty question is asked once.
-
-      const leg: RememberedLeg = {
-        durationMinutes: answer.estimate.durationMinutes,
-        distanceMeters: answer.estimate.distanceMeters,
-        source: answer.estimate.source,
-        path: answer.estimate.path,
-        rides: answer.estimate.rides,
-        expiresAt: new Date(
-          Date.now() + (timeBucket === ANY_TIME ? KEEP_FOR[request.mode] : KEEP_TIMED_TRANSIT_FOR),
-        ),
-      };
-      await rows.put(key, leg);
-      memory?.rows.set(rowKeyOf(key), leg);
-
-      return answer;
+      const asking = ask(request, key, timeBucket).finally(() => {
+        pending.delete(rowKey);
+      });
+      pending.set(rowKey, asking);
+      return asking;
     },
   };
+
+  async function ask(
+    request: TravelRequest,
+    key: LegKey,
+    timeBucket: string,
+  ): Promise<LegResolution> {
+    const answer = await inner.estimate(request);
+    if (answer.status === "unresolved") {
+      return answer;
+    }
+
+    // A straight line costs nothing to work out, but reaching one means Google
+    // was asked and had no route, and that ask is billed. So the answer is
+    // kept whatever its source, and the same empty question is asked once.
+
+    const leg: RememberedLeg = {
+      durationMinutes: answer.estimate.durationMinutes,
+      distanceMeters: answer.estimate.distanceMeters,
+      source: answer.estimate.source,
+      path: answer.estimate.path,
+      rides: answer.estimate.rides,
+      expiresAt: new Date(
+        Date.now() + (timeBucket === ANY_TIME ? KEEP_FOR[request.mode] : KEEP_TIMED_TRANSIT_FOR),
+      ),
+    };
+    await rows.put(key, leg);
+    memory?.rows.set(rowKeyOf(key), leg);
+
+    return answer;
+  }
 }

@@ -92,6 +92,29 @@ describe("withLegCache", () => {
     expect(store.reads.one).toBe(2);
   });
 
+  it("asks the provider once for the same leg asked twice at once", async () => {
+    const store = rowsInMemory();
+    const inner = counting();
+    /** Answers a tick later, so the second ask arrives while the first is still out. */
+    const slow: TravelProvider = {
+      name: "slow",
+      estimate: async (request) => {
+        await new Promise((tick) => setTimeout(tick, 1));
+        return inner.provider.estimate(request);
+      },
+    };
+    const cached = withLegCache(slow, { rows: store.rows });
+
+    const [first, second] = await Promise.all([
+      cached.estimate(request(MARKET, OVAL, "walk")),
+      cached.estimate(request(MARKET, OVAL, "walk")),
+    ]);
+
+    expect(inner.asked).toBe(1);
+    expect(second).toEqual(first);
+    expect(store.held.size).toBe(1);
+  });
+
   it("does not keep an answer the provider did not have", async () => {
     const store = rowsInMemory();
     const nothing: TravelProvider = {
