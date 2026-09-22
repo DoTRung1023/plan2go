@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { addDays } from "@/core/time/zoned";
 import { DateRangeField } from "@/features/trip-settings/date-range-field";
+import { useLocalToday } from "@/ui/use-local-today";
 import { MAX_TRIP_DAYS } from "@/server/trips/new-trip-input";
 import type { ChosenPlace } from "./place-field";
 import { PlaceField } from "./place-field";
@@ -20,6 +21,11 @@ const NO_ERROR: CreateTripFormState = { error: null, field: null };
 const OPENING_SPAN_DAYS = 4;
 
 interface CreateTripFormProps {
+  /**
+   * Today where the reader most likely is, as the server best knows it: the
+   * day the form opens on and the earliest it offers. The ring on the
+   * calendar is today on the reader's own clock, read in the browser.
+   */
   readonly today: string;
 }
 
@@ -32,6 +38,7 @@ export function CreateTripForm({ today }: CreateTripFormProps) {
    */
   const [first, setFirst] = useState(today);
   const [last, setLast] = useState(addDays(today, OPENING_SPAN_DAYS));
+  const ringed = useLocalToday();
   const [city, setCity] = useState<ChosenPlace | null>(null);
   /**
    * The answer the city was last changed under. An answer saying the city is
@@ -72,7 +79,7 @@ export function CreateTripForm({ today }: CreateTripFormProps) {
           label="Dates"
           start={first}
           end={last}
-          today={today}
+          today={ringed}
           min={today}
           maxSpanDays={MAX_TRIP_DAYS}
           size="large"

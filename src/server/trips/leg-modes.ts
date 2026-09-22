@@ -15,7 +15,9 @@ const DEFAULT_TRAVEL_MODE: TravelMode = "walk";
  * Every mode is asked and the fastest wins, because a stop on the other side of
  * the world is not a walk and nobody should have to say so. The answer is a
  * starting point rather than a verdict: the leg says which way it picked and
- * offers the others beside it.
+ * offers the others beside it. Asked for with no moment, since the leg is not
+ * yet on the day it will be timed against; the day's own render asks again
+ * with one.
  */
 export async function fastestTravelMode(
   from: LatLng | null,
@@ -26,7 +28,7 @@ export async function fastestTravelMode(
     return DEFAULT_TRAVEL_MODE;
   }
   const answers = await Promise.all(
-    TRAVEL_MODES.map((mode) => travel.estimate({ from, to, mode })),
+    TRAVEL_MODES.map((mode) => travel.estimate({ from, to, mode, departAt: null })),
   );
   return fastestMode(answers) ?? DEFAULT_TRAVEL_MODE;
 }

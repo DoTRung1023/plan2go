@@ -142,13 +142,13 @@ interface DateRangeFieldProps {
   readonly start: IsoDate;
   readonly end: IsoDate;
   /**
-   * The day that gets the ring. Decided by the caller, because which day is
-   * today depends on whose clock is asked: the trip's, on its own page, and
-   * the reader's on the page that starts one. Read off the browser's clock in
-   * UTC, as it once was, this was yesterday every morning in Adelaide, and
-   * agreed with neither the day tabs nor the earliest day the form offers.
+   * The day that gets the ring: today on the reader's own clock, or null
+   * while the browser has not yet said, when no day is ringed. Read off the
+   * browser's clock in UTC, as it once was, this was yesterday every morning
+   * in Adelaide; it is read in the browser's own zone now, the same way the
+   * day tabs read it, so the two always agree.
    */
-  readonly today: IsoDate;
+  readonly today: IsoDate | null;
   /** Earliest day that may be chosen. Days before it are shown but not offered. */
   readonly min?: IsoDate;
   /** The longest a trip may run, counting both ends. */

@@ -144,6 +144,37 @@ const UNAVAILABLE: LegResolution = {
   reason: "provider-unavailable",
 };
 
+const MILLIS_PER_MINUTE = 60_000;
+const MINUTES_PER_DAY = 1440;
+
+/**
+ * How far from now Google will look up a timetable: seven days back and a
+ * hundred ahead, in its own words. A departure outside that is answered with
+ * a 400, so one is not sent, and the answer is for the service running now.
+ */
+const TRANSIT_PAST_DAYS = 7;
+const TRANSIT_FUTURE_DAYS = 100;
+
+/**
+ * The departure to send for a public transport leg, or null when none can be:
+ * a leg with no known departure, or one further from now than the timetable
+ * reaches. Only public transport is asked for a time. A walk takes as long as
+ * it takes, and a drive is asked for without traffic, which is the tier whose
+ * answer does not depend on the moment, so a time would be paid for and
+ * ignored.
+ */
+export function transitDepartureFor(request: TravelRequest, now: Date): string | null {
+  if (request.mode !== "transit" || request.departAt === null) {
+    return null;
+  }
+  const nowMinutes = now.getTime() / MILLIS_PER_MINUTE;
+  const daysAway = (request.departAt - nowMinutes) / MINUTES_PER_DAY;
+  if (daysAway < -TRANSIT_PAST_DAYS || daysAway > TRANSIT_FUTURE_DAYS) {
+    return null;
+  }
+  return new Date(request.departAt * MILLIS_PER_MINUTE).toISOString();
+}
+
 /**
  * Real routes from Google, called from the server only. The key is passed in
  * rather than read from the environment here, so this file has no opinion about
@@ -152,9 +183,11 @@ const UNAVAILABLE: LegResolution = {
  * Two things this deliberately does not do. It never throws for a leg it cannot
  * answer, because one unreachable stop must not take down the page the rest of
  * the trip is on, and the engine already has a shape for an unanswered leg. And
- * it asks for routes without traffic, which is the cheapest tier and the only
+ * it asks for roads without traffic, which is the cheapest tier and the only
  * one whose answer does not depend on the moment it was asked, so a cached row
- * stays true for longer than the minute it was written in.
+ * stays true for longer than the minute it was written in. Public transport is
+ * the exception: a timetable is a different thing at nine on a Sunday from
+ * five on a Friday, so that is asked for at the moment the day sets out on it.
  */
 export function createGoogleRoutesProvider(options: GoogleRoutesOptions): TravelProvider {
   return {
@@ -163,6 +196,7 @@ export function createGoogleRoutesProvider(options: GoogleRoutesOptions): Travel
     async estimate(request: TravelRequest): Promise<LegResolution> {
       const travelMode = ROUTES_MODE[request.mode];
       const transit = request.mode === "transit";
+      const departureTime = transitDepartureFor(request, new Date());
       const headers = {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": options.apiKey,
@@ -180,6 +214,7 @@ export function createGoogleRoutesProvider(options: GoogleRoutesOptions): Travel
         },
         travelMode,
         ...(travelMode === "DRIVE" ? { routingPreference: "TRAFFIC_UNAWARE" } : {}),
+        ...(departureTime === null ? {} : { departureTime }),
       };
 
       let response: Response;

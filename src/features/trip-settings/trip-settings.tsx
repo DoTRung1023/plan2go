@@ -2,13 +2,13 @@
 
 import type { ReactNode } from "react";
 import { useActionState, useId, useRef, useState } from "react";
-import type { IsoDate } from "@/core/model/day";
 import { daysBetween } from "@/core/time/zoned";
 import {
   HEADING_BAND,
   HEADING_BODY,
   HEADING_DAY_LINE,
 } from "@/features/day-planner/panel-heading";
+import { useLocalToday } from "@/ui/use-local-today";
 import { DateRangeField } from "./date-range-field";
 
 export interface TripSettingsOutcome {
@@ -47,8 +47,6 @@ interface TripSettingsProps {
   readonly title: string;
   readonly startDate: string;
   readonly endDate: string;
-  /** Today where the trip is, for the calendar's ring. The same day the tabs mark. */
-  readonly today: IsoDate;
   /**
    * What can be done to the trip as a whole. It sits on the name's row, at the
    * top of the panel, because that row is the trip itself rather than a day in
@@ -110,7 +108,6 @@ export function TripSettings({
   title,
   startDate,
   endDate,
-  today,
   actions,
   dayLine,
   leaveAt,
@@ -118,6 +115,8 @@ export function TripSettings({
   onSave,
 }: TripSettingsProps) {
   const [state, submit, pending] = useActionState(onSave, UNSAVED);
+  /** For the calendar's ring: today on the reader's clock, the day the tabs mark too. */
+  const today = useLocalToday();
   const [name, setName] = useState(title);
   const [first, setFirst] = useState(startDate);
   const [last, setLast] = useState(endDate);

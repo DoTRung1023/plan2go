@@ -57,7 +57,7 @@ describe("createHaversineTravelProvider", () => {
     const result = await provider.estimate({
       from: ADELAIDE_GPO,
       to: BOTANIC_GARDEN,
-      mode: "walk",
+      mode: "walk", departAt: null,
     });
 
     expect(result.status).toBe("resolved");
@@ -70,7 +70,7 @@ describe("createHaversineTravelProvider", () => {
   });
 
   it("applies the detour factor to the straight line", async () => {
-    const result = await provider.estimate({ from: ADELAIDE_GPO, to: GLENELG, mode: "drive" });
+    const result = await provider.estimate({ from: ADELAIDE_GPO, to: GLENELG, mode: "drive", departAt: null });
     const straightLine = haversineMeters(ADELAIDE_GPO, GLENELG);
 
     expect(result.status).toBe("resolved");
@@ -83,8 +83,8 @@ describe("createHaversineTravelProvider", () => {
   });
 
   it("is slower on foot than behind a wheel over the same ground", async () => {
-    const onFoot = await provider.estimate({ from: ADELAIDE_GPO, to: GLENELG, mode: "walk" });
-    const driving = await provider.estimate({ from: ADELAIDE_GPO, to: GLENELG, mode: "drive" });
+    const onFoot = await provider.estimate({ from: ADELAIDE_GPO, to: GLENELG, mode: "walk", departAt: null });
+    const driving = await provider.estimate({ from: ADELAIDE_GPO, to: GLENELG, mode: "drive", departAt: null });
 
     expect(onFoot.status).toBe("resolved");
     expect(driving.status).toBe("resolved");
@@ -98,7 +98,7 @@ describe("createHaversineTravelProvider", () => {
     const result = await provider.estimate({
       from: ADELAIDE_GPO,
       to: ADELAIDE_GPO,
-      mode: "walk",
+      mode: "walk", departAt: null,
     });
 
     expect(result).toEqual({
@@ -118,7 +118,7 @@ describe("createHaversineTravelProvider", () => {
     const result = await provider.estimate({
       from: ADELAIDE_GPO,
       to: { lat: ADELAIDE_GPO.lat + 0.0001, lng: ADELAIDE_GPO.lng },
-      mode: "drive",
+      mode: "drive", departAt: null,
     });
 
     expect(result.status).toBe("resolved");
@@ -132,7 +132,7 @@ describe("createHaversineTravelProvider", () => {
     const result = await provider.estimate({
       from: ADELAIDE_GPO,
       to: { lat: Number.NaN, lng: 138.5 },
-      mode: "walk",
+      mode: "walk", departAt: null,
     });
 
     expect(result).toEqual({ status: "unresolved", reason: "missing-coordinates" });

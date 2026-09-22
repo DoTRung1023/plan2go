@@ -7,7 +7,7 @@ import type { DayPlan } from "@/core/model/day";
 import { PlusIcon } from "@/ui/icons";
 import type { EditOutcome } from "./day-actions";
 import { formatDayDate, formatDayTab } from "./format-day-date";
-import { useLocalToday } from "./use-local-today";
+import { useLocalToday } from "@/ui/use-local-today";
 import "./day-tabs.css";
 
 interface DayTabsProps {

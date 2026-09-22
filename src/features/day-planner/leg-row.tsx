@@ -158,11 +158,12 @@ function Option({
 /**
  * The way to the live version of this leg, under every leg that can be made.
  *
- * No departure times here, because none were asked for. The link is where
- * they live: the same two places and the same way between them, opened in
- * Google Maps for the moment the traveller is actually leaving. The timetable
- * for public transport, the traffic for a drive, and for a walk the same route
- * with turn by turn directions on it.
+ * The leg is timed for the moment the day plans to set out on it, but the
+ * minute a service leaves and the traffic on the road are not here. The link
+ * is where they live: the same two places and the same way between them,
+ * opened in Google Maps for the moment the traveller is actually leaving. The
+ * timetable for public transport, the traffic for a drive, and for a walk the
+ * same route with turn by turn directions on it.
  */
 function DirectionsLink({ href }: { readonly href: string }) {
   return (

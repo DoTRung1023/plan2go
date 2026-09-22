@@ -54,10 +54,14 @@ API returns no cycling route at all across much of the world, so the mode was in
 answered by a straight line at an assumed speed. Adding it back means a provider that
 actually covers it, behind the same port.
 
-`TravelRequest` carries no departure time, so transit answers are the service running
-when they were asked for and driving is asked for without traffic. Giving the engine a
-departure time is the next real piece of work here: a leg's departure depends on the
-legs before it, so it cannot simply be passed down.
+`TravelRequest` carries the moment the day sets out on the leg, in minutes since the
+epoch, or null while that is not known. A leg's departure depends on the legs before
+it, so `legRequestsFor(day, answered)` runs the day through the engine as far as the
+answers reach and `computeTrip` asks for the legs one at a time. Public transport is
+asked for at that moment, inside the seven days back and hundred ahead that Google
+looks up a timetable for, and cached to the quarter hour; a walk takes as long as it
+takes, and driving is still asked for without traffic, which is the cheaper tier and
+the one whose answer does not move with the moment, so neither is sent one.
 
 **Dependency direction.** `app` to `features` to `server` and `adapters` to `core`.
 `core` imports nothing internal. This is enforced by lint, not by good intentions.

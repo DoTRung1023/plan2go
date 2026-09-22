@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { DayEndpoint, DayPlan } from "../model/day";
-import type { TravelMode } from "../model/leg";
+import type { TravelEstimate, TravelMode } from "../model/leg";
 import type { LatLng, Place } from "../model/place";
 import type { Stop } from "../model/stop";
 import { legRequestsFor } from "./leg-requests";
@@ -90,9 +90,50 @@ describe("legRequestsFor", () => {
 
   it("matches the leg order computeDay expects for a single stop", () => {
     const requests = legRequestsFor(day([stop("Market", MARKET, "transit")]));
-    expect(requests).toEqual([
-      { from: HOME, to: MARKET, mode: "transit" },
-      { from: MARKET, to: HOME, mode: "walk" },
+    expect(requests.map((request) => [request.from, request.to, request.mode])).toEqual([
+      [HOME, MARKET, "transit"],
+      [MARKET, HOME, "walk"],
     ]);
   });
+
+  it("sets the first leg out at the day's own leaving time, on its date, in its zone", () => {
+    const [first] = legRequestsFor(day([stop("Market", MARKET, "walk")]));
+    // 09:00 on 22 August 2026 in Adelaide, which is 23:30 UTC the evening before.
+    expect(first?.departAt).toBe(Date.UTC(2026, 7, 21, 23, 30) / 60_000);
+  });
+
+  it("sets a later leg out only once the legs before it are answered", () => {
+    const plan = day([stop("Market", MARKET, "walk"), stop("Zoo", ZOO, "walk")]);
+    const [first] = legRequestsFor(plan);
+    const unanswered = legRequestsFor(plan);
+    expect(unanswered.map((request) => request.departAt)).toEqual([first?.departAt, null, null]);
+
+    const answered = legRequestsFor(plan, [
+      { status: "resolved", estimate: walkOf(10) },
+      { status: "resolved", estimate: walkOf(15) },
+    ]);
+    // Ten minutes there, thirty at the market, then the next leg sets out.
+    expect(answered.map((request) => request.departAt)).toEqual([
+      first?.departAt,
+      (first?.departAt ?? 0) + 10 + 30,
+      (first?.departAt ?? 0) + 10 + 30 + 15 + 30,
+    ]);
+  });
+
+  it("sets nothing out after a leg nobody could answer", () => {
+    const plan = day([stop("Market", MARKET, "walk"), stop("Zoo", ZOO, "walk")]);
+    const requests = legRequestsFor(plan, [{ status: "unresolved", reason: "no-route" }]);
+    expect(requests.map((request) => request.departAt === null)).toEqual([false, true, true]);
+  });
 });
+
+function walkOf(durationMinutes: number): TravelEstimate {
+  return {
+    mode: "walk",
+    durationMinutes,
+    distanceMeters: durationMinutes * 80,
+    source: "haversine",
+    path: null,
+    rides: null,
+  };
+}

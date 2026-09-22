@@ -39,9 +39,10 @@ export type TransitVehicle = (typeof TRANSIT_VEHICLES)[number];
  *
  * The line is what is written on the front of the vehicle and on the stop, and
  * the headsign is where it says it is going, which between them are how a
- * traveller standing at a stop tells the right one from the others. No times:
- * nothing here is asked for a departure time, so an answer is the service
- * running when it was asked, and a time on it would be a promise nobody made.
+ * traveller standing at a stop tells the right one from the others. No times
+ * of its own: the leg is asked for at the moment the day plans to set out on
+ * it, so the ride is the one running then, but the minute it leaves is left to
+ * the timetable the traveller reads on the day.
  */
 export interface TransitRide {
   readonly vehicle: TransitVehicle;
@@ -97,4 +98,12 @@ export interface TravelRequest {
   readonly from: LatLng;
   readonly to: LatLng;
   readonly mode: TravelMode;
+  /**
+   * When the leg is set out on, in minutes since the epoch, as the day plans
+   * it: the day's own leaving time for the first leg, and for every leg after
+   * it the moment the stop before it is left, which is only known once the
+   * legs before it are answered. Null while it is not known, and the answer
+   * is then for whenever the provider was asked.
+   */
+  readonly departAt: number | null;
 }

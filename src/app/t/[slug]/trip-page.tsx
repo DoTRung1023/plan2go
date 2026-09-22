@@ -1,6 +1,5 @@
 import type { Trip } from "@/core/model/trip";
 import { computeTrip } from "@/features/day-planner/compute-trip";
-import { todayIn } from "@/server/trips/time-zones";
 import { TripEditor } from "./trip-editor";
 import { travelProvider } from "./travel";
 
@@ -30,10 +29,6 @@ export async function TripPage({ trip, editKey }: TripPageProps) {
       days={days}
       centre={trip.centre}
       cityName={trip.cityName}
-      /* Today where the trip is, for the calendar the dates are changed on:
-         the earliest day it offers is the trip's own today. The day strip
-         marks today on the reader's clock instead, and finds that itself. */
-      today={todayIn(trip.timeZone)}
       editKey={editKey}
     />
   );

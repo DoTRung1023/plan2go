@@ -11,10 +11,11 @@ import { db } from "../db";
  *
  * A road route asked for without traffic is a property of the roads, and a
  * month is well inside how often those change. A timetable is not: a train
- * every ten minutes at noon is one an hour at midnight, and nothing here sends
- * a departure time yet, so a transit answer is only true around when it was
- * asked. It is kept long enough to cover the re-renders of one sitting and no
- * longer.
+ * every ten minutes at noon is one an hour at midnight. A transit leg asked
+ * for at the moment the day sets out on it is an answer about that moment,
+ * and timetables hold for weeks, so it is kept for a day. One asked for with
+ * no moment at all is the service running when it was asked, and is kept
+ * long enough to cover the re-renders of one sitting and no longer.
  */
 const MILLIS_PER_HOUR = 3_600_000;
 
@@ -26,6 +27,8 @@ const KEEP_FOR: Readonly<Record<TravelMode, number>> = {
   transit: MILLIS_PER_HOUR,
 };
 
+const KEEP_TIMED_TRANSIT_FOR = MILLIS_PER_DAY;
+
 /**
  * Degrees kept in a cache key. Four is about eleven metres, which is finer than
  * any two places a person would call different, and coarse enough that the same
@@ -34,11 +37,23 @@ const KEEP_FOR: Readonly<Record<TravelMode, number>> = {
 const KEY_DECIMALS = 4;
 
 /**
- * The answers asked for here do not move with the time of day, so every one of
- * them shares a bucket. The column is there for the traffic aware and timetable
- * answers that will want one.
+ * A walk or a drive without traffic does not move with the time of day, so
+ * every one of them shares a bucket. A public transport leg is answered for
+ * the moment it sets out, and two moments a few minutes apart get the same
+ * timetable, so the moment is kept to the quarter hour: fine enough that a
+ * service every twenty minutes is told from the next, coarse enough that a
+ * stay nudged by a minute does not pay for the same answer again.
  */
-const TIME_BUCKET = "any";
+const ANY_TIME = "any";
+
+const BUCKET_MINUTES = 15;
+
+function timeBucketFor(request: TravelRequest): string {
+  if (request.mode !== "transit" || request.departAt === null) {
+    return ANY_TIME;
+  }
+  return `t${String(Math.floor(request.departAt / BUCKET_MINUTES))}`;
+}
 
 /** The shape of a route as it is stored. Parsed on the way out, never trusted. */
 const pathSchema = z.array(z.object({ lat: z.number(), lng: z.number() }));
@@ -108,7 +123,8 @@ const DB_MODE: Readonly<Record<TravelMode, "WALK" | "DRIVE" | "TRANSIT">> = {
  * Every paid provider is wrapped in this before anyone is allowed to call it,
  * which is the rule in CLAUDE.md and the reason a trip page can be rendered
  * again after every edit without spending anything. The key is exactly the four
- * things that determine the answer: the two ends, the mode, and the time bucket.
+ * things that determine the answer: the two ends, the mode, and the moment the
+ * leg sets out, for the one mode whose answer moves with it.
  *
  * Only answers that cost money are kept. Arithmetic is free to redo and keeping
  * it buys nothing, while a stored guess outlives the day we change how the
@@ -124,11 +140,12 @@ export function withLegCache(inner: TravelProvider): TravelProvider {
     name: `${inner.name}+cache`,
 
     async estimate(request: TravelRequest): Promise<LegResolution> {
+      const timeBucket = timeBucketFor(request);
       const key = {
         originKey: keyFor(request.from),
         destinationKey: keyFor(request.to),
         mode: DB_MODE[request.mode],
-        timeBucket: TIME_BUCKET,
+        timeBucket,
       };
       const where = { originKey_destinationKey_mode_timeBucket: key };
 
@@ -163,7 +180,9 @@ export function withLegCache(inner: TravelProvider): TravelProvider {
         source: answer.estimate.source,
         path: pathToJson(answer.estimate.path),
         rides: ridesToJson(answer.estimate.rides),
-        expiresAt: new Date(Date.now() + KEEP_FOR[request.mode]),
+        expiresAt: new Date(
+          Date.now() + (timeBucket === ANY_TIME ? KEEP_FOR[request.mode] : KEEP_TIMED_TRANSIT_FOR),
+        ),
       };
       await db.legCache.upsert({ where, create: row, update: row });
 

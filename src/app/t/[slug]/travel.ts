@@ -1,4 +1,4 @@
-import { createGoogleRoutesProvider } from "@/adapters/travel/google-routes";
+import { createGoogleRoutesProvider, transitDepartureFor } from "@/adapters/travel/google-routes";
 import { createHaversineTravelProvider } from "@/adapters/travel/haversine";
 import type { TravelProvider } from "@/core/ports/travel-provider";
 import { googleMapsApiKey } from "@/server/places/google-key";
@@ -36,6 +36,22 @@ function withStraightLineFallback(
 }
 
 /**
+ * A request asked with a moment the provider would pay no attention to, a
+ * walk, a drive, or a timetable further off than Google looks, is asked
+ * without one. Put in front of the cache, so the cache keys such a leg the
+ * way its answer is actually decided, and one row serves every moment.
+ */
+function withoutIgnoredDepartures(inner: TravelProvider): TravelProvider {
+  return {
+    name: inner.name,
+    estimate(request) {
+      const honoured = transitDepartureFor(request, new Date()) !== null;
+      return inner.estimate(honoured ? request : { ...request, departAt: null });
+    },
+  };
+}
+
+/**
  * The provider every path in this route uses, composed in one place so a page
  * render, a stop being added and a day being reordered all get their times from
  * the same source.
@@ -55,10 +71,12 @@ export function travelProvider(): TravelProvider {
   if (apiKey === null) {
     return createHaversineTravelProvider();
   }
-  return withLegCache(
-    withStraightLineFallback(
-      createGoogleRoutesProvider({ apiKey }),
-      createHaversineTravelProvider(),
+  return withoutIgnoredDepartures(
+    withLegCache(
+      withStraightLineFallback(
+        createGoogleRoutesProvider({ apiKey }),
+        createHaversineTravelProvider(),
+      ),
     ),
   );
 }

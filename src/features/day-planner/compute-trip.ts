@@ -29,8 +29,7 @@ export interface PlannedLeg {
   readonly options: readonly LegOption[];
   /**
    * The same two places and the chosen way between them, handed to Google
-   * Maps. That is where the timetable lives: nothing here is asked for a
-   * departure time, so the live times are a click away rather than a guess.
+   * Maps, where the live times and the minute the next service leaves are.
    * Null only for a leg whose ends could not be paired, which the day's own
    * running order rules out.
    */
@@ -83,13 +82,34 @@ function estimateLeg(
   return Promise.all(TRAVEL_MODES.map((mode) => travel.estimate({ ...request, mode })));
 }
 
+/**
+ * The legs of one day, answered one after another. Each is asked for at the
+ * moment the day sets out on it, and that moment is where the leg before it
+ * ends, so a leg cannot be asked for until the one before it is answered:
+ * the day's own answers are handed back to the engine after each, and the
+ * next request comes out with its moment on it. Every way of covering one
+ * leg is asked for together, since they all set out at the same moment.
+ * Slower than asking for the whole day at once, by one round trip per leg,
+ * which the cache makes a moment on every render but the first.
+ */
 async function computeOneDay(plan: DayPlan, travel: TravelProvider): Promise<PlannedDay> {
-  const requests = legRequestsFor(plan);
   const targets = legTargets(plan);
   const ends = legEnds(plan);
-  const answersPerLeg = await Promise.all(
-    requests.map((request) => estimateLeg(request, travel)),
-  );
+  const legCount = legRequestsFor(plan).length;
+  const requests: TravelRequest[] = [];
+  const answersPerLeg: (readonly LegResolution[])[] = [];
+  /** The engine is given the answer for the mode the day is actually using. */
+  const resolved: LegResolution[] = [];
+  for (let index = 0; index < legCount; index += 1) {
+    const request = legRequestsFor(plan, resolved)[index];
+    if (request === undefined) {
+      break;
+    }
+    const answers = await estimateLeg(request, travel);
+    requests.push(request);
+    answersPerLeg.push(answers);
+    resolved.push(answers[TRAVEL_MODES.indexOf(request.mode)] ?? UNRESOLVED);
+  }
 
   const legs = requests.map((request, index) => {
     const answers = answersPerLeg[index] ?? [];
@@ -100,12 +120,6 @@ async function computeOneDay(plan: DayPlan, travel: TravelProvider): Promise<Pla
       options: TRAVEL_MODES.map((mode, at) => toOption(mode, answers[at] ?? UNRESOLVED)),
       directions: end === undefined ? null : directionsUrl(end.from, end.to, request.mode),
     };
-  });
-
-  /** The engine is given the answer for the mode the day is actually using. */
-  const resolved: readonly LegResolution[] = requests.map((request, index) => {
-    const at = TRAVEL_MODES.indexOf(request.mode);
-    return answersPerLeg[index]?.[at] ?? UNRESOLVED;
   });
 
   return { plan, computed: computeDay({ day: plan, legs: resolved }), legs };
