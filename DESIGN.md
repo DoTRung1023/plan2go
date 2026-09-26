@@ -364,14 +364,16 @@ The last card on the day ends with the stop that would come next, as a slot on t
 rail. Under the disc, where the thread runs on to it, is the number that stop would
 get, in a 30px circle drawn with a dashed 2px ring in `terracotta` and the digit in
 the disc's face and step, in `terracotta-700`. Beside it, on the card's left edge,
-**Add a place** at the small step in `terracotta-700`, and at the right edge, where the
-times end, "from" and the time this stop is left, at the meta step in `ink-muted`,
-which is when the next place would start. The slot is the card's second row, 13px
-under its body, as far as the body is from the card's edge, and the thread stops 13px
-short of the ring. The whole row is one button that takes the traveller to the search
-field. Under the pointer the ring goes solid in `terracotta-700` over the accent at 15
-percent, and the digit and the words go to `terracotta-900`, because the card under the
-pointer is on sunken paper and `terracotta-700` over that tint falls short of 4.5 to 1.
+**Add a place** at the small step in `terracotta-700`, and at the right, "from" and the
+time this stop is left, at the meta step in `ink-muted`, which is when the next place
+would start. The slot is the card's second row, 13px under its body, as far as the body
+is from the card's edge, and the thread stops 13px short of the ring. The whole row is
+one button that takes the traveller to the search field. It runs from the ring's left
+edge to where the times end, and the time sits 10px in from that end. Under the pointer,
+or with the keyboard on it, the row is a band of terracotta at 8 percent, a pill as tall
+as the ring, and nothing else on it changes. The card behind it does not sink the way it
+does under the pointer, and this stop's marker on the map is let go: the slot is about
+the stop after this one.
 It is on the last card because that is where a place found in the search goes, and it
 is the one control on a card about the day rather than the stop. A reader without the
 edit link does not get it, and the thread ends at the foot of the card as on every

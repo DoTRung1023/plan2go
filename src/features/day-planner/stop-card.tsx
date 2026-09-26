@@ -460,9 +460,15 @@ export function StopCard({
           A second row of the card's grid, set as far below the body as the
           body is from the card's edge. The ring is two pixels rather than
           the pixel and a half the dashed rows use, which browsers draw as
-          one and which reads too faint for a number on the rail. Its hover
-          is a group of its own: the card is a group already, and the slot
-          should not light up whenever the pointer is anywhere on the card.
+          one and which reads too faint for a number on the rail.
+
+          Under the pointer, or with the keyboard on it, the row is a band of
+          the accent at a low tint, a pill from the ring's left edge to where
+          the times end, the time ten in from that end so it sits inside it;
+          the ring and the words stay as they are. The card under it lets go
+          of its own hover, and so does this stop's marker on the map: the
+          slot is about the stop after this one, and the card sinking behind
+          it said the pointer was on this one.
 
           The press does not take focus. A note field left open and empty
           above it closes when it loses focus, and the row it leaves is
@@ -477,21 +483,27 @@ export function StopCard({
           onMouseDown={(event) => {
             event.preventDefault();
           }}
+          onMouseEnter={() => {
+            onHover(null);
+          }}
+          onMouseLeave={() => {
+            onHover(stop.stopId);
+          }}
           onClick={onAddNext}
           aria-label={
             stop.departure === null
               ? `Add a place as stop ${String(position + 1)}`
               : `Add a place as stop ${String(position + 1)}, from ${formatDayTime(stop.departure)}`
           }
-          className="group/next col-span-2 mt-[13px] grid grid-cols-[30px_minmax(0,1fr)_auto] items-center gap-x-[13px] rounded-pill text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+          className="col-span-2 mt-[13px] grid grid-cols-[30px_minmax(0,1fr)_auto] items-center gap-x-[13px] rounded-pill pr-[10px] text-left hover:bg-terracotta/8 focus-visible:bg-terracotta/8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
         >
           <span
             aria-hidden="true"
-            className="grid h-[30px] w-[30px] place-items-center rounded-pill border-2 border-dashed border-terracotta font-display text-body/none font-semibold text-terracotta-700 tabular-nums group-hover/next:border-solid group-hover/next:border-terracotta-700 group-hover/next:bg-terracotta/15 group-hover/next:text-terracotta-900"
+            className="grid h-[30px] w-[30px] place-items-center rounded-pill border-2 border-dashed border-terracotta font-display text-body/none font-semibold text-terracotta-700 tabular-nums"
           >
             {position + 1}
           </span>
-          <span className="text-small/none font-semibold text-terracotta-700 group-hover/next:text-terracotta-900">
+          <span className="text-small/none font-semibold text-terracotta-700">
             Add a place
           </span>
           {stop.departure === null ? null : (
