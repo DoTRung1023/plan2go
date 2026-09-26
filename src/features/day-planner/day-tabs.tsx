@@ -42,12 +42,30 @@ function stopLine(day: DayPlan): string {
 }
 
 /**
- * A handle, not a summary. It carried the day's number, its date and its stop
- * count stacked three deep, which made the strip taller than the heading under
- * it and said three times over what the line below now says once.
+ * A handle, not a summary: the day's number over its date, and nothing about
+ * what is on it. The number came back once the line under the strip that
+ * named the open day went, since the tab is now the only place it is said.
+ *
+ * Every tab as wide as the widest date needs, so the strip reads as a row of
+ * days rather than a row of words, however narrow a Monday is beside a
+ * Wednesday. A date wider than that still gets its room. The two lines four
+ * apart, and eight above and below them, which puts a tab at the height two
+ * lines of the tab's own type need and no more.
  */
 const TAB =
-  "flex shrink-0 items-center rounded-pill border-0 px-[15px] py-[9px] text-small/none font-semibold whitespace-nowrap focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta";
+  "flex min-w-[82px] shrink-0 flex-col items-center gap-1 rounded-pill border-0 px-[15px] py-2 whitespace-nowrap focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta";
+
+/**
+ * The day's number: the one uppercase label in the product, at the micro
+ * step. It names which day of the trip this is, the way a calendar heads a
+ * column, and the date under it is what is read; in capitals it stays a
+ * heading at a size that would otherwise be read as the same kind of text as
+ * the date. Not spaced out: capitals at this step are already as wide as the
+ * date under them wants them to be.
+ */
+const TAB_NUMBER = "text-micro/none font-semibold uppercase";
+
+const TAB_DATE = "text-small/none font-semibold tabular-nums";
 
 export function DayTabs({ days, selectedIndex, onSelect, onAddDay }: DayTabsProps) {
   const tabs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -115,16 +133,17 @@ export function DayTabs({ days, selectedIndex, onSelect, onAddDay }: DayTabsProp
           Below, seven: the same four, and under them the line the strip
           draws as its scrollbar once a trip is long enough, which sits just
           under the pills as their edge and clear of any ring. The room is
-          there whether or not the line is, so the line naming the day is as
-          close under the strip either way. */}
+          there whether or not the line is, so the card round the strip sits
+          as close under it either way. Eight between the last day and the
+          button that adds one. */}
       <div
         ref={watchStrip}
-        className="day-tabs scroll-line scroll-shy flex items-center gap-[7px] pt-[4px] pb-[7px]"
+        className="day-tabs scroll-line scroll-shy flex items-center gap-2 pt-[4px] pb-[7px]"
       >
         <div
           role="tablist"
           aria-label="Days of this trip"
-          className="flex shrink-0 items-center gap-[7px]"
+          className="flex shrink-0 items-center gap-1"
         >
       {days.map((day, index) => {
         const selected = index === selectedIndex;
@@ -161,15 +180,24 @@ export function DayTabs({ days, selectedIndex, onSelect, onAddDay }: DayTabsProp
                   : "bg-transparent text-ink-muted hover:bg-neutral-200"
             }`}
           >
-            {/* The tab no longer draws the date in full or counts the stops.
-                Both are on the day's own line the moment it is opened, and a
-                reader who cannot see the strip still hears all of it here. */}
+            {/* The tab draws the day's number and a short date, and a reader
+                who cannot see the strip hears the date in full and what is
+                on the day here instead. */}
             <span className="sr-only">
               {`Day ${String(index + 1)}, ${formatDayDate(day.date)}, ${stopLine(day)}.${
                 isToday ? " Today." : ""
               }`}
             </span>
-            <span aria-hidden="true" className="tabular-nums">
+            {/* On the chosen day the number steps back from the date by a
+                sixth, the paper over the dark pill otherwise reading as two
+                lines of equal weight. */}
+            <span
+              aria-hidden="true"
+              className={`${TAB_NUMBER} tabular-nums ${selected ? "text-paper/85" : ""}`}
+            >
+              {`Day ${String(index + 1)}`}
+            </span>
+            <span aria-hidden="true" className={TAB_DATE}>
               {formatDayTab(day.date)}
             </span>
           </button>
@@ -188,16 +216,17 @@ export function DayTabs({ days, selectedIndex, onSelect, onAddDay }: DayTabsProp
             // it read as heavier than any of them: a circle fills its height
             // where a word in a pill does not, and a dashed ring is louder
             // than a filled one. Smaller, it is what it is, the way to one
-            // more day rather than a day.
-            className="ml-[2px] grid h-[26px] w-[26px] shrink-0 place-items-center rounded-pill border-[1.5px] border-dashed border-rule-strong text-ink-faint hover:border-terracotta hover:text-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+            // more day rather than a day. The glyph in the ink the days'
+            // words are in, since the ring already says it is only an offer.
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-pill border-[1.5px] border-dashed border-rule-strong text-ink-muted hover:border-terracotta hover:text-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
           >
-            <PlusIcon size={13} strokeWidth={2.75} />
+            <PlusIcon size={15} strokeWidth={2.75} />
           </button>
         )}
       </div>
 
       {error === null ? null : (
-        <Notice role="alert" className="mb-[10px]">
+        <Notice role="alert" className="mb-[7px]">
             {error}
         </Notice>
       )}

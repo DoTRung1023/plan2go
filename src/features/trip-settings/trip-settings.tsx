@@ -251,7 +251,7 @@ export function TripSettings({
         {tabs}
 
         {state.error === null || state.field !== null ? null : (
-          <Notice role="alert" size="meta" className="mt-3">
+          <Notice role="alert" size="meta" className="mt-3 mb-[7px]">
               {state.error}
           </Notice>
         )}

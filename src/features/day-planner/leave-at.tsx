@@ -26,8 +26,9 @@ function twoDigits(value: number): string {
  * The weight is said outright: the times' step brings its weight only when it
  * sets the line height too, and the start point's line around it sets none.
  *
- * Its words at the same padding either side as the stay's, and the chevron
- * as close to the time as the arrow on the line is. Raised by three, so the
+ * Ten in from either end, which is the stay's right end and two short of its
+ * left, where the stay has a clock to stand in front of; the chevron as close
+ * to the time as the arrow on the line is. Raised by three, so the
  * middle of the pill is the middle of the place's name beside it; the rest
  * of its height hangs below the line, which the line makes room for.
  */
@@ -42,8 +43,17 @@ function toClock(minutes: number): string {
 }
 
 interface LeaveAtProps {
-  /** When the day begins, as minutes from local midnight. */
+  /** When the day begins, as minutes from local midnight, as it is stored. */
   readonly value: number;
+  /**
+   * When the day actually leaves, as the day's other times were worked out
+   * from it. The same as the stored time on every day but the one a clock
+   * jumps forward on, where a time inside the missing hour is read as the
+   * hour after it: stored 02:30, the day leaves at 03:30, and the arrow after
+   * the pill agrees with 03:30. So this is what the pill says when it is
+   * closed with nothing waiting to be written.
+   */
+  readonly clock: string;
   readonly onChoose: (minutes: number) => Promise<EditOutcome>;
 }
 
@@ -65,7 +75,7 @@ interface LeaveAtProps {
  * when it closes, so a morning picked as an hour and then a minute is one
  * trip to the server rather than two.
  */
-export function LeaveAt({ value, onChoose }: LeaveAtProps) {
+export function LeaveAt({ value, clock, onChoose }: LeaveAtProps) {
   const [draft, setDraft] = useState(value);
   const [seen, setSeen] = useState(value);
   const [open, setOpen] = useState(false);
@@ -86,6 +96,34 @@ export function LeaveAt({ value, onChoose }: LeaveAtProps) {
 
   const hour = Math.floor(draft / 60) % 24;
   const minute = draft % 60;
+
+  /** A time being chosen, or chosen and not back yet, is said as chosen. */
+  const shown = open || draft !== value ? toClock(draft) : clock;
+
+  /**
+   * A time chosen and not yet written is written if the pill goes before its
+   * picker is closed. The pill is not always where it was: it is on the first
+   * card until a start point is added, and then on that, and a reorder can
+   * put a different card first, so the one a time was being chosen on can be
+   * taken away with the picker still open. Closing is what writes, and a pill
+   * taken away is never closed, so without this the choice would be dropped
+   * without a word. What is sent is read at the moment it goes, from here.
+   * The answer comes back to nothing: the pill that would show an error is
+   * gone, and the day is read again after the write whatever it says.
+   */
+  const pending = useRef({ open, draft, value, onChoose });
+  useEffect(() => {
+    pending.current = { open, draft, value, onChoose };
+  });
+  useEffect(
+    () => () => {
+      const last = pending.current;
+      if (last.open && last.draft !== last.value) {
+        void last.onChoose(last.draft);
+      }
+    },
+    [],
+  );
 
   /** Setting the time to the one it already was is not a change worth a write. */
   const close = (): void => {
@@ -127,7 +165,7 @@ export function LeaveAt({ value, onChoose }: LeaveAtProps) {
         ref={trigger}
         aria-haspopup="dialog"
         aria-expanded={open}
-        aria-label={`Leave at ${toClock(draft)}`}
+        aria-label={`Leave at ${shown}`}
         disabled={saving}
         onClick={() => {
           if (open) {
@@ -138,7 +176,7 @@ export function LeaveAt({ value, onChoose }: LeaveAtProps) {
         }}
         className={`${TRIGGER} ${open ? "border-terracotta" : "border-terracotta/55"}`}
       >
-        {toClock(draft)}
+        {shown}
         <ChevronDownIcon size={12} strokeWidth={2.75} className="shrink-0" />
       </button>
 

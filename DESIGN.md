@@ -241,8 +241,8 @@ everything else.
 
 Eleven steps and no others. Every size in the planner is one of them, set with its own
 line height and, where it is a pill, with `text-step/none` rather than a second leading
-utility fighting the first. Lead is the day a panel is open on, the one heading that is
-neither the trip's title nor a place. Small is the tier the interface is mostly made of,
+utility fighting the first. Lead is the heading of what opens over the page: the place
+open in the sheet, and the question asked before a trip is deleted. Small is the tier the interface is mostly made of,
 tab labels, menu rows, the words on a leg, which used to be a scatter of 13px and 13.5px
 chosen one component at a time. A number that is not on the scale is a number that has
 not been thought about, and the marketing page, which the scale does not govern, is the
@@ -258,7 +258,9 @@ one place such a number may appear. Every element that renders a time or a durat
 - **body:** running text.
 - **meta:** secondary text, addresses, the words in a leg row.
 - **micro:** the second line of a search result, and the sentence in a conflict.
-- **label:** the small heading above a value. Sentence case, 600, never uppercase.
+- **label:** the small heading above a value. Sentence case, 600, never uppercase. The one
+  uppercase heading in the product is the day's number on a day tab, which is set at the
+  micro step rather than this one, over the date the way a calendar heads a column.
 - **tick:** the two lines under the name of a day tab, the date and the stop count.
 
 Body text is left aligned. Never centred, except a single line inside an empty state.
@@ -279,9 +281,16 @@ The list pane stands on sunken paper, and everything on it is laid on that groun
 in from the edge, 12px apart. The trip comes first, on a pill of raised paper under a
 floating control's shadow: its name at the title step, its dates, and its menu, one row
 about the whole trip. Under it the days, on one card of paper at the `row` radius: the
-strip of tabs and nothing else, the pills eleven in from the card's top and bottom
-alike. The tab already names the day and its date, and when the day leaves is set on
-the day itself. Then the day itself: stops on raised cards, legs between them on pills of paper, and the ends of the
+strip of tabs and nothing else, held close: seven in from every edge, so the card reads
+as one control made of days. Each tab is two lines, **DAY 1** over **Sat 26**: the
+number uppercase at the micro step, the date at the small step, both 600, four apart,
+eight above and below. Every tab is as wide as the widest date needs, 82px, so the row
+reads as days rather than words, and they stand four apart. The chosen day is on
+`terracotta-800` with its date in `paper` and its number at 85 percent of it; the rest
+are in `ink-muted`, and today in sage as before. After the last tab, eight off, the
+button that adds a day: a 32px dashed ring in `rule-strong` with a 15px plus in
+`ink-muted`, still shorter than the tabs so it reads as an offer. When the day leaves
+is set on the day itself. Then the day itself: stops on raised cards, legs between them on pills of paper, and the ends of the
 day on shorter rows of paper inside a hairline, dashed where an end is not there yet.
 The next place is offered as the next number on the rail, drawn dashed at the foot of
 the last stop card, where a place found in the search is added. Three surfaces, each a step up from the one it sits on, and
@@ -367,7 +376,7 @@ never both, and it defaults to 09:00. For someone who may edit, that time is a p
 time in the times' own face, step and `terracotta-700`, with the stay's chevron after
 it, inside a dashed 1px edge in `terracotta` at 55 percent, the weight a hovered card's
 edge is drawn at, over `terracotta` at 10 percent. Its words sit 10px in from either end,
-as the stay's do. The edge takes the whole accent under the pointer and keeps it while
+which is the stay's right end and 2px short of its left. The edge takes the whole accent under the pointer and keeps it while
 the picker is open, and the picker is the same two columns the stay opens, hanging from
 the pill's right end. The pill is raised 3px so its middle is the middle of the place's
 name beside it. On the first card the arrow after it stands 8px off, rather than the

@@ -486,6 +486,7 @@ export function DayItinerary({
       <LeaveAt
         key={day.id}
         value={day.startAtMinutes}
+        clock={formatClock(computed.begins.minutesFromMidnight)}
         onChoose={(startAtMinutes) => actions.setDayStart({ startAtMinutes })}
       />
     );

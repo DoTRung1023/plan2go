@@ -28,14 +28,16 @@ export const HEADING_BAND =
 
 /**
  * The second is the strip of days, on one card of paper, a step up from the
- * ground and a step under the raised cards the stops are on. Seven over the
- * strip, which carries four of its own as room for a focus ring, so the pills
- * sit eleven under the edge; four under it, which with the seven the strip
- * keeps below its pills is eleven over the edge too.
+ * ground and a step under the raised cards the stops are on. The card holds
+ * the strip close, seven in from every edge, so it reads as one control made
+ * of days rather than a shelf they stand on. Three over the strip, which
+ * carries four of its own as room for a focus ring, makes seven; nothing
+ * under it, where the strip keeps seven of its own for the same ring and its
+ * scrollbar; seven either side.
  *
  * There is no line under the strip naming the open day any more. The tab
- * already says which day it is and its date, and when the day leaves is set
- * on the day itself, on the time it leaves at.
+ * says which day it is and its date, and when the day leaves is set on the
+ * day itself, on the time it leaves at.
  */
 export const HEADING_BODY =
-  "mt-3 rounded-row border border-rule bg-paper px-[14px] pt-[7px] pb-[4px]";
+  "mt-3 rounded-row border border-rule bg-paper px-[7px] pt-[3px] pb-0";
