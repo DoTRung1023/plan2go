@@ -281,10 +281,11 @@ floating control's shadow: its name at the title step, its dates, and its menu, 
 about the whole trip. Under it the days, on one card of paper at the `row` radius: the
 strip of tabs, and beneath them the line naming the open day, what it comes to, and
 when it leaves, the time as words that tint under the pointer. Then the day
-itself: stops on raised cards, legs between them on pills of paper, the ends of the day
-on shorter rows of paper inside a hairline, dashed where an end is not there yet, and
-the next place, where there is not one yet, as a dashed pill. Three surfaces, each a
-step up from the one it sits on, and nothing drawn edge to edge.
+itself: stops on raised cards, legs between them on pills of paper, and the ends of the
+day on shorter rows of paper inside a hairline, dashed where an end is not there yet.
+The next place is offered from the foot of the last stop card, where a place found in
+the search is added. Three surfaces, each a step up from the one it sits on, and
+nothing drawn edge to edge.
 
 **Mobile, below 1024px.** One column. The map collapses to a sticky strip 140px tall at
 the top of the viewport, with the day tabs stuck directly beneath it. The page is the
@@ -344,7 +345,14 @@ often about. The triangle for the same reason the clock is gone, which is that a
 said only that this concerned the time, and every line on a stop card does. The tint
 alone is never the signal.
 
-A stop card carries its own controls and no others. The two that act on the whole
+A stop card carries its own controls and one other. The last card on the day ends in a
+foot under a dashed rule in the card's hairline, twelve either side of it, holding the
+offer of a note while there is none and, at the right, **Add place after**: a pill as
+tall as the stay, filled with terracotta at 20 percent, its words at the note's step in
+`terracotta-700`, which takes the traveller to the search field. It is on the last card
+because that is where a place found in the search goes, so the words are true, and it
+is the only control on a card about the day rather than the stop. A reader without the
+edit link gets neither the foot nor the rule. The two that act on the whole
 stop, moving it and taking it off the day, sit under the two times at the top right,
 because they are about the row rather than about anything inside it. The address under
 the name runs on beneath the times as far as the tools reach, which are narrower than

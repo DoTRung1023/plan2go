@@ -46,7 +46,7 @@ Every trip opened this way is a row in the shared database. Delete them when don
 
 ## The search field
 
-`input[role="combobox"][placeholder^="Add a place"]`. Its panel is `div.top-full`
+`input[role="combobox"][placeholder="Search for a place"]`. Its panel is `div.top-full`
 inside the nearest `div.relative`. A `MutationObserver` on that container, installed
 before the click, gives a timestamped transcript of everything the panel says, which
 is the evidence for anything about loading states.

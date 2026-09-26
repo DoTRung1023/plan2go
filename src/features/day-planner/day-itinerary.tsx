@@ -54,7 +54,7 @@ interface DayItineraryProps {
   readonly onHoverEndpoint: (placeId: string | null) => void;
   /** Null for a reader who holds no edit token. */
   readonly actions: DayActions | null;
-  /** Takes the reader to the search field, from a day with nothing on it. Null for a reader who cannot edit. */
+  /** Takes the reader to the search field, from a day with nothing on it or from the foot of its last stop. Null for a reader who cannot edit. */
   readonly onFindPlace: (() => void) | null;
 }
 
@@ -238,16 +238,6 @@ function Anchor({
  */
 const ADD_ENDPOINT =
   "group grid w-full grid-cols-[30px_minmax(0,1fr)_auto] items-center gap-x-[13px] rounded-row border-[1.5px] border-dashed border-rule-strong bg-paper px-[15.5px] py-[8.5px] text-left hover:border-terracotta hover:bg-paper-raised disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
-
-/**
- * The next place, where it would go: after the last stop, before the end of
- * the day. The same dash as an end of the day that is not there yet, on
- * nothing, as a pill, because it is a button and not a row with a shape to
- * show; the label at the step the tab labels are set in, and the accent
- * under the pointer.
- */
-const ADD_PLACE =
-  "flex w-full items-center justify-center gap-2 rounded-pill border-[1.5px] border-dashed border-rule-strong bg-transparent py-[12px] text-small/none font-semibold text-ink-muted hover:border-terracotta hover:text-terracotta-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 /** What each end of the day is called, wherever it has to be said out loud. */
 const ENDS = {
@@ -548,6 +538,11 @@ export function DayItinerary({
                 openingHours={place === undefined ? null : hoursOn(place, day)}
                 conflicts={conflictsAtStop(computed.conflicts, stop.stopId)}
                 actions={actions}
+                /* The next place is offered from the foot of the last card,
+                   since that is where a place found in the search is added.
+                   The last as shown, so while a move is being saved it is on
+                   whichever card has been dropped last. */
+                onAddAfter={index === shownStops.length - 1 ? onFindPlace : null}
                 dragging={dragIndex === index}
                 dragOver={overIndex === index}
                 onDragStart={setDragIndex}
@@ -572,20 +567,6 @@ export function DayItinerary({
 
       {moving ? (
         <p className="mt-2 px-[10px] text-micro text-ink-muted">Working out the new times.</p>
-      ) : null}
-
-      {/* Where the next place goes, after the last stop and before the end of
-          the day. The search field is over the map, which is the other pane
-          on a desk and a strip above this on a phone, so this points at it
-          the way the empty day does; a day with no stops has that instead,
-          and a reader who cannot edit has neither. */}
-      {onFindPlace !== null && day.stops.length > 0 ? (
-        <div className="pt-3">
-          <button type="button" onClick={onFindPlace} className={ADD_PLACE}>
-            <PlusIcon size={TOOL_GLYPH.info} strokeWidth={TOOL_GLYPH.stroke} />
-            Add a place
-          </button>
-        </div>
       ) : null}
 
       <EndpointSlot

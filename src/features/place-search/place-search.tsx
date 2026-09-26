@@ -718,14 +718,13 @@ export function PlaceSearch({
                           }}
                           // Close on its right, so the words run up to the
                           // plus rather than wrapping a word early to leave
-                          // room the plus does not need.
-                          className="flex min-w-0 flex-1 items-start gap-[7px] rounded-chip py-2 pr-[6px] pl-[7px] text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta"
+                          // room the plus does not need. The pin is centred
+                          // on the row, as the plus is, so the two marks at
+                          // either end sit on one line however many lines
+                          // the name and address take between them.
+                          className="flex min-w-0 flex-1 items-center gap-[7px] rounded-chip py-2 pr-[6px] pl-[7px] text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta"
                         >
-                          <PinIcon
-                            size={15}
-                            strokeWidth={2.75}
-                            className="mt-[2px] shrink-0 text-terracotta"
-                          />
+                          <PinIcon size={15} strokeWidth={2.75} className="shrink-0 text-terracotta" />
                           {/* Wrapped greedily rather than prettily: the page
                               keeps a last line from being one word, which in
                               a row this narrow moved a word down that fitted

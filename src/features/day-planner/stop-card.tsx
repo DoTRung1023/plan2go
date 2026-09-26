@@ -70,6 +70,16 @@ export const TOOL_GLYPH = {
   close: 17,
 } as const;
 
+/**
+ * The offer of the next place, at the foot of the last card on the day: a
+ * pill as tall as the stay beside it, filled with the accent at a fifth so it
+ * reads as the one thing on the card to press next without taking the weight
+ * of the times, and set at the note's step, so the two offers in the foot of
+ * the card are one line of words, told apart by the fill.
+ */
+const ADD_AFTER =
+  "ml-auto flex h-8 shrink-0 items-center gap-[6px] rounded-pill bg-terracotta/20 pr-3 pl-[13px] text-micro/none font-semibold whitespace-nowrap text-terracotta-700 hover:bg-terracotta/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+
 /** A quarter of an hour: the smallest amount of time worth naming on a day. */
 interface StopCardProps {
   /** Its number in the day, counted from one. */
@@ -89,6 +99,12 @@ interface StopCardProps {
   readonly conflicts: readonly Conflict[];
   /** Null for a reader who holds no edit token, who gets the card and no controls. */
   readonly actions: DayActions | null;
+  /**
+   * Takes the traveller to the search field for the next place. Only the last
+   * card on the day has it, because a place found there is added at the end
+   * of the day, after this one; null on every other card and for a reader.
+   */
+  readonly onAddAfter: (() => void) | null;
   readonly dragging: boolean;
   readonly dragOver: boolean;
   readonly onDragStart: (index: number) => void;
@@ -119,6 +135,7 @@ export function StopCard({
   openingHours,
   conflicts,
   actions,
+  onAddAfter,
   dragging,
   dragOver,
   onDragStart,
@@ -227,6 +244,28 @@ export function StopCard({
     event.dataTransfer.effectAllowed = "move";
     onDragStart(index);
   };
+
+  /**
+   * The one line offering to start a note, for an editor. Shown in the body,
+   * where it keeps to its own width at the start of the column, or in the foot
+   * of the last card, where it sits on the middle of the row with the pill
+   * beside it rather than at the top of it.
+   */
+  const noteOffer = (where: "body" | "foot") =>
+    actions === null ? null : (
+      <button
+        type="button"
+        onClick={() => {
+          setWritingNote(true);
+        }}
+        className={`flex items-center gap-[5px] pr-1 text-micro font-semibold text-ink-muted hover:text-terracotta-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
+          where === "body" ? "self-start" : ""
+        }`}
+      >
+        <PlusIcon size={12} strokeWidth={2.75} />
+        Add a note
+      </button>
+    );
 
   const over = (event: DragEvent<HTMLElement>): void => {
     if (actions === null) {
@@ -404,18 +443,7 @@ export function StopCard({
         ))}
 
         {shownNote === null && !writingNote ? (
-          actions === null ? null : (
-            <button
-              type="button"
-              onClick={() => {
-                setWritingNote(true);
-              }}
-              className="flex items-center gap-[5px] self-start pr-1 text-micro font-semibold text-ink-muted hover:text-terracotta-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
-            >
-              <PlusIcon size={12} strokeWidth={2.75} />
-              Add a note
-            </button>
-          )
+          onAddAfter === null ? noteOffer("body") : null
         ) : (
           <textarea
             ref={noteField}
@@ -439,6 +467,28 @@ export function StopCard({
           <Notice role="alert">
               {error}
           </Notice>
+        )}
+
+        {/* The foot of the last card: what can be added to the day from
+            here, under a dashed rule in the card's own hairline so it reads
+            as the card's last line rather than as a card of its own. The
+            rule sits in the middle of twelve either side of it. The note's
+            offer moves down into it, beside the offer of the next place,
+            while there is no note; once there is one the field stays above
+            the rule with the rest of what the stop is. */}
+        {onAddAfter === null ? null : (
+          <div className="mt-1 flex items-center gap-3 border-t border-dashed border-rule pt-3">
+            {shownNote === null && !writingNote ? noteOffer("foot") : null}
+            <button
+              type="button"
+              onClick={onAddAfter}
+              aria-label={`Add place after ${stop.placeName}`}
+              className={ADD_AFTER}
+            >
+              <PlusIcon size={13} strokeWidth={TOOL_GLYPH.stroke} />
+              Add place after
+            </button>
+          </div>
         )}
       </div>
     </article>
