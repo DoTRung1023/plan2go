@@ -453,19 +453,27 @@ export function StopCard({
 
       {/* The next stop, where it would go: the number it would get, drawn
           dashed on the rail under this card's disc, so the thread the day
-          hangs on runs on to it, and beside it the words on the card's own
-          left edge. When the stop would start is when this one ends. One
-          button for the row, so the whole of it can be pressed on a phone.
+          hangs on runs on to it, and beside it the words on the left edge of
+          the name above. The time is when this stop is left, which is when
+          the way to the next one would begin, not when that one would start:
+          the leg between them comes first. One button for the row, so the
+          whole of it can be pressed on a phone.
 
           A second row of the card's grid, set as far below the body as the
-          body is from the card's edge. The ring is two pixels rather than
-          the pixel and a half the dashed rows use, which browsers draw as
-          one and which reads too faint for a number on the rail.
+          body is from the card's edge. Everything in it is drawn the way the
+          same thing already is on the card. The ring is the thread it
+          continues, bent round: two pixels wide, four on and five off, with
+          square ends, drawn rather than bordered because a dashed border
+          cannot be told its rhythm and every browser picks its own. The
+          digit is the disc's. The words are at the stay's step, and the time
+          at the step the opening hours are in, since both are the small print
+          of the stop. The time sits as far in from the right as the stay's
+          own words do from its edge.
 
-          Under the pointer, or with the keyboard on it, the row is a band of
-          the accent at a low tint, a pill from the ring's left edge to where
-          the times end, the time ten in from that end so it sits inside it;
-          the ring and the words stay as they are. The card under it lets go
+          Under the pointer, or with the keyboard on it, the row takes the
+          fill the card's other controls take under the pointer, as a pill
+          from the ring's left edge to where the times end; the ring and the
+          words stay as they are. The card under it lets go
           of its own hover, and so does this stop's marker on the map: the
           slot is about the stop after this one, and the card sinking behind
           it said the pointer was on this one.
@@ -493,21 +501,35 @@ export function StopCard({
           aria-label={
             stop.departure === null
               ? `Add a place as stop ${String(position + 1)}`
-              : `Add a place as stop ${String(position + 1)}, from ${formatDayTime(stop.departure)}`
+              : `Add a place as stop ${String(position + 1)}, after leaving ${stop.placeName} at ${formatDayTime(stop.departure)}`
           }
-          className="col-span-2 mt-[13px] grid grid-cols-[30px_minmax(0,1fr)_auto] items-center gap-x-[13px] rounded-pill pr-[10px] text-left hover:bg-terracotta/8 focus-visible:bg-terracotta/8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+          className="col-span-2 mt-[13px] grid grid-cols-[30px_minmax(0,1fr)_auto] items-center gap-x-[13px] rounded-pill pr-[10px] text-left hover:bg-neutral-200 focus-visible:bg-neutral-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
         >
           <span
             aria-hidden="true"
-            className="grid h-[30px] w-[30px] place-items-center rounded-pill border-2 border-dashed border-terracotta font-display text-body/none font-semibold text-terracotta-700 tabular-nums"
+            className="relative grid h-[30px] w-[30px] place-items-center font-display text-body/none font-semibold text-terracotta-700 tabular-nums"
           >
-            {position + 1}
+            {/* A path length of ninety makes the four on and five off go
+                round exactly ten times, so no dash is cut short where the
+                circle closes. */}
+            <svg viewBox="0 0 30 30" fill="none" className="absolute inset-0 text-terracotta">
+              <circle
+                cx="15"
+                cy="15"
+                r="14"
+                stroke="currentColor"
+                strokeWidth={2}
+                pathLength={90}
+                strokeDasharray="4 5"
+              />
+            </svg>
+            <span className="relative">{position + 1}</span>
           </span>
           <span className="text-small/none font-semibold text-terracotta-700">
             Add a place
           </span>
           {stop.departure === null ? null : (
-            <span className="text-meta/none whitespace-nowrap text-ink-muted tabular-nums">
+            <span className="text-micro/none whitespace-nowrap text-ink-muted tabular-nums">
               from {formatDayTime(stop.departure)}
             </span>
           )}

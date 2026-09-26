@@ -362,16 +362,20 @@ place.
 
 The last card on the day ends with the stop that would come next, as a slot on the
 rail. Under the disc, where the thread runs on to it, is the number that stop would
-get, in a 30px circle drawn with a dashed 2px ring in `terracotta` and the digit in
-the disc's face and step, in `terracotta-700`. Beside it, on the card's left edge,
-**Add a place** at the small step in `terracotta-700`, and at the right, "from" and the
-time this stop is left, at the meta step in `ink-muted`, which is when the next place
-would start. The slot is the card's second row, 13px under its body, as far as the body
+get, in a 30px circle whose ring is the thread bent round: 2px wide, 4px on and 5px
+off with square ends, in `terracotta`, drawn as a path so the rhythm is the thread's in
+every browser. The digit is the disc's face and step, in `terracotta-700`. Beside it, on
+the left edge of the name above, **Add a place** at the small step in `terracotta-700`,
+the stay's step, and at the right, "from" and the time this stop is left, at the micro
+step in `ink-muted`, the step the opening hours are in. That is when the way to the next
+place would begin, not when the next place would start: the leg between them comes
+first. The slot is the card's second row, 13px under its body, as far as the body
 is from the card's edge, and the thread stops 13px short of the ring. The whole row is
 one button that takes the traveller to the search field. It runs from the ring's left
-edge to where the times end, and the time sits 10px in from that end. Under the pointer,
-or with the keyboard on it, the row is a band of terracotta at 8 percent, a pill as tall
-as the ring, and nothing else on it changes. The card behind it does not sink the way it
+edge to where the times end, and the time sits 10px in from that end, as the stay's
+words do from its edge. Under the pointer, or with the keyboard on it, the row is a pill
+as tall as the ring in `neutral-200`, the fill the card's tools take under the pointer,
+and nothing else on it changes. The card behind it does not sink the way it
 does under the pointer, and this stop's marker on the map is let go: the slot is about
 the stop after this one.
 It is on the last card because that is where a place found in the search goes, and it
