@@ -254,7 +254,6 @@ const ENDS = {
     add: "Add start point",
     hint: "Hotel, home or pickup",
     label: "Where the day starts",
-    placeholder: "Hotel, station",
     change: "Change where the day starts",
     remove: "Remove where the day starts",
   },
@@ -262,7 +261,6 @@ const ENDS = {
     add: "Add end point",
     hint: "Hotel, station or airport",
     label: "Where the day ends",
-    placeholder: "Hotel, station",
     change: "Change where the day ends",
     remove: "Remove where the day ends",
   },
@@ -380,7 +378,9 @@ function EndpointSlot({
         <div className="py-2">
           <EndpointPicker
             label={words.label}
-            placeholder={words.placeholder}
+            /* The same words the button said, so the search opens asking for
+               what the row offered. */
+            placeholder={words.hint}
             near={nearestPoint(day)}
             onChoose={write}
             onCancel={() => {
