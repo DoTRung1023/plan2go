@@ -470,10 +470,11 @@ export function StopCard({
           of the stop. The time sits as far in from the right as the stay's
           own words do from its edge.
 
-          Under the pointer, or with the keyboard on it, the row takes the
-          fill the card's other controls take under the pointer, as a pill
-          from the ring's left edge to where the times end; the ring and the
-          words stay as they are. The card under it lets go
+          Under the pointer the row takes the fill the card's other controls
+          take under the pointer, as a pill from the ring's left edge to where
+          the times end; the ring and the words stay as they are. With the
+          keyboard on it the focus ring draws that same pill and there is no
+          fill, as on every other control. The card under it lets go
           of its own hover, and so does this stop's marker on the map: the
           slot is about the stop after this one, and the card sinking behind
           it said the pointer was on this one.
@@ -503,7 +504,7 @@ export function StopCard({
               ? `Add a place as stop ${String(position + 1)}`
               : `Add a place as stop ${String(position + 1)}, after leaving ${stop.placeName} at ${formatDayTime(stop.departure)}`
           }
-          className="col-span-2 mt-[13px] grid grid-cols-[30px_minmax(0,1fr)_auto] items-center gap-x-[13px] rounded-pill pr-[10px] text-left hover:bg-neutral-200 focus-visible:bg-neutral-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+          className="col-span-2 mt-[13px] grid grid-cols-[30px_minmax(0,1fr)_auto] items-center gap-x-[13px] rounded-pill pr-[10px] text-left hover:bg-neutral-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
         >
           <span
             aria-hidden="true"

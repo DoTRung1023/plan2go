@@ -373,9 +373,10 @@ first. The slot is the card's second row, 13px under its body, as far as the bod
 is from the card's edge, and the thread stops 13px short of the ring. The whole row is
 one button that takes the traveller to the search field. It runs from the ring's left
 edge to where the times end, and the time sits 10px in from that end, as the stay's
-words do from its edge. Under the pointer, or with the keyboard on it, the row is a pill
-as tall as the ring in `neutral-200`, the fill the card's tools take under the pointer,
-and nothing else on it changes. The card behind it does not sink the way it
+words do from its edge. Under the pointer the row is a pill as tall as
+the ring in `neutral-200`, the fill the card's tools take under the pointer, and
+nothing else on it changes. With the keyboard on it the focus ring draws the same pill,
+with no fill, as on every other control. The card behind it does not sink the way it
 does under the pointer, and this stop's marker on the map is let go: the slot is about
 the stop after this one.
 It is on the last card because that is where a place found in the search goes, and it
