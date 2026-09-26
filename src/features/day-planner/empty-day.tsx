@@ -31,10 +31,10 @@ export function EmptyDay({ dayName, onFindPlace }: EmptyDayProps) {
         /* The search field is over the map, which on a desk is the other
            pane and on a phone is a strip above this: either way it is not
            where the eye is, so the empty day points at it. */
-        /* The same pill, in the accent, as the one that offers the next place
-           at the end of a day that has some: forty tall, the same type and
-           the same glyph size, since it is the same action in the other
-           state of the day. */
+        /* The same action as the next number on the rail at the foot of the
+           last card, in the state of the day with no card to hang it from:
+           here it is the one thing to do, so it is the accent's solid pill
+           rather than a slot on a thread that has not started yet. */
         <button
           type="button"
           onClick={onFindPlace}

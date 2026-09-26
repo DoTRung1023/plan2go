@@ -70,16 +70,6 @@ export const TOOL_GLYPH = {
   close: 17,
 } as const;
 
-/**
- * The offer of the next place, at the foot of the last card on the day: a
- * pill as tall as the stay beside it, filled with the accent at a fifth so it
- * reads as the one thing on the card to press next without taking the weight
- * of the times, and set at the note's step, so the two offers in the foot of
- * the card are one line of words, told apart by the fill.
- */
-const ADD_AFTER =
-  "ml-auto flex h-8 shrink-0 items-center gap-[6px] rounded-pill bg-terracotta/20 pr-3 pl-[13px] text-micro/none font-semibold whitespace-nowrap text-terracotta-700 hover:bg-terracotta/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
-
 /** A quarter of an hour: the smallest amount of time worth naming on a day. */
 interface StopCardProps {
   /** Its number in the day, counted from one. */
@@ -104,7 +94,7 @@ interface StopCardProps {
    * card on the day has it, because a place found there is added at the end
    * of the day, after this one; null on every other card and for a reader.
    */
-  readonly onAddAfter: (() => void) | null;
+  readonly onAddNext: (() => void) | null;
   readonly dragging: boolean;
   readonly dragOver: boolean;
   readonly onDragStart: (index: number) => void;
@@ -135,7 +125,7 @@ export function StopCard({
   openingHours,
   conflicts,
   actions,
-  onAddAfter,
+  onAddNext,
   dragging,
   dragOver,
   onDragStart,
@@ -245,28 +235,6 @@ export function StopCard({
     onDragStart(index);
   };
 
-  /**
-   * The one line offering to start a note, for an editor. Shown in the body,
-   * where it keeps to its own width at the start of the column, or in the foot
-   * of the last card, where it sits on the middle of the row with the pill
-   * beside it rather than at the top of it.
-   */
-  const noteOffer = (where: "body" | "foot") =>
-    actions === null ? null : (
-      <button
-        type="button"
-        onClick={() => {
-          setWritingNote(true);
-        }}
-        className={`flex items-center gap-[5px] pr-1 text-micro font-semibold text-ink-muted hover:text-terracotta-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
-          where === "body" ? "self-start" : ""
-        }`}
-      >
-        <PlusIcon size={12} strokeWidth={2.75} />
-        Add a note
-      </button>
-    );
-
   const over = (event: DragEvent<HTMLElement>): void => {
     if (actions === null) {
       return;
@@ -310,7 +278,8 @@ export function StopCard({
       }`}
     >
       {/* The disc, and the thread running on down behind it to the foot of
-          the card, so the line the day hangs on is seen to pass through the
+          the card, or on the last card to the number of the stop that would
+          come next, so the line the day hangs on is seen to pass through the
           stop rather than stopping at it. Quieter here than on the page,
           because it is over a raised card and should not compete with it. */}
       <div className="flex flex-col items-center gap-[7px] [--thread-ink:16%]">
@@ -443,7 +412,18 @@ export function StopCard({
         ))}
 
         {shownNote === null && !writingNote ? (
-          onAddAfter === null ? noteOffer("body") : null
+          actions === null ? null : (
+            <button
+              type="button"
+              onClick={() => {
+                setWritingNote(true);
+              }}
+              className="flex items-center gap-[5px] self-start pr-1 text-micro font-semibold text-ink-muted hover:text-terracotta-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+            >
+              <PlusIcon size={12} strokeWidth={2.75} />
+              Add a note
+            </button>
+          )
         ) : (
           <textarea
             ref={noteField}
@@ -469,28 +449,58 @@ export function StopCard({
           </Notice>
         )}
 
-        {/* The foot of the last card: what can be added to the day from
-            here, under a dashed rule in the card's own hairline so it reads
-            as the card's last line rather than as a card of its own. The
-            rule sits in the middle of twelve either side of it. The note's
-            offer moves down into it, beside the offer of the next place,
-            while there is no note; once there is one the field stays above
-            the rule with the rest of what the stop is. */}
-        {onAddAfter === null ? null : (
-          <div className="mt-1 flex items-center gap-3 border-t border-dashed border-rule pt-3">
-            {shownNote === null && !writingNote ? noteOffer("foot") : null}
-            <button
-              type="button"
-              onClick={onAddAfter}
-              aria-label={`Add place after ${stop.placeName}`}
-              className={ADD_AFTER}
-            >
-              <PlusIcon size={13} strokeWidth={TOOL_GLYPH.stroke} />
-              Add place after
-            </button>
-          </div>
-        )}
       </div>
+
+      {/* The next stop, where it would go: the number it would get, drawn
+          dashed on the rail under this card's disc, so the thread the day
+          hangs on runs on to it, and beside it the words on the card's own
+          left edge. When the stop would start is when this one ends. One
+          button for the row, so the whole of it can be pressed on a phone.
+
+          A second row of the card's grid, set as far below the body as the
+          body is from the card's edge. The ring is two pixels rather than
+          the pixel and a half the dashed rows use, which browsers draw as
+          one and which reads too faint for a number on the rail. Its hover
+          is a group of its own: the card is a group already, and the slot
+          should not light up whenever the pointer is anywhere on the card.
+
+          The press does not take focus. A note field left open and empty
+          above it closes when it loses focus, and the row it leaves is
+          shorter than the field, so if the press moved focus the slot would
+          jump up under the pointer before the release and the click would
+          land on nothing. Keeping focus where it is lets the click arrive,
+          and moving to the search field then closes the note as before. It
+          also keeps a press here from starting a drag of the card. */}
+      {onAddNext === null ? null : (
+        <button
+          type="button"
+          onMouseDown={(event) => {
+            event.preventDefault();
+          }}
+          onClick={onAddNext}
+          aria-label={
+            stop.departure === null
+              ? `Add a place as stop ${String(position + 1)}`
+              : `Add a place as stop ${String(position + 1)}, from ${formatDayTime(stop.departure)}`
+          }
+          className="group/next col-span-2 mt-[13px] grid grid-cols-[30px_minmax(0,1fr)_auto] items-center gap-x-[13px] rounded-pill text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+        >
+          <span
+            aria-hidden="true"
+            className="grid h-[30px] w-[30px] place-items-center rounded-pill border-2 border-dashed border-terracotta font-display text-body/none font-semibold text-terracotta-700 tabular-nums group-hover/next:border-solid group-hover/next:border-terracotta-700 group-hover/next:bg-terracotta/15 group-hover/next:text-terracotta-900"
+          >
+            {position + 1}
+          </span>
+          <span className="text-small/none font-semibold text-terracotta-700 group-hover/next:text-terracotta-900">
+            Add a place
+          </span>
+          {stop.departure === null ? null : (
+            <span className="text-meta/none whitespace-nowrap text-ink-muted tabular-nums">
+              from {formatDayTime(stop.departure)}
+            </span>
+          )}
+        </button>
+      )}
     </article>
   );
 }

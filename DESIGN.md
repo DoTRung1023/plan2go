@@ -283,8 +283,8 @@ strip of tabs, and beneath them the line naming the open day, what it comes to, 
 when it leaves, the time as words that tint under the pointer. Then the day
 itself: stops on raised cards, legs between them on pills of paper, and the ends of the
 day on shorter rows of paper inside a hairline, dashed where an end is not there yet.
-The next place is offered from the foot of the last stop card, where a place found in
-the search is added. Three surfaces, each a step up from the one it sits on, and
+The next place is offered as the next number on the rail, drawn dashed at the foot of
+the last stop card, where a place found in the search is added. Three surfaces, each a step up from the one it sits on, and
 nothing drawn edge to edge.
 
 **Mobile, below 1024px.** One column. The map collapses to a sticky strip 140px tall at
@@ -345,14 +345,8 @@ often about. The triangle for the same reason the clock is gone, which is that a
 said only that this concerned the time, and every line on a stop card does. The tint
 alone is never the signal.
 
-A stop card carries its own controls and one other. The last card on the day ends in a
-foot under a dashed rule in the card's hairline, twelve either side of it, holding the
-offer of a note while there is none and, at the right, **Add place after**: a pill as
-tall as the stay, filled with terracotta at 20 percent, its words at the note's step in
-`terracotta-700`, which takes the traveller to the search field. It is on the last card
-because that is where a place found in the search goes, so the words are true, and it
-is the only control on a card about the day rather than the stop. A reader without the
-edit link gets neither the foot nor the rule. The two that act on the whole
+A stop card carries its own controls and, on the last card of the day, one other,
+described below. The two that act on the whole
 stop, moving it and taking it off the day, sit under the two times at the top right,
 because they are about the row rather than about anything inside it. The address under
 the name runs on beneath the times as far as the tools reach, which are narrower than
@@ -365,6 +359,23 @@ opens, and writes when it closes; the opening hours sit beside it in words, and 
 note is either a field or the one line offering to start one. Removing is immediate: a stop is a search away from
 coming back, and a dialog asking twice would be a modal over something editable in
 place.
+
+The last card on the day ends with the stop that would come next, as a slot on the
+rail. Under the disc, where the thread runs on to it, is the number that stop would
+get, in a 30px circle drawn with a dashed 2px ring in `terracotta` and the digit in
+the disc's face and step, in `terracotta-700`. Beside it, on the card's left edge,
+**Add a place** at the small step in `terracotta-700`, and at the right edge, where the
+times end, "from" and the time this stop is left, at the meta step in `ink-muted`,
+which is when the next place would start. The slot is the card's second row, 13px
+under its body, as far as the body is from the card's edge, and the thread stops 13px
+short of the ring. The whole row is one button that takes the traveller to the search
+field. Under the pointer the ring goes solid in `terracotta-700` over the accent at 15
+percent, and the digit and the words go to `terracotta-900`, because the card under the
+pointer is on sunken paper and `terracotta-700` over that tint falls short of 4.5 to 1.
+It is on the last card because that is where a place found in the search goes, and it
+is the one control on a card about the day rather than the stop. A reader without the
+edit link does not get it, and the thread ends at the foot of the card as on every
+other.
 
 A leg opens. Closed it is one line, the mode and how long it takes, with **Change** at
 the end of it. Open it is a sunken panel of every way of covering the same ground, one

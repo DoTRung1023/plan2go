@@ -538,11 +538,11 @@ export function DayItinerary({
                 openingHours={place === undefined ? null : hoursOn(place, day)}
                 conflicts={conflictsAtStop(computed.conflicts, stop.stopId)}
                 actions={actions}
-                /* The next place is offered from the foot of the last card,
-                   since that is where a place found in the search is added.
-                   The last as shown, so while a move is being saved it is on
-                   whichever card has been dropped last. */
-                onAddAfter={index === shownStops.length - 1 ? onFindPlace : null}
+                /* The next place is offered on the last card, as the next
+                   number on the rail, since that is where a place found in
+                   the search is added. The last as shown, so while a move is
+                   being saved it is on whichever card has been dropped last. */
+                onAddNext={index === shownStops.length - 1 ? onFindPlace : null}
                 dragging={dragIndex === index}
                 dragOver={overIndex === index}
                 onDragStart={setDragIndex}
