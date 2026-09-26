@@ -19,6 +19,12 @@ export interface DayActions {
     readonly mode: TravelMode;
   }) => Promise<EditOutcome>;
 
+  /**
+   * When the day leaves, as minutes from local midnight: the one clock on the
+   * day, which every other time on it follows from.
+   */
+  readonly setDayStart: (input: { readonly startAtMinutes: number }) => Promise<EditOutcome>;
+
   readonly setStay: (input: {
     readonly stopId: string;
     readonly stayMinutes: number;

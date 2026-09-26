@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { ChevronDownIcon } from "@/ui/icons";
 import { ColumnPicker } from "./column-picker";
 import type { EditOutcome } from "./day-actions";
 import { Notice } from "@/ui/notice";
@@ -15,12 +16,23 @@ function twoDigits(value: number): string {
 }
 
 /**
- * The time as words on the line rather than as a box, the way the dates are
- * on the row that names the trip: it tints under the pointer to say it can be
- * changed, and stays tinted while its picker is open.
+ * The time where the day's times are, in their face, their step and their
+ * colour, inside a pill that says it is the one of them that is set rather
+ * than worked out: a dashed edge in the accent at the weight a hovered card's
+ * edge is drawn, over the accent at a tenth, and the chevron the stay's pill
+ * carries to say it opens. The edge takes the whole accent under the pointer
+ * and keeps it while the picker is open, as the stay's does.
+ *
+ * The weight is said outright: the times' step brings its weight only when it
+ * sets the line height too, and the start point's line around it sets none.
+ *
+ * Its words at the same padding either side as the stay's, and the chevron
+ * as close to the time as the arrow on the line is. Raised by three, so the
+ * middle of the pill is the middle of the place's name beside it; the rest
+ * of its height hangs below the line, which the line makes room for.
  */
 const TRIGGER =
-  "rounded-pill px-2 py-[5px] text-small/none font-semibold tabular-nums hover:bg-terracotta-100 hover:text-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "flex items-center gap-[5px] rounded-pill border border-dashed bg-terracotta/10 py-[5px] pr-[10px] pl-[10px] font-display text-time/none font-semibold text-terracotta-700 tabular-nums hover:border-terracotta disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 /** Minutes from midnight on the clock: "09:05". */
 function toClock(minutes: number): string {
@@ -36,9 +48,11 @@ interface LeaveAtProps {
 }
 
 /**
- * When the day leaves: the one clock on the day, at the end of the line that
- * names it. Every other time follows from this one, worked out through the
- * legs and the stays, which is why no stop and no end of the day offers a
+ * When the day leaves: the one clock on the day, set where it shows. That is
+ * the start point's time when the day has one, and otherwise the first
+ * stop's arrival, which with nothing before it is the moment the day sets
+ * out. Every other time follows from this one, worked out through the legs
+ * and the stays, which is why no other stop and no end of the day offers a
  * time of its own to set.
  *
  * The time is a button, and the picker it opens is the product's own, two
@@ -52,7 +66,6 @@ interface LeaveAtProps {
  * trip to the server rather than two.
  */
 export function LeaveAt({ value, onChoose }: LeaveAtProps) {
-  const id = useId();
   const [draft, setDraft] = useState(value);
   const [seen, setSeen] = useState(value);
   const [open, setOpen] = useState(false);
@@ -106,17 +119,15 @@ export function LeaveAt({ value, onChoose }: LeaveAtProps) {
   });
 
   return (
-    <div ref={container} className="relative flex flex-none items-center gap-2">
-      <label htmlFor={id} className="text-small whitespace-nowrap text-ink-muted">
-        Leave at
-      </label>
-
+    <div ref={container} className="relative -mt-[3px] flex flex-none items-center">
+      {/* Named for what it sets, with the time it shows in the name, so it is
+          found by the words on it as well as read out with them. */}
       <button
-        id={id}
         type="button"
         ref={trigger}
         aria-haspopup="dialog"
         aria-expanded={open}
+        aria-label={`Leave at ${toClock(draft)}`}
         disabled={saving}
         onClick={() => {
           if (open) {
@@ -125,9 +136,10 @@ export function LeaveAt({ value, onChoose }: LeaveAtProps) {
           }
           setOpen(true);
         }}
-        className={`${TRIGGER} ${open ? "bg-terracotta-100 text-terracotta-700" : "text-ink"}`}
+        className={`${TRIGGER} ${open ? "border-terracotta" : "border-terracotta/55"}`}
       >
         {toClock(draft)}
+        <ChevronDownIcon size={12} strokeWidth={2.75} className="shrink-0" />
       </button>
 
       {open ? (

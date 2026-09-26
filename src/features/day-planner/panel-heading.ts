@@ -27,17 +27,15 @@ export const HEADING_BAND =
   "flex items-center gap-[10px] rounded-pill border border-rule bg-paper-raised py-[10px] pr-3 pl-[18px] shadow-sm";
 
 /**
- * The second is the day: the strip of days and the line naming the open one,
- * on one card of paper, a step up from the ground and a step under the
- * raised cards the stops are on. Seven over the strip, which carries four of
- * its own as room for a focus ring, so the pills sit eleven under the edge.
+ * The second is the strip of days, on one card of paper, a step up from the
+ * ground and a step under the raised cards the stops are on. Seven over the
+ * strip, which carries four of its own as room for a focus ring, so the pills
+ * sit eleven under the edge; four under it, which with the seven the strip
+ * keeps below its pills is eleven over the edge too.
+ *
+ * There is no line under the strip naming the open day any more. The tab
+ * already says which day it is and its date, and when the day leaves is set
+ * on the day itself, on the time it leaves at.
  */
 export const HEADING_BODY =
-  "mt-3 rounded-row border border-rule bg-paper px-[14px] pt-[7px] pb-[13px]";
-
-/**
- * The line naming the open day, under the strip. Four under it, which with
- * the seven the strip keeps below its pills is eleven, the same as over them.
- * No rule between: the card's edge is what closes the two off from the day.
- */
-export const HEADING_DAY_LINE = "mt-[4px] flex items-center gap-[9px]";
+  "mt-3 rounded-row border border-rule bg-paper px-[14px] pt-[7px] pb-[4px]";

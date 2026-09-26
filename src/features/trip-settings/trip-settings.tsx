@@ -3,11 +3,7 @@
 import type { ReactNode } from "react";
 import { useActionState, useId, useRef, useState } from "react";
 import { daysBetween } from "@/core/time/zoned";
-import {
-  HEADING_BAND,
-  HEADING_BODY,
-  HEADING_DAY_LINE,
-} from "@/features/day-planner/panel-heading";
+import { HEADING_BAND, HEADING_BODY } from "@/features/day-planner/panel-heading";
 import { useLocalToday } from "@/ui/use-local-today";
 import { DateRangeField } from "./date-range-field";
 import { Notice } from "@/ui/notice";
@@ -56,21 +52,9 @@ interface TripSettingsProps {
    */
   readonly actions: ReactNode;
   /**
-   * Which day is open and what it comes to, said on the same line the dates
-   * are changed from. Passed in because the day is the planner's business and
-   * the trip's name is this one's, and they share a row rather than an owner.
-   */
-  readonly dayLine: ReactNode;
-  /**
-   * When the open day leaves, at the end of its line. The one clock on the
-   * day, kept beside the line that names the day rather than on the day
-   * itself, because every time down the panel follows from it.
-   */
-  readonly leaveAt: ReactNode;
-  /**
-   * The strip of days, which belongs between the trip's name and the day's own
-   * line. It is passed through rather than rendered here because choosing a day
-   * is the planner's business; this only owns the row it sits in.
+   * The strip of days, under the trip's name. It is passed through rather than
+   * rendered here because choosing a day is the planner's business; this only
+   * owns the card it sits on.
    */
   readonly tabs: ReactNode;
   /**
@@ -110,8 +94,6 @@ export function TripSettings({
   startDate,
   endDate,
   actions,
-  dayLine,
-  leaveAt,
   tabs,
   onSave,
 }: TripSettingsProps) {
@@ -267,15 +249,6 @@ export function TripSettings({
 
       <div className={HEADING_BODY}>
         {tabs}
-
-        {/* Nothing but which day is open now: the dates that used to end this
-            line have gone up to the row that names the trip. */}
-        <div className={HEADING_DAY_LINE}>
-          <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-[10px]">
-            {dayLine}
-          </div>
-          {leaveAt}
-        </div>
 
         {state.error === null || state.field !== null ? null : (
           <Notice role="alert" size="meta" className="mt-3">

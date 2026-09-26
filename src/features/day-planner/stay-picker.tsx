@@ -18,10 +18,10 @@ const MINUTES = Array.from({ length: 12 }, (_unused, step) => step * 5);
 /**
  * How long the stop lasts, on a small pill of raised paper: the clock in the
  * accent in front of the number, the chevron after it saying it opens. The
- * one control on the card a person sets a number with, drawn the way the
- * day's own clock is at the top of the panel, so the two are found the same
- * way. The edge takes the accent under the pointer and keeps it while the
- * picker is open.
+ * card's own number to set; the day's leaving time, on the first card or the
+ * start point, is the other pill on the day that opens these columns, and
+ * carries the same chevron so the two are found the same way. The edge takes
+ * the accent under the pointer and keeps it while the picker is open.
  */
 const TRIGGER =
   "flex h-8 items-center gap-2 rounded-pill border bg-paper-raised pr-[10px] pl-3 text-small/none font-semibold text-ink tabular-nums hover:border-terracotta disabled:opacity-45 disabled:hover:border-rule focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";

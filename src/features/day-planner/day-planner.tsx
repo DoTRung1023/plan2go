@@ -6,9 +6,7 @@ import type { PlannedDay } from "./compute-trip";
 import type { EndpointRef } from "./day-itinerary";
 import { DayItinerary } from "./day-itinerary";
 import { DayTabs } from "./day-tabs";
-import { formatClock } from "@/core/time/minutes";
-import { dayStatus } from "./day-status";
-import { GUTTER, HEADING_BAND, HEADING_BODY, HEADING_DAY_LINE } from "./panel-heading";
+import { GUTTER, HEADING_BAND, HEADING_BODY } from "./panel-heading";
 import type { DayActions, EditOutcome } from "./day-actions";
 import { formatDateRange } from "./format-day-date";
 
@@ -104,10 +102,10 @@ export function DayPlanner({
 
   return (
     <>
-      {/* One block: the trip's name, the days, and which of them is open. An
-          editor gets all three from the settings form, because the dates on the
-          day's line are part of it. A reader who cannot edit gets the heading
-          and the strip on their own.
+      {/* One block: the trip's name and the days. An editor gets both from
+          the settings form, because the trip's name and dates are set there.
+          A reader who cannot edit gets the heading and the strip on their
+          own.
 
           Two things laid on the panel's sunken ground, the trip's pill and
           the day's card, in from the edge by the gutter and standing above
@@ -135,25 +133,6 @@ export function DayPlanner({
                 onSelect={onSelect}
                 onAddDay={onAddDay}
               />
-              {/* The same line an editor's card carries, read rather than
-                  set: which day is open and what it comes to, and when it
-                  leaves, which every time down the day follows from. */}
-              {selected === undefined ? null : (
-                <div className={HEADING_DAY_LINE}>
-                  <span className="font-display text-lead/none text-ink">
-                    Day {selectedIndex + 1}
-                  </span>
-                  <span className="min-w-0 flex-1 truncate text-meta/none font-medium text-ink-muted">
-                    {dayStatus(selected)}
-                  </span>
-                  <span className="flex flex-none items-center gap-2 text-small whitespace-nowrap text-ink-muted">
-                    Leave at
-                    <span className="px-2 text-small/none font-semibold text-ink tabular-nums">
-                      {formatClock(selected.plan.startAtMinutes)}
-                    </span>
-                  </span>
-                </div>
-              )}
             </div>
           </>
         )}

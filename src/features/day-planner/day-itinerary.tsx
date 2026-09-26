@@ -14,6 +14,7 @@ import { EmptyDay } from "./empty-day";
 import { EndpointPicker } from "./endpoint-picker";
 import { formatDayDate } from "./format-day-date";
 import { formatOpeningHours } from "./format-opening-hours";
+import { LeaveAt } from "./leave-at";
 import { LegRow } from "./leg-row";
 import { AboutPlaceButton, StopCard, TOOL, TOOL_GLYPH } from "./stop-card";
 import { Notice } from "@/ui/notice";
@@ -123,6 +124,7 @@ function Anchor({
   endpoint,
   fallback,
   time,
+  setTime,
   hours,
   controls,
   hovered,
@@ -134,11 +136,16 @@ function Anchor({
   /** Said when the place has no address of its own. */
   readonly fallback: string;
   /**
-   * Read, never set here. When the day leaves is chosen beside the day's
-   * name at the top of the panel, and where it ends is worked out from
-   * everything before it.
+   * When the day passes this end. Where it ends is worked out from
+   * everything before it, so it is only ever read.
    */
   readonly time: string | null;
+  /**
+   * What sets that time instead of reading it, for the start of the day for
+   * someone who may change it: the start point's time is when the day
+   * leaves, the one clock on it. Null wherever the time is only read.
+   */
+  readonly setTime: React.ReactNode;
   /** When the place is open on this day, or null when we do not know. */
   readonly hours: string | null;
   /** What can be done to this end of the day, for a reader who may change it. */
@@ -211,9 +218,11 @@ function Anchor({
             glyph first. Where the day starts is somewhere the traveller is
             going too, so anyone reading can open it. */}
         <div className="flex flex-none flex-col items-end gap-[3px]">
-          <p className="font-display text-time whitespace-nowrap text-terracotta-700 tabular-nums">
-            {time ?? "Time not known"}
-          </p>
+          {setTime ?? (
+            <p className="font-display text-time whitespace-nowrap text-terracotta-700 tabular-nums">
+              {time ?? "Time not known"}
+            </p>
+          )}
           <span className="-mr-1 flex items-center opacity-55 group-hover:opacity-100 focus-within:opacity-100">
             <AboutPlaceButton name={endpoint.place.name} onOpen={onOpen} />
             {controls}
@@ -283,6 +292,7 @@ function EndpointSlot({
   day,
   endpoint,
   time,
+  setTime,
   actions,
   hoveredEndpointId,
   onHoverEndpoint,
@@ -292,6 +302,8 @@ function EndpointSlot({
   readonly day: DayPlan;
   readonly endpoint: DayEndpoint | null;
   readonly time: string | null;
+  /** Sets the time rather than reading it; null wherever it is only read. */
+  readonly setTime: React.ReactNode;
   readonly actions: DayActions | null;
   readonly hoveredEndpointId: string | null;
   readonly onHoverEndpoint: (placeId: string | null) => void;
@@ -353,6 +365,7 @@ function EndpointSlot({
           endpoint={endpoint}
           fallback={words.label}
           time={time}
+          setTime={setTime}
           hours={hoursOn(endpoint.place, day)}
           controls={picking ? null : controls}
           hovered={hoveredEndpointId === endpoint.place.id}
@@ -461,6 +474,22 @@ export function DayItinerary({
       movedWithin(stops, move.from, move.to),
   );
 
+  /**
+   * When the day leaves, set where that time is shown rather than above the
+   * day: on the start point's time when the day has one, and otherwise on
+   * the first stop's arrival, which with nothing before it is the moment the
+   * day sets out. One of the two, never both. Keyed by the day, so a time
+   * half chosen on one day is not carried to the next.
+   */
+  const leaveAt =
+    actions === null ? null : (
+      <LeaveAt
+        key={day.id}
+        value={day.startAtMinutes}
+        onChoose={(startAtMinutes) => actions.setDayStart({ startAtMinutes })}
+      />
+    );
+
   const notes = new Map(day.stops.map((stop) => [stop.id, stop.note]));
   const places = new Map(day.stops.map((stop) => [stop.id, stop.place]));
 
@@ -498,6 +527,7 @@ export function DayItinerary({
         day={day}
         endpoint={day.start}
         time={formatClock(computed.begins.minutesFromMidnight)}
+        setTime={leaveAt}
         actions={actions}
         hoveredEndpointId={hoveredEndpointId}
         onHoverEndpoint={onHoverEndpoint}
@@ -538,6 +568,7 @@ export function DayItinerary({
                 openingHours={place === undefined ? null : hoursOn(place, day)}
                 conflicts={conflictsAtStop(computed.conflicts, stop.stopId)}
                 actions={actions}
+                leaveAt={index === 0 && day.start === null ? leaveAt : null}
                 /* The next place is offered on the last card, as the next
                    number on the rail, since that is where a place found in
                    the search is added. The last as shown, so while a move is
@@ -576,6 +607,7 @@ export function DayItinerary({
         time={
           computed.ends === null ? null : formatClock(computed.ends.minutesFromMidnight)
         }
+        setTime={null}
         actions={actions}
         hoveredEndpointId={hoveredEndpointId}
         onHoverEndpoint={onHoverEndpoint}

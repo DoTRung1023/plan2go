@@ -8,10 +8,8 @@ import type { EndpointRef } from "@/features/day-planner/day-itinerary";
 import { DayPlanner } from "@/features/day-planner/day-planner";
 import { PlaceSearch } from "@/features/place-search/place-search";
 import { DayTabs } from "@/features/day-planner/day-tabs";
-import { dayStatus } from "@/features/day-planner/day-status";
 import { DEFAULT_EXPORT } from "@/features/day-planner/export-request";
 import { PaneHandle } from "./pane-handle";
-import { LeaveAt } from "@/features/day-planner/leave-at";
 import { PrintedTrip } from "@/features/day-planner/printed-trip";
 import { placesOnTheTrip } from "@/features/place-search/places-on-the-trip";
 import { searchBias } from "@/features/place-search/search-bias";
@@ -512,6 +510,15 @@ export function TripEditor({
                         mode,
                       }),
                     ),
+                  setDayStart: ({ startAtMinutes }) =>
+                    recording(
+                      setDayStartAction({
+                        slug,
+                        editKey,
+                        dayId: selected.plan.id,
+                        startAtMinutes,
+                      }),
+                    ),
                   setStay: ({ stopId, stayMinutes }) =>
                     recording(
                       setStopStayAction({ slug, editKey, stopId, stayMinutes }),
@@ -558,36 +565,6 @@ export function TripEditor({
                         : () => recording(addDayAction({ slug, editKey }))
                     }
                   />
-                }
-                dayLine={
-                  selected === undefined ? null : (
-                    <>
-                      <span className="font-display text-lead/none text-ink">
-                        Day {selectedIndex + 1}
-                      </span>
-                      <span className="min-w-0 truncate text-meta/none font-medium text-ink-muted">
-                        {dayStatus(selected)}
-                      </span>
-                    </>
-                  )
-                }
-                leaveAt={
-                  selected === undefined ? null : (
-                    <LeaveAt
-                      key={selected.plan.id}
-                      value={selected.plan.startAtMinutes}
-                      onChoose={(startAtMinutes) =>
-                        recording(
-                          setDayStartAction({
-                            slug,
-                            editKey,
-                            dayId: selected.plan.id,
-                            startAtMinutes,
-                          }),
-                        )
-                      }
-                    />
-                  )
                 }
                 actions={
                   <TripMenu label="Trip actions">

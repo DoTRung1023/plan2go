@@ -1,6 +1,6 @@
 "use client";
 
-import type { DragEvent } from "react";
+import type { DragEvent, ReactNode } from "react";
 import { useEffect, useRef, useState, useTransition } from "react";
 import type { Conflict } from "@/core/model/conflict";
 import type { ComputedStop } from "@/core/time/compute-day";
@@ -90,6 +90,12 @@ interface StopCardProps {
   /** Null for a reader who holds no edit token, who gets the card and no controls. */
   readonly actions: DayActions | null;
   /**
+   * What sets the day's leaving time, in place of this stop's arrival. Only
+   * the first card of a day with no start point has it, since that arrival
+   * is when the day leaves; null on every other card and for a reader.
+   */
+  readonly leaveAt: ReactNode;
+  /**
    * Takes the traveller to the search field for the next place. Only the last
    * card on the day has it, because a place found there is added at the end
    * of the day, after this one; null on every other card and for a reader.
@@ -125,6 +131,7 @@ export function StopCard({
   openingHours,
   conflicts,
   actions,
+  leaveAt,
   onAddNext,
   dragging,
   dragOver,
@@ -311,39 +318,48 @@ export function StopCard({
             <p className="min-w-0 text-meta text-ink-faint [grid-area:address]">{address}</p>
           )}
 
-          {/* Read, never set. Every time on the day follows from when it
-              leaves, worked out through the legs and the stays, so the one
-              clock to change is beside the day's name at the top of the
-              panel. In the accent, a shade down for text at this size: the
-              time is the loudest thing on the card, and it is warm rather
-              than black beside the disc that shares its colour.
+          {/* Read, never set, but for one: every time on the day follows
+              from when it leaves, worked out through the legs and the stays,
+              so the one clock to change is that one, set where it shows.
+              With no start point that is this card's arrival on the first
+              card, which then comes as the pill that sets it. In the accent,
+              a shade down for text at this size: the time is the loudest
+              thing on the card, and it is warm rather than black beside the
+              disc that shares its colour.
 
               Both ends of the stay rather than only its beginning. When you
               get somewhere is half of what a stop is; the other half is when
               you are done with it, and it was only ever readable by adding
               the stay underneath to the time above it. The arrow is the same
-              one the starter page puts between the two ends of a trip. */}
-          <p className="flex items-center gap-[5px] self-start justify-self-end font-display text-time whitespace-nowrap text-terracotta-700 tabular-nums [grid-area:times]">
-              {stop.arrival === null ? (
-                "Time not known"
-              ) : (
-                <>
-                  {formatDayTime(stop.arrival)}
-                  {stop.departure === null ? null : (
-                    <>
-                      <ArrowRightIcon
-                        size={13}
-                        strokeWidth={2.5}
-                        aria-hidden="true"
-                        className="shrink-0 text-terracotta-700/65"
-                      />
-                      <span className="sr-only">to</span>
-                      {formatDayTime(stop.departure)}
-                    </>
-                  )}
-                </>
-              )}
-          </p>
+              one the starter page puts between the two ends of a trip, and
+              stands further off a pill than off a time, since the pill's own
+              edge takes some of the room.
+
+              A div rather than a paragraph, because the pill hangs its picker
+              from itself and a paragraph may not hold one. */}
+          <div
+            className={`flex items-center ${leaveAt === null ? "gap-[5px]" : "gap-2"} self-start justify-self-end font-display text-time whitespace-nowrap text-terracotta-700 tabular-nums [grid-area:times]`}
+          >
+            {leaveAt === null && stop.arrival === null ? (
+              "Time not known"
+            ) : (
+              <>
+                {leaveAt ?? (stop.arrival === null ? null : formatDayTime(stop.arrival))}
+                {stop.departure === null ? null : (
+                  <>
+                    <ArrowRightIcon
+                      size={13}
+                      strokeWidth={2.5}
+                      aria-hidden="true"
+                      className="shrink-0 text-terracotta-700/65"
+                    />
+                    <span className="sr-only">to</span>
+                    {formatDayTime(stop.departure)}
+                  </>
+                )}
+              </>
+            )}
+          </div>
 
           <div
             className={`-mr-1 flex items-center self-start justify-self-end group-hover:opacity-100 focus-within:opacity-100 [grid-area:tools] ${

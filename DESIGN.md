@@ -279,9 +279,9 @@ The list pane stands on sunken paper, and everything on it is laid on that groun
 in from the edge, 12px apart. The trip comes first, on a pill of raised paper under a
 floating control's shadow: its name at the title step, its dates, and its menu, one row
 about the whole trip. Under it the days, on one card of paper at the `row` radius: the
-strip of tabs, and beneath them the line naming the open day, what it comes to, and
-when it leaves, the time as words that tint under the pointer. Then the day
-itself: stops on raised cards, legs between them on pills of paper, and the ends of the
+strip of tabs and nothing else, the pills eleven in from the card's top and bottom
+alike. The tab already names the day and its date, and when the day leaves is set on
+the day itself. Then the day itself: stops on raised cards, legs between them on pills of paper, and the ends of the
 day on shorter rows of paper inside a hairline, dashed where an end is not there yet.
 The next place is offered as the next number on the rail, drawn dashed at the foot of
 the last stop card, where a place found in the search is added. Three surfaces, each a step up from the one it sits on, and
@@ -359,6 +359,20 @@ opens, and writes when it closes; the opening hours sit beside it in words, and 
 note is either a field or the one line offering to start one. Removing is immediate: a stop is a search away from
 coming back, and a dialog asking twice would be a modal over something editable in
 place.
+
+When the day leaves is set where that time shows, on the day rather than above it: on
+the start point's time when the day has one, and otherwise on the first stop's arrival,
+which with nothing before it is the moment the day sets out. One of the two carries it,
+never both, and it defaults to 09:00. For someone who may edit, that time is a pill: the
+time in the times' own face, step and `terracotta-700`, with the stay's chevron after
+it, inside a dashed 1px edge in `terracotta` at 55 percent, the weight a hovered card's
+edge is drawn at, over `terracotta` at 10 percent. Its words sit 10px in from either end,
+as the stay's do. The edge takes the whole accent under the pointer and keeps it while
+the picker is open, and the picker is the same two columns the stay opens, hanging from
+the pill's right end. The pill is raised 3px so its middle is the middle of the place's
+name beside it. On the first card the arrow after it stands 8px off, rather than the
+5px it stands off a plain time, because the pill's edge takes some of the room. A reader
+without the edit link gets the plain time in both places.
 
 The last card on the day ends with the stop that would come next, as a slot on the
 rail. Under the disc, where the thread runs on to it, is the number that stop would
