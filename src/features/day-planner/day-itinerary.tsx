@@ -243,17 +243,17 @@ const ADD_ENDPOINT =
 const ENDS = {
   start: {
     add: "Add start point",
-    hint: "Hotel, home or pickup, wherever the day begins",
+    hint: "Hotel, home or pickup",
     label: "Where the day starts",
-    placeholder: "Hotel, station, wherever the day begins",
+    placeholder: "Hotel, station",
     change: "Change where the day starts",
     remove: "Remove where the day starts",
   },
   end: {
     add: "Add end point",
-    hint: "Hotel, station or airport, wherever the day finishes",
+    hint: "Hotel, station or airport",
     label: "Where the day ends",
-    placeholder: "Hotel, station, wherever the day finishes",
+    placeholder: "Hotel, station",
     change: "Change where the day ends",
     remove: "Remove where the day ends",
   },
