@@ -373,14 +373,20 @@ When the day leaves is set where that time shows, on the day rather than above i
 the start point's time when the day has one, and otherwise on the first stop's arrival,
 which with nothing before it is the moment the day sets out. One of the two carries it,
 never both, and it defaults to 09:00. For someone who may edit, that time is a pill: the
-time in the times' own face, step and `terracotta-700`, with the stay's chevron after
-it, inside a dashed 1px edge in `terracotta` at 55 percent, the weight a hovered card's
-edge is drawn at, over `terracotta` at 10 percent. Its words sit 10px in from either end,
-which is the stay's right end and 2px short of its left. The edge takes the whole accent under the pointer and keeps it while
-the picker is open, and the picker is the same two columns the stay opens, hanging from
-the pill's right end. The pill is raised 3px so its middle is the middle of the place's
-name beside it. On the first card the arrow after it stands 8px off, rather than the
-5px it stands off a plain time, because the pill's edge takes some of the room. A reader
+time in the times' own face, step and `terracotta-700`, with the stay's 12px chevron
+after it in the arrow's `terracotta-700` at 65 percent, quieter than the time as the
+stay's chevron is quieter than its words, inside a dashed 1px edge in `terracotta` at 55 percent, the weight a hovered
+card's edge is drawn at, over `terracotta` at 10 percent. The edge takes the whole
+accent under the pointer and keeps it while the picker is open, and the picker is the
+same two columns the stay opens, hanging from the pill's right end. The pill takes
+exactly the room the plain time takes: the time's own line height, with 1px of padding
+and 1px of edge above and below given back by a 2px margin, so the time sits where a
+reader's plain time does and nothing else on the card or the row moves. Across, the
+whole times line is 7px apart as it is seen: the edge to the time, the time to the
+chevron, the chevron to the edge, the edge to the arrow, and the arrow to the next time.
+The chevron and the arrow carry some margin inside their own boxes, so what is written
+is 6px of padding on the left, 5px before the chevron as before the arrow, and 4px
+after it. A reader
 without the edit link gets the plain time in both places.
 
 The last card on the day ends with the stop that would come next, as a slot on the

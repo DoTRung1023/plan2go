@@ -332,13 +332,12 @@ export function StopCard({
               you are done with it, and it was only ever readable by adding
               the stay underneath to the time above it. The arrow is the same
               one the starter page puts between the two ends of a trip, and
-              stands further off a pill than off a time, since the pill's own
-              edge takes some of the room.
+              stands as far off the pill as off a plain time.
 
               A div rather than a paragraph, because the pill hangs its picker
               from itself and a paragraph may not hold one. */}
           <div
-            className={`flex items-center ${leaveAt === null ? "gap-[5px]" : "gap-2"} self-start justify-self-end font-display text-time whitespace-nowrap text-terracotta-700 tabular-nums [grid-area:times]`}
+            className="flex items-center gap-[5px] self-start justify-self-end font-display text-time whitespace-nowrap text-terracotta-700 tabular-nums [grid-area:times]"
           >
             {leaveAt === null && stop.arrival === null ? (
               "Time not known"

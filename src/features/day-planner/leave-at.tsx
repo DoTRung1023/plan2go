@@ -19,21 +19,29 @@ function twoDigits(value: number): string {
  * The time where the day's times are, in their face, their step and their
  * colour, inside a pill that says it is the one of them that is set rather
  * than worked out: a dashed edge in the accent at the weight a hovered card's
- * edge is drawn, over the accent at a tenth, and the chevron the stay's pill
- * carries to say it opens. The edge takes the whole accent under the pointer
- * and keeps it while the picker is open, as the stay's does.
+ * edge is drawn, over the accent at a tenth, and the stay's chevron after it
+ * to say it opens, in the arrow's colour: the accent at two thirds, so the two
+ * small glyphs on the line are the same quiet mark beside the times, the way
+ * the stay's chevron is quieter than its words. The edge takes the whole
+ * accent under the pointer and keeps it while the picker is open, as the
+ * stay's does.
  *
- * The weight is said outright: the times' step brings its weight only when it
- * sets the line height too, and the start point's line around it sets none.
+ * It takes exactly the room the time takes without it, so nothing else on
+ * the card or the row moves when it is there: the time's own line height,
+ * a pixel of padding and a pixel of edge above and below, and those two
+ * pixels given back by the margin round it. The time lands where a reader's
+ * plain time does, and the edge is drawn in the room already round the line.
+ * Across, everything on the times line is seven apart as it is seen: the
+ * edge to the time, the time to the chevron, the chevron to the edge, the
+ * edge to the arrow and the arrow to the next time. The chevron and the arrow
+ * each carry a little margin of their own inside their box, so the gaps
+ * written here are smaller than the ones that show, and the gap to the
+ * chevron is the same five the line puts before its arrow.
  *
- * Ten in from either end, which is the stay's right end and two short of its
- * left, where the stay has a clock to stand in front of; the chevron as close
- * to the time as the arrow on the line is. Raised by three, so the
- * middle of the pill is the middle of the place's name beside it; the rest
- * of its height hangs below the line, which the line makes room for.
+ * The weight is said outright: the start point's line around it sets none.
  */
 const TRIGGER =
-  "flex items-center gap-[5px] rounded-pill border border-dashed bg-terracotta/10 py-[5px] pr-[10px] pl-[10px] font-display text-time/none font-semibold text-terracotta-700 tabular-nums hover:border-terracotta disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "flex items-center gap-[5px] rounded-pill border border-dashed bg-terracotta/10 py-px pr-[4px] pl-[6px] font-display text-time font-semibold text-terracotta-700 tabular-nums hover:border-terracotta disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 /** Minutes from midnight on the clock: "09:05". */
 function toClock(minutes: number): string {
@@ -157,7 +165,7 @@ export function LeaveAt({ value, clock, onChoose }: LeaveAtProps) {
   });
 
   return (
-    <div ref={container} className="relative -mt-[3px] flex flex-none items-center">
+    <div ref={container} className="relative -my-[2px] flex flex-none items-center">
       {/* Named for what it sets, with the time it shows in the name, so it is
           found by the words on it as well as read out with them. */}
       <button
@@ -177,7 +185,7 @@ export function LeaveAt({ value, clock, onChoose }: LeaveAtProps) {
         className={`${TRIGGER} ${open ? "border-terracotta" : "border-terracotta/55"}`}
       >
         {shown}
-        <ChevronDownIcon size={12} strokeWidth={2.75} className="shrink-0" />
+        <ChevronDownIcon size={12} strokeWidth={2.75} className="shrink-0 text-terracotta-700/65" />
       </button>
 
       {open ? (
