@@ -64,7 +64,13 @@ export function EndpointMenu({
         }
       }}
       onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) {
+        // Only when focus has gone somewhere else on the page. Safari and
+        // Firefox on a Mac do not focus a button that is pressed, so pressing
+        // an action blurs the one that had focus with nowhere named to go,
+        // and closing then took the action away before its click arrived. A
+        // press outside is the pointerdown above.
+        const next = event.relatedTarget;
+        if (next !== null && !event.currentTarget.contains(next)) {
           setOpen(false);
         }
       }}
