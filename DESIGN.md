@@ -376,9 +376,12 @@ never both, and it defaults to 09:00. For someone who may edit, that time is a p
 time in the times' own face, step and `terracotta-700`, with the stay's 12px chevron
 after it in the arrow's `terracotta-700` at 65 percent, quieter than the time as the
 stay's chevron is quieter than its words, inside a dashed 1px edge in `terracotta` at 55 percent, the weight a hovered
-card's edge is drawn at, over `terracotta` at 10 percent. The edge takes the whole
-accent under the pointer and keeps it while the picker is open, and the picker is the
-same two columns the stay opens, hanging from the pill's right end. The pill takes
+card's edge is drawn at, over `terracotta` at 10 percent. Under the pointer, and while
+the picker is open, it does what the dashed row offering an end of the day does: the
+dash takes the whole accent and the paper lifts to `paper-raised`. The tint alone sank
+with the card, which sinks under the same pointer, and left only a darker edge to tell
+the two apart; raised paper is opaque and comes up out of the sunken card instead. The
+picker is the same two columns the stay opens, hanging from the pill's right end. The pill takes
 exactly the room the plain time takes: the time's own line height, with 1px of padding
 and 1px of edge above and below given back by a 2px margin, so the time sits where a
 reader's plain time does and nothing else on the card or the row moves. Across, the

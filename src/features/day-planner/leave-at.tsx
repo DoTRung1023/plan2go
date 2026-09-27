@@ -22,9 +22,15 @@ function twoDigits(value: number): string {
  * edge is drawn, over the accent at a tenth, and the stay's chevron after it
  * to say it opens, in the arrow's colour: the accent at two thirds, so the two
  * small glyphs on the line are the same quiet mark beside the times, the way
- * the stay's chevron is quieter than its words. The edge takes the whole
- * accent under the pointer and keeps it while the picker is open, as the
- * stay's does.
+ * the stay's chevron is quieter than its words.
+ *
+ * Under the pointer, and while its picker is open, it does what the dashed
+ * row offering an end of the day does: the dash takes the whole accent and
+ * the paper lifts. The tint is laid over nothing, so it sinks with the card
+ * when the card sinks under the same pointer, and a darker edge on its own
+ * was all that told the two apart. Raised paper is opaque and lighter than
+ * the sunken card around it, so the pill comes up out of the card instead,
+ * the way the stay's pill always stands on it.
  *
  * It takes exactly the room the time takes without it, so nothing else on
  * the card or the row moves when it is there: the time's own line height,
@@ -41,7 +47,7 @@ function twoDigits(value: number): string {
  * The weight is said outright: the start point's line around it sets none.
  */
 const TRIGGER =
-  "flex items-center gap-[5px] rounded-pill border border-dashed bg-terracotta/10 py-px pr-[4px] pl-[6px] font-display text-time font-semibold text-terracotta-700 tabular-nums hover:border-terracotta disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "flex items-center gap-[5px] rounded-pill border border-dashed py-px pr-[4px] pl-[6px] font-display text-time font-semibold text-terracotta-700 tabular-nums hover:border-terracotta hover:bg-paper-raised disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 /** Minutes from midnight on the clock: "09:05". */
 function toClock(minutes: number): string {
@@ -182,7 +188,7 @@ export function LeaveAt({ value, clock, onChoose }: LeaveAtProps) {
           }
           setOpen(true);
         }}
-        className={`${TRIGGER} ${open ? "border-terracotta" : "border-terracotta/55"}`}
+        className={`${TRIGGER} ${open ? "border-terracotta bg-paper-raised" : "border-terracotta/55 bg-terracotta/10"}`}
       >
         {shown}
         <ChevronDownIcon size={12} strokeWidth={2.75} className="shrink-0 text-terracotta-700/65" />
