@@ -5,7 +5,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { conflictsAtStop } from "@/core/model/conflict";
 import type { Place } from "@/core/model/place";
 import type { ClockTime } from "@/core/time/compute-day";
-import { durationParts, formatClock, formatDuration } from "@/core/time/minutes";
+import { formatClock, formatDuration } from "@/core/time/minutes";
 import type { PlannedDay } from "./compute-trip";
 import { conflictSentence } from "./conflict-sentence";
 import type { DayMapSources } from "./day-map-source";
@@ -29,9 +29,12 @@ import lockup from "../../../logo/logo-text.png";
 /**
  * A row of the day on paper: the time in a column of its own on the left,
  * the marker the row hangs on, and the rest. The time first, because a
- * printed day is read down its times the way a timetable is.
+ * printed day is read down its times the way a timetable is. The time column
+ * is as wide as the longest leg, "12 hr 55 min", so a leg's duration stands
+ * on one line, and it grows with the words when they are printed larger.
  */
-const ROW = "grid grid-cols-[52px_20px_minmax(0,1fr)] items-start gap-x-[10px]";
+const ROW =
+  "grid grid-cols-[calc(72px*var(--sheet-text,1))_20px_minmax(0,1fr)] items-start gap-x-[10px]";
 
 /** A rule on paper: a hair of the neutral ramp, never the cream ground. */
 const RULE = "border-neutral-400";
@@ -140,19 +143,18 @@ function TimeCell({ time }: { readonly time: ClockTime | null }) {
 }
 
 /**
- * How long a leg takes, in the time column, which is as wide as a clock time
- * and no wider. A long one, "about 2 hr 50 min", runs onto a second line
- * rather than out of the column and under the leg's disc, breaking only
- * between its pieces: "about", "2 hr", "50 min", never inside one.
+ * How long a leg takes, in the time column, on one line: "2 hr 16 min" is
+ * never split. A guess, "about 2 hr 50 min", is wider than the column, so
+ * "about" goes on the line above rather than the duration running out of the
+ * column and under the leg's disc.
  */
 function LegDuration({ minutes, rough }: { readonly minutes: number; readonly rough: boolean }) {
-  const pieces = rough ? ["about", ...durationParts(minutes)] : durationParts(minutes);
-  return pieces.map((piece, index) => (
-    <span key={piece}>
-      {index === 0 ? "" : " "}
-      <span className="whitespace-nowrap">{piece}</span>
-    </span>
-  ));
+  return (
+    <>
+      {rough ? "about " : null}
+      <span className="whitespace-nowrap">{formatDuration(minutes)}</span>
+    </>
+  );
 }
 
 function LegLine({ day, legIndex }: { readonly day: PlannedDay; readonly legIndex: number }) {
