@@ -33,7 +33,8 @@ export const HEADING_BAND =
  * of days rather than a shelf they stand on. Three over the strip, which
  * carries four of its own as room for a focus ring, makes seven; nothing
  * under it, where the strip keeps seven of its own for the same ring and its
- * scrollbar; seven either side.
+ * scrollbar; seven either side, four of which the strip reaches out into for
+ * the ring as well.
  *
  * There is no line under the strip naming the open day any more. The tab
  * says which day it is and its date, and when the day leaves is set on the

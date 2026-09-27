@@ -24,21 +24,14 @@ interface DayTabsProps {
 }
 
 /**
- * What is on the day, under the date. Every tab says both, because which day it
- * is and how full it is are two different questions and a reader choosing a tab
- * is usually asking them together.
- *
- * Checkpoints are not counted, the same way they are not numbered: a day of
- * three places and a station changed at is a day of three stops, and the tab
- * has to agree with the numbers down the day it opens. A day that is only
- * places passed through is not empty, so it says what it is instead.
+ * What is on the day, for a reader who hears the strip rather than sees it.
+ * The tab draws only the day and its date, but which day it is and how full
+ * it is are two different questions, and a reader choosing a tab is usually
+ * asking them together.
  */
 function stopLine(day: DayPlan): string {
   const stops = day.stops.length;
-  if (stops > 0) {
-    return formatStops(stops);
-  }
-  return day.stops.length === 0 ? "empty" : "passing through";
+  return stops > 0 ? formatStops(stops) : "empty";
 }
 
 /**
@@ -48,12 +41,17 @@ function stopLine(day: DayPlan): string {
  *
  * Every tab as wide as the widest date needs, so the strip reads as a row of
  * days rather than a row of words, however narrow a Monday is beside a
- * Wednesday. A date wider than that still gets its room. The two lines four
- * apart, and eight above and below them, which puts a tab at the height two
- * lines of the tab's own type need and no more.
+ * Wednesday. A date wider than that still gets its room. 44 tall, the height
+ * a finger needs, with the two lines four apart centred in it. Stated rather
+ * than left to the lines and their padding, which came to 44.5 and put every
+ * pill, and everything under the strip, on half a pixel.
+ *
+ * The ring is drawn outside, the way it is on every other control: inside,
+ * it was terracotta on the chosen day's dark pill, and hard to find. The
+ * strip keeps the room for it.
  */
 const TAB =
-  "flex min-w-[82px] shrink-0 flex-col items-center gap-1 rounded-pill border-0 px-[15px] py-2 whitespace-nowrap focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta";
+  "flex h-11 min-w-[82px] shrink-0 flex-col items-center justify-center gap-1 rounded-pill border-0 px-[15px] whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 /**
  * The day's number: the one uppercase label in the product, at the micro
@@ -125,10 +123,12 @@ export function DayTabs({ days, selectedIndex, onSelect, onAddDay }: DayTabsProp
           tab list holds tabs, and a button among them is announced as one. */}
       {/* The strip clips whatever leaves it, which is what keeps a sideways
           scroller from growing a bar downwards, so the room a focus ring
-          needs outside the button at the end is kept inside the strip: the
+          needs outside a tab or the button is kept inside the strip: the
           ring is two pixels drawn two pixels out, and there are four above
-          and below. Whoever puts the strip on a page takes those four off
-          the space above it, so the pills sit where they would have anyway.
+          and at either side. Whoever puts the strip on a page takes the four
+          above off the space over it, and the strip reaches four out into the
+          room at either side of it, so the pills sit where they would have
+          anyway and the line under them runs exactly as far as they do.
 
           Below, seven: the same four, and under them the line the strip
           draws as its scrollbar once a trip is long enough, which sits just
@@ -138,71 +138,75 @@ export function DayTabs({ days, selectedIndex, onSelect, onAddDay }: DayTabsProp
           button that adds one. */}
       <div
         ref={watchStrip}
-        className="day-tabs scroll-line scroll-shy flex items-center gap-2 pt-[4px] pb-[7px]"
+        className="day-tabs scroll-line scroll-shy -mx-[4px] flex items-center gap-2 px-[4px] pt-[4px] pb-[7px]"
       >
         <div
           role="tablist"
           aria-label="Days of this trip"
           className="flex shrink-0 items-center gap-1"
         >
-      {days.map((day, index) => {
-        const selected = index === selectedIndex;
-        /**
-         * Sage, the second voice, so it never argues with the terracotta that
-         * means "the day you are reading". Being chosen is the louder fact of
-         * the two, so a day that is both is drawn as chosen and says the rest
-         * in words a screen reader reads out.
-         */
-        const isToday = day.date === today;
-        return (
-          <button
-            key={day.id}
-            ref={(node) => {
-              tabs.current[index] = node;
-            }}
-            type="button"
-            role="tab"
-            id={`day-tab-${day.id}`}
-            aria-selected={selected}
-            aria-controls={`day-panel-${day.id}`}
-            tabIndex={selected ? 0 : -1}
-            onClick={() => {
-              onSelect(index);
-            }}
-            onKeyDown={(event) => {
-              move(event, index);
-            }}
-            className={`${TAB} ${
-              selected
-                ? "bg-terracotta-800 text-paper"
-                : isToday
-                  ? "bg-sage-100 text-sage-800 hover:bg-sage-200"
-                  : "bg-transparent text-ink-muted hover:bg-neutral-200"
-            }`}
-          >
-            {/* The tab draws the day's number and a short date, and a reader
-                who cannot see the strip hears the date in full and what is
-                on the day here instead. */}
-            <span className="sr-only">
-              {`Day ${String(index + 1)}, ${formatDayDate(day.date)}, ${stopLine(day)}.${
-                isToday ? " Today." : ""
-              }`}
-            </span>
-            {/* On the chosen day the number steps back from the date by a
-                sixth, the paper over the dark pill otherwise reading as two
-                lines of equal weight. */}
-            <span
-              aria-hidden="true"
-              className={`${TAB_NUMBER} tabular-nums ${selected ? "text-paper/85" : ""}`}
-            >
-              {`Day ${String(index + 1)}`}
-            </span>
-            <span aria-hidden="true" className={TAB_DATE}>
-              {formatDayTab(day.date)}
-            </span>
-          </button>
-        );
-      })}
+          {days.map((day, index) => {
+            const selected = index === selectedIndex;
+            /**
+             * Sage, the second voice, so it never argues with the terracotta
+             * that means "the day you are reading". Being chosen is the
+             * louder fact of the two, so a day that is both is drawn as
+             * chosen and says the rest in words a screen reader reads out.
+             */
+            const isToday = day.date === today;
+            return (
+              <button
+                key={day.id}
+                ref={(node) => {
+                  tabs.current[index] = node;
+                }}
+                type="button"
+                role="tab"
+                id={`day-tab-${day.id}`}
+                aria-selected={selected}
+                aria-controls={`day-panel-${day.id}`}
+                tabIndex={selected ? 0 : -1}
+                onClick={() => {
+                  onSelect(index);
+                }}
+                onKeyDown={(event) => {
+                  move(event, index);
+                }}
+                // Under the pointer a day takes the step every control on
+                // paper takes, paper-sunken, and its words go to ink. The
+                // neutral fill it had is the one the raised cards use, and on
+                // this card's paper it was hardly a change at all.
+                className={`${TAB} ${
+                  selected
+                    ? "bg-terracotta-800 text-paper"
+                    : isToday
+                      ? "bg-sage-100 text-sage-800 hover:bg-sage-200"
+                      : "bg-transparent text-ink-muted hover:bg-paper-sunken hover:text-ink"
+                }`}
+              >
+                {/* The tab draws the day's number and a short date, and a
+                    reader who cannot see the strip hears the date in full and
+                    what is on the day here instead. */}
+                <span className="sr-only">
+                  {`Day ${String(index + 1)}, ${formatDayDate(day.date)}, ${stopLine(day)}.${
+                    isToday ? " Today." : ""
+                  }`}
+                </span>
+                {/* On the chosen day the number steps back from the date by a
+                    sixth, the paper over the dark pill otherwise reading as
+                    two lines of equal weight. */}
+                <span
+                  aria-hidden="true"
+                  className={`${TAB_NUMBER} tabular-nums ${selected ? "text-paper/85" : ""}`}
+                >
+                  {`Day ${String(index + 1)}`}
+                </span>
+                <span aria-hidden="true" className={TAB_DATE}>
+                  {formatDayTab(day.date)}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         {onAddDay === null ? null : (
@@ -218,7 +222,9 @@ export function DayTabs({ days, selectedIndex, onSelect, onAddDay }: DayTabsProp
             // than a filled one. Smaller, it is what it is, the way to one
             // more day rather than a day. The glyph in the ink the days'
             // words are in, since the ring already says it is only an offer.
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-pill border-[1.5px] border-dashed border-rule-strong text-ink-muted hover:border-terracotta hover:text-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+            // Under the pointer the dash takes the whole accent, as every
+            // dashed control's does, over the same sunken paper a day takes.
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-pill border-[1.5px] border-dashed border-rule-strong text-ink-muted hover:border-terracotta hover:bg-paper-sunken hover:text-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
           >
             <PlusIcon size={15} strokeWidth={2.75} />
           </button>
@@ -227,7 +233,7 @@ export function DayTabs({ days, selectedIndex, onSelect, onAddDay }: DayTabsProp
 
       {error === null ? null : (
         <Notice role="alert" className="mb-[7px]">
-            {error}
+          {error}
         </Notice>
       )}
     </div>

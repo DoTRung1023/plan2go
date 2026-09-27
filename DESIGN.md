@@ -87,11 +87,6 @@ typography:
     fontSize: 10.5px
     lineHeight: 1
     fontWeight: 600
-  tick:
-    fontFamily: Be Vietnam Pro
-    fontSize: 9.5px
-    lineHeight: 1
-    fontVariantNumeric: tabular-nums
 rounded:
   chip: 14px
   row: 18px
@@ -239,7 +234,7 @@ English clips the upper one.
 Display carries times, place names, durations and the day heading. Body carries
 everything else.
 
-Eleven steps and no others. Every size in the planner is one of them, set with its own
+Ten steps and no others. Every size in the planner is one of them, set with its own
 line height and, where it is a pill, with `text-step/none` rather than a second leading
 utility fighting the first. Lead is the heading of what opens over the page: the place
 open in the sheet, and the question asked before a trip is deleted. Small is the tier the interface is mostly made of,
@@ -261,7 +256,10 @@ one place such a number may appear. Every element that renders a time or a durat
 - **label:** the small heading above a value. Sentence case, 600, never uppercase. The one
   uppercase heading in the product is the day's number on a day tab, which is set at the
   micro step rather than this one, over the date the way a calendar heads a column.
-- **tick:** the two lines under the name of a day tab, the date and the stop count.
+
+There was an eleventh, tick, at 9.5px, for the date and the stop count under a day
+tab's name. It went when the tab became the day's number over its date, which is set at
+the micro and small steps, and nothing else ever spent it.
 
 Body text is left aligned. Never centred, except a single line inside an empty state.
 
@@ -282,14 +280,19 @@ in from the edge, 12px apart. The trip comes first, on a pill of raised paper un
 floating control's shadow: its name at the title step, its dates, and its menu, one row
 about the whole trip. Under it the days, on one card of paper at the `row` radius: the
 strip of tabs and nothing else, held close: seven in from every edge, so the card reads
-as one control made of days. Each tab is two lines, **DAY 1** over **Sat 26**: the
-number uppercase at the micro step, the date at the small step, both 600, four apart,
-eight above and below. Every tab is as wide as the widest date needs, 82px, so the row
-reads as days rather than words, and they stand four apart. The chosen day is on
-`terracotta-800` with its date in `paper` and its number at 85 percent of it; the rest
-are in `ink-muted`, and today in sage as before. After the last tab, eight off, the
-button that adds a day: a 32px dashed ring in `rule-strong` with a 15px plus in
-`ink-muted`, still shorter than the tabs so it reads as an offer. When the day leaves
+as one control made of days. Each tab is a pill 44px tall, the height a finger needs,
+with two lines centred in it, **DAY 1** over **Sat 26**: the number uppercase at the
+micro step, the date at the small step, both 600, four apart. Every tab is as wide as
+the widest date needs, 82px, so the row reads as days rather than words, and they stand
+four apart. The chosen day is on `terracotta-800` with its date in `paper` and its
+number at 85 percent of it; the rest are in `ink-muted`, and today in sage as before.
+Under the pointer a day that is not chosen takes `paper-sunken`, the step every control
+on paper takes, with its words in `ink`, and today goes from sage 100 to 200. After the
+last tab, eight off, the button that adds a day: a 32px dashed ring in `rule-strong`
+with a 15px plus in `ink-muted`, still shorter than the tabs so it reads as an offer.
+Under the pointer its dash takes the whole accent, its plus `terracotta-700`, over the
+same `paper-sunken`. The focus ring is drawn outside every tab and the button, as it is
+everywhere, and the strip keeps four pixels round them so no ring is clipped. When the day leaves
 is set on the day itself. Then the day itself: stops on raised cards, legs between them on pills of paper, and the ends of the
 day on shorter rows of paper inside a hairline, dashed where an end is not there yet.
 The next place is offered as the next number on the rail, drawn dashed at the foot of

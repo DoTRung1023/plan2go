@@ -131,8 +131,6 @@
   --text-micro--line-height: 1.4;
   --text-label: 10.5px;
   --text-label--line-height: 1;
-  --text-tick: 9.5px;
-  --text-tick--line-height: 1;
 
   /*
    * One radius system. Rounded to the point of softness, and small controls go
@@ -400,7 +398,6 @@
   --text-meta: calc(12px * var(--sheet-text));
   --text-micro: calc(11.5px * var(--sheet-text));
   --text-label: calc(10.5px * var(--sheet-text));
-  --text-tick: calc(9.5px * var(--sheet-text));
 }
 
 /* A sheet for a printer with no colour in it: everything the map's colours
