@@ -15,11 +15,11 @@ export function EmptyDay({ dayName, onFindPlace }: EmptyDayProps) {
     /*
      * Centred, and it sits between the two ends of the day rather than in
      * place of them: a day with nowhere to go still has somewhere to start
-     * from, and the buttons for those are above and below this. On a raised
-     * card at a stop's radius, where the first stop will stand, and on the
-     * same left and right edges as every card and row on the day.
+     * from, and the buttons for those are above and below this. Straight on
+     * the ground with no card under it, because a card on this panel is a
+     * stop and there is no stop here yet.
      */
-    <div className="flex flex-col items-center gap-[13px] rounded-card border border-rule bg-paper-raised px-6 py-10 text-center">
+    <div className="flex flex-col items-center gap-[13px] px-6 py-10 text-center">
       <span className="grid h-[42px] w-[42px] shrink-0 place-items-center rounded-pill border-[1.5px] border-dashed border-rule-strong text-ink-faint">
         <PinIcon size={19} strokeWidth={2.4} />
       </span>

@@ -525,7 +525,7 @@ export function DayItinerary({
 
       {/* Twelve under the start of the day when there is one, the room every
           block on the panel keeps from the next. The row offering a start
-          keeps its own twelve, and with neither the card is the top. */}
+          keeps its own twelve, and with neither the empty day is the top. */}
       {day.stops.length === 0 ? (
         <div className={day.start === null ? "" : "mt-3"}>
           <EmptyDay dayName={formatDayDate(day.date)} onFindPlace={onFindPlace} />

@@ -174,8 +174,8 @@ paper and ink.
 
 - **paper:** the page, the day's card on the planner, a leg, and an end of the day
   still to be chosen.
-- **paper-raised:** stop cards, the card saying a day has none yet, the trip's row,
-  floating controls, inputs, the search panel, menus.
+- **paper-raised:** stop cards, the trip's row, floating controls, inputs, the search
+  panel, menus.
 - **paper-sunken:** the planner's ground, wells, the map gutter, a hovered control.
 - **rule:** hairlines and card borders, drawn as ink at low opacity so one value works
   over all three surfaces.
@@ -295,9 +295,9 @@ same `paper-sunken`. The focus ring is drawn outside every tab and the button, a
 everywhere, and the strip keeps four pixels round them so no ring is clipped. When the day leaves
 is set on the day itself. Then the day itself: stops on raised cards, legs between them on pills of paper, and the ends of the
 day on shorter rows of paper inside a hairline, dashed where an end is not there yet.
-A day with no stops says so on a raised card at the stops' radius, where the first stop
-will stand: between the two ends, on the same edges as every card and row, and twelve
-under the start of the day when there is one. The next place is offered as the next number on the rail, drawn dashed at the foot of
+A day with no stops says so straight on the ground, with no card under it, since a card
+on the day is a stop: between the two ends, on the same edges as every card and row, and
+twelve under the start of the day when there is one. The next place is offered as the next number on the rail, drawn dashed at the foot of
 the last stop card, where a place found in the search is added. Three surfaces, each a step up from the one it sits on, and
 nothing drawn edge to edge.
 
