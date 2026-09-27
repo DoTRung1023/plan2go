@@ -301,7 +301,7 @@ export function PlaceSearch({
 
       const run = async (): Promise<void> => {
         const response = await fetch(`/api/places/search?${parameters.toString()}`);
-        const body: unknown = await response.json();
+        const body: unknown = await response.json().catch(() => null);
         if (attempt !== newest.current) {
           return;
         }
