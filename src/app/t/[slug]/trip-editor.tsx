@@ -233,6 +233,21 @@ export function TripEditor({
     setLeaving(true);
   };
   /**
+   * The map pressed beside the sheet: done with a place already on the trip,
+   * the same as the cross on the field, since its marker stays on the map and
+   * nothing is lost by letting it go. Not a place found in a search, whose pin
+   * and name would go with it; not one put aside, which was put there to look
+   * at the map; nor one already on its way out, which something else closed.
+   * Answers whether the sheet was let go.
+   */
+  const dismissFromMap = (): boolean => {
+    if (opened === null || opened.kind === "candidate" || aside || leaving) {
+      return false;
+    }
+    setLeaving(true);
+    return true;
+  };
+  /**
    * Whether the export dialog is open. While it is, its preview is what the
    * printer gets; while it is not, the page keeps the open day as a sheet for
    * the browser's own print command, so the two come out the same way.
@@ -393,19 +408,7 @@ export function TripEditor({
                   ? opened.placeId
                   : null
               }
-              onPressMap={() => {
-                // Away from a place already on the trip, the same as the
-                // cross on the field: its marker stays on the map, so nothing
-                // is lost by letting it go. Not a place found in a search,
-                // whose pin and name would go with it, and not one put aside,
-                // which was put there to look at the map. Nor one already on
-                // its way out, which something else closed.
-                if (opened === null || opened.kind === "candidate" || aside || leaving) {
-                  return false;
-                }
-                dismiss();
-                return true;
-              }}
+              onPressMap={dismissFromMap}
               candidate={candidate}
               covered={covered}
               expanded={expanded}

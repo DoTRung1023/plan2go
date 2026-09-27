@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { ArrowLeftIcon, MoreIcon } from "@/ui/icons";
-import { closesOnOutsidePress } from "@/ui/outside-press";
+import { useOutsidePress } from "@/ui/use-outside-press";
 
 /**
  * A page a row can turn the menu into: the menu's panel stays where it is
@@ -94,25 +94,7 @@ export function TripMenu({ label, children }: TripMenuProps) {
     }
   }, [page]);
 
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    const dismiss = (event: MouseEvent): void => {
-      const target = event.target;
-      const inside =
-        target instanceof Node &&
-        container.current !== null &&
-        container.current.contains(target);
-      if (!inside) {
-        close();
-      }
-    };
-    document.addEventListener("mousedown", dismiss);
-    return () => {
-      document.removeEventListener("mousedown", dismiss);
-    };
-  }, [open]);
+  useOutsidePress(container, open, close);
 
   return (
     <div
@@ -155,7 +137,6 @@ export function TripMenu({ label, children }: TripMenuProps) {
 
       {open ? (
         <div
-          {...closesOnOutsidePress}
           role={page === null ? "menu" : "dialog"}
           aria-label={page === null ? label : page.title}
           // Close under the button, so the menu reads as what the button

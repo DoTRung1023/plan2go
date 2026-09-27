@@ -6,6 +6,7 @@ import { useEffect, useId, useRef, useState } from "react";
 // carries every locale zod has with it. See export-query.ts.
 import { array, nullable, object, optional, safeParse, string } from "zod/mini";
 import { SearchIcon } from "@/ui/icons";
+import { useOutsidePress } from "@/ui/use-outside-press";
 import { FIELD_GROUND, FIELD_LABEL, FIELD_SHELL, FIELD_STACK } from "./field-styles";
 
 /** Long enough that typing does not spend money on every letter. */
@@ -125,25 +126,9 @@ export function PlaceField({ id, name, label, placeholder, chosen, onChange }: P
     };
   }, [trimmed, searched, chosen]);
 
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    const dismiss = (event: MouseEvent): void => {
-      const target = event.target;
-      const inside =
-        target instanceof Node &&
-        container.current !== null &&
-        container.current.contains(target);
-      if (!inside) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", dismiss);
-    return () => {
-      document.removeEventListener("mousedown", dismiss);
-    };
-  }, [open]);
+  useOutsidePress(container, open, () => {
+    setOpen(false);
+  });
 
   const pick = (place: ChosenPlace): void => {
     onChange(place);

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { closesOnOutsidePress } from "@/ui/outside-press";
 import "./column-picker.css";
 
 /**
@@ -70,7 +69,6 @@ export function ColumnPicker({ label, columns, align, onEscape }: ColumnPickerPr
   return (
     <div
       ref={panel}
-      {...closesOnOutsidePress}
       role="dialog"
       aria-label={label}
       onKeyDown={(event) => {

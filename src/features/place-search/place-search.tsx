@@ -8,7 +8,7 @@ import type { LatLng, Place } from "@/core/model/place";
 import { CheckIcon, CloseIcon, PinIcon, PlusIcon, SearchIcon } from "@/ui/icons";
 import { useScrollBar } from "@/ui/use-scroll-bar";
 import { Notice } from "@/ui/notice";
-import { closesOnOutsidePress } from "@/ui/outside-press";
+import { useOutsidePress } from "@/ui/use-outside-press";
 
 /** Long enough that typing does not spend money on every letter. */
 const DEBOUNCE_MS = 250;
@@ -345,25 +345,9 @@ export function PlaceSearch({
     void askAboutCity(city).then(setPopular);
   }, [open, searched, city]);
 
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    const dismiss = (event: MouseEvent): void => {
-      const target = event.target;
-      const inside =
-        target instanceof Node &&
-        container.current !== null &&
-        container.current.contains(target);
-      if (!inside) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", dismiss);
-    return () => {
-      document.removeEventListener("mousedown", dismiss);
-    };
-  }, [open]);
+  useOutsidePress(container, open, () => {
+    setOpen(false);
+  });
 
   const clear = (): void => {
     newest.current += 1;
@@ -666,7 +650,6 @@ export function PlaceSearch({
 
       {panel ? (
         <div
-          {...closesOnOutsidePress}
           className="absolute top-full right-0 left-0 z-30 mt-2 flex max-h-[330px] flex-col overflow-hidden rounded-panel border border-rule bg-paper-raised shadow-md"
         >
           {/* Only the bar's own width on the right: the room a row leaves

@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import type { IsoDate } from "@/core/model/day";
 import { addDays, daysBetween, isoDateAsUtc, parseIsoDate, weekdayOf } from "@/core/time/zoned";
 import { ArrowLeftIcon, ArrowRightIcon } from "@/ui/icons";
-import { closesOnOutsidePress } from "@/ui/outside-press";
+import { useOutsidePress } from "@/ui/use-outside-press";
 import { formatDateRange } from "@/features/day-planner/format-day-date";
 
 const DAYS_IN_WEEK = 7;
@@ -267,27 +267,11 @@ export function DateRangeField({
     grid.current?.querySelector<HTMLButtonElement>(`[data-date="${focused}"]`)?.focus();
   }, [open, focused]);
 
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    const dismiss = (event: MouseEvent): void => {
-      const target = event.target;
-      const inside =
-        target instanceof Node &&
-        container.current !== null &&
-        container.current.contains(target);
-      if (!inside) {
-        setOpen(false);
-        setDrawingFrom(null);
-        closing.current?.();
-      }
-    };
-    document.addEventListener("mousedown", dismiss);
-    return () => {
-      document.removeEventListener("mousedown", dismiss);
-    };
-  }, [open]);
+  useOutsidePress(container, open, () => {
+    setOpen(false);
+    setDrawingFrom(null);
+    closing.current?.();
+  });
 
   const months = Array.from({ length: MONTHS_SHOWN }, (_unused, at) =>
     shiftMonths(leftMonth, at),
@@ -424,7 +408,6 @@ export function DateRangeField({
 
       {open ? (
         <div
-          {...closesOnOutsidePress}
           role="dialog"
           aria-label={`Choose the ${label.toLowerCase()}`}
           style={{ left: shift }}

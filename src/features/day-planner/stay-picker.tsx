@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { formatDuration, MINUTES_PER_HOUR } from "@/core/time/minutes";
 import { ChevronDownIcon, ChevronUpIcon, ClockIcon } from "@/ui/icons";
+import { useOutsidePress } from "@/ui/use-outside-press";
 import { ColumnPicker } from "./column-picker";
 import { formatStay } from "./format-stay";
 
@@ -76,25 +77,7 @@ export function StayPicker({ placeName, value, disabled, onChoose }: StayPickerP
     }
   };
 
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    const dismiss = (event: MouseEvent): void => {
-      const target = event.target;
-      const inside =
-        target instanceof Node &&
-        container.current !== null &&
-        container.current.contains(target);
-      if (!inside) {
-        close();
-      }
-    };
-    document.addEventListener("mousedown", dismiss);
-    return () => {
-      document.removeEventListener("mousedown", dismiss);
-    };
-  });
+  useOutsidePress(container, open, close);
 
   return (
     <div ref={container} className="relative flex flex-none items-center">

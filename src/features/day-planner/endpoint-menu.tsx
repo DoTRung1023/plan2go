@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { CloseIcon, InfoIcon, MoreIcon, PencilIcon } from "@/ui/icons";
 import { MENU_ITEM, MENU_RULE } from "@/ui/menu";
-import { closesOnOutsidePress } from "@/ui/outside-press";
+import { useOutsidePress } from "@/ui/use-outside-press";
 import { TOOL, TOOL_GLYPH } from "./stop-card";
 
 interface EndpointMenuProps {
@@ -48,20 +48,13 @@ export function EndpointMenu({
   const point = `${which} point`;
 
   useEffect(() => {
-    if (!open) {
-      return;
+    if (open) {
+      firstAction.current?.focus();
     }
-    firstAction.current?.focus();
-    const dismiss = (event: PointerEvent): void => {
-      if (event.target instanceof Node && !container.current?.contains(event.target)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("pointerdown", dismiss);
-    return () => {
-      document.removeEventListener("pointerdown", dismiss);
-    };
   }, [open]);
+  useOutsidePress(container, open, () => {
+    setOpen(false);
+  });
 
   const choose = (action: () => void): void => {
     setOpen(false);
@@ -94,7 +87,7 @@ export function EndpointMenu({
         // the page altogether, which names nowhere. The one blur that names
         // nowhere and is not leaving is a press on one of the menu's own
         // buttons; closing then took the action away before its click
-        // arrived. A press outside is the pointerdown above.
+        // arrived. A press outside is useOutsidePress's.
         const next = event.relatedTarget;
         const leaving =
           next === null ? !pressedInside.current : !event.currentTarget.contains(next);
@@ -121,7 +114,6 @@ export function EndpointMenu({
 
       {open ? (
         <div
-          {...closesOnOutsidePress}
           id={id}
           role="group"
           aria-label={`${point} options`}

@@ -44,6 +44,14 @@ export function placeDomMarker(
   return overlay;
 }
 
+/**
+ * Whether something pressed is one of these markers or inside one. They are
+ * laid over the map, so a press on one reaches the map under it as well.
+ */
+export function isOnMarker(target: EventTarget | null): boolean {
+  return target instanceof Element && target.closest(".trip-map-marker") !== null;
+}
+
 /** A numbered stop. Text goes in as text, so nothing has to be escaped. */
 export function stopMarkerElement(order: number, name: string): HTMLElement {
   const marker = document.createElement("span");

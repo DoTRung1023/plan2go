@@ -5,6 +5,7 @@ import { ChevronDownIcon } from "@/ui/icons";
 import { ColumnPicker } from "./column-picker";
 import type { EditOutcome } from "./day-actions";
 import { Notice } from "@/ui/notice";
+import { useOutsidePress } from "@/ui/use-outside-press";
 
 const HOURS = Array.from({ length: 24 }, (_unused, hour) => hour);
 
@@ -154,25 +155,7 @@ export function LeaveAt({ value, clock, onChoose }: LeaveAtProps) {
     });
   };
 
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    const dismiss = (event: MouseEvent): void => {
-      const target = event.target;
-      const inside =
-        target instanceof Node &&
-        container.current !== null &&
-        container.current.contains(target);
-      if (!inside) {
-        close();
-      }
-    };
-    document.addEventListener("mousedown", dismiss);
-    return () => {
-      document.removeEventListener("mousedown", dismiss);
-    };
-  });
+  useOutsidePress(container, open, close);
 
   return (
     <div ref={container} className="relative -my-[2px] flex flex-none items-center">

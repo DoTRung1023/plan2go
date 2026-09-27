@@ -13,12 +13,12 @@ import {
   stopMarkerElement,
 } from "./dom-marker";
 import { ExpandIcon, ShrinkIcon } from "@/ui/icons";
-import { outsidePressIsTaken } from "@/ui/outside-press";
 import {
   googleMapsBrowserKey,
   loadGoogleMaps,
   onGoogleMapsRefused,
 } from "./load-google-maps";
+import { listenForPresses } from "./map-press";
 import { paperMapStyle } from "./map-style";
 import type { RouteStroke } from "./route-style";
 import { ROUTE_STROKES, legInk, routeStroke } from "./route-style";
@@ -26,15 +26,6 @@ import "./trip-map.css";
 
 /** Zoom used when a day has one point and there is no extent to fit. */
 const SINGLE_POINT_ZOOM = 14;
-
-/**
- * How long a press on the map is held before it counts as one, in
- * milliseconds: long enough for the second press of a double press, which
- * zooms, to arrive and call it off. A little over the quarter second map
- * libraries give a single press, since a double press made with care is
- * slower than one made in a hurry.
- */
-const SINGLE_PRESS_MS = 300;
 
 /**
  * A day with nothing on it still needs a view. It opens on the city the trip is
@@ -480,62 +471,17 @@ export function TripMap({
   }, []);
 
   /**
-   * The map pressed, as the reader means it: once, on the ground or on a
-   * route, and for nothing else.
-   *
-   * Not on a marker. The markers are our own DOM laid over the map, and a
-   * press on one reaches the map as well as the marker; that one is the
-   * marker's.
-   *
-   * Not the first half of a double press, which zooms. Google says click for
-   * each press of a double press before it says dblclick, so a press is held
-   * for as long as a second could follow it, and let go if one does.
-   *
-   * Not a press spent putting a panel away. Pressing beside an open menu or
-   * picker is how it is closed, and the same press closing the sheet too
-   * closed something the reader was still using. Asked as the press begins,
-   * on the way down to whatever was pressed, before the panel has heard it
-   * and gone.
+   * The map pressed, as map-press tells one apart. What the press closed, if
+   * anything, decides whether the map keeps its view when the sheet goes.
    */
   useEffect(() => {
-    if (state.status !== "ready") {
+    const element = container.current;
+    if (state.status !== "ready" || element === null) {
       return;
     }
-    const { map } = state;
-    const element = container.current;
-    let spent = false;
-    let held: ReturnType<typeof setTimeout> | null = null;
-    const letGo = (): void => {
-      if (held !== null) {
-        clearTimeout(held);
-        held = null;
-      }
-    };
-    const pressStarted = (): void => {
-      spent = outsidePressIsTaken();
-    };
-    element?.addEventListener("pointerdown", pressStarted, { capture: true });
-    const click = map.addListener("click", (event: google.maps.MapMouseEvent) => {
-      const { domEvent } = event;
-      if (domEvent.target instanceof Element && domEvent.target.closest(".trip-map-marker") !== null) {
-        return;
-      }
-      letGo();
-      if (spent || (domEvent instanceof UIEvent && domEvent.detail > 1)) {
-        return;
-      }
-      held = setTimeout(() => {
-        held = null;
-        heldView.current = pressing.current();
-      }, SINGLE_PRESS_MS);
+    return listenForPresses(state.map, element, () => {
+      heldView.current = pressing.current();
     });
-    const doubled = map.addListener("dblclick", letGo);
-    return () => {
-      letGo();
-      element?.removeEventListener("pointerdown", pressStarted, { capture: true });
-      click.remove();
-      doubled.remove();
-    };
   }, [state]);
 
   useEffect(() => {
