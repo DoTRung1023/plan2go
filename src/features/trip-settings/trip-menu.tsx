@@ -6,16 +6,6 @@ import { ArrowLeftIcon, MoreIcon } from "@/ui/icons";
 import { closesOnOutsidePress } from "@/ui/outside-press";
 
 /**
- * One row of the menu. A word with a glyph in front of it, the way every menu
- * anybody has used is drawn, so nothing here has to be learned.
- */
-export const MENU_ITEM =
-  "flex w-full items-center gap-[10px] rounded-chip border-0 bg-transparent px-3 py-[9px] text-left text-small/none font-semibold text-ink hover:bg-neutral-200 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta";
-
-/** The line between what a trip does and what ends it. */
-export const MENU_RULE = "mx-[10px] my-[5px] h-px bg-rule";
-
-/**
  * A page a row can turn the menu into: the menu's panel stays where it is
  * and shows this instead of its rows, under the page's name and a way back
  * to them. What is on the page is the row's own, rendered by the row's

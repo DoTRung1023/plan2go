@@ -134,7 +134,6 @@ function Anchor({
   onChange,
   onRemove,
   saving,
-  pickerOpen,
   hovered,
   onHover,
   onOpen,
@@ -159,8 +158,8 @@ function Anchor({
   /** Null for a reader who cannot change this end, or while its picker is open. */
   readonly onChange: (() => void) | null;
   readonly onRemove: (() => void) | null;
+  /** Whether a change to this end is being written down. */
   readonly saving: boolean;
-  readonly pickerOpen: boolean;
   /** Whether the pointer is on this place, here or on the map beside it. */
   readonly hovered: boolean;
   readonly onHover: (placeId: string | null) => void;
@@ -187,12 +186,11 @@ function Anchor({
      * and as raised as a stop's gave them the weight of the places it is
      * for. The same row, with the line dashed, is what offers to choose an
      * end that is not there yet, so the two read as one slot filled and
-     * empty. The clock and menu sit together on one line to keep the filled
-     * row close to the empty one in height. Under the pointer, it sinks
-     * the way a stop card does, inside a ring in its own colour, which for
-     * an end of the day is sage, as its ring on the map is. The marker sits
-     * in the middle of the shorter row rather than at its top, where a disc
-     * sits on a card whose content runs on below it.
+     * empty. Under the pointer, it sinks the way a stop card does, inside a
+     * ring in its own colour, which for an end of the day is sage, as its
+     * ring on the map is. The marker sits in the middle of the shorter row
+     * rather than at its top, where a disc sits on a card whose content runs
+     * on below it; the words and the time sit at the top, as a card's do.
      */
     <div
       ref={row}
@@ -208,21 +206,17 @@ function Anchor({
     >
       <EndpointMark which={which} />
 
-      <div className="min-w-0">
-        <button
-          type="button"
-          disabled={saving || pickerOpen}
-          onClick={onChange ?? onOpen}
-          aria-label={onChange === null ? `About ${endpoint.place.name}` : `Change ${which} point`}
-          className="block w-full rounded-chip text-left hover:opacity-75 disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
-        >
-          <span className="block break-words font-display text-place text-ink">{endpointName(endpoint)}</span>
-          <span className="mt-[3px] block break-words text-meta text-ink-faint">
-            {endpoint.place.address ?? fallback}
-          </span>
-        </button>
-        {/* The same line a stop card carries, in the same words and the
-            clock: a hotel that locks its doors at eleven matters here too. */}
+      {/* Words, not a button, as a stop's name and address are: what can be
+          done to the place is in the tools, and a name that changed the
+          place when it was pressed was a change nobody asked for. */}
+      <div className="min-w-0 self-start">
+        <p className="break-words font-display text-place text-ink">{endpointName(endpoint)}</p>
+        <p className="mt-[3px] break-words text-meta text-ink-faint">
+          {endpoint.place.address ?? fallback}
+        </p>
+        {/* The same line a stop card carries, in the same words and the same
+            clock: a hotel that locks its doors at eleven is as much use to
+            know about as a museum that shuts at five. */}
         {hours === null ? null : (
           <p className="mt-[5px] flex items-center gap-[5px] text-micro text-ink-muted tabular-nums">
             <ClockIcon size={12} className="shrink-0" />
@@ -231,26 +225,34 @@ function Anchor({
         )}
       </div>
 
-      {/* The clock and actions share one line, keeping this the same compact
-          row as the empty slot even when the end can be edited. */}
-      <div className="flex items-center gap-1">
+      {/* The time, and under it what can be done to this end of the day: the
+          same column a stop card keeps at its top right, on the same right
+          edge, so the times of the whole day stand in one column. A reader
+          gets the glyph that opens the place; someone who may change the end
+          gets the three dots that open its menu, where opening the place is
+          the first row. Drawn at 55 percent until the row is under the
+          pointer, as a card's tools are, and whole while the menu is open,
+          so the menu is never drawn faded. */}
+      <div className="flex flex-none flex-col items-end gap-[3px] self-start">
         {setTime ?? (
           <p className="font-display text-time whitespace-nowrap text-terracotta-700 tabular-nums">
             {time ?? "Time not known"}
           </p>
         )}
-        {onChange === null || onRemove === null ? (
-          <AboutPlaceButton name={endpoint.place.name} onOpen={onOpen} />
-        ) : (
-          <EndpointMenu
-            which={which}
-            placeName={endpoint.place.name}
-            disabled={saving}
-            onAbout={onOpen}
-            onChange={onChange}
-            onRemove={onRemove}
-          />
-        )}
+        <span className="-mr-1 flex items-center opacity-55 group-hover:opacity-100 focus-within:opacity-100 [&:has([aria-expanded=true])]:opacity-100">
+          {onChange === null || onRemove === null ? (
+            <AboutPlaceButton name={endpoint.place.name} onOpen={onOpen} />
+          ) : (
+            <EndpointMenu
+              which={which}
+              placeName={endpoint.place.name}
+              disabled={saving}
+              onAbout={onOpen}
+              onChange={onChange}
+              onRemove={onRemove}
+            />
+          )}
+        </span>
       </div>
     </div>
   );
@@ -353,7 +355,6 @@ function EndpointSlot({
           onChange={actions === null || picking ? null : () => setPicking(true)}
           onRemove={actions === null || picking ? null : () => write(null)}
           saving={saving}
-          pickerOpen={picking}
           hovered={hoveredEndpointId === endpoint.place.id}
           onHover={onHoverEndpoint}
           onOpen={() => {
@@ -522,8 +523,13 @@ export function DayItinerary({
         onOpen={onOpenEndpoint}
       />
 
+      {/* Twelve under the start of the day when there is one, the room every
+          block on the panel keeps from the next. The row offering a start
+          keeps its own twelve, and with neither the card is the top. */}
       {day.stops.length === 0 ? (
-        <EmptyDay dayName={formatDayDate(day.date)} onFindPlace={onFindPlace} />
+        <div className={day.start === null ? "" : "mt-3"}>
+          <EmptyDay dayName={formatDayDate(day.date)} onFindPlace={onFindPlace} />
+        </div>
       ) : null}
 
       <div className={moving ? "opacity-55" : ""} aria-busy={moving}>

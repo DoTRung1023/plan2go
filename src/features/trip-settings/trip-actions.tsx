@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { PlusIcon, TrashIcon } from "@/ui/icons";
-import { MENU_ITEM, MENU_RULE } from "./trip-menu";
+import { MENU_ITEM, MENU_RULE } from "@/ui/menu";
 import { Notice } from "@/ui/notice";
 
 /** Deleting this trip either happened or it did not. */

@@ -60,7 +60,8 @@ export function AboutPlaceButton({
  * cannot be as wide as the rest without being taller than them, so it matches
  * on height and is left narrow. The info circle is set a step over the rest,
  * because a round shape holds less ink than an X of the same extent and reads
- * smaller beside it at a matching size.
+ * smaller beside it at a matching size. The three dots that open an end of
+ * the day's menu run 2.6 to 21.4, stroke and all, and match on width.
  */
 export const TOOL_GLYPH = {
   stroke: 2.75,
@@ -68,6 +69,7 @@ export const TOOL_GLYPH = {
   pencil: 11,
   grip: 16,
   close: 17,
+  more: 13.5,
 } as const;
 
 /** A quarter of an hour: the smallest amount of time worth naming on a day. */

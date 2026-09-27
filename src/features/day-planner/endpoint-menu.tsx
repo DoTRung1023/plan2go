@@ -2,7 +2,9 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { CloseIcon, InfoIcon, MoreIcon, PencilIcon } from "@/ui/icons";
+import { MENU_ITEM, MENU_RULE } from "@/ui/menu";
 import { closesOnOutsidePress } from "@/ui/outside-press";
+import { TOOL, TOOL_GLYPH } from "./stop-card";
 
 interface EndpointMenuProps {
   readonly which: "start" | "end";
@@ -13,10 +15,15 @@ interface EndpointMenuProps {
   readonly onRemove: () => void;
 }
 
-const ITEM =
-  "flex w-full items-center gap-[10px] rounded-chip px-3 py-[9px] text-left text-small font-semibold text-ink hover:bg-neutral-200 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta";
-
-/** The actions for a filled end point stay beside its clock, not beneath it. */
+/**
+ * What can be done to an end of the day, for someone who may change it, as
+ * one tool under its time: the three dots, in a tool's box on the tools'
+ * edge, where a stop card keeps its row of glyphs. An end has three things
+ * to do to it and a row a third shorter than a card, so they are words in a
+ * menu rather than three glyphs, drawn the way the trip's own menu draws its
+ * rows. Down from the start of the day and up from its end, so it opens over
+ * the day rather than off the foot of the list.
+ */
 export function EndpointMenu({
   which,
   placeName,
@@ -64,7 +71,7 @@ export function EndpointMenu({
   return (
     <div
       ref={container}
-      className="relative -mr-[15px] shrink-0"
+      className="relative shrink-0"
       onKeyDown={(event) => {
         if (event.key === "Escape" && open) {
           event.preventDefault();
@@ -100,15 +107,16 @@ export function EndpointMenu({
         ref={trigger}
         type="button"
         disabled={disabled}
+        title="More"
         aria-label={`More options for ${point}`}
         aria-expanded={open}
         aria-controls={open ? id : undefined}
         onClick={() => {
           setOpen(!open);
         }}
-        className="grid h-11 w-11 place-items-center rounded-pill text-ink-muted hover:bg-neutral-200 hover:text-ink disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+        className={TOOL}
       >
-        <MoreIcon size={17} strokeWidth={2.75} />
+        <MoreIcon size={TOOL_GLYPH.more} strokeWidth={TOOL_GLYPH.stroke} />
       </button>
 
       {open ? (
@@ -118,26 +126,29 @@ export function EndpointMenu({
           role="group"
           aria-label={`${point} options`}
           className={`absolute right-0 z-30 w-[190px] rounded-panel border border-rule bg-paper-raised p-[6px] shadow-lg ${
-            which === "start" ? "top-full mt-1" : "bottom-full mb-1"
+            which === "start" ? "top-full mt-[6px]" : "bottom-full mb-[6px]"
           }`}
         >
+          {/* Called by the words on the row and then the place's name, for
+              whoever hears the row rather than sees it beside the name: the
+              words a speaking reader would say to press it start the name. */}
           <button
             ref={firstAction}
             type="button"
-            aria-label={`About ${placeName}`}
+            aria-label={`About this place, ${placeName}`}
             onClick={() => choose(onAbout)}
-            className={ITEM}
+            className={MENU_ITEM}
           >
-            <InfoIcon size={16} strokeWidth={2.4} />
+            <InfoIcon size={15} strokeWidth={2.75} className="shrink-0" />
             About this place
           </button>
-          <button type="button" onClick={() => choose(onChange)} className={ITEM}>
-            <PencilIcon size={16} strokeWidth={2.4} />
+          <button type="button" onClick={() => choose(onChange)} className={MENU_ITEM}>
+            <PencilIcon size={15} strokeWidth={2.75} className="shrink-0" />
             Change {point}
           </button>
-          <div className="mx-[10px] my-1 h-px bg-rule" />
-          <button type="button" onClick={() => choose(onRemove)} className={ITEM}>
-            <CloseIcon size={16} strokeWidth={2.4} />
+          <div className={MENU_RULE} />
+          <button type="button" onClick={() => choose(onRemove)} className={MENU_ITEM}>
+            <CloseIcon size={15} strokeWidth={2.75} className="shrink-0" />
             Remove {point}
           </button>
         </div>

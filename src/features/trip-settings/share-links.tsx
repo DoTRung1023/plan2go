@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ShareIcon } from "@/ui/icons";
-import { MENU_ITEM, useMenuPages } from "./trip-menu";
+import { MENU_ITEM } from "@/ui/menu";
+import { useMenuPages } from "./trip-menu";
 
 /** The word at the end of the pill, in the accent, with the pill's own ground under the pointer. */
 const COPY =

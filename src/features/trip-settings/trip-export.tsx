@@ -1,7 +1,7 @@
 "use client";
 
 import { DownloadIcon } from "@/ui/icons";
-import { MENU_ITEM } from "./trip-menu";
+import { MENU_ITEM } from "@/ui/menu";
 
 const TITLE = "Export";
 

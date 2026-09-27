@@ -174,8 +174,8 @@ paper and ink.
 
 - **paper:** the page, the day's card on the planner, a leg, and an end of the day
   still to be chosen.
-- **paper-raised:** stop cards, the trip's row, floating controls, inputs, the search
-  panel.
+- **paper-raised:** stop cards, the card saying a day has none yet, the trip's row,
+  floating controls, inputs, the search panel, menus.
 - **paper-sunken:** the planner's ground, wells, the map gutter, a hovered control.
 - **rule:** hairlines and card borders, drawn as ink at low opacity so one value works
   over all three surfaces.
@@ -295,7 +295,9 @@ same `paper-sunken`. The focus ring is drawn outside every tab and the button, a
 everywhere, and the strip keeps four pixels round them so no ring is clipped. When the day leaves
 is set on the day itself. Then the day itself: stops on raised cards, legs between them on pills of paper, and the ends of the
 day on shorter rows of paper inside a hairline, dashed where an end is not there yet.
-The next place is offered as the next number on the rail, drawn dashed at the foot of
+A day with no stops says so on a raised card at the stops' radius, where the first stop
+will stand: between the two ends, on the same edges as every card and row, and twelve
+under the start of the day when there is one. The next place is offered as the next number on the rail, drawn dashed at the foot of
 the last stop card, where a place found in the search is added. Three surfaces, each a step up from the one it sits on, and
 nothing drawn edge to edge.
 
@@ -345,6 +347,17 @@ start and end in the same place, in which case there is one marker rather than t
 top of each other. Each says when the place it stands at is open, in the same words and
 the same clock a stop card uses: a hotel that locks its doors at eleven is as much use
 to know about as a museum that shuts at five.
+
+An end's row is laid on a stop card's grid to the pixel: the name and address on the
+stops' left edge, in words rather than as a button, and at the top right the time, on
+the stops' right edge so the day's times stand in one column, with the tools under it.
+A reader gets the glyph that opens the place. Someone who may edit gets one tool
+instead, three dots, which opens a menu drawn with the trip menu's rows: **About this
+place**, **Change start point**, and under a rule **Remove start point** (or the end's).
+An end has three things to do to it and a row a third shorter than a card, so they are
+words in a menu rather than three glyphs in a row. The tool is drawn at 55 percent
+until the pointer is over the row, as a card's are, and whole while its menu is open.
+The menu opens down from the start of the day and up from its end, over the day.
 
 A stop says when it is arrived at and when it is left, the pair at the top right with an
 arrow between them. The second is the first plus the stay set underneath, which is
