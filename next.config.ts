@@ -19,6 +19,23 @@ const nextConfig: NextConfig = {
       "./node_modules/.pnpm/**/@prisma/client/runtime/*.map",
     ],
   },
+
+  /*
+   * The browser the export prints with. @sparticuz/chromium unpacks it from
+   * brotli archives in its own bin folder, found from a path it works out as
+   * it runs, and a path worked out at run time is one the trace cannot follow.
+   * Left to the trace, the function had the package's code and no browser,
+   * every export on Linux threw before a page was opened, and the route
+   * answered 502. Development never noticed: on a Mac the export prints with
+   * the Chrome that is installed. Named by where pnpm keeps the package,
+   * which is where its code runs from and so where it looks, and only for
+   * the one route that prints, since the browser is most of 70 MB.
+   */
+  outputFileTracingIncludes: {
+    "/api/export": [
+      "./node_modules/.pnpm/@sparticuz+chromium@*/node_modules/@sparticuz/chromium/bin/**",
+    ],
+  },
 };
 
 export default nextConfig;
