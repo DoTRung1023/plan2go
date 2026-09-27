@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { CloseIcon, InfoIcon, MoreIcon, PencilIcon } from "@/ui/icons";
+import { closesOnOutsidePress } from "@/ui/outside-press";
 
 interface EndpointMenuProps {
   readonly which: "start" | "end";
@@ -29,6 +30,14 @@ export function EndpointMenu({
   const container = useRef<HTMLDivElement | null>(null);
   const trigger = useRef<HTMLButtonElement | null>(null);
   const firstAction = useRef<HTMLButtonElement | null>(null);
+  /**
+   * Whether a press that began inside the menu is still held. Safari and
+   * Firefox on a Mac do not focus a button that is pressed, so pressing an
+   * action blurs whatever had focus with nowhere named to go; that blur is
+   * the press on its way to a click, which closes the menu itself. Let go
+   * wherever the pointer is released.
+   */
+  const pressedInside = useRef(false);
   const point = `${which} point`;
 
   useEffect(() => {
@@ -63,14 +72,26 @@ export function EndpointMenu({
           trigger.current?.focus();
         }
       }}
+      onPointerDown={() => {
+        pressedInside.current = true;
+        document.addEventListener(
+          "pointerup",
+          () => {
+            pressedInside.current = false;
+          },
+          { once: true },
+        );
+      }}
       onBlur={(event) => {
-        // Only when focus has gone somewhere else on the page. Safari and
-        // Firefox on a Mac do not focus a button that is pressed, so pressing
-        // an action blurs the one that had focus with nowhere named to go,
-        // and closing then took the action away before its click arrived. A
-        // press outside is the pointerdown above.
+        // Closed when focus goes anywhere outside the menu, including out of
+        // the page altogether, which names nowhere. The one blur that names
+        // nowhere and is not leaving is a press on one of the menu's own
+        // buttons; closing then took the action away before its click
+        // arrived. A press outside is the pointerdown above.
         const next = event.relatedTarget;
-        if (next !== null && !event.currentTarget.contains(next)) {
+        const leaving =
+          next === null ? !pressedInside.current : !event.currentTarget.contains(next);
+        if (leaving) {
           setOpen(false);
         }
       }}
@@ -92,6 +113,7 @@ export function EndpointMenu({
 
       {open ? (
         <div
+          {...closesOnOutsidePress}
           id={id}
           role="group"
           aria-label={`${point} options`}

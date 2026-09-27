@@ -44,10 +44,14 @@ function twoDigits(value: number): string {
  * written here are smaller than the ones that show, and the gap to the
  * chevron is the same five the line puts before its arrow.
  *
- * The weight is said outright: the start point's line around it sets none.
+ * The weight is the time step's own, which comes with it when no line height
+ * is named after it.
+ *
+ * Only an enabled pill lifts. While a time is being saved it cannot be
+ * pressed, and a pill that still rose under the pointer said it could.
  */
 const TRIGGER =
-  "flex items-center gap-[5px] rounded-pill border border-dashed py-px pr-[4px] pl-[6px] font-display text-time font-semibold text-terracotta-700 tabular-nums hover:border-terracotta hover:bg-paper-raised disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "flex items-center gap-[5px] rounded-pill border border-dashed py-px pr-[4px] pl-[6px] font-display text-time text-terracotta-700 tabular-nums enabled:hover:border-terracotta enabled:hover:bg-paper-raised disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 /** Minutes from midnight on the clock: "09:05". */
 function toClock(minutes: number): string {

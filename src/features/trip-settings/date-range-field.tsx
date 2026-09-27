@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import type { IsoDate } from "@/core/model/day";
 import { addDays, daysBetween, isoDateAsUtc, parseIsoDate, weekdayOf } from "@/core/time/zoned";
 import { ArrowLeftIcon, ArrowRightIcon } from "@/ui/icons";
+import { closesOnOutsidePress } from "@/ui/outside-press";
 import { formatDateRange } from "@/features/day-planner/format-day-date";
 
 const DAYS_IN_WEEK = 7;
@@ -423,6 +424,7 @@ export function DateRangeField({
 
       {open ? (
         <div
+          {...closesOnOutsidePress}
           role="dialog"
           aria-label={`Choose the ${label.toLowerCase()}`}
           style={{ left: shift }}

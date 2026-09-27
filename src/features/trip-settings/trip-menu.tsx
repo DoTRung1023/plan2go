@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { ArrowLeftIcon, MoreIcon } from "@/ui/icons";
+import { closesOnOutsidePress } from "@/ui/outside-press";
 
 /**
  * One row of the menu. A word with a glyph in front of it, the way every menu
@@ -164,6 +165,7 @@ export function TripMenu({ label, children }: TripMenuProps) {
 
       {open ? (
         <div
+          {...closesOnOutsidePress}
           role={page === null ? "menu" : "dialog"}
           aria-label={page === null ? label : page.title}
           // Close under the button, so the menu reads as what the button

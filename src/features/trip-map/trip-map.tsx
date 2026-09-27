@@ -13,6 +13,7 @@ import {
   stopMarkerElement,
 } from "./dom-marker";
 import { ExpandIcon, ShrinkIcon } from "@/ui/icons";
+import { outsidePressIsTaken } from "@/ui/outside-press";
 import {
   googleMapsBrowserKey,
   loadGoogleMaps,
@@ -25,6 +26,15 @@ import "./trip-map.css";
 
 /** Zoom used when a day has one point and there is no extent to fit. */
 const SINGLE_POINT_ZOOM = 14;
+
+/**
+ * How long a press on the map is held before it counts as one, in
+ * milliseconds: long enough for the second press of a double press, which
+ * zooms, to arrive and call it off. A little over the quarter second map
+ * libraries give a single press, since a double press made with care is
+ * slower than one made in a hurry.
+ */
+const SINGLE_PRESS_MS = 300;
 
 /**
  * A day with nothing on it still needs a view. It opens on the city the trip is
@@ -113,10 +123,13 @@ interface TripMapProps {
   /** The end of this day the sheet is open on, by its place, the same way. */
   readonly openedEndpointId: string | null;
   /**
-   * The map itself pressed, anywhere but a marker: the ground, or a route
-   * drawn on it. Not a drag, which Google tells apart before it gets here.
+   * The map itself pressed, once, anywhere but a marker: the ground, or a
+   * route drawn on it. Not a drag, not the first half of a double press, and
+   * not a press spent putting away a panel that was open. Answers whether
+   * the press closed something, which leaves the map where the reader had it
+   * rather than framing the day again under the pointer.
    */
-  readonly onPressMap: () => void;
+  readonly onPressMap: () => boolean;
   /**
    * Asked for rather than done here: what the map grows over belongs to
    * whoever laid the two panes out, and a map that resized itself would be
@@ -382,6 +395,11 @@ export function TripMap({
   const openingEndpoint = useRef(onOpenEndpoint);
   const pressing = useRef(onPressMap);
   /**
+   * Set when a press on the map has closed the sheet, and spent when the
+   * sheet has gone: the one time the sheet going does not frame the day.
+   */
+  const heldView = useRef(false);
+  /**
    * Read the same way when the day is drawn, so a marker built while the
    * sheet is open on it is built held. Pointing at one is over before the
    * day is drawn again; the sheet stays open across a day being edited.
@@ -462,23 +480,61 @@ export function TripMap({
   }, []);
 
   /**
-   * The markers are our own DOM laid over the map, and a press on one reaches
-   * the map as well as the marker. That one is the marker's, and the map
-   * leaves it alone.
+   * The map pressed, as the reader means it: once, on the ground or on a
+   * route, and for nothing else.
+   *
+   * Not on a marker. The markers are our own DOM laid over the map, and a
+   * press on one reaches the map as well as the marker; that one is the
+   * marker's.
+   *
+   * Not the first half of a double press, which zooms. Google says click for
+   * each press of a double press before it says dblclick, so a press is held
+   * for as long as a second could follow it, and let go if one does.
+   *
+   * Not a press spent putting a panel away. Pressing beside an open menu or
+   * picker is how it is closed, and the same press closing the sheet too
+   * closed something the reader was still using. Asked as the press begins,
+   * on the way down to whatever was pressed, before the panel has heard it
+   * and gone.
    */
   useEffect(() => {
     if (state.status !== "ready") {
       return;
     }
-    const listener = state.map.addListener("click", (event: google.maps.MapMouseEvent) => {
-      const target = event.domEvent.target;
-      if (target instanceof Element && target.closest(".trip-map-marker") !== null) {
+    const { map } = state;
+    const element = container.current;
+    let spent = false;
+    let held: ReturnType<typeof setTimeout> | null = null;
+    const letGo = (): void => {
+      if (held !== null) {
+        clearTimeout(held);
+        held = null;
+      }
+    };
+    const pressStarted = (): void => {
+      spent = outsidePressIsTaken();
+    };
+    element?.addEventListener("pointerdown", pressStarted, { capture: true });
+    const click = map.addListener("click", (event: google.maps.MapMouseEvent) => {
+      const { domEvent } = event;
+      if (domEvent.target instanceof Element && domEvent.target.closest(".trip-map-marker") !== null) {
         return;
       }
-      pressing.current();
+      letGo();
+      if (spent || (domEvent instanceof UIEvent && domEvent.detail > 1)) {
+        return;
+      }
+      held = setTimeout(() => {
+        held = null;
+        heldView.current = pressing.current();
+      }, SINGLE_PRESS_MS);
     });
+    const doubled = map.addListener("dblclick", letGo);
     return () => {
-      listener.remove();
+      letGo();
+      element?.removeEventListener("pointerdown", pressStarted, { capture: true });
+      click.remove();
+      doubled.remove();
     };
   }, [state]);
 
@@ -565,9 +621,13 @@ export function TripMap({
         hoveringLeg.current(null);
       });
       // A line that takes the pointer keeps its presses from the map, and
-      // pressing a route is still pressing the map as far as anyone can tell.
-      target.addListener("click", () => {
-        pressing.current();
+      // pressing a route is still pressing the map as far as anyone can tell,
+      // so they are handed on to it, double presses and all.
+      target.addListener("click", (event: google.maps.PolyMouseEvent) => {
+        maps.event.trigger(map, "click", event);
+      });
+      target.addListener("dblclick", (event: google.maps.PolyMouseEvent) => {
+        maps.event.trigger(map, "dblclick", event);
       });
       lines.current.push(target);
 
@@ -654,6 +714,14 @@ export function TripMap({
       return;
     }
     const { map } = state;
+    // A press on the map that closed the sheet leaves the map where the reader
+    // had it: they were looking at it, and framing the day again under the
+    // pointer threw that away. Closed any other way, the sheet going frames
+    // the day as before.
+    if (heldView.current && covered === 0) {
+      heldView.current = false;
+      return;
+    }
     // On a wide window whatever is open stands over the map's left edge, and
     // the day is framed in what is left beside it: a frame that filled the
     // map would have its left under the sheet, or all of it once the pane

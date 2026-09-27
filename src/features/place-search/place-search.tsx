@@ -8,6 +8,7 @@ import type { LatLng, Place } from "@/core/model/place";
 import { CheckIcon, CloseIcon, PinIcon, PlusIcon, SearchIcon } from "@/ui/icons";
 import { useScrollBar } from "@/ui/use-scroll-bar";
 import { Notice } from "@/ui/notice";
+import { closesOnOutsidePress } from "@/ui/outside-press";
 
 /** Long enough that typing does not spend money on every letter. */
 const DEBOUNCE_MS = 250;
@@ -664,7 +665,10 @@ export function PlaceSearch({
       </div>
 
       {panel ? (
-        <div className="absolute top-full right-0 left-0 z-30 mt-2 flex max-h-[330px] flex-col overflow-hidden rounded-panel border border-rule bg-paper-raised shadow-md">
+        <div
+          {...closesOnOutsidePress}
+          className="absolute top-full right-0 left-0 z-30 mt-2 flex max-h-[330px] flex-col overflow-hidden rounded-panel border border-rule bg-paper-raised shadow-md"
+        >
           {/* Only the bar's own width on the right: the room a row leaves
               beside its plus is the row's, below, so it can match what the
               plus has on its other side. */}

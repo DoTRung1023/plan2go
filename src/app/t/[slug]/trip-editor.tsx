@@ -398,10 +398,13 @@ export function TripEditor({
                 // cross on the field: its marker stays on the map, so nothing
                 // is lost by letting it go. Not a place found in a search,
                 // whose pin and name would go with it, and not one put aside,
-                // which was put there to look at the map.
-                if (opened !== null && opened.kind !== "candidate" && !aside) {
-                  dismiss();
+                // which was put there to look at the map. Nor one already on
+                // its way out, which something else closed.
+                if (opened === null || opened.kind === "candidate" || aside || leaving) {
+                  return false;
                 }
+                dismiss();
+                return true;
               }}
               candidate={candidate}
               covered={covered}

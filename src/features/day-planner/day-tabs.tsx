@@ -28,10 +28,13 @@ interface DayTabsProps {
  * The tab draws only the day and its date, but which day it is and how full
  * it is are two different questions, and a reader choosing a tab is usually
  * asking them together.
+ *
+ * A day with no stops is said to have none rather than to be empty: it can
+ * still start at the hotel and end at the station, and those are on it.
  */
 function stopLine(day: DayPlan): string {
   const stops = day.stops.length;
-  return stops > 0 ? formatStops(stops) : "empty";
+  return stops > 0 ? formatStops(stops) : "no stops";
 }
 
 /**
@@ -128,7 +131,10 @@ export function DayTabs({ days, selectedIndex, onSelect, onAddDay }: DayTabsProp
           and at either side. Whoever puts the strip on a page takes the four
           above off the space over it, and the strip reaches four out into the
           room at either side of it, so the pills sit where they would have
-          anyway and the line under them runs exactly as far as they do.
+          anyway and the line under them runs exactly as far as they do. The
+          same four are the strip's scroll padding, so a tab the keyboard
+          scrolls to stops that far short of the edge, not against it with
+          its ring cut off.
 
           Below, seven: the same four, and under them the line the strip
           draws as its scrollbar once a trip is long enough, which sits just
@@ -138,7 +144,7 @@ export function DayTabs({ days, selectedIndex, onSelect, onAddDay }: DayTabsProp
           button that adds one. */}
       <div
         ref={watchStrip}
-        className="day-tabs scroll-line scroll-shy -mx-[4px] flex items-center gap-2 px-[4px] pt-[4px] pb-[7px]"
+        className="day-tabs scroll-line scroll-shy -mx-[4px] flex scroll-px-[4px] items-center gap-2 px-[4px] pt-[4px] pb-[7px]"
       >
         <div
           role="tablist"
