@@ -577,8 +577,8 @@ sheet after each day for writing on. A footer on every sheet says it was made wi
 plan2go and which sheet it is of how many, counting every sheet.
 
 The export is chosen in a window over the whole page, the deepest shadow's one use:
-the choices down a column on the left, the days as chips with a word that takes all
-of them or just the open one, then what goes on the page as boxes with a line under
+the choices down a column on the left, the days as chips, every day with something on it
+chosen to begin with, and a word that takes all of them or none, then what goes on the page as boxes with a line under
 each saying what it means, then the paper as rows of pills, its size, which way up,
 how much of it the map takes, how big the words are and whether it is in the map's
 colours or in ink alone, then

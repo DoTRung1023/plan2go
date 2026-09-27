@@ -154,8 +154,6 @@ interface ExportDialogProps {
   /** Stands in for the trip's name in the file's name when it has none. */
   readonly cityName: string | null;
   readonly days: readonly PlannedDay[];
-  /** The day open in the panel, which is what the export starts out as. */
-  readonly selectedDayId: string;
   readonly onClose: () => void;
 }
 
@@ -179,22 +177,20 @@ interface ExportDialogProps {
  * they go to the printer at full size.
  *
  * A day with nothing on it cannot be chosen: a blank sheet is worse than no
- * sheet. Escape closes the dialog, as does the scrim around it.
+ * sheet. Every other day is chosen to begin with, whichever day is open in
+ * the panel, since the whole trip is what is most often handed over.
+ * Escape closes the dialog, as does the scrim around it.
  */
-export function ExportDialog({
-  title,
-  slug,
-  cityName,
-  days,
-  selectedDayId,
-  onClose,
-}: ExportDialogProps) {
+export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDialogProps) {
   const titleId = useId();
   const nameId = useId();
   const closeButton = useRef<HTMLButtonElement | null>(null);
   const preview = useRef<HTMLDivElement | null>(null);
   const scroller = useRef<HTMLDivElement | null>(null);
-  const [chosen, setChosen] = useState<ReadonlySet<string>>(() => new Set([selectedDayId]));
+  const printable = days.filter((day) => day.plan.stops.length > 0);
+  const [chosen, setChosen] = useState<ReadonlySet<string>>(
+    () => new Set(printable.map((day) => day.plan.id)),
+  );
   const [cover, setCover] = useState(false);
   const [map, setMap] = useState(true);
   const [mapSize, setMapSize] = useState<MapSize>(DEFAULT_EXPORT.mapSize);
@@ -220,7 +216,6 @@ export function ExportDialog({
   /** The name of the page at the top of the preview: "Day 2", "Cover", "Day 2 · notes". */
   const [onPage, setOnPage] = useState<string | null>(null);
 
-  const printable = days.filter((day) => day.plan.stops.length > 0);
   const picked = printable.filter((day) => chosen.has(day.plan.id));
   const allPicked = picked.length === printable.length && printable.length > 0;
 

@@ -609,7 +609,6 @@ export function TripEditor({
           slug={slug}
           cityName={cityName}
           days={days}
-          selectedDayId={selected.plan.id}
           onClose={() => {
             setExportOpen(false);
           }}
