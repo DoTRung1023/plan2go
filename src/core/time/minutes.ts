@@ -39,16 +39,26 @@ export function formatClock(minutesFromMidnight: number): string {
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
 }
 
-/** "25 min", "1 hr", "1 hr 40 min". Never decimal hours. */
-export function formatDuration(minutes: number): string {
+/**
+ * A duration as the pieces it is said in, each a number with its unit:
+ * ["25 min"], ["1 hr"], ["1 hr", "40 min"]. Kept apart for a narrow column,
+ * where a duration may run onto a second line between its pieces but a
+ * number is never left at the end of a line without its unit.
+ */
+export function durationParts(minutes: number): readonly string[] {
   const whole = Math.max(0, wholeMinutes(minutes));
   const hours = Math.floor(whole / MINUTES_PER_HOUR);
   const rest = whole % MINUTES_PER_HOUR;
   if (hours === 0) {
-    return `${String(rest)} min`;
+    return [`${String(rest)} min`];
   }
   if (rest === 0) {
-    return `${String(hours)} hr`;
+    return [`${String(hours)} hr`];
   }
-  return `${String(hours)} hr ${String(rest)} min`;
+  return [`${String(hours)} hr`, `${String(rest)} min`];
+}
+
+/** "25 min", "1 hr", "1 hr 40 min". Never decimal hours. */
+export function formatDuration(minutes: number): string {
+  return durationParts(minutes).join(" ");
 }

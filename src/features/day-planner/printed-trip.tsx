@@ -5,7 +5,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { conflictsAtStop } from "@/core/model/conflict";
 import type { Place } from "@/core/model/place";
 import type { ClockTime } from "@/core/time/compute-day";
-import { formatClock, formatDuration } from "@/core/time/minutes";
+import { durationParts, formatClock, formatDuration } from "@/core/time/minutes";
 import type { PlannedDay } from "./compute-trip";
 import { conflictSentence } from "./conflict-sentence";
 import type { DayMapSources } from "./day-map-source";
@@ -139,6 +139,22 @@ function TimeCell({ time }: { readonly time: ClockTime | null }) {
   );
 }
 
+/**
+ * How long a leg takes, in the time column, which is as wide as a clock time
+ * and no wider. A long one, "about 2 hr 50 min", runs onto a second line
+ * rather than out of the column and under the leg's disc, breaking only
+ * between its pieces: "about", "2 hr", "50 min", never inside one.
+ */
+function LegDuration({ minutes, rough }: { readonly minutes: number; readonly rough: boolean }) {
+  const pieces = rough ? ["about", ...durationParts(minutes)] : durationParts(minutes);
+  return pieces.map((piece, index) => (
+    <span key={piece}>
+      {index === 0 ? "" : " "}
+      <span className="whitespace-nowrap">{piece}</span>
+    </span>
+  ));
+}
+
 function LegLine({ day, legIndex }: { readonly day: PlannedDay; readonly legIndex: number }) {
   const leg = day.computed.legs[legIndex];
   const planned = day.legs[legIndex];
@@ -155,10 +171,10 @@ function LegLine({ day, legIndex }: { readonly day: PlannedDay; readonly legInde
 
   return (
     <div className={ROW}>
-      <p className={`pt-[5px] text-right text-meta whitespace-nowrap ${MUTED} tabular-nums`}>
-        {leg.durationMinutes === null
-          ? ""
-          : `${rough ? "about " : ""}${formatDuration(leg.durationMinutes)}`}
+      <p className={`pt-[5px] text-right text-meta ${MUTED} tabular-nums`}>
+        {leg.durationMinutes === null ? null : (
+          <LegDuration minutes={leg.durationMinutes} rough={rough} />
+        )}
       </p>
       {/* The leg hangs on the thread as it does on screen: its glyph on a disc
           washed with the ink the map draws this leg in, so the line on the

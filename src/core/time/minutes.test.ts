@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatClock, formatDuration, wholeMinutes } from "./minutes";
+import { durationParts, formatClock, formatDuration, wholeMinutes } from "./minutes";
 
 describe("formatClock", () => {
   it("reads midnight and noon the way a person says them", () => {
@@ -28,6 +28,20 @@ describe("formatDuration", () => {
 
   it("never returns a negative duration", () => {
     expect(formatDuration(-10)).toBe("0 min");
+  });
+});
+
+describe("durationParts", () => {
+  it("keeps each number with its unit, one piece per unit", () => {
+    expect(durationParts(25)).toEqual(["25 min"]);
+    expect(durationParts(60)).toEqual(["1 hr"]);
+    expect(durationParts(170)).toEqual(["2 hr", "50 min"]);
+  });
+
+  it("is what formatDuration says, joined", () => {
+    for (const minutes of [0, 25, 60, 100, 170, -10]) {
+      expect(durationParts(minutes).join(" ")).toBe(formatDuration(minutes));
+    }
   });
 });
 
