@@ -393,6 +393,16 @@ export function TripEditor({
                   ? opened.placeId
                   : null
               }
+              onPressMap={() => {
+                // Away from a place already on the trip, the same as the
+                // cross on the field: its marker stays on the map, so nothing
+                // is lost by letting it go. Not a place found in a search,
+                // whose pin and name would go with it, and not one put aside,
+                // which was put there to look at the map.
+                if (opened !== null && opened.kind !== "candidate" && !aside) {
+                  dismiss();
+                }
+              }}
               candidate={candidate}
               covered={covered}
               expanded={expanded}

@@ -113,6 +113,11 @@ interface TripMapProps {
   /** The end of this day the sheet is open on, by its place, the same way. */
   readonly openedEndpointId: string | null;
   /**
+   * The map itself pressed, anywhere but a marker: the ground, or a route
+   * drawn on it. Not a drag, which Google tells apart before it gets here.
+   */
+  readonly onPressMap: () => void;
+  /**
    * Asked for rather than done here: what the map grows over belongs to
    * whoever laid the two panes out, and a map that resized itself would be
    * deciding on their behalf.
@@ -338,6 +343,7 @@ export function TripMap({
   hoveredEndpointId,
   onHoverEndpoint,
   openedEndpointId,
+  onPressMap,
   start,
   end,
   stops,
@@ -374,6 +380,7 @@ export function TripMap({
   const hoveringLeg = useRef(onHoverLeg);
   const hoveringEndpoint = useRef(onHoverEndpoint);
   const openingEndpoint = useRef(onOpenEndpoint);
+  const pressing = useRef(onPressMap);
   /**
    * Read the same way when the day is drawn, so a marker built while the
    * sheet is open on it is built held. Pointing at one is over before the
@@ -387,6 +394,7 @@ export function TripMap({
     hoveringLeg.current = onHoverLeg;
     hoveringEndpoint.current = onHoverEndpoint;
     openingEndpoint.current = onOpenEndpoint;
+    pressing.current = onPressMap;
     openedStop.current = openedStopId;
     openedEndpoint.current = openedEndpointId;
   });
@@ -452,6 +460,27 @@ export function TripMap({
       stopWatching();
     };
   }, []);
+
+  /**
+   * The markers are our own DOM laid over the map, and a press on one reaches
+   * the map as well as the marker. That one is the marker's, and the map
+   * leaves it alone.
+   */
+  useEffect(() => {
+    if (state.status !== "ready") {
+      return;
+    }
+    const listener = state.map.addListener("click", (event: google.maps.MapMouseEvent) => {
+      const target = event.domEvent.target;
+      if (target instanceof Element && target.closest(".trip-map-marker") !== null) {
+        return;
+      }
+      pressing.current();
+    });
+    return () => {
+      listener.remove();
+    };
+  }, [state]);
 
   useEffect(() => {
     if (state.status !== "ready") {
@@ -534,6 +563,11 @@ export function TripMap({
       });
       target.addListener("mouseout", () => {
         hoveringLeg.current(null);
+      });
+      // A line that takes the pointer keeps its presses from the map, and
+      // pressing a route is still pressing the map as far as anyone can tell.
+      target.addListener("click", () => {
+        pressing.current();
       });
       lines.current.push(target);
 
