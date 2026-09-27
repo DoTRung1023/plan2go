@@ -394,9 +394,8 @@ without the edit link gets the plain time in both places.
 
 The last card on the day ends with the stop that would come next, as a slot on the
 rail. Under the disc, where the thread runs on to it, is the number that stop would
-get, in a 30px circle whose ring is the thread bent round: 2px wide, 4px on and 5px
-off with square ends, in `terracotta`, drawn as a path so the rhythm is the thread's in
-every browser. The digit is the disc's face and step, in `terracotta-700`. Beside it, on
+get, in a 30px circle drawn with the leaving time's edge, the other dashed outline in
+the accent a card carries: 1px, dashed, in `terracotta` at 55 percent. The digit is the disc's face and step, in `terracotta-700`. Beside it, on
 the left edge of the name above, **Add a place** at the small step in `terracotta-700`,
 the stay's step, and at the right, "from" and the time this stop is left, at the micro
 step in `ink-muted`, the step the opening hours are in. That is when the way to the next
@@ -407,7 +406,8 @@ one button that takes the traveller to the search field. It runs from the ring's
 edge to where the times end, and the time sits 10px in from that end, as the stay's
 words do from its edge. Under the pointer the row is a pill as tall as
 the ring in `neutral-200`, the fill the card's tools take under the pointer, and
-nothing else on it changes. With the keyboard on it the focus ring draws the same pill,
+the ring's dash takes the whole accent, as every dashed control's does; the words stay
+as they are. With the keyboard on it the focus ring draws the same pill,
 with no fill, as on every other control. The card behind it does not sink the way it
 does under the pointer, and this stop's marker on the map is let go: the slot is about
 the stop after this one.
