@@ -11,8 +11,8 @@ export const tripBySlug = cache(
   async (slug: string): Promise<Trip | null> => prismaTripRepository.findBySlug(slug),
 );
 
-/** What the browser's tab says: the trip's name, and plan2go when there is no trip to name. */
+/** The trip's name and plan2go in the browser tab, or plan2go when the trip is missing. */
 export async function tripTitle(slug: string): Promise<{ title: string }> {
   const trip = await tripBySlug(slug);
-  return { title: trip === null ? "plan2go" : trip.title };
+  return { title: trip === null ? "plan2go" : `${trip.title} | plan2go` };
 }

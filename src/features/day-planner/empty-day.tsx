@@ -17,7 +17,7 @@ export function EmptyDay({ dayName, onFindPlace }: EmptyDayProps) {
      * place of them: a day with nowhere to go still has somewhere to start
      * from, and the buttons for those are above and below this.
      */
-    <div className="flex flex-col items-center gap-[13px] px-6 py-10 text-center">
+    <div className="ml-[2px] flex flex-col items-center gap-[13px] rounded-card border border-rule bg-paper-raised px-6 py-10 text-center">
       <span className="grid h-[42px] w-[42px] shrink-0 place-items-center rounded-pill border-[1.5px] border-dashed border-rule-strong text-ink-faint">
         <PinIcon size={19} strokeWidth={2.4} />
       </span>

@@ -7,16 +7,17 @@ import type { LatLng, Place, PlaceId } from "@/core/model/place";
 import type { ComputedDay, ComputedStop } from "@/core/time/compute-day";
 import { formatClock } from "@/core/time/minutes";
 import { weekdayOf } from "@/core/time/zoned";
-import { ClockIcon, CloseIcon, FlagIcon, HomeIcon, PencilIcon, PlusIcon } from "@/ui/icons";
+import { ClockIcon, FlagIcon, HomeIcon, PlusIcon } from "@/ui/icons";
 import type { PlannedDay } from "./compute-trip";
 import type { DayActions } from "./day-actions";
 import { EmptyDay } from "./empty-day";
+import { EndpointMenu } from "./endpoint-menu";
 import { EndpointPicker } from "./endpoint-picker";
 import { formatDayDate } from "./format-day-date";
 import { formatOpeningHours } from "./format-opening-hours";
 import { LeaveAt } from "./leave-at";
 import { LegRow } from "./leg-row";
-import { AboutPlaceButton, StopCard, TOOL, TOOL_GLYPH } from "./stop-card";
+import { AboutPlaceButton, StopCard, TOOL_GLYPH } from "./stop-card";
 import { Notice } from "@/ui/notice";
 
 /**
@@ -114,6 +115,10 @@ function EndpointMark({ which }: { readonly which: keyof typeof MARKS }) {
   );
 }
 
+/** The filled and empty ends share a shell, marker column and text edge. */
+const ENDPOINT_ROW =
+  "grid w-full grid-cols-[30px_minmax(0,1fr)_auto] items-center gap-x-[13px] rounded-row text-left";
+
 /**
  * Where the day starts and where it ends. A different shape from a stop, not
  * merely a different colour: a rounded square in sage with one corner cut,
@@ -126,7 +131,10 @@ function Anchor({
   time,
   setTime,
   hours,
-  controls,
+  onChange,
+  onRemove,
+  saving,
+  pickerOpen,
   hovered,
   onHover,
   onOpen,
@@ -148,8 +156,11 @@ function Anchor({
   readonly setTime: React.ReactNode;
   /** When the place is open on this day, or null when we do not know. */
   readonly hours: string | null;
-  /** What can be done to this end of the day, for a reader who may change it. */
-  readonly controls: React.ReactNode;
+  /** Null for a reader who cannot change this end, or while its picker is open. */
+  readonly onChange: (() => void) | null;
+  readonly onRemove: (() => void) | null;
+  readonly saving: boolean;
+  readonly pickerOpen: boolean;
   /** Whether the pointer is on this place, here or on the map beside it. */
   readonly hovered: boolean;
   readonly onHover: (placeId: string | null) => void;
@@ -176,7 +187,8 @@ function Anchor({
      * and as raised as a stop's gave them the weight of the places it is
      * for. The same row, with the line dashed, is what offers to choose an
      * end that is not there yet, so the two read as one slot filled and
-     * empty. Under the pointer, here or on the map, it sinks to the ground
+     * empty. The clock and menu sit together on one line to keep the filled
+     * row close to the empty one in height. Under the pointer, it sinks
      * the way a stop card does, inside a ring in its own colour, which for
      * an end of the day is sage, as its ring on the map is. The marker sits
      * in the middle of the shorter row rather than at its top, where a disc
@@ -190,44 +202,55 @@ function Anchor({
       onMouseLeave={() => {
         onHover(null);
       }}
-      className={`group grid grid-cols-[30px_minmax(0,1fr)] gap-x-[13px] rounded-row border px-4 py-[9px] ${
+      className={`group ${ENDPOINT_ROW} border px-4 py-[9px] ${
         hovered ? "border-sage-600/55 bg-paper-sunken" : "border-rule bg-paper"
       }`}
     >
       <EndpointMark which={which} />
 
-      <div className="flex items-start gap-[10px]">
-        <div className="min-w-0 flex-1">
-          <p className="font-display text-place text-ink">{endpointName(endpoint)}</p>
-          <p className="mt-[3px] text-meta text-ink-faint">
+      <div className="min-w-0">
+        <button
+          type="button"
+          disabled={saving || pickerOpen}
+          onClick={onChange ?? onOpen}
+          aria-label={onChange === null ? `About ${endpoint.place.name}` : `Change ${which} point`}
+          className="block w-full rounded-chip text-left hover:opacity-75 disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+        >
+          <span className="block break-words font-display text-place text-ink">{endpointName(endpoint)}</span>
+          <span className="mt-[3px] block break-words text-meta text-ink-faint">
             {endpoint.place.address ?? fallback}
-          </p>
-          {/* The same line a stop card carries, in the same words and the same
-              clock: a hotel that locks its doors at eleven is as much use to
-              know about as a museum that shuts at five. */}
-          {hours === null ? null : (
-            <p className="mt-[5px] flex items-center gap-[5px] text-micro text-ink-muted tabular-nums">
-              <ClockIcon size={12} className="shrink-0" />
-              {hours}
-            </p>
-          )}
-        </div>
-
-        {/* The time, and under it what can be done to this end of the day:
-            the same column a stop card keeps at its top right, with the same
-            glyph first. Where the day starts is somewhere the traveller is
-            going too, so anyone reading can open it. */}
-        <div className="flex flex-none flex-col items-end gap-[3px]">
-          {setTime ?? (
-            <p className="font-display text-time whitespace-nowrap text-terracotta-700 tabular-nums">
-              {time ?? "Time not known"}
-            </p>
-          )}
-          <span className="-mr-1 flex items-center opacity-55 group-hover:opacity-100 focus-within:opacity-100">
-            <AboutPlaceButton name={endpoint.place.name} onOpen={onOpen} />
-            {controls}
           </span>
-        </div>
+        </button>
+        {/* The same line a stop card carries, in the same words and the
+            clock: a hotel that locks its doors at eleven matters here too. */}
+        {hours === null ? null : (
+          <p className="mt-[5px] flex items-center gap-[5px] text-micro text-ink-muted tabular-nums">
+            <ClockIcon size={12} className="shrink-0" />
+            {hours}
+          </p>
+        )}
+      </div>
+
+      {/* The clock and actions share one line, keeping this the same compact
+          row as the empty slot even when the end can be edited. */}
+      <div className="flex items-center gap-1">
+        {setTime ?? (
+          <p className="font-display text-time whitespace-nowrap text-terracotta-700 tabular-nums">
+            {time ?? "Time not known"}
+          </p>
+        )}
+        {onChange === null || onRemove === null ? (
+          <AboutPlaceButton name={endpoint.place.name} onOpen={onOpen} />
+        ) : (
+          <EndpointMenu
+            which={which}
+            placeName={endpoint.place.name}
+            disabled={saving}
+            onAbout={onOpen}
+            onChange={onChange}
+            onRemove={onRemove}
+          />
+        )}
       </div>
     </div>
   );
@@ -238,15 +261,13 @@ function Anchor({
  * outline on paper where the row has no place to stand on yet, with the
  * marker the end will get, the name of the end and what goes there, and a
  * plus at the end of the row. On the anchor's grid, so the marker and the
- * words stand where the place's will once there is one; the dash is a
- * pixel and a half, and that much comes off the gutter and off the height,
- * so the marker lands on the anchor's 17px and the row is as deep as the
- * anchor is, to the pixel. On paper, a step under the raised cards the
- * stops are on and level with a leg, since it is an offer rather than a
- * place. The dash takes the accent under the pointer and the paper lifts.
+ * words stand where the place's will once there is one. The empty row can
+ * be a little shorter because it has no clock or menu. On paper, a step under
+ * the raised cards the stops are on and level with a leg, since it is an
+ * offer rather than a place. The dash takes the accent under the pointer and
+ * the paper lifts.
  */
-const ADD_ENDPOINT =
-  "group grid w-full grid-cols-[30px_minmax(0,1fr)_auto] items-center gap-x-[13px] rounded-row border-[1.5px] border-dashed border-rule-strong bg-paper px-[15.5px] py-[8.5px] text-left hover:border-terracotta hover:bg-paper-raised disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+const ADD_ENDPOINT = `${ENDPOINT_ROW} group border-[1.5px] border-dashed border-rule-strong bg-paper px-[15.5px] py-[8.5px] hover:border-terracotta hover:bg-paper-raised disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta`;
 
 /** What each end of the day is called, wherever it has to be said out loud. */
 const ENDS = {
@@ -254,15 +275,11 @@ const ENDS = {
     add: "Add start point",
     hint: "Hotel, home or pickup",
     label: "Where the day starts",
-    change: "Change where the day starts",
-    remove: "Remove where the day starts",
   },
   end: {
     add: "Add end point",
     hint: "Hotel, station or airport",
     label: "Where the day ends",
-    change: "Change where the day ends",
-    remove: "Remove where the day ends",
   },
 } as const;
 
@@ -323,38 +340,6 @@ function EndpointSlot({
     });
   };
 
-  /* The word each glyph stands for is kept as its name and as the tooltip,
-     so it is read out and can be hovered for, only not spelled out on the row. */
-  const controls =
-    actions === null ? null : (
-      <>
-        <button
-          type="button"
-          disabled={saving}
-          onClick={() => {
-            setPicking(true);
-          }}
-          title="Change"
-          aria-label={words.change}
-          className={TOOL}
-        >
-          <PencilIcon size={TOOL_GLYPH.pencil} strokeWidth={TOOL_GLYPH.stroke} />
-        </button>
-        <button
-          type="button"
-          disabled={saving}
-          onClick={() => {
-            write(null);
-          }}
-          title="Remove"
-          aria-label={words.remove}
-          className={TOOL}
-        >
-          <CloseIcon size={TOOL_GLYPH.close} strokeWidth={TOOL_GLYPH.stroke} />
-        </button>
-      </>
-    );
-
   return (
     <div>
       {endpoint === null ? null : (
@@ -365,7 +350,10 @@ function EndpointSlot({
           time={time}
           setTime={setTime}
           hours={hoursOn(endpoint.place, day)}
-          controls={picking ? null : controls}
+          onChange={actions === null || picking ? null : () => setPicking(true)}
+          onRemove={actions === null || picking ? null : () => write(null)}
+          saving={saving}
+          pickerOpen={picking}
           hovered={hoveredEndpointId === endpoint.place.id}
           onHover={onHoverEndpoint}
           onOpen={() => {
@@ -416,8 +404,7 @@ function EndpointSlot({
               <span className="block text-small/[1.15] font-semibold text-ink">{words.add}</span>
               <span className="mt-[3px] block text-micro/[1.25] text-ink-muted">{words.hint}</span>
             </span>
-            {/* Where a card keeps its tools, in a tool's box, so the plus
-                stands in the column the info glyph on the cards does. */}
+            {/* The plus sits at the same right edge as the filled row's menu. */}
             <span className="-mr-1 grid h-[22px] w-[22px] place-items-center text-ink-faint group-hover:text-terracotta-700">
               <PlusIcon size={15} strokeWidth={TOOL_GLYPH.stroke} />
             </span>
