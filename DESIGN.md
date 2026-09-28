@@ -534,8 +534,8 @@ from it and slides the new name in, and a dark pill at the foot of the map says 
 is now in Hue".
 
 The panels, the places the field finds and the cities the pill offers, hold the
-product's own list rather than the file's, drawn from one set of classes,
-`panel-styles.ts`, so the two cannot drift apart. The panels themselves are the bar's,
+product's own list rather than the file's, drawn from one set of classes in
+`place-search.css`, so the two cannot drift apart. The panels themselves are the bar's,
 so the bar and what it opens read as one thing: each hangs from the bar, exactly its
 width and 8px under it, on the bar's surface inside an edge of ink at 10 percent at the
 `panel` radius, at the same lift as the bar in use, there or not there with no

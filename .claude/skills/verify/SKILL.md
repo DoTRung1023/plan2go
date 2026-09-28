@@ -49,16 +49,16 @@ Every trip opened this way is a row in the shared database. Delete them when don
 The bar is `.place-search .search-bar`; its field is `input[aria-keyshortcuts="/"]`,
 which has no placeholder attribute (the empty field's words are an overlay,
 `.search-words`). The bar carries `data-active` while it is in use, and
-`.search-scrim` covers the page then. Both panels hang inside `.search-bar`, are drawn
-from the classes in `panel-styles.ts`, and are mounted only while open, with no
-transition, so wait for them to exist. The place list is the element the field's
+`.search-scrim` covers the page then. Both panels are `.search-panel`, hang inside
+`.search-bar`, and are mounted only while open, with no transition, so wait for them
+to exist; a row is `.search-row`, with `data-active` on the one picked out. The place list is the element the field's
 `aria-controls` names, a `[role="listbox"]` labelled "Popular in <city>" or "Places that
 match"; the city panel is `[role="dialog"][aria-label^="The city"]`, opened by
 `.search-pill`, with its own field inside it. Before anything is typed the place panel
 opens on a sideways row of quick search chips, one per kind of place; take one with
 `getByRole("button", { name: "Park", exact: true })`, since rows named for a park match
 a looser selector. A chip is a toggle (`aria-pressed`): pressed, the list's
-`aria-label` becomes "Parks in <city>" once `/api/places/kind` answers, and pressed
+`aria-label` becomes "Parks in <city>" once `/api/places/nearby?kind=park` answers, and pressed
 again it is "Popular in <city>". Round arrows labelled "Scroll back through the quick
 searches" and "Scroll on through the quick searches" are there only while there is
 more of the row that way. A
@@ -67,9 +67,10 @@ timestamped transcript of everything the panels say, which is the evidence for
 anything about loading states. `.search-toast` is the sentence at the foot of the
 map after a move or an add, gone after 2.4 s.
 
-Routes worth intercepting with `page.route`: `**/api/places/nearby**` (the city
-recommendations, asked once per mount), `**/api/places/search**` (typed search,
-250 ms debounce, two letter minimum) and `**/api/places/preview**` (the look at a
+Routes worth intercepting with `page.route`: `**/api/places/nearby**` (the city's
+best known, asked once per city, and with `kind=` the best known of a kind, asked once
+per kind and city), `**/api/places/search**` (typed search, 150 ms debounce, two
+letter minimum, each answer kept so words typed again are not asked again) and `**/api/places/preview**` (the look at a
 chosen place, which needs the edit key). Delay `nearby` to hold its waiting line still
 for a screenshot.
 
