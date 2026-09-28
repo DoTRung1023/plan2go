@@ -1,5 +1,6 @@
 import type { Trip } from "@/core/model/trip";
 import { computeTrip } from "@/features/day-planner/compute-trip";
+import { legWrites } from "@/server/travel/leg-cache";
 import { TripEditor } from "./trip-editor";
 import { tripTravelProvider } from "./travel";
 
@@ -20,7 +21,14 @@ interface TripPageProps {
  * this is where its legs are answered and its times worked out.
  */
 export async function TripPage({ trip, editKey }: TripPageProps) {
-  const days = await computeTrip(trip, await tripTravelProvider(trip, "after-replying"));
+  // A new answer is handed back the moment it arrives, with its write started
+  // and not waited on: the legs of a day are asked one behind the other, and a
+  // write waited on is a round trip added to every leg after it. They are all
+  // waited on here before the page goes, so whatever reads the table next,
+  // another tab or the export, finds them there rather than paying again.
+  const writes = legWrites();
+  const days = await computeTrip(trip, await tripTravelProvider(trip, writes));
+  await writes.landed();
 
   return (
     <>

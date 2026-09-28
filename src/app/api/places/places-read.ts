@@ -6,10 +6,23 @@ import { googleMapsApiKey } from "@/server/places/google-key";
 import { consumeRateLimit } from "@/server/rate-limit/ip-rate-limit";
 import type { RateLimitPolicy } from "@/server/rate-limit/window";
 
+/**
+ * The words a route's refusals use for what the reader was doing, where one
+ * route's differ from the next: "Too many `searches` from this connection.
+ * Wait 30 seconds and `search again`." and "Could not reach the `place search
+ * service`."
+ */
+interface Asking {
+  readonly many: string;
+  readonly again: string;
+  readonly service: string;
+}
+
 interface PlacesRead<Query> {
   /** What its requests are counted under, and how many one connection may make. */
   readonly route: string;
   readonly policy: RateLimitPolicy;
+  readonly asking: Asking;
   /** The query string, as the route reads it. */
   readonly query: z.ZodType<Query>;
   /** What the function log calls the provider failing, so an outage can be told apart. */
@@ -32,6 +45,11 @@ export function refuse(
  * A read in front of the places provider: a route that asks for no edit
  * token, since reads never do, but spends money, so it is counted by address
  * before anything else and refused plainly when the server has no key.
+ * Nothing the answer reads, our own tables included, is read before the
+ * count, so a connection over its limit costs the database only the count.
+ *
+ * Every places route that answers in words comes through here, so the shape
+ * of a refusal and the order things are checked in are written once.
  *
  * Every refusal says what happened and what to do. Whether the reader hears
  * it is the caller's to decide: a list nobody asked for out loud, such as the
@@ -46,8 +64,8 @@ export function placesRead<Query>(
       const wait = String(limit.retryAfterSeconds);
       return refuse(
         429,
-        "Too many searches from this connection.",
-        `Wait ${wait} seconds and try again.`,
+        `Too many ${read.asking.many} from this connection.`,
+        `Wait ${wait} seconds and ${read.asking.again}.`,
         { "Retry-After": wait },
       );
     }
@@ -74,7 +92,7 @@ export function placesRead<Query>(
       console.error(read.failing, cause);
       return refuse(
         502,
-        "Could not reach the place search service.",
+        `Could not reach the ${read.asking.service}.`,
         "Your trip is saved, try again in a moment.",
       );
     }

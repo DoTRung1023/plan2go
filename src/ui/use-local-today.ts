@@ -3,13 +3,17 @@ import { useEffect, useState } from "react";
 /** How often the clock is looked at, so midnight is never more than this late. */
 const LOOK_EVERY_MILLIS = 60_000;
 
-/** Today's date on this browser's clock, in the zone the browser is in, as YYYY-MM-DD. */
+/**
+ * Today's date on this browser's clock, in the zone the browser is in, as
+ * YYYY-MM-DD. Put together from the date's own parts rather than formatted
+ * by a locale, which a browser short of locale data writes its own way, and
+ * the form parses what this returns.
+ */
 function localToday(): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${String(now.getFullYear())}-${month}-${day}`;
 }
 
 /**

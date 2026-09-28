@@ -39,7 +39,10 @@ export function useTypedSearch<T>(
   onAnswer: () => void,
 ): TypedSearch<T> {
   const [found, setFound] = useState<readonly T[]>([]);
-  /** The words the answer on screen is for, found or refused. */
+  /**
+   * The words and the place the answer on screen is for, found or refused.
+   * Both, because the same words asked somewhere new are a new question.
+   */
   const [answered, setAnswered] = useState<string | null>(null);
   const [refusal, setRefusal] = useState<string | null>(null);
   const [known, setKnown] = useState<Readonly<Record<string, readonly T[]>>>({});
@@ -69,7 +72,7 @@ export function useTypedSearch<T>(
         if (attempt !== newest.current) {
           return;
         }
-        setAnswered(words);
+        setAnswered(key);
         if ("error" in answer) {
           setFound([]);
           setRefusal(answer.error);
@@ -89,12 +92,13 @@ export function useTypedSearch<T>(
   return {
     searched,
     found: recalled ?? found,
-    searching: searched && answered !== words && !isRecalled,
+    searching: searched && answered !== key && !isRecalled,
     // A refusal was about other words than these, which are answered already.
     refusal: isRecalled ? null : refusal,
     reset: () => {
       newest.current += 1;
       setFound([]);
+      setAnswered(null);
       setRefusal(null);
     },
   };

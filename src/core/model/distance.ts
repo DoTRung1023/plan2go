@@ -34,14 +34,28 @@ function wrapLongitude(lng: number): number {
  * The box a circle round a point fits in, for a search that can be held to a
  * box but not to a circle. A box across the 180th meridian keeps its corners
  * on either side of it, the east one west of the west one, which is how such a
- * box is written; one reaching a pole stops at it.
+ * box is written.
+ *
+ * A circle reaching a pole takes in every longitude, since every meridian
+ * meets there. Such a box stops at the pole and runs from -180 to 180, rather
+ * than folding its corners past each other into a sliver on the far side of
+ * the world. A circle that stops short of a pole is always less than half the
+ * way round, so no other box needs this.
  */
 export function boxAround(centre: LatLng, radiusMeters: number): Box {
   const degrees = (radiusMeters / EARTH_RADIUS_METERS) * (180 / Math.PI);
   const lngDegrees = degrees / Math.cos(toRadians(centre.lat));
+  const low = centre.lat - degrees;
+  const high = centre.lat + degrees;
+  if (low <= -90 || high >= 90) {
+    return {
+      low: { lat: Math.max(low, -90), lng: -180 },
+      high: { lat: Math.min(high, 90), lng: 180 },
+    };
+  }
   return {
-    low: { lat: Math.max(centre.lat - degrees, -90), lng: wrapLongitude(centre.lng - lngDegrees) },
-    high: { lat: Math.min(centre.lat + degrees, 90), lng: wrapLongitude(centre.lng + lngDegrees) },
+    low: { lat: low, lng: wrapLongitude(centre.lng - lngDegrees) },
+    high: { lat: high, lng: wrapLongitude(centre.lng + lngDegrees) },
   };
 }
 

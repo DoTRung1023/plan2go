@@ -47,18 +47,9 @@ const querySchema = z.object({
  * has gone.
  */
 export async function GET(request: Request): Promise<Response> {
-  const parsed = querySchema.safeParse(Object.fromEntries(new URL(request.url).searchParams));
-
-  // Counted and looked for on the trip at once rather than one after the
-  // other, which is a round trip to the database saved on every picture.
-  // Finding the place costs nothing and tells the caller nothing, and nothing
-  // is paid for below until the count has said this request may spend.
-  const [limit, onTrip] = await Promise.all([
-    consumeRateLimit(ROUTE, request.headers, POLICY),
-    parsed.success
-      ? prismaTripRepository.findPlaceByProviderId(parsed.data.slug, parsed.data.id)
-      : null,
-  ]);
+  // Counted before anything else is read, so a connection over its limit is
+  // turned away without costing the database anything more than the count.
+  const limit = await consumeRateLimit(ROUTE, request.headers, POLICY);
   if (!limit.allowed) {
     return new Response(null, {
       status: 429,
@@ -71,11 +62,13 @@ export async function GET(request: Request): Promise<Response> {
     return new Response(null, { status: 503 });
   }
 
+  const parsed = querySchema.safeParse(Object.fromEntries(new URL(request.url).searchParams));
   if (!parsed.success) {
     return new Response(null, { status: 400 });
   }
 
   const { slug, id, at, width, key } = parsed.data;
+  const onTrip = await prismaTripRepository.findPlaceByProviderId(slug, id);
   if (onTrip === null) {
     const access =
       key === undefined

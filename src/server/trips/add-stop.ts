@@ -1,12 +1,14 @@
 import type { DayId, DayPlan } from "@/core/model/day";
-import type { LegResolution } from "@/core/model/leg";
+import type { TravelMode } from "@/core/model/leg";
 import type { LatLng, Place } from "@/core/model/place";
 import type { Stop } from "@/core/model/stop";
-import type { Trip } from "@/core/model/trip";
 import type { PlacesProvider } from "@/core/ports/places-provider";
 import type { TravelProvider } from "@/core/ports/travel-provider";
-import { legRequestsFor } from "@/core/time/leg-requests";
+import { legPoints } from "@/core/time/day-points";
+import { answerLegsInOrder, legRequestsFor } from "@/core/time/leg-requests";
+import { editKeyHashMatches } from "../ownership/edit-key";
 import type { TripRepository } from "../repositories/trip-repository";
+import type { TravelFor } from "./leg-modes";
 import { fastestTravelMode } from "./leg-modes";
 
 /** A new stop gets an hour, until the traveller says otherwise. */
@@ -42,19 +44,12 @@ export async function momentToReach(
     note: null,
   };
   const next: DayPlan = { ...day, stops: [...day.stops, stop] };
-  const toNew = legRequestsFor(next).length - (day.end === null ? 1 : 2);
+  const toNew = legPoints(next).length - (day.end === null ? 1 : 2);
   if (toNew < 0) {
     return null;
   }
 
-  const answered: LegResolution[] = [];
-  for (let index = 0; index < toNew; index += 1) {
-    const request = legRequestsFor(next, answered)[index];
-    if (request === undefined) {
-      return null;
-    }
-    answered.push(await travel.estimate(request));
-  }
+  const answered = await answerLegsInOrder(next, (request) => travel.estimate(request), toNew);
   return legRequestsFor(next, answered)[toNew]?.departAt ?? null;
 }
 
@@ -89,60 +84,74 @@ function travelsFrom(day: DayPlan | undefined): LatLng | null {
 }
 
 /**
+ * The quickest way to a new last stop, asked at the moment the day will set
+ * out on it, which is known already, so the page drawn after this finds the
+ * answer kept.
+ */
+async function wayInTo(
+  day: DayPlan | undefined,
+  place: Place,
+  travel: TravelProvider,
+): Promise<TravelMode> {
+  const leaves = day === undefined ? null : await momentToReach(day, place, travel);
+  return fastestTravelMode(travelsFrom(day), place.position, travel, leaves);
+}
+
+/**
  * Put a searched place onto a day.
  *
  * The trip's own copy is checked first, so the details call is paid for once
  * per place per trip and never again, which is also what lets a saved trip be
  * rendered years later without touching the provider.
  *
- * Everything that does not wait on anything else is asked for at once. Adding
- * a place is the slowest thing a person does often here, and it used to be
- * four waits one behind the other: the trip read, then the way in, then the
- * write, then the way out. The trip read has no bearing on which place this
- * is, and both legs are measured between points that are known before either
- * is written, so only the two writes are left in a line, and those have to be:
- * the first is what says the key is good.
+ * The key is checked before anything is spent. Nothing here is paid for, a
+ * details call, a leg of the day timed, or a way in or out measured, until the
+ * key has been compared with the trip's own, so a plain link with a made up
+ * key costs three reads of our own tables and is turned away. The write below
+ * checks the key again, and is still what authorises the change.
  *
- * The travel provider is made for the trip once it has been read, so every
- * leg already on the day is answered from one read of our own table rather
- * than one read a leg, which is what finding the way in's moment asks for.
+ * Everything that does not wait on anything else is asked for at once. Adding
+ * a place is the slowest thing a person does often here: the trip, the key
+ * and the trip's copy of the place are read together, then the place and what
+ * is already known about the day's legs, then the way in and the way out. The
+ * way out runs between points known before anything is measured, so it does
+ * not wait for the way in's moment to be worked out. Only the two writes are
+ * left in a line, and those have to be: the first is what says the key is good.
  */
 export async function addStopFromSearch(
   request: AddStopRequest,
   repository: TripRepository,
   provider: PlacesProvider,
-  travelFor: (trip: Trip | null) => Promise<TravelProvider>,
+  travelFor: TravelFor,
 ): Promise<AddStopResult> {
-  // The trip is read for the point the new leg starts at, which is a
-  // different question from which place this is, so neither waits on the
-  // other. The write below is still what authorises the change, so this tells
-  // an outsider nothing they could not have read from the trip's own page.
-  const [stored, trip] = await Promise.all([
+  const [storedHash, stored, trip] = await Promise.all([
+    repository.findEditKeyHash(request.slug),
     repository.findPlaceByProviderId(request.slug, request.providerPlaceId),
     repository.findBySlug(request.slug),
   ]);
-  const place: Place | null =
-    stored ?? (await provider.details(request.providerPlaceId, request.session));
+  if (storedHash === null || !editKeyHashMatches(request.editKeyHash, storedHash)) {
+    return { status: "refused" };
+  }
 
+  // Only the day the stop goes on is timed, so only its legs are read.
+  const day = trip?.days.find((candidate) => candidate.id === request.dayId);
+  const [place, travel] = await Promise.all([
+    stored ?? provider.details(request.providerPlaceId, request.session),
+    travelFor(day === undefined ? [] : [day]),
+  ]);
   if (place === null) {
     return { status: "no-such-place" };
   }
 
-  const day = trip?.days.find((candidate) => candidate.id === request.dayId);
-  const travel = await travelFor(trip);
-  // The way in is asked at the moment the day will set out on it, which is
-  // known already, so the page drawn after this finds the answer kept. The
-  // way out's moment turns on which way in wins, so it is asked with none,
-  // as before, rather than after the way in has been answered: waiting on
-  // it would put a second question to the provider behind the first.
-  const leaves = day === undefined ? null : await momentToReach(day, place, travel);
   // A new last stop is also where the leg out to the day's end now starts
   // from, and the way home from somewhere else was an answer to a different
-  // question. Asked again, the way every leg with new ends is. Both legs run
-  // between points already known, so both are measured at once.
+  // question. Asked again, the way every leg with new ends is. Its moment
+  // turns on which way in wins, so it is asked with none rather than behind
+  // the way in: waiting on it would put a second question to the provider
+  // behind the first.
   const end = day?.end ?? null;
   const [wayIn, wayOut] = await Promise.all([
-    fastestTravelMode(travelsFrom(day), place.position, travel, leaves),
+    wayInTo(day, place, travel),
     end === null ? null : fastestTravelMode(place.position, end.place.position, travel),
   ]);
 

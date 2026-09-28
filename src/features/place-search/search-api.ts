@@ -10,6 +10,13 @@ export const DEBOUNCE_MS = 150;
 /** Fewer letters than this are not a search yet. */
 export const MINIMUM_LETTERS = 2;
 
+/**
+ * Degrees kept on a point a search is asked near. Any more is spurious and
+ * misses the cache. One figure for every list the panel asks for, so the
+ * typed search and the city's lists round the same point the same way.
+ */
+export const POINT_DECIMALS = 4;
+
 /** A place as the search routes answer with it. */
 const suggestionSchema = object({
   providerPlaceId: string(),

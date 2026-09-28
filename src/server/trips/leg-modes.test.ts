@@ -3,7 +3,9 @@ import type { DayEndpoint, DayPlan } from "@/core/model/day";
 import type { LegResolution, TravelRequest } from "@/core/model/leg";
 import type { Place } from "@/core/model/place";
 import type { Stop } from "@/core/model/stop";
-import { fastestTravelMode, legsWithNewEnds } from "./leg-modes";
+import { legRequestsFor } from "@/core/time/leg-requests";
+import type { LegModeUpdate, TripRepository } from "../repositories/trip-repository";
+import { fastestTravelMode, legsWithNewEnds, refreshLegModes } from "./leg-modes";
 
 function place(id: string): Place {
   return {
@@ -79,30 +81,30 @@ describe("legsWithNewEnds", () => {
   });
 });
 
-describe("fastestTravelMode", () => {
-  /** Every mode answered, the drive fastest, with what was asked kept. */
-  function recording(): { readonly asked: TravelRequest[]; readonly estimate: (request: TravelRequest) => Promise<LegResolution> } {
-    const asked: TravelRequest[] = [];
-    const minutes = { walk: 40, drive: 12, transit: 25 } as const;
-    return {
-      asked,
-      estimate: (request) => {
-        asked.push(request);
-        return Promise.resolve({
-          status: "resolved",
-          estimate: {
-            mode: request.mode,
-            durationMinutes: minutes[request.mode],
-            distanceMeters: 3000,
-            source: "google-routes",
-            path: null,
-            rides: null,
-          },
-        });
-      },
-    };
-  }
+/** Every mode answered, the drive fastest, with what was asked kept. */
+function recording(): { readonly asked: TravelRequest[]; readonly estimate: (request: TravelRequest) => Promise<LegResolution> } {
+  const asked: TravelRequest[] = [];
+  const minutes = { walk: 40, drive: 12, transit: 25 } as const;
+  return {
+    asked,
+    estimate: (request) => {
+      asked.push(request);
+      return Promise.resolve({
+        status: "resolved",
+        estimate: {
+          mode: request.mode,
+          durationMinutes: minutes[request.mode],
+          distanceMeters: 3000,
+          source: "google-routes",
+          path: null,
+          rides: null,
+        },
+      });
+    },
+  };
+}
 
+describe("fastestTravelMode", () => {
   it("asks every mode at the moment given, and takes the fastest", async () => {
     const travel = recording();
     const mode = await fastestTravelMode(
@@ -128,5 +130,106 @@ describe("fastestTravelMode", () => {
     });
 
     expect(travel.asked.every((request) => request.departAt === null)).toBe(true);
+  });
+});
+
+describe("refreshLegModes", () => {
+  const NOT_STUBBED = "This stub only answers setting a leg's mode.";
+
+  /** Keeps the modes written, and answers nothing else. */
+  function repositoryKeepingModes(): {
+    readonly repository: TripRepository;
+    readonly modes: LegModeUpdate[];
+  } {
+    const modes: LegModeUpdate[] = [];
+    const unstubbed = (): Promise<never> => Promise.reject(new Error(NOT_STUBBED));
+    return {
+      modes,
+      repository: {
+        findBySlug: unstubbed,
+        findEditKeyHash: unstubbed,
+        findPlaceByProviderId: unstubbed,
+        setLegMode: (update) => {
+          modes.push(update);
+          return Promise.resolve({ status: "set" });
+        },
+        create: unstubbed,
+        updateSettings: unstubbed,
+        delete: unstubbed,
+        addStop: unstubbed,
+        setDayEndpoint: unstubbed,
+        setDayStart: unstubbed,
+        setDayCity: unstubbed,
+        updateStop: unstubbed,
+        removeStop: unstubbed,
+        moveStop: unstubbed,
+      },
+    };
+  }
+
+  it("asks each changed leg at the moment the day in its new order sets out on it", async () => {
+    const { repository, modes } = repositoryKeepingModes();
+    const travel = recording();
+    const after = day([B, A]);
+    const setsOut = legRequestsFor(after)[0]?.departAt ?? 0;
+
+    await refreshLegModes(
+      { slug: "s", editKeyHash: "h", before: day([A, B]), after },
+      repository,
+      () => Promise.resolve({ name: "recording", estimate: travel.estimate }),
+    );
+
+    // Every leg changed ends, and each is driven, twelve minutes, then an
+    // hour at the stop, so the next sets out seventy two minutes later.
+    expect(travel.asked.map((asked) => asked.departAt)).toEqual([
+      ...Array<number>(3).fill(setsOut),
+      ...Array<number>(3).fill(setsOut + 72),
+      ...Array<number>(3).fill(setsOut + 144),
+    ]);
+    expect(modes.map(({ stopId, mode }) => [stopId, mode])).toEqual([
+      ["b", "drive"],
+      ["a", "drive"],
+      [null, "drive"],
+    ]);
+  });
+
+  it("answers a leg that kept its ends the way the day travels it, and asks nothing past the last change", async () => {
+    const { repository, modes } = repositoryKeepingModes();
+    const travel = recording();
+    const after = day([A, C]);
+    const setsOut = legRequestsFor(after)[0]?.departAt ?? 0;
+
+    await refreshLegModes(
+      { slug: "s", editKeyHash: "h", before: day([A, B, C]), after },
+      repository,
+      () => Promise.resolve({ name: "recording", estimate: travel.estimate }),
+    );
+
+    // Out to A on foot as before, forty minutes and an hour there, then every
+    // way to C; the way home kept its ends and is not asked about at all.
+    expect(travel.asked.map(({ mode, departAt }) => [mode, departAt])).toEqual([
+      ["walk", setsOut],
+      ["drive", setsOut + 100],
+      ["transit", setsOut + 100],
+      ["walk", setsOut + 100],
+    ]);
+    expect(modes.map(({ stopId, mode }) => [stopId, mode])).toEqual([["c", "drive"]]);
+  });
+
+  it("reads nothing and asks nothing when no leg changed its ends", async () => {
+    const { repository, modes } = repositoryKeepingModes();
+    let warmed = 0;
+
+    await refreshLegModes(
+      { slug: "s", editKeyHash: "h", before: day([A, B]), after: day([A, B]) },
+      repository,
+      () => {
+        warmed += 1;
+        return Promise.reject(new Error(NOT_STUBBED));
+      },
+    );
+
+    expect(warmed).toBe(0);
+    expect(modes).toEqual([]);
   });
 });

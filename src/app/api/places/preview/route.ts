@@ -1,20 +1,16 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createGooglePlacesProvider } from "@/adapters/places/google-places";
 import { checkEditAccess } from "@/server/ownership/edit-access";
-import { googleMapsApiKey } from "@/server/places/google-key";
 import { placeDetailsFor } from "@/server/places/place-details";
-import { consumeRateLimit } from "@/server/rate-limit/ip-rate-limit";
 import type { RateLimitPolicy } from "@/server/rate-limit/window";
 import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
+import { placesRead, refuse } from "../places-read";
 
 /**
  * A place is looked at once per choice from a search, and a person chooses a
  * handful in a sitting. Anything asking more often is not a person.
  */
 const POLICY: RateLimitPolicy = { windowSeconds: 60, maxRequests: 30 };
-
-const ROUTE = "places-preview";
 
 const querySchema = z.object({
   slug: z.string().min(1).max(80),
@@ -34,43 +30,24 @@ const querySchema = z.object({
  * kept in our own table for a day, and the add that may follow reads it from
  * there rather than asking the provider again.
  */
-export async function GET(request: Request): Promise<NextResponse> {
-  const limit = await consumeRateLimit(ROUTE, request.headers, POLICY);
-  if (!limit.allowed) {
-    return NextResponse.json(
-      {
-        error: "Too many places looked at from this connection.",
-        action: `Wait ${String(limit.retryAfterSeconds)} seconds and choose it again.`,
-      },
-      { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } },
-    );
-  }
-
-  const apiKey = googleMapsApiKey();
-  if (apiKey === null) {
-    return NextResponse.json(
-      { error: "Place search is not switched on for this server." },
-      { status: 503 },
-    );
-  }
-
-  const parsed = querySchema.safeParse(Object.fromEntries(new URL(request.url).searchParams));
-  if (!parsed.success) {
-    return NextResponse.json({ error: "That request could not be read." }, { status: 400 });
-  }
-
-  const { slug, key, id, session } = parsed.data;
-  // A key that is wrong is given the same sentence as a place that is not
-  // there: telling them apart would turn this into a way to test keys.
-  const access = await checkEditAccess({ slug, presentedKey: key, repository: prismaTripRepository });
-  if (access.status !== "granted") {
-    return NextResponse.json({ error: "That place could not be found." }, { status: 404 });
-  }
-
-  try {
-    const place = await placeDetailsFor(id, createGooglePlacesProvider({ apiKey }), session ?? null);
+export const GET = placesRead({
+  route: "places-preview",
+  policy: POLICY,
+  asking: { many: "places looked at", again: "choose it again", service: "place service" },
+  query: querySchema,
+  failing: "Place preview failed",
+  answer: async ({ slug, key, id, session }, provider) => {
+    // A key that is wrong is given the same sentence as a place that is not
+    // there: telling them apart would turn this into a way to test keys.
+    const access = await checkEditAccess({
+      slug,
+      presentedKey: key,
+      repository: prismaTripRepository,
+    });
+    const place =
+      access.status === "granted" ? await placeDetailsFor(id, provider, session ?? null) : null;
     if (place === null) {
-      return NextResponse.json({ error: "That place could not be found." }, { status: 404 });
+      return refuse(404, "That place could not be found.", "Search for it again.");
     }
     return NextResponse.json({
       place: {
@@ -80,14 +57,5 @@ export async function GET(request: Request): Promise<NextResponse> {
         position: place.position,
       },
     });
-  } catch (cause) {
-    console.error("Place preview failed", cause);
-    return NextResponse.json(
-      {
-        error: "Could not reach the place service.",
-        action: "Your trip is saved, try again in a moment.",
-      },
-      { status: 502 },
-    );
-  }
-}
+  },
+});

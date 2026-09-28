@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { DayEndpoint, DayPlan } from "../model/day";
-import type { TravelEstimate, TravelMode } from "../model/leg";
+import type { LegResolution, TravelEstimate, TravelMode, TravelRequest } from "../model/leg";
 import type { LatLng, Place } from "../model/place";
 import type { Stop } from "../model/stop";
-import { legRequestsFor } from "./leg-requests";
+import { answerLegsInOrder, legRequestsFor } from "./leg-requests";
 
 const HOME: LatLng = { lat: -34.9310, lng: 138.596 };
 const MARKET: LatLng = { lat: -34.9294, lng: 138.5974 };
@@ -125,6 +125,58 @@ describe("legRequestsFor", () => {
     const plan = day([stop("Market", MARKET, "walk"), stop("Zoo", ZOO, "walk")]);
     const requests = legRequestsFor(plan, [{ status: "unresolved", reason: "no-route" }]);
     expect(requests.map((request) => request.departAt === null)).toEqual([false, true, true]);
+  });
+});
+
+describe("answerLegsInOrder", () => {
+  /** Answers every leg as a walk of the given minutes, keeping what was asked and where. */
+  function walking(minutes: number): {
+    readonly asked: { readonly request: TravelRequest; readonly index: number }[];
+    readonly answer: (request: TravelRequest, index: number) => Promise<LegResolution>;
+  } {
+    const asked: { request: TravelRequest; index: number }[] = [];
+    return {
+      asked,
+      answer: (request, index) => {
+        asked.push({ request, index });
+        return Promise.resolve({ status: "resolved", estimate: walkOf(minutes) });
+      },
+    };
+  }
+
+  it("asks each leg at the moment the answers before it set it out", async () => {
+    const plan = day([stop("Market", MARKET, "walk"), stop("Zoo", ZOO, "walk")]);
+    const walk = walking(10);
+
+    const answered = await answerLegsInOrder(plan, walk.answer);
+
+    expect(answered).toHaveLength(3);
+    // Every leg was asked with the moment it has once the ones before it are
+    // answered, which is the moment the day itself is drawn with.
+    expect(walk.asked.map(({ request }) => request.departAt)).toEqual(
+      legRequestsFor(plan, answered).map((request) => request.departAt),
+    );
+    expect(walk.asked.every(({ request }) => request.departAt !== null)).toBe(true);
+    expect(walk.asked.map(({ index }) => index)).toEqual([0, 1, 2]);
+  });
+
+  it("asks only as many legs as it is told to, from the start of the day", async () => {
+    const plan = day([stop("Market", MARKET, "walk"), stop("Zoo", ZOO, "walk")]);
+    const walk = walking(10);
+
+    const answered = await answerLegsInOrder(plan, walk.answer, 2);
+
+    expect(answered).toHaveLength(2);
+    expect(walk.asked.map(({ request }) => request.to)).toEqual([MARKET, ZOO]);
+  });
+
+  it("asks nothing of a day nobody goes anywhere on", async () => {
+    const walk = walking(10);
+
+    const answered = await answerLegsInOrder(day([], "walk", { start: null, end: null }), walk.answer);
+
+    expect(answered).toEqual([]);
+    expect(walk.asked).toEqual([]);
   });
 });
 

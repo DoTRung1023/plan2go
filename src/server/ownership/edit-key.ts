@@ -18,7 +18,12 @@ export function hashEditKey(key: string): string {
 
 /** Constant time comparison of a presented key against the stored hash. */
 export function editKeyMatches(key: string, storedHash: string): boolean {
-  const presented = Buffer.from(hashEditKey(key), "hex");
+  return editKeyHashMatches(hashEditKey(key), storedHash);
+}
+
+/** The same comparison, for a key that was hashed on its way in. */
+export function editKeyHashMatches(presentedHash: string, storedHash: string): boolean {
+  const presented = Buffer.from(presentedHash, "hex");
   const stored = Buffer.from(storedHash, "hex");
   if (presented.length !== stored.length) {
     return false;

@@ -13,7 +13,7 @@ import {
   setStopNote,
   setStopStay,
 } from "@/server/trips/edit-stop";
-import { travelProvider } from "./travel";
+import { travelProviderFor } from "./travel";
 
 export interface StopEditState {
   readonly error: string | null;
@@ -108,7 +108,7 @@ export async function removeStopAction(input: unknown): Promise<StopEditState> {
     removeStop(
       scoped(parsed.data),
       prismaTripRepository,
-      travelProvider(),
+      travelProviderFor,
     ),
   );
 }
@@ -123,7 +123,7 @@ export async function moveStopAction(input: unknown): Promise<StopEditState> {
     moveStop(
       scoped(parsed.data),
       prismaTripRepository,
-      travelProvider(),
+      travelProviderFor,
     ),
   );
 }

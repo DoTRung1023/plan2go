@@ -1,13 +1,39 @@
 import type { DayPlan } from "@/core/model/day";
 import { TRAVEL_MODES } from "@/core/model/leg";
-import type { TravelMode } from "@/core/model/leg";
+import type { LegResolution, TravelMode } from "@/core/model/leg";
 import type { LatLng, Place } from "@/core/model/place";
 import type { TravelProvider } from "@/core/ports/travel-provider";
+import { legTargets } from "@/core/time/day-points";
 import { fastestMode } from "@/core/time/fastest-mode";
+import { answerLegsInOrder } from "@/core/time/leg-requests";
 import type { TripRepository } from "../repositories/trip-repository";
 
 /** What a leg falls back to when there is nothing to measure. */
 const DEFAULT_TRAVEL_MODE: TravelMode = "walk";
+
+/** A mode no answer came back for, which cannot happen but is typed. */
+const UNRESOLVED: LegResolution = { status: "unresolved", reason: "not-requested" };
+
+/**
+ * A travel provider for the days about to be timed, with what is already
+ * known about their legs read first. Passed in, because how travel is
+ * answered is composed by the route that owns the page.
+ */
+export type TravelFor = (days: readonly DayPlan[]) => Promise<TravelProvider>;
+
+/** The quickest way to cover a leg, and its answer, which the day then travels it by. */
+async function fastestWay(
+  from: LatLng,
+  to: LatLng,
+  travel: TravelProvider,
+  departAt: number | null,
+): Promise<{ readonly mode: TravelMode; readonly answer: LegResolution }> {
+  const answers = await Promise.all(
+    TRAVEL_MODES.map((mode) => travel.estimate({ from, to, mode, departAt })),
+  );
+  const mode = fastestMode(answers) ?? DEFAULT_TRAVEL_MODE;
+  return { mode, answer: answers[TRAVEL_MODES.indexOf(mode)] ?? UNRESOLVED };
+}
 
 /**
  * The quickest way to cover a leg.
@@ -17,11 +43,11 @@ const DEFAULT_TRAVEL_MODE: TravelMode = "walk";
  * starting point rather than a verdict: the leg says which way it picked and
  * offers the others beside it.
  *
- * Asked at the moment given, in minutes since the epoch, when the moment the
- * day sets out on the leg is known before the leg is on the day: then the
- * answer paid for here is the one the day's own render looks for next, rather
- * than one it asks for again. Asked with none otherwise, since the leg is not
- * yet on the day it will be timed against, and the render asks with one.
+ * Asked at the moment given, in minutes since the epoch, which is the moment
+ * the day sets out on the leg when that is known before the leg is on the
+ * day: then the answer paid for here is the one the day's own render looks
+ * for next, rather than one it asks for again. Asked with none when the
+ * moment turns on something not yet decided.
  */
 export async function fastestTravelMode(
   from: LatLng | null,
@@ -32,10 +58,7 @@ export async function fastestTravelMode(
   if (from === null) {
     return DEFAULT_TRAVEL_MODE;
   }
-  const answers = await Promise.all(
-    TRAVEL_MODES.map((mode) => travel.estimate({ from, to, mode, departAt })),
-  );
-  return fastestMode(answers) ?? DEFAULT_TRAVEL_MODE;
+  return (await fastestWay(from, to, travel, departAt)).mode;
 }
 
 /**
@@ -113,23 +136,57 @@ interface RefreshRequest {
  * somewhere across the country. A leg whose two ends are the same places it had
  * before is untouched, because that mode may have been chosen deliberately and
  * nothing about it has changed.
+ *
+ * Each changed leg is asked at the moment the day in its new order sets out on
+ * it, so the answers paid for here are the ones the page drawn in the same
+ * reply looks for, rather than ones it pays for again. That moment turns on
+ * every leg before it, including the changed ones and the way each of those
+ * is now travelled, so the day is walked in order as the page walks it, as far
+ * as the last changed leg, and the fastest way chosen for each changed leg is
+ * the answer carried on to the next. The legs in between are answered the way
+ * the day travels them, which the page asked about already and our own table
+ * has kept.
  */
 export async function refreshLegModes(
   request: RefreshRequest,
   repository: TripRepository,
-  travel: TravelProvider,
+  travelFor: TravelFor,
 ): Promise<void> {
-  // All at once: each leg is its own row and its own wait on the provider, and
-  // a reorder touches two or three of them, so one behind the other is the
-  // slowest part of a drag for no reason.
+  const relaid = new Set(legsWithNewEnds(request.before, request.after).map((leg) => leg.target));
+  if (relaid.size === 0) {
+    return;
+  }
+  const travel = await travelFor([request.after]);
+  // Keyed the way storage and the relaid legs are: a stop by its id, and the
+  // leg out to where the day ends by null.
+  const targets = legTargets(request.after).map((target) =>
+    target.kind === "stop" ? target.stopId : null,
+  );
+  const lastRelaid = targets.findLastIndex((target) => relaid.has(target));
+
+  const chosen: { readonly target: string | null; readonly mode: TravelMode }[] = [];
+  await answerLegsInOrder(
+    request.after,
+    async (leg, index) => {
+      const target = targets[index] ?? null;
+      if (!relaid.has(target)) {
+        return travel.estimate(leg);
+      }
+      const fastest = await fastestWay(leg.from, leg.to, travel, leg.departAt);
+      chosen.push({ target, mode: fastest.mode });
+      return fastest.answer;
+    },
+    lastRelaid + 1,
+  );
+
   await Promise.all(
-    legsWithNewEnds(request.before, request.after).map(async (leg) =>
+    chosen.map(({ target, mode }) =>
       repository.setLegMode({
         slug: request.slug,
         editKeyHash: request.editKeyHash,
         dayId: request.after.id,
-        stopId: leg.target,
-        mode: await fastestTravelMode(leg.from.position, leg.to.position, travel),
+        stopId: target,
+        mode,
       }),
     ),
   );

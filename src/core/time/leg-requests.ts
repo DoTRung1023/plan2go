@@ -30,3 +30,35 @@ export function legRequestsFor(
     departAt: computed.legs[index]?.departure?.epochMinutes ?? null,
   }));
 }
+
+/**
+ * A day's legs answered one after another in running order, each asked at the
+ * moment the day sets out on it. The answers so far go back to the engine
+ * before the next leg is asked, so its request comes out with its moment on it.
+ *
+ * `answer` is given each leg's request and where the leg falls in the day, and
+ * gives back the answer the day travels that leg by. With a `count`, only that
+ * many legs from the start of the day are asked about. The answers come back
+ * in order, one for each leg asked.
+ *
+ * Everything that times a day comes through here: the page drawing it, and
+ * anything that pays for a leg before the page is drawn so the page then finds
+ * it kept. One loop, so both find the same moment for the same leg.
+ */
+export async function answerLegsInOrder(
+  day: DayPlan,
+  answer: (request: TravelRequest, index: number) => Promise<LegResolution>,
+  count?: number,
+): Promise<readonly LegResolution[]> {
+  const legs = legPoints(day).length;
+  const asked = count === undefined ? legs : Math.min(count, legs);
+  const answered: LegResolution[] = [];
+  for (let index = 0; index < asked; index += 1) {
+    const request = legRequestsFor(day, answered)[index];
+    if (request === undefined) {
+      break;
+    }
+    answered.push(await answer(request, index));
+  }
+  return answered;
+}

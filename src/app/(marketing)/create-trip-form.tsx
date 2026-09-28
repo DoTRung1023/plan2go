@@ -98,9 +98,13 @@ export function CreateTripForm() {
         </Notice>
       )}
 
+      {/* Not open to a press until the dates are there to send. The page is
+          served without them, and a form sent before the browser has said
+          what today is would come back saying the first day is missing, with
+          nowhere yet to enter one. */}
       <button
         type="submit"
-        disabled={pending}
+        disabled={pending || today === null}
         className="mt-1 w-full rounded-pill bg-terracotta px-6 py-4 font-display text-[16px] leading-[1.2] font-semibold text-paper hover:bg-terracotta-600 active:bg-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
       >
         {pending ? "Making the trip" : "Start planning"}

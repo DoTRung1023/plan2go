@@ -16,13 +16,10 @@ import { cityListWords } from "./place-kinds";
 import { PlaceRows } from "./place-rows";
 import { QuickSearches } from "./quick-searches";
 import type { Suggestion } from "./search-api";
-import { askForPlaces, refusalSentence } from "./search-api";
+import { askForPlaces, POINT_DECIMALS, refusalSentence } from "./search-api";
 import { useCityList } from "./use-city-list";
 import { useTypedSearch } from "./use-typed-search";
 import "./place-search.css";
-
-/** Degrees kept on the bias point. Any more is spurious and misses the cache. */
-const BIAS_DECIMALS = 4;
 
 /** The city's best known shown, once whatever is already on the trip is out of them. */
 const RECOMMENDED_SHOWN = 6;
@@ -285,13 +282,13 @@ export function PlaceSearch({
 
   const typed = useTypedSearch(
     words,
-    near === null ? "" : `${near.lat.toFixed(BIAS_DECIMALS)},${near.lng.toFixed(BIAS_DECIMALS)}`,
+    near === null ? "" : `${near.lat.toFixed(POINT_DECIMALS)},${near.lng.toFixed(POINT_DECIMALS)}`,
     (asked) => {
       session.current ??= crypto.randomUUID();
       const parameters = new URLSearchParams({ q: asked, session: session.current });
       if (near !== null) {
-        parameters.set("lat", near.lat.toFixed(BIAS_DECIMALS));
-        parameters.set("lng", near.lng.toFixed(BIAS_DECIMALS));
+        parameters.set("lat", near.lat.toFixed(POINT_DECIMALS));
+        parameters.set("lng", near.lng.toFixed(POINT_DECIMALS));
       }
       return askForPlaces("/api/places/search", parameters);
     },

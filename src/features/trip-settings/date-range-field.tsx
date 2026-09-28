@@ -179,7 +179,9 @@ function End({ name, date }: { readonly name: string; readonly date: IsoDate | n
       <span className="text-[13px] leading-none font-semibold text-ink-muted">{name}</span>
       <span className="truncate text-[14px] leading-[1.2] tabular-nums">
         {day === null ? (
-          <span className="invisible">{" "}</span>
+          // Written as its escape because it is invisible: a space that does
+          // not collapse, so the empty line keeps the height of a day.
+          <span className="invisible">{"\u00a0"}</span>
         ) : (
           <>
             {/* The steps are where each longer form stops fitting the widest

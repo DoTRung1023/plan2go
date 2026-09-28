@@ -31,6 +31,7 @@ const querySchema = z.object({
 export const GET = placesRead({
   route: "places-cities",
   policy: POLICY,
+  asking: { many: "searches", again: "try again", service: "place search service" },
   query: querySchema,
   failing: "Cities to visit failed",
   answer: async ({ city, limit }, provider) => {

@@ -276,20 +276,56 @@ function resolved(mode: TravelMode, leg: RememberedLeg): LegResolution {
   };
 }
 
+/**
+ * New answers being written while a render goes on without waiting for them,
+ * all waited on together before the reply goes.
+ */
+export interface LegWrites {
+  /** A write started and not waited on. */
+  hold(writing: Promise<void>): void;
+  /** Every write held so far, landed. Rejects with the first that failed. */
+  landed(): Promise<void>;
+}
+
+export function legWrites(): LegWrites {
+  // Each write is settled into a result as it is held, so one that fails
+  // while the render is still asking for legs is kept for landed() to report
+  // rather than left as a rejection nobody is listening for yet.
+  const settling: Promise<PromiseSettledResult<void>>[] = [];
+  return {
+    hold(writing) {
+      settling.push(
+        writing.then(
+          (value): PromiseSettledResult<void> => ({ status: "fulfilled", value }),
+          (reason: unknown): PromiseSettledResult<void> => ({ status: "rejected", reason }),
+        ),
+      );
+    },
+    async landed() {
+      for (const result of await Promise.all(settling)) {
+        if (result.status === "rejected") {
+          throw result.reason;
+        }
+      }
+    },
+  };
+}
+
 export interface LegCacheOptions {
   /** Answers already read for this render, so a leg among them costs no round trip. */
   readonly memory?: LegCacheMemory;
   readonly rows?: LegRows;
   /**
-   * Takes the writing of a new answer off the way through, to be done once
-   * the reply has gone. For a render with a memory only: the answer is in
-   * the memory the moment it arrives, which is where the rest of the render
-   * looks, and a day's legs are asked one behind the other, so a write waited
-   * on is a round trip added to every leg after it. Without this each answer
-   * is written before it is handed back, which an action needs: the page it
-   * asks to be drawn again reads the table straight after, in the same reply.
+   * Hands a new answer back the moment it arrives, its write started and held
+   * here rather than waited on. For a render with a memory only: the answer
+   * is in the memory at once, which is where the rest of the render looks,
+   * and a day's legs are asked one behind the other, so a write waited on is
+   * a round trip added to every leg after it. Whoever passes this waits on
+   * `landed` before replying, so every answer is in the table before anyone
+   * else can look for it there, and a write that failed fails the reply.
+   * Without it each answer is written before it is handed back.
    */
-  readonly defer?: (write: () => Promise<void>) => void;
+  readonly writes?: LegWrites;
 }
 
 /**
@@ -325,7 +361,7 @@ export interface LegCacheOptions {
 export function withLegCache(inner: TravelProvider, options: LegCacheOptions = {}): TravelProvider {
   const rows = options.rows ?? prismaLegRows;
   const memory = options.memory;
-  const defer = memory === undefined ? undefined : options.defer;
+  const writes = memory === undefined ? undefined : options.writes;
   /** Provider asks under way, by the row they will be kept as. */
   const pending = new Map<string, Promise<LegResolution>>();
 
@@ -395,10 +431,10 @@ export function withLegCache(inner: TravelProvider, options: LegCacheOptions = {
       ),
     };
     memory?.rows.set(rowKeyOf(key), leg);
-    if (defer === undefined) {
+    if (writes === undefined) {
       await rows.put(key, leg);
     } else {
-      defer(() => rows.put(key, leg));
+      writes.hold(rows.put(key, leg));
     }
 
     return answer;

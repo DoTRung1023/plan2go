@@ -1,11 +1,11 @@
-import { after } from "next/server";
 import { createGoogleRoutesProvider, transitDepartureFor } from "@/adapters/travel/google-routes";
 import { createHaversineTravelProvider } from "@/adapters/travel/haversine";
+import type { DayPlan } from "@/core/model/day";
 import type { Trip } from "@/core/model/trip";
 import type { TravelProvider } from "@/core/ports/travel-provider";
 import { legEnds } from "@/core/time/day-points";
 import { googleMapsApiKey } from "@/server/places/google-key";
-import type { LegCacheMemory } from "@/server/travel/leg-cache";
+import type { LegWrites } from "@/server/travel/leg-cache";
 import { warmLegCache, withLegCache } from "@/server/travel/leg-cache";
 
 /**
@@ -66,76 +66,35 @@ function withoutIgnoredDepartures(inner: TravelProvider): TravelProvider {
 }
 
 /**
- * When a new answer is written to our own table: before it is handed back, or
- * once the reply has gone.
- *
- * Only the trip's own page writes after. Its legs are asked one behind the
- * other, so a write waited on is a round trip added to every leg after it,
- * and nothing reads the table again until the reader's next change. An
- * action's page is drawn again from the table in the same reply, and an
- * export's map pictures ask for the same legs a moment after its sheets, so
- * both of those write first, or the answer would be paid for twice.
- */
-export type KeepAnswers = "before-answering" | "after-replying";
-
-function composed(apiKey: string, memory?: LegCacheMemory, keep?: KeepAnswers): TravelProvider {
-  return withoutIgnoredDepartures(
-    withLegCache(
-      withStraightLineFallback(
-        createGoogleRoutesProvider({ apiKey }),
-        createHaversineTravelProvider(),
-      ),
-      {
-        memory,
-        defer:
-          keep === "after-replying"
-            ? (write) => {
-                after(write);
-              }
-            : undefined,
-      },
-    ),
-  );
-}
-
-/**
  * The provider every path in this route uses, composed in one place so a page
  * render, a stop being added and a day being reordered all get their times from
- * the same source.
+ * the same source, with every cached answer for the legs of the days given read
+ * first, in one go.
  *
  * Google answers all three ways of getting somewhere, and says so when there is
  * no route: there is no driving to an island and no train where there is no
  * line. Where it says so, the straight line answers instead, carrying its own
  * source and no shape, so the map draws it as the line between the two ends.
  *
+ * A day's legs are asked for one after another, because each sets out when
+ * the one before it arrives, so read one at a time each is its own round trip
+ * to the database, and a day of ten stops is ten of them in a row. The pairs of
+ * places are known before any of that starts, and reading their rows together
+ * turns those round trips into one. An action gives only the days it changes,
+ * so it reads the legs it is about to time and not the whole trip's.
+ *
+ * Each new answer is written to our own table before it is handed back, unless
+ * `writes` is given to hold the writes instead, and then whoever gave it waits
+ * on them before replying. An action's page is drawn again from the table in
+ * the same reply, so it writes first.
+ *
  * Without a key there is nothing to call, so the straight line provider answers
  * everything and the planner still works. Every paid answer goes through the
  * cache, so the same leg is paid for once.
  */
-export function travelProvider(): TravelProvider {
-  const apiKey = googleMapsApiKey();
-
-  if (apiKey === null) {
-    return createHaversineTravelProvider();
-  }
-  return composed(apiKey);
-}
-
-/**
- * The same provider for a whole trip about to be drawn, with every cached
- * answer for every leg of it read first, in one go.
- *
- * A trip's legs are asked for one after another, so on the way through
- * travelProvider each is its own round trip to the database, and a day of
- * ten stops is ten of them in a row before the page can be sent. The pairs
- * of places are known before any of that starts, and reading their rows
- * together turns those round trips into one. An action changing one leg
- * still uses travelProvider: it asks about one leg, and warming for one is
- * the same round trip with more words.
- */
-export async function tripTravelProvider(
-  trip: Trip,
-  keep: KeepAnswers = "before-answering",
+export async function travelProviderFor(
+  days: readonly DayPlan[],
+  writes?: LegWrites,
 ): Promise<TravelProvider> {
   const apiKey = googleMapsApiKey();
 
@@ -143,9 +102,22 @@ export async function tripTravelProvider(
     return createHaversineTravelProvider();
   }
   const memory = await warmLegCache(
-    trip.days.flatMap((day) =>
+    days.flatMap((day) =>
       legEnds(day).map(({ from, to }) => ({ from: from.position, to: to.position })),
     ),
   );
-  return composed(apiKey, memory, keep);
+  return withoutIgnoredDepartures(
+    withLegCache(
+      withStraightLineFallback(
+        createGoogleRoutesProvider({ apiKey }),
+        createHaversineTravelProvider(),
+      ),
+      { memory, writes },
+    ),
+  );
+}
+
+/** The same provider for a whole trip about to be drawn. */
+export function tripTravelProvider(trip: Trip, writes?: LegWrites): Promise<TravelProvider> {
+  return travelProviderFor(trip.days, writes);
 }

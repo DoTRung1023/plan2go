@@ -8,7 +8,7 @@ import type { ComputedDay } from "@/core/time/compute-day";
 import { computeDay } from "@/core/time/compute-day";
 import type { LegTarget } from "@/core/time/day-points";
 import { legEnds, legTargets } from "@/core/time/day-points";
-import { legRequestsFor } from "@/core/time/leg-requests";
+import { answerLegsInOrder } from "@/core/time/leg-requests";
 import { directionsUrl } from "./directions-url";
 
 /** One way of covering a leg, as it is offered beside the others. */
@@ -101,31 +101,24 @@ function estimateLeg(
 /**
  * The legs of one day, answered one after another. Each is asked for at the
  * moment the day sets out on it, and that moment is where the leg before it
- * ends, so a leg cannot be asked for until the one before it is answered:
- * the day's own answers are handed back to the engine after each, and the
- * next request comes out with its moment on it. Every way of covering one
- * leg is asked for together, since they all set out at the same moment.
- * Slower than asking for the whole day at once, by one round trip per leg,
- * which the cache makes a moment on every render but the first.
+ * ends, so a leg cannot be asked for until the one before it is answered.
+ * Every way of covering one leg is asked for together, since they all set out
+ * at the same moment. Slower than asking for the whole day at once, by one
+ * round trip per leg, which the cache makes a moment on every render but the
+ * first.
  */
 async function computeOneDay(plan: DayPlan, travel: TravelProvider): Promise<PlannedDay> {
   const targets = legTargets(plan);
   const ends = legEnds(plan);
-  const legCount = legRequestsFor(plan).length;
   const requests: TravelRequest[] = [];
   const answersPerLeg: (readonly LegResolution[])[] = [];
-  /** The engine is given the answer for the mode the day is actually using. */
-  const resolved: LegResolution[] = [];
-  for (let index = 0; index < legCount; index += 1) {
-    const request = legRequestsFor(plan, resolved)[index];
-    if (request === undefined) {
-      break;
-    }
+  // The engine is given the answer for the mode the day is actually using.
+  const resolved = await answerLegsInOrder(plan, async (request) => {
     const answers = await estimateLeg(request, travel);
     requests.push(request);
     answersPerLeg.push(answers);
-    resolved.push(answers[TRAVEL_MODES.indexOf(request.mode)] ?? UNRESOLVED);
-  }
+    return answers[TRAVEL_MODES.indexOf(request.mode)] ?? UNRESOLVED;
+  });
 
   const computed = computeDay({ day: plan, legs: resolved });
   const legs = requests.map((request, index) => {

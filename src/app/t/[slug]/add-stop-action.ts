@@ -8,7 +8,7 @@ import { googleMapsApiKey } from "@/server/places/google-key";
 import { placeDetailsFor } from "@/server/places/place-details";
 import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
 import { addStopFromSearch } from "@/server/trips/add-stop";
-import { travelProvider, tripTravelProvider } from "./travel";
+import { travelProviderFor } from "./travel";
 
 export interface AddStopState {
   /** The place that was added, for the sentence shown afterwards. */
@@ -55,10 +55,10 @@ export async function addStopAction(input: unknown): Promise<AddStopState> {
     { ...rest, editKeyHash: hashEditKey(editKey) },
     prismaTripRepository,
     provider,
-    // Warmed with the trip's legs in one read, and writing each new answer
+    // Warmed with the day's legs in one read, and writing each new answer
     // before handing it back: the page drawn again in this same reply reads
     // the table for what was paid for here.
-    (trip) => (trip === null ? Promise.resolve(travelProvider()) : tripTravelProvider(trip)),
+    travelProviderFor,
   );
 
   if (result.status === "no-such-place") {

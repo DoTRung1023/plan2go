@@ -20,6 +20,7 @@ import type {
   TripDeleted,
   TripRepository,
 } from "../repositories/trip-repository";
+import type { TravelFor } from "./leg-modes";
 import { setDayEndpoint } from "./set-day-endpoint";
 
 const NOT_STUBBED = "This stub only answers the endpoint question.";
@@ -136,8 +137,8 @@ function providerFor(known: Place | null): {
 }
 
 /** Answers every leg with a time per mode, so the quickest is knowable. */
-function travelFor(minutes: Readonly<Record<TravelMode, number>>): TravelProvider {
-  return {
+function travelFor(minutes: Readonly<Record<TravelMode, number>>): TravelFor {
+  const travel: TravelProvider = {
     name: "stub",
     estimate: ({ mode }) =>
       Promise.resolve<LegResolution>({
@@ -152,13 +153,15 @@ function travelFor(minutes: Readonly<Record<TravelMode, number>>): TravelProvide
         },
       }),
   };
+  return () => Promise.resolve(travel);
 }
 
 /** Never reached by a day with nothing on it, which has no leg to ask about. */
-const NO_TRAVEL: TravelProvider = {
-  name: "stub",
-  estimate: () => Promise.reject(new Error(NOT_STUBBED)),
-};
+const NO_TRAVEL: TravelFor = () =>
+  Promise.resolve({
+    name: "stub",
+    estimate: () => Promise.reject(new Error(NOT_STUBBED)),
+  });
 
 /** Driving quickest, then the train, with walking a long way behind. */
 const BY_CAR = travelFor({ drive: 12, transit: 25, walk: 90 });

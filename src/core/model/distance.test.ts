@@ -73,7 +73,26 @@ describe("boxAround", () => {
     expect(box.high.lng).toBeLessThan(-179);
   });
 
-  it("stops at a pole rather than past it", () => {
-    expect(boxAround({ lat: 89.95, lng: 0 }, 20_000).high.lat).toBe(90);
+  it("stops at a pole rather than past it, and takes in every longitude", () => {
+    const box = boxAround({ lat: 89.95, lng: 0 }, 20_000);
+    expect(box.high.lat).toBe(90);
+    expect(box.low.lng).toBe(-180);
+    expect(box.high.lng).toBe(180);
+  });
+
+  it("stops at the south pole the same way", () => {
+    const box = boxAround({ lat: -89.95, lng: 120 }, 20_000);
+    expect(box.low.lat).toBe(-90);
+    expect(box.low.lng).toBe(-180);
+    expect(box.high.lng).toBe(180);
+  });
+
+  it("keeps its corners in order just short of a pole", () => {
+    // 20 km from the pole, with a radius of 19 km: the circle stops short of
+    // it, and the box is wide but still the right way round.
+    const box = boxAround({ lat: 89.82, lng: 30 }, 19_000);
+    expect(box.high.lat).toBeLessThan(90);
+    expect(box.low.lng).toBeLessThan(30);
+    expect(box.high.lng).toBeGreaterThan(30);
   });
 });

@@ -7,7 +7,7 @@ import { EDIT_KEY_PATTERN, hashEditKey } from "@/server/ownership/edit-key";
 import { googleMapsApiKey } from "@/server/places/google-key";
 import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
 import { setDayEndpoint } from "@/server/trips/set-day-endpoint";
-import { travelProvider } from "./travel";
+import { travelProviderFor } from "./travel";
 
 export interface DayEndpointState {
   readonly error: string | null;
@@ -49,7 +49,7 @@ export async function setDayEndpointAction(input: unknown): Promise<DayEndpointS
     { ...rest, editKeyHash: hashEditKey(editKey) },
     prismaTripRepository,
     createGooglePlacesProvider({ apiKey }),
-    travelProvider(),
+    travelProviderFor,
   );
 
   if (result.status === "no-such-place") {

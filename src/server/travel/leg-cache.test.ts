@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { LegResolution, TravelRequest } from "@/core/model/leg";
 import type { TravelProvider } from "@/core/ports/travel-provider";
-import type { LegRows } from "./leg-cache";
-import { warmLegCache, withLegCache } from "./leg-cache";
+import type { LegRows, LegWrites } from "./leg-cache";
+import { legWrites, warmLegCache, withLegCache } from "./leg-cache";
 
 const MARKET = { lat: -34.9285, lng: 138.6007 };
 const OVAL = { lat: -34.9156, lng: 138.5961 };
@@ -154,18 +154,23 @@ describe("warmLegCache", () => {
     expect(answer.status === "resolved" && answer.estimate.durationMinutes).toBe(12);
   });
 
-  it("hands a new answer back before it is written, when writing is put off", async () => {
+  it("hands a new answer back before its write has landed, when writes are held", async () => {
     const store = rowsInMemory();
     const inner = counting();
     const memory = await warmLegCache([{ from: OVAL, to: BEACH }], store.rows);
-    const later: (() => Promise<void>)[] = [];
-    const cached = withLegCache(inner.provider, {
-      rows: store.rows,
-      memory,
-      defer: (write) => {
-        later.push(write);
-      },
+    const gate: { open?: () => void } = {};
+    const opened = new Promise<void>((resolve) => {
+      gate.open = resolve;
     });
+    const slow: LegRows = {
+      ...store.rows,
+      put: async (key, leg) => {
+        await opened;
+        await store.rows.put(key, leg);
+      },
+    };
+    const writes = legWrites();
+    const cached = withLegCache(inner.provider, { rows: slow, memory, writes });
 
     const answer = await cached.estimate(request(OVAL, BEACH, "walk"));
     const again = await cached.estimate(request(OVAL, BEACH, "walk"));
@@ -176,19 +181,37 @@ describe("warmLegCache", () => {
     expect(inner.asked).toBe(1);
     expect(store.held.size).toBe(0);
 
-    await Promise.all(later.map((write) => write()));
+    gate.open?.();
+    await writes.landed();
     expect(store.held.size).toBe(1);
   });
 
-  it("writes before answering when there is no memory to answer from, even if told to put it off", async () => {
+  it("says a held write failed once they are waited on", async () => {
+    const store = rowsInMemory();
+    const memory = await warmLegCache([{ from: OVAL, to: BEACH }], store.rows);
+    const failing: LegRows = {
+      ...store.rows,
+      put: () => Promise.reject(new Error("The table could not be written.")),
+    };
+    const writes = legWrites();
+    const cached = withLegCache(counting().provider, { rows: failing, memory, writes });
+
+    const answer = await cached.estimate(request(OVAL, BEACH, "walk"));
+
+    expect(answer.status).toBe("resolved");
+    await expect(writes.landed()).rejects.toThrow("The table could not be written.");
+  });
+
+  it("writes before answering when there is no memory to answer from, even if handed writes to hold", async () => {
     const store = rowsInMemory();
     const inner = counting();
-    const cached = withLegCache(inner.provider, {
-      rows: store.rows,
-      defer: () => {
-        throw new Error("A cache with no memory must not put its writes off.");
+    const refusing: LegWrites = {
+      hold: () => {
+        throw new Error("A cache with no memory must not hold its writes.");
       },
-    });
+      landed: () => Promise.resolve(),
+    };
+    const cached = withLegCache(inner.provider, { rows: store.rows, writes: refusing });
 
     await cached.estimate(request(OVAL, BEACH, "walk"));
 

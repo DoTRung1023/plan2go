@@ -4,10 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { LatLng } from "@/core/model/place";
 import type { PlaceKind } from "@/core/model/place-kind";
 import type { Answer, Suggestion } from "./search-api";
-import { askForPlaces } from "./search-api";
-
-/** Degrees kept on the point asked about. Any more is spurious and misses the cache. */
-const POINT_DECIMALS = 4;
+import { askForPlaces, POINT_DECIMALS } from "./search-api";
 
 /**
  * The city's best known asked for, which is more than are shown. What the

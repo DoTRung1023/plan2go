@@ -1,9 +1,9 @@
 import type { DayEndpoint, DayId, DayPlan } from "@/core/model/day";
 import type { Place } from "@/core/model/place";
 import type { PlacesProvider } from "@/core/ports/places-provider";
-import type { TravelProvider } from "@/core/ports/travel-provider";
 import type { Trip } from "@/core/model/trip";
 import type { DayEnd, TripRepository } from "../repositories/trip-repository";
+import type { TravelFor } from "./leg-modes";
 import { refreshLegModes } from "./leg-modes";
 
 export interface SetDayEndpointRequest {
@@ -44,7 +44,7 @@ async function refreshLegsAt(
   which: DayEnd,
   endpoint: DayEndpoint | null,
   repository: TripRepository,
-  travel: TravelProvider,
+  travelFor: TravelFor,
 ): Promise<void> {
   await refreshLegModes(
     {
@@ -54,7 +54,7 @@ async function refreshLegsAt(
       after: withEnd(before, which, endpoint),
     },
     repository,
-    travel,
+    travelFor,
   );
 }
 
@@ -72,7 +72,7 @@ async function offerToTheNextDay(
   endpoint: DayEndpoint,
   trip: Trip,
   repository: TripRepository,
-  travel: TravelProvider,
+  travelFor: TravelFor,
 ): Promise<void> {
   const at = trip.days.findIndex((day) => day.id === request.dayId);
   const next = at === -1 ? undefined : trip.days[at + 1];
@@ -88,7 +88,7 @@ async function offerToTheNextDay(
     place: endpoint.place,
     label: endpoint.label,
   });
-  await refreshLegsAt(request, next, "start", endpoint, repository, travel);
+  await refreshLegsAt(request, next, "start", endpoint, repository, travelFor);
 }
 
 /**
@@ -106,7 +106,7 @@ export async function setDayEndpoint(
   request: SetDayEndpointRequest,
   repository: TripRepository,
   provider: PlacesProvider,
-  travel: TravelProvider,
+  travelFor: TravelFor,
 ): Promise<SetDayEndpointResult> {
   let place: Place | null = null;
 
@@ -142,11 +142,11 @@ export async function setDayEndpoint(
   const endpoint: DayEndpoint | null =
     place === null ? null : { place, label: request.label };
   if (before !== undefined) {
-    await refreshLegsAt(request, before, request.which, endpoint, repository, travel);
+    await refreshLegsAt(request, before, request.which, endpoint, repository, travelFor);
   }
 
   if (request.which === "end" && endpoint !== null && trip !== null) {
-    await offerToTheNextDay(request, endpoint, trip, repository, travel);
+    await offerToTheNextDay(request, endpoint, trip, repository, travelFor);
   }
 
   return { status: "set", placeName: place?.name ?? null };

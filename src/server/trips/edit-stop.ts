@@ -1,6 +1,6 @@
 import type { DayPlan } from "@/core/model/day";
-import type { TravelProvider } from "@/core/ports/travel-provider";
 import type { StopChanged, TripRepository } from "../repositories/trip-repository";
+import type { TravelFor } from "./leg-modes";
 import { refreshLegModes } from "./leg-modes";
 
 /**
@@ -100,7 +100,7 @@ async function dayHolding(
 export async function removeStop(
   edit: StopEdit,
   repository: TripRepository,
-  travel: TravelProvider,
+  travelFor: TravelFor,
 ): Promise<StopChanged> {
   const before = await dayHolding(edit.slug, edit.stopId, repository);
 
@@ -124,7 +124,7 @@ export async function removeStop(
       },
     },
     repository,
-    travel,
+    travelFor,
   );
   return removed;
 }
@@ -154,7 +154,7 @@ function reordered(day: DayPlan, stopId: string, toPosition: number): DayPlan {
 export async function moveStop(
   edit: StopEdit & { readonly toPosition: number },
   repository: TripRepository,
-  travel: TravelProvider,
+  travelFor: TravelFor,
 ): Promise<StopChanged> {
   const before = await dayHolding(edit.slug, edit.stopId, repository);
 
@@ -176,7 +176,7 @@ export async function moveStop(
       after: reordered(before, edit.stopId, edit.toPosition),
     },
     repository,
-    travel,
+    travelFor,
   );
   return moved;
 }
