@@ -5,6 +5,7 @@ import { useLayoutEffect, useRef, useState, useTransition } from "react";
 import { useScrollBar } from "@/ui/use-scroll-bar";
 import type { DayPlan } from "@/core/model/day";
 import { CityDot } from "@/ui/city-dot";
+import { RAISED } from "@/ui/raised";
 import { PlusIcon } from "@/ui/icons";
 import type { EditOutcome } from "./day-actions";
 import { formatDayDate, formatDayTab } from "./format-day-date";
@@ -59,7 +60,7 @@ function stopLine(day: DayPlan): string {
  * strip keeps the room for it.
  */
 const TAB =
-  "day-tab relative flex h-11 min-w-[82px] shrink-0 flex-col items-center justify-center gap-1 rounded-pill border-0 px-[15px] whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "relative flex h-11 min-w-[82px] shrink-0 flex-col items-center justify-center gap-1 rounded-pill border-0 px-[15px] whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 /**
  * The day's number: the one uppercase label in the product, at the micro
@@ -192,17 +193,21 @@ export function DayTabs({ days, selectedIndex, onSelect, onAddDay }: DayTabsProp
         >
           {/* The chosen day's pill, one for the strip rather than one per
               tab, so choosing a day slides it there instead of one pill
-              going out and another coming on. */}
-          <span aria-hidden="true" className="day-pill h-11 rounded-pill bg-terracotta-800" />
+              going out and another coming on. Raised paper under a
+              floating control's shadow, the way the trip's own row is
+              drawn above it, so the day is marked by what it stands on
+              and its words and dot are the ones every other day has. */}
+          <span aria-hidden="true" className={`day-pill h-11 rounded-pill ${RAISED}`} />
           {days.map((day, index) => {
             const selected = index === selectedIndex;
             /**
-             * Sage, the second voice, so it never argues with the terracotta
-             * that means "the day you are reading". Being chosen is the
-             * louder fact of the two, so a day that is both is drawn as
-             * chosen and says the rest in words a screen reader reads out.
+             * Sage, the second voice. Being chosen changes only what a day
+             * stands on, so a day that is both keeps its sage words on the
+             * chosen day's pill, and a screen reader is told both.
              */
             const isToday = day.date === today;
+            /** A day's words, the same whether or not it is the one chosen. */
+            const words = isToday ? "text-sage-800" : "text-ink-muted hover:text-ink";
             return (
               <button
                 key={day.id}
@@ -222,16 +227,16 @@ export function DayTabs({ days, selectedIndex, onSelect, onAddDay }: DayTabsProp
                 onKeyDown={(event) => {
                   move(event, index);
                 }}
-                // Under the pointer a day takes the step every control on
-                // paper takes, paper-sunken, and its words go to ink. The
-                // neutral fill it had is the one the raised cards use, and on
-                // this card's paper it was hardly a change at all.
-                className={`${TAB} ${
+                // Under the pointer a day that is not chosen takes the step
+                // every control on paper takes, paper-sunken, and its words
+                // go to ink. The chosen day paints the pill itself until the
+                // strip's own pill has been laid under it.
+                className={`${TAB} ${words} ${
                   selected
-                    ? "bg-terracotta-800 text-paper group-data-[placed]/days:bg-transparent"
+                    ? `${RAISED} group-data-[placed]/days:bg-transparent group-data-[placed]/days:shadow-none group-data-[placed]/days:ring-0`
                     : isToday
-                      ? "bg-sage-100 text-sage-800 hover:bg-sage-200"
-                      : "bg-transparent text-ink-muted hover:bg-paper-sunken hover:text-ink"
+                      ? "bg-sage-100 hover:bg-sage-200"
+                      : "bg-transparent hover:bg-paper-sunken"
                 }`}
               >
                 {/* The tab draws the day's number and a short date, and a
@@ -242,19 +247,13 @@ export function DayTabs({ days, selectedIndex, onSelect, onAddDay }: DayTabsProp
                     day.city === null ? "" : `${day.city.name}, `
                   }${stopLine(day)}.${isToday ? " Today." : ""}`}
                 </span>
-                {/* On the chosen day the number steps back from the date by a
-                    sixth, the paper over the dark pill otherwise reading as
-                    two lines of equal weight. The city's dot leads it, so
-                    days with the same dot are in the same city and the pill
-                    in the search, which carries the dot and the name, is
-                    the key to them; a day with no city has no dot and no
-                    gap kept for one. */}
-                <span
-                  aria-hidden="true"
-                  className={`flex items-center gap-1 ${TAB_NUMBER} tabular-nums ${selected ? "text-paper/85" : ""}`}
-                >
+                {/* The city's dot leads the number, so days with the same
+                    dot are in the same city and the pill in the search,
+                    which carries the dot and the name, is the key to them;
+                    a day with no city has no dot and no gap kept for one. */}
+                <span aria-hidden="true" className={`flex items-center gap-1 ${TAB_NUMBER} tabular-nums`}>
                   {day.city === null ? null : (
-                    <CityDot slot={day.city.color} size={7} onDark={selected} />
+                    <CityDot slot={day.city.color} size={7} />
                   )}
                   {`Day ${String(index + 1)}`}
                 </span>

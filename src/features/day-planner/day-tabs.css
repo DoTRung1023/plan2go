@@ -22,8 +22,8 @@
  *
  * 250ms on a curve that covers most of the way at once and settles into the
  * rest, so a choice is answered straight away and still seen to travel.
- * The words on the days turn over the same time and curve, so a date is
- * never paper on paper while the pill is still on its way to it.
+ * Nothing else moves: the days' words and dots are the same on the pill as
+ * off it, so there is nothing for them to turn to.
  */
 .day-pill {
   display: none;
@@ -41,15 +41,8 @@
   display: block;
 }
 
-.day-tab,
-.day-tab > span {
-  transition: color 250ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .day-pill,
-  .day-tab,
-  .day-tab > span {
+  .day-pill {
     transition: none;
   }
 }

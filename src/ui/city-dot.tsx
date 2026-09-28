@@ -22,22 +22,16 @@ interface CityDotProps {
   readonly slot: number;
   /** Edge of the dot, in pixels. */
   readonly size: number;
-  /**
-   * Drawn on something dark: a ring of paper round the colour, the same on
-   * every dark ground, so a dot keeps its own colour there rather than a
-   * lighter one that two cities could share.
-   */
-  readonly onDark: boolean;
 }
 
 /**
  * Which city something is in, as a dot of that city's colour. Decorative:
  * whatever carries the dot says the city in words for a reader who cannot
- * see it. The ring is a shadow, so it takes no room and the dot is the same
- * size on light and dark alike. Its colour turns over 200ms when what it
- * stands for changes to another city, with the city's name beside it.
+ * see it. Always drawn on paper, so always in its own colour. It turns over
+ * 200ms when what it stands for changes to another city, with the city's
+ * name beside it.
  */
-export function CityDot({ slot, size, onDark }: CityDotProps) {
+export function CityDot({ slot, size }: CityDotProps) {
   return (
     <span
       aria-hidden="true"
@@ -46,7 +40,6 @@ export function CityDot({ slot, size, onDark }: CityDotProps) {
         width: size,
         height: size,
         backgroundColor: cityColor(slot),
-        boxShadow: onDark ? "0 0 0 1.5px var(--color-paper)" : undefined,
       }}
     />
   );

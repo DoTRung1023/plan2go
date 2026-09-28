@@ -118,8 +118,8 @@ components:
     textColor: "{colors.ink}"
     rounded: "{rounded.row}"
   day-tab-active:
-    backgroundColor: "{colors.terracotta-ramp.800}"
-    textColor: "{colors.paper}"
+    backgroundColor: "{colors.paper-raised}"
+    textColor: "{colors.ink-muted}"
     rounded: "{rounded.pill}"
   day-tab-inactive:
     backgroundColor: transparent
@@ -190,7 +190,7 @@ paper and ink.
 - **ink, ink-muted, ink-faint:** primary text, secondary text, and placeholders.
 - **terracotta:** the accent. 100 and 200 are tinted fills, 200 being the conflict block
   and the error block, the base is the accent itself, 600 is hover, 700 is pressed and is
-  the step to use for accent coloured text, 800 is the active day tab.
+  the step to use for accent coloured text, 800 is a chosen chip or menu row.
 - **sage:** the second accent. 100 and 200 mark today in the day strip, 600 is the marker
   for the ends of a day, 700 draws the public transport route line.
 - **neutral:** the warm greys behind everything, used for the drive tint and the map's
@@ -300,15 +300,15 @@ pill 44px tall, the height a finger needs, eight in from the strip's edge so the
 curves run alongside each other, with two lines centred in it, **DAY 1** over **Sat 26**: the number uppercase at the
 micro step, the date at the small step, both 600, four apart. Every tab is as wide as
 the widest date needs, 82px, so the row reads as days rather than words, and they stand
-four apart. The chosen day is on a pill of `terracotta-800`, one for the whole strip
-that slides along under the days to whichever is chosen, with its date in `paper` and
-its number at 85 percent of it; the rest are in `ink-muted`, and today in sage as before.
+four apart. The chosen day stands on a pill of raised paper edged in `rule` under a
+floating control's shadow, the way the trip's own row above it is drawn, one for the
+whole strip that slides along under the days to whichever is chosen. Being chosen
+changes only what the day stands on: its words and its dot are the ones every day
+has, `ink-muted`, and today in sage as before, on the pill or off it.
 In front of the number, four off, a 7px dot in the colour of the day's city, so days
 with the same dot are in the same city; the pill in the search is the key to them, and
-the strip names no city. On the chosen day's dark pill the dot keeps its own colour
-inside a 1.5px ring of `paper`, the one rule for a dot on anything dark, since lighter
-tints of sage and deep sage come out the same. A day with no city has no dot and keeps
-no gap for one. The city's name is the tab's title and is read out with its date.
+the strip names no city. A dot is only ever drawn on paper, so it is always in its own
+colour. A day with no city has no dot and keeps no gap for one. The city's name is the tab's title and is read out with its date.
 Under the pointer a day that is not chosen takes `paper-sunken`, the step every control
 on paper takes, with its words in `ink`, and today goes from sage 100 to 200. After the
 last tab, eight off, the button that adds a day: a 32px dashed ring in `rule-strong`
@@ -495,10 +495,11 @@ arrive. Every picture and rating in it is credited to where it came from.
 
 A trip can move between cities, so every day is in one: its own once it has been moved,
 and the city the trip was opened in until then. The search field says which, first
-thing in it: a 32px pill of `terracotta-800`, the dark the chosen day is drawn in since
-this is that day's city, with a 9px dot of the city's colour ringed in `paper` as on the
-chosen day, the city's name at the small step in `paper` and a
-chevron, 8px in from the field's edge so its curve runs inside the field's. The words
+thing in it: a 32px pill drawn the way the chosen day is, raised paper edged in `rule`
+under a floating control's shadow, so the city looks like the day that is in it, with a
+9px dot of the city's colour, the city's name at the small step and a chevron, both in
+`ink-muted` as a day's words are and `ink` under the pointer, 8px in from the field's
+edge so its curve runs inside the field's. The words
 in the field name the city too, "Search places in Hanoi", and the empty field offers
 what that city is known for. Pressed, the pill opens the same panel a search for places
 does, the field's width at the `panel` radius under `shadow-md`, drawn from one set of
@@ -598,9 +599,8 @@ The chosen day's pill: `translate` and `width` over 250ms on `cubic-bezier(0.22,
 1)`, which covers most of the way at once and settles into the rest, so a choice is
 answered straight away and still seen to travel. One pill for the strip rather than one
 per tab, so choosing a day moves it there rather than one going out and another coming
-on, the way a phone app's tab bar moves its highlight. The words on the days change
-colour over the same time and curve, so a date is never `paper` on paper while the pill
-is on its way to it; that holds under the pointer too, where a day's words go to `ink`.
+on, the way a phone app's tab bar moves its highlight. Nothing else on the strip
+moves: a day's words and dot are the same on the pill as off it.
 
 Nothing else. No transitions on focus, any other panel opening, or map interaction, and
 no other transition on hover. Those changes are instant.
