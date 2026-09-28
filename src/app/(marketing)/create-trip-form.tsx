@@ -1,8 +1,9 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import type { IsoDate } from "@/core/model/day";
 import { addDays } from "@/core/time/zoned";
-import { DateRangeField } from "@/features/trip-settings/date-range-field";
+import { DateRangeField, DateRangeWaiting } from "@/features/trip-settings/date-range-field";
 import { useLocalToday } from "@/ui/use-local-today";
 import { MAX_TRIP_DAYS } from "@/core/model/trip";
 import type { ChosenPlace } from "./place-field";
@@ -21,25 +22,24 @@ const NO_ERROR: CreateTripFormState = { error: null, field: null };
  */
 const OPENING_SPAN_DAYS = 4;
 
-interface CreateTripFormProps {
-  /**
-   * Today where the reader most likely is, as the server best knows it: the
-   * day the form opens on and the earliest it offers. The ring on the
-   * calendar is today on the reader's own clock, read in the browser.
-   */
-  readonly today: string;
-}
-
-export function CreateTripForm({ today }: CreateTripFormProps) {
+export function CreateTripForm() {
   const [state, submit, pending] = useActionState(createTripAction, NO_ERROR);
   /**
-   * Both ends are held here so the last day can travel with the first. Only the
-   * calendar writes to them, so they are always real dates, and the server
-   * checks the pair again anyway.
+   * Today on the reader's own clock: the day the form opens on, the earliest
+   * it offers, and the day the calendar rings. Read in the browser, because
+   * the page is built once and served as it is to every zone, and null for
+   * the moment before the browser has said, while the field waits for it.
    */
-  const [first, setFirst] = useState(today);
-  const [last, setLast] = useState(addDays(today, OPENING_SPAN_DAYS));
-  const ringed = useLocalToday();
+  const today = useLocalToday();
+  /**
+   * The two ends the reader chose, held together so the last day can travel
+   * with the first, or null until they choose. Only the calendar writes them,
+   * so they are always real dates, and the server checks the pair again
+   * anyway. Until then the trip opens on today and runs five days.
+   */
+  const [chosen, setChosen] = useState<{ readonly start: IsoDate; readonly end: IsoDate } | null>(
+    null,
+  );
   const [city, setCity] = useState<ChosenPlace | null>(null);
   /**
    * The answer the city was last changed under. An answer saying the city is
@@ -73,22 +73,23 @@ export function CreateTripForm({ today }: CreateTripFormProps) {
       </div>
 
       <div>
-        <DateRangeField
-          id="tripDates"
-          startName="startDate"
-          endName="endDate"
-          label="Dates"
-          start={first}
-          end={last}
-          today={ringed}
-          min={today}
-          maxSpanDays={MAX_TRIP_DAYS}
-          size="large"
-          onChange={(range) => {
-            setFirst(range.start);
-            setLast(range.end);
-          }}
-        />
+        {today === null ? (
+          <DateRangeWaiting id="tripDates" label="Dates" />
+        ) : (
+          <DateRangeField
+            id="tripDates"
+            startName="startDate"
+            endName="endDate"
+            label="Dates"
+            start={chosen?.start ?? today}
+            end={chosen?.end ?? addDays(today, OPENING_SPAN_DAYS)}
+            today={today}
+            min={today}
+            maxSpanDays={MAX_TRIP_DAYS}
+            size="large"
+            onChange={setChosen}
+          />
+        )}
       </div>
 
       {error === null ? null : (

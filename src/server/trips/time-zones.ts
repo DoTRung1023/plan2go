@@ -1,7 +1,3 @@
-import type { IsoDate } from "@/core/model/day";
-import { epochMinutesToWallClock } from "@/core/time/zoned";
-import { MILLIS_PER_MINUTE } from "@/core/time/minutes";
-
 /** Built once. The table behind Intl.supportedValuesOf is walked on every call. */
 const supported = new Set(Intl.supportedValuesOf("timeZone"));
 
@@ -25,10 +21,4 @@ export function openingTimeZone(headers: Headers): string {
   }
   const server = Intl.DateTimeFormat().resolvedOptions().timeZone;
   return isSupportedTimeZone(server) ? server : "UTC";
-}
-
-/** Today's calendar date in a zone, which is not today's date everywhere. */
-export function todayIn(timeZone: string, now: Date = new Date()): IsoDate {
-  const epochMinutes = Math.floor(now.getTime() / MILLIS_PER_MINUTE);
-  return epochMinutesToWallClock(epochMinutes, timeZone).date;
 }

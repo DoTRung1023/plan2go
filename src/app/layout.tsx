@@ -12,12 +12,19 @@ import "./globals.css";
  * that Vietnamese leans on, the tone over the circumflex in ế and ộ, came back
  * undersized and sitting in the wrong place.
  *
- * The subsets are named rather than left to default, and vietnamese is one of
- * them. Next cuts each subset as its own file with its own unicode-range, and
- * preloads every one of them on every page, so the cost of a subset is paid by
- * every reader, not only the ones whose trip needs it. That is why the list of
- * weights below is the list actually used and nothing more: each weight is
- * another file per subset, and a weight nobody set is bytes on every page.
+ * Next cuts each of a face's subsets as its own file with its own
+ * unicode-range, and writes every one of them into the stylesheet whatever is
+ * named here: vietnamese and latin-ext are there, and so is devanagari, which
+ * nothing asks for. The browser fetches a file only when the page has a
+ * letter in its range, so a Hanoi trip gets its tone marks and a page of plain
+ * English never downloads them. What `subsets` names is only what is preloaded,
+ * fetched before the page asks, on every page for every reader; so it is latin
+ * alone, which every page uses, and the rest arrive when a letter needs them.
+ * Named rather than left to default, so that stays a decision.
+ *
+ * The list of weights below is the list actually used and nothing more: each
+ * weight is another file per subset, and a weight nobody set is bytes on
+ * every page.
  *
  * The list is written out twice rather than shared between the two calls. Next
  * reads these arguments at build time by looking at the source, so a name
@@ -30,7 +37,7 @@ import "./globals.css";
  * that did, so headings ask for 600 and get back the weight they used to have.
  */
 const display = Baloo_2({
-  subsets: ["latin", "latin-ext", "vietnamese"],
+  subsets: ["latin"],
   variable: "--font-baloo-2",
   display: "swap",
 });
@@ -45,7 +52,7 @@ const display = Baloo_2({
  * italicises, so those files would be fetched and never drawn.
  */
 const body = Be_Vietnam_Pro({
-  subsets: ["latin", "latin-ext", "vietnamese"],
+  subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-be-vietnam-pro",
   display: "swap",

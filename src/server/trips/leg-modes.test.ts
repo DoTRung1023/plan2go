@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { DayEndpoint, DayPlan } from "@/core/model/day";
+import type { LegResolution, TravelRequest } from "@/core/model/leg";
 import type { Place } from "@/core/model/place";
 import type { Stop } from "@/core/model/stop";
-import { legsWithNewEnds } from "./leg-modes";
+import { fastestTravelMode, legsWithNewEnds } from "./leg-modes";
 
 function place(id: string): Place {
   return {
@@ -75,5 +76,57 @@ describe("legsWithNewEnds", () => {
   it("relays the way home when the last stop changes", () => {
     const relaid = legsWithNewEnds(day([A, B]), day([B, A]));
     expect(relaid.map((leg) => leg.target)).toEqual(["b", "a", null]);
+  });
+});
+
+describe("fastestTravelMode", () => {
+  /** Every mode answered, the drive fastest, with what was asked kept. */
+  function recording(): { readonly asked: TravelRequest[]; readonly estimate: (request: TravelRequest) => Promise<LegResolution> } {
+    const asked: TravelRequest[] = [];
+    const minutes = { walk: 40, drive: 12, transit: 25 } as const;
+    return {
+      asked,
+      estimate: (request) => {
+        asked.push(request);
+        return Promise.resolve({
+          status: "resolved",
+          estimate: {
+            mode: request.mode,
+            durationMinutes: minutes[request.mode],
+            distanceMeters: 3000,
+            source: "google-routes",
+            path: null,
+            rides: null,
+          },
+        });
+      },
+    };
+  }
+
+  it("asks every mode at the moment given, and takes the fastest", async () => {
+    const travel = recording();
+    const mode = await fastestTravelMode(
+      HOTEL.place.position,
+      A.place.position,
+      { name: "recording", estimate: travel.estimate },
+      29_000_000,
+    );
+
+    expect(mode).toBe("drive");
+    expect(travel.asked.map((request) => request.departAt)).toEqual([
+      29_000_000,
+      29_000_000,
+      29_000_000,
+    ]);
+  });
+
+  it("asks with no moment when given none", async () => {
+    const travel = recording();
+    await fastestTravelMode(HOTEL.place.position, A.place.position, {
+      name: "recording",
+      estimate: travel.estimate,
+    });
+
+    expect(travel.asked.every((request) => request.departAt === null)).toBe(true);
   });
 });

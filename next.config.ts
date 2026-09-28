@@ -4,6 +4,17 @@ const nextConfig: NextConfig = {
   devIndicators: false,
 
   /*
+   * Memoises every component and hook at build time, so a render reaches only
+   * the parts whose inputs changed. The planner holds what the pointer is
+   * over at the top of the page, because the map and the list both answer to
+   * it, and without this every card, leg and marker crossed rendered the
+   * whole page again: the search, the settings and the sheets kept for the
+   * printer included. The code already keeps the compiler's rules, which the
+   * lint checks, so this changes what is rendered again and nothing else.
+   */
+  reactCompiler: true,
+
+  /*
    * Prisma's runtime folder is traced whole into every server function, and
    * most of it is for other databases and other runtimes: a query engine and
    * a query compiler for each of five databases, each as a base64 module, and

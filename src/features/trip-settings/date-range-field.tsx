@@ -168,22 +168,58 @@ interface DateRangeFieldProps {
  * about the pill and not about the window: the card it sits in is a column of
  * a grid that folds, so a wide window can still hand it a narrow card. The
  * weekday goes first, then the year, and the pill measures itself to decide.
+ *
+ * A day not known yet is a blank line at the same height, so the pill is the
+ * same size with it and without it.
  */
-function End({ name, date }: { readonly name: string; readonly date: IsoDate }) {
-  const day = isoDateAsUtc(date);
+function End({ name, date }: { readonly name: string; readonly date: IsoDate | null }) {
+  const day = date === null ? null : isoDateAsUtc(date);
   return (
     <span className="flex min-w-0 flex-1 flex-col gap-[5px]">
       <span className="text-[13px] leading-none font-semibold text-ink-muted">{name}</span>
       <span className="truncate text-[14px] leading-[1.2] tabular-nums">
-        {/* The steps are where each longer form stops fitting the widest day
-            it can be asked to show, measured rather than guessed. */}
-        <span className="hidden @min-[336px]:inline">{READABLE.format(day)}</span>
-        <span className="hidden @min-[260px]:inline @min-[336px]:hidden">
-          {DAY_MONTH_YEAR.format(day)}
-        </span>
-        <span className="@min-[260px]:hidden">{DAY_MONTH.format(day)}</span>
+        {day === null ? (
+          <span className="invisible">{" "}</span>
+        ) : (
+          <>
+            {/* The steps are where each longer form stops fitting the widest
+                day it can be asked to show, measured rather than guessed. */}
+            <span className="hidden @min-[336px]:inline">{READABLE.format(day)}</span>
+            <span className="hidden @min-[260px]:inline @min-[336px]:hidden">
+              {DAY_MONTH_YEAR.format(day)}
+            </span>
+            <span className="@min-[260px]:hidden">{DAY_MONTH.format(day)}</span>
+          </>
+        )}
       </span>
     </span>
+  );
+}
+
+/**
+ * The starter page's field before the browser has said what today is, which
+ * is the day a trip opens on and the earliest the calendar offers. The page is
+ * built once and served to every zone as it is, so only the browser can know.
+ *
+ * Drawn exactly as the field is, the pill, both names and the arrow between
+ * them, with the two days blank until they are known, so nothing on the page
+ * moves when they arrive a moment after it has loaded. Not open to a press
+ * yet, since there is no month to show.
+ */
+export function DateRangeWaiting({ id, label }: { readonly id: string; readonly label: string }) {
+  const dressed = SIZES.large;
+  return (
+    <div className={`relative ${dressed.stack}`}>
+      <label className="sr-only" htmlFor={id}>
+        {label}
+      </label>
+      <button id={id} type="button" disabled aria-busy="true" className={`${TRIGGER} ${dressed.trigger}`}>
+        <End name="First day" date={null} />
+        <ArrowRightIcon size={18} strokeWidth={1.75} className="shrink-0 text-ink-faint" />
+        <End name="Last day" date={null} />
+        <span className={dressed.change}>Change</span>
+      </button>
+    </div>
   );
 }
 

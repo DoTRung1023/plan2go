@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { createGoogleRoutesProvider, transitDepartureFor } from "@/adapters/travel/google-routes";
 import { createHaversineTravelProvider } from "@/adapters/travel/haversine";
 import type { Trip } from "@/core/model/trip";
@@ -64,14 +65,35 @@ function withoutIgnoredDepartures(inner: TravelProvider): TravelProvider {
   };
 }
 
-function composed(apiKey: string, memory?: LegCacheMemory): TravelProvider {
+/**
+ * When a new answer is written to our own table: before it is handed back, or
+ * once the reply has gone.
+ *
+ * Only the trip's own page writes after. Its legs are asked one behind the
+ * other, so a write waited on is a round trip added to every leg after it,
+ * and nothing reads the table again until the reader's next change. An
+ * action's page is drawn again from the table in the same reply, and an
+ * export's map pictures ask for the same legs a moment after its sheets, so
+ * both of those write first, or the answer would be paid for twice.
+ */
+export type KeepAnswers = "before-answering" | "after-replying";
+
+function composed(apiKey: string, memory?: LegCacheMemory, keep?: KeepAnswers): TravelProvider {
   return withoutIgnoredDepartures(
     withLegCache(
       withStraightLineFallback(
         createGoogleRoutesProvider({ apiKey }),
         createHaversineTravelProvider(),
       ),
-      { memory },
+      {
+        memory,
+        defer:
+          keep === "after-replying"
+            ? (write) => {
+                after(write);
+              }
+            : undefined,
+      },
     ),
   );
 }
@@ -111,7 +133,10 @@ export function travelProvider(): TravelProvider {
  * still uses travelProvider: it asks about one leg, and warming for one is
  * the same round trip with more words.
  */
-export async function tripTravelProvider(trip: Trip): Promise<TravelProvider> {
+export async function tripTravelProvider(
+  trip: Trip,
+  keep: KeepAnswers = "before-answering",
+): Promise<TravelProvider> {
   const apiKey = googleMapsApiKey();
 
   if (apiKey === null) {
@@ -122,5 +147,5 @@ export async function tripTravelProvider(trip: Trip): Promise<TravelProvider> {
       legEnds(day).map(({ from, to }) => ({ from: from.position, to: to.position })),
     ),
   );
-  return composed(apiKey, memory);
+  return composed(apiKey, memory, keep);
 }

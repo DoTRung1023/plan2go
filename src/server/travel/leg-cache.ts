@@ -280,6 +280,16 @@ export interface LegCacheOptions {
   /** Answers already read for this render, so a leg among them costs no round trip. */
   readonly memory?: LegCacheMemory;
   readonly rows?: LegRows;
+  /**
+   * Takes the writing of a new answer off the way through, to be done once
+   * the reply has gone. For a render with a memory only: the answer is in
+   * the memory the moment it arrives, which is where the rest of the render
+   * looks, and a day's legs are asked one behind the other, so a write waited
+   * on is a round trip added to every leg after it. Without this each answer
+   * is written before it is handed back, which an action needs: the page it
+   * asks to be drawn again reads the table straight after, in the same reply.
+   */
+  readonly defer?: (write: () => Promise<void>) => void;
 }
 
 /**
@@ -315,6 +325,7 @@ export interface LegCacheOptions {
 export function withLegCache(inner: TravelProvider, options: LegCacheOptions = {}): TravelProvider {
   const rows = options.rows ?? prismaLegRows;
   const memory = options.memory;
+  const defer = memory === undefined ? undefined : options.defer;
   /** Provider asks under way, by the row they will be kept as. */
   const pending = new Map<string, Promise<LegResolution>>();
 
@@ -383,8 +394,12 @@ export function withLegCache(inner: TravelProvider, options: LegCacheOptions = {
         Date.now() + (timeBucket === ANY_TIME ? KEEP_FOR[request.mode] : KEEP_TIMED_TRANSIT_FOR),
       ),
     };
-    await rows.put(key, leg);
     memory?.rows.set(rowKeyOf(key), leg);
+    if (defer === undefined) {
+      await rows.put(key, leg);
+    } else {
+      defer(() => rows.put(key, leg));
+    }
 
     return answer;
   }

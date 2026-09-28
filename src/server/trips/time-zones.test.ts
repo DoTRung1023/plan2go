@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isSupportedTimeZone, openingTimeZone, todayIn } from "./time-zones";
+import { isSupportedTimeZone, openingTimeZone } from "./time-zones";
 
 describe("isSupportedTimeZone", () => {
   it("accepts an IANA zone", () => {
@@ -24,13 +24,5 @@ describe("openingTimeZone", () => {
 
   it("falls back to the server when there is no header", () => {
     expect(isSupportedTimeZone(openingTimeZone(new Headers()))).toBe(true);
-  });
-});
-
-describe("todayIn", () => {
-  it("is already tomorrow in Adelaide while it is still today in Lisbon", () => {
-    const instant = new Date("2026-09-01T22:00:00Z");
-    expect(todayIn("Europe/Lisbon", instant)).toBe("2026-09-01");
-    expect(todayIn("Australia/Adelaide", instant)).toBe("2026-09-02");
   });
 });

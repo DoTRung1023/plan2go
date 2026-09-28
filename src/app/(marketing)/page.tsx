@@ -1,21 +1,15 @@
-import { headers } from "next/headers";
 import Image from "next/image";
 // Imported rather than served from public/, so Next sizes and hashes it.
 import lockup from "../../../logo/logo-text.png";
 import { CreateTripForm } from "./create-trip-form";
 
-import { openingTimeZone, todayIn } from "@/server/trips/time-zones";
-
-/** Reads a clock, so it is worked out per request rather than at build time. */
-export const dynamic = "force-dynamic";
-
-export default async function MarketingPage() {
-  /**
-   * Today where the reader is, not today in UTC. Adelaide spends the first nine
-   * and a half hours of every day being offered yesterday otherwise.
-   */
-  const today = todayIn(openingTimeZone(await headers()));
-
+/**
+ * Built once and served as it is, from the edge nearest the reader, rather
+ * than drawn afresh on every visit. Nothing on it depends on who is asking:
+ * today, which the form opens on, is read from the reader's own clock in the
+ * browser, and the zone a trip keeps is decided when it is opened.
+ */
+export default function MarketingPage() {
   return (
     /*
      * What the product is on one side, the form that starts one on the other.
@@ -50,7 +44,7 @@ export default async function MarketingPage() {
         </p>
       </div>
 
-      <CreateTripForm today={today} />
+      <CreateTripForm />
     </div>
   );
 }

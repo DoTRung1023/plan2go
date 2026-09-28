@@ -154,6 +154,47 @@ describe("warmLegCache", () => {
     expect(answer.status === "resolved" && answer.estimate.durationMinutes).toBe(12);
   });
 
+  it("hands a new answer back before it is written, when writing is put off", async () => {
+    const store = rowsInMemory();
+    const inner = counting();
+    const memory = await warmLegCache([{ from: OVAL, to: BEACH }], store.rows);
+    const later: (() => Promise<void>)[] = [];
+    const cached = withLegCache(inner.provider, {
+      rows: store.rows,
+      memory,
+      defer: (write) => {
+        later.push(write);
+      },
+    });
+
+    const answer = await cached.estimate(request(OVAL, BEACH, "walk"));
+    const again = await cached.estimate(request(OVAL, BEACH, "walk"));
+
+    // Answered, and answered again from the memory, with nothing written yet.
+    expect(answer.status).toBe("resolved");
+    expect(again).toEqual(answer);
+    expect(inner.asked).toBe(1);
+    expect(store.held.size).toBe(0);
+
+    await Promise.all(later.map((write) => write()));
+    expect(store.held.size).toBe(1);
+  });
+
+  it("writes before answering when there is no memory to answer from, even if told to put it off", async () => {
+    const store = rowsInMemory();
+    const inner = counting();
+    const cached = withLegCache(inner.provider, {
+      rows: store.rows,
+      defer: () => {
+        throw new Error("A cache with no memory must not put its writes off.");
+      },
+    });
+
+    await cached.estimate(request(OVAL, BEACH, "walk"));
+
+    expect(store.held.size).toBe(1);
+  });
+
   it("treats a miss on a warmed pair as a miss, and remembers what the provider then says", async () => {
     const store = rowsInMemory();
     const inner = counting();

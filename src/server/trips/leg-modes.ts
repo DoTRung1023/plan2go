@@ -15,20 +15,25 @@ const DEFAULT_TRAVEL_MODE: TravelMode = "walk";
  * Every mode is asked and the fastest wins, because a stop on the other side of
  * the world is not a walk and nobody should have to say so. The answer is a
  * starting point rather than a verdict: the leg says which way it picked and
- * offers the others beside it. Asked for with no moment, since the leg is not
- * yet on the day it will be timed against; the day's own render asks again
- * with one.
+ * offers the others beside it.
+ *
+ * Asked at the moment given, in minutes since the epoch, when the moment the
+ * day sets out on the leg is known before the leg is on the day: then the
+ * answer paid for here is the one the day's own render looks for next, rather
+ * than one it asks for again. Asked with none otherwise, since the leg is not
+ * yet on the day it will be timed against, and the render asks with one.
  */
 export async function fastestTravelMode(
   from: LatLng | null,
   to: LatLng,
   travel: TravelProvider,
+  departAt: number | null = null,
 ): Promise<TravelMode> {
   if (from === null) {
     return DEFAULT_TRAVEL_MODE;
   }
   const answers = await Promise.all(
-    TRAVEL_MODES.map((mode) => travel.estimate({ from, to, mode, departAt: null })),
+    TRAVEL_MODES.map((mode) => travel.estimate({ from, to, mode, departAt })),
   );
   return fastestMode(answers) ?? DEFAULT_TRAVEL_MODE;
 }

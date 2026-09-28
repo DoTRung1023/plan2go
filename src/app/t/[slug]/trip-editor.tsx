@@ -8,6 +8,8 @@ import type { EndpointRef } from "@/features/day-planner/day-itinerary";
 import { DayPlanner } from "@/features/day-planner/day-planner";
 import { PlaceSearch } from "@/features/place-search/place-search";
 import { DayTabs } from "@/features/day-planner/day-tabs";
+import type { DayMapSources } from "@/features/day-planner/export/day-map-source";
+import type { ExportRequest } from "@/features/day-planner/export/export-request";
 import { DEFAULT_EXPORT } from "@/features/day-planner/export/export-request";
 import { PaneHandle } from "./pane-handle";
 import { PrintedTrip } from "@/features/day-planner/export/printed-trip";
@@ -58,6 +60,9 @@ const ExportDialog = dynamic(
     ),
   },
 );
+
+/** The sheets kept for the browser's own print command carry no map pictures. */
+const NO_MAPS: DayMapSources = {};
 
 /** The Maps script reaches for the document as it runs, so it never renders on the server. */
 const TripMap = dynamic(
@@ -344,6 +349,23 @@ export function TripEditor({
       (selected?.legs ?? []).map(
         (leg) => leg.options.find((option) => option.mode === leg.chosen)?.path ?? null,
       ),
+    [selected],
+  );
+
+  /**
+   * What the sheets kept for the browser's own print command are asked to
+   * show: the open day, as the export prints it, without its map. Held still
+   * between renders like the paths above. The sheets measure the day again
+   * whenever they are handed a new request, which is a layout of the whole
+   * day read back by the browser, and this page renders again every time the
+   * pointer crosses a card, a leg or a marker.
+   */
+  const printRequest = useMemo(
+    (): ExportRequest => ({
+      ...DEFAULT_EXPORT,
+      dayIds: selected === undefined ? [] : [selected.plan.id],
+      map: false,
+    }),
     [selected],
   );
 
@@ -637,12 +659,8 @@ export function TripEditor({
           key={selected?.plan.id}
           title={title}
           days={days}
-          maps={{}}
-          request={{
-            ...DEFAULT_EXPORT,
-            dayIds: selected === undefined ? [] : [selected.plan.id],
-            map: false,
-          }}
+          maps={NO_MAPS}
+          request={printRequest}
           visible={false}
         />
       )}

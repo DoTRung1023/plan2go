@@ -20,7 +20,7 @@ interface TripPageProps {
  * this is where its legs are answered and its times worked out.
  */
 export async function TripPage({ trip, editKey }: TripPageProps) {
-  const days = await computeTrip(trip, await tripTravelProvider(trip));
+  const days = await computeTrip(trip, await tripTravelProvider(trip, "after-replying"));
 
   return (
     <>
