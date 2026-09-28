@@ -20,28 +20,19 @@ export interface PlaceSearchRequest {
 }
 
 /**
- * What a city is known for, asked without anybody having typed anything.
+ * The best known places in a city, asked without anybody having typed
+ * anything: what the city is known for, or the best known of one kind in it,
+ * "parks in Hanoi". A kind is answered by what the places are rather than by
+ * what they are called: a park named nothing like "park" is still a park, and
+ * a hotel called Park Hyatt is not one.
  *
  * The point is the middle of the city the trip is in and not the day being
  * planned: someone who has not typed yet is being shown where they are, and a
  * day whose stops are all in one suburb should not narrow that to the suburb.
  */
 export interface NearbyPlacesRequest {
-  readonly centre: LatLng;
-  /** How far out from the centre to look, in metres. */
-  readonly radiusMeters: number;
-  readonly limit: number;
-}
-
-/**
- * The places of one kind in a city, "parks in Hanoi", asked with a press
- * rather than typed. Answered by what the places are rather than by what they
- * are called: a park named nothing like "park" is still a park, and a hotel
- * called Park Hyatt is not one.
- */
-export interface PlacesOfKindRequest {
-  readonly kind: PlaceKind;
-  /** The middle of the city, as for the places it is known for. */
+  /** One kind of place, or null for what the city is known for, of any kind. */
+  readonly kind: PlaceKind | null;
   readonly centre: LatLng;
   /** How far out from the centre to look, in metres, and no further. */
   readonly radiusMeters: number;
@@ -101,12 +92,11 @@ export interface PlacesProvider {
   readonly name: string;
   search(request: PlaceSearchRequest): Promise<readonly PlaceSuggestion[]>;
   /**
-   * The places a city is known for, ordered by how well known they are rather
-   * than by how close they sit to the point given. Answers the empty field.
+   * The best known places in a city, of one kind or of any, ordered by how
+   * well known they are rather than by how close they sit to the point given.
+   * Answers the empty field and its quick searches.
    */
   nearby(request: NearbyPlacesRequest): Promise<readonly PlaceSuggestion[]>;
-  /** The best known places of one kind in a city. Answers a quick search. */
-  ofKind(request: PlacesOfKindRequest): Promise<readonly PlaceSuggestion[]>;
   /** The places a question in words is answered with, and where each one is. */
   landmarks(request: LandmarkRequest): Promise<readonly LandmarkPlace[]>;
   details(providerPlaceId: string, session: string | null): Promise<PlaceDetails | null>;

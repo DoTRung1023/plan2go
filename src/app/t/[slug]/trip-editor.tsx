@@ -275,6 +275,8 @@ export function TripEditor({
    * after typing, a press after Escape.
    */
   const searchField = useRef<HTMLInputElement | null>(null);
+  /** The map's own box, for the search to say what just happened at its foot. */
+  const mapBox = useRef<HTMLDivElement | null>(null);
   const findPlace = (): void => {
     const field = searchField.current;
     if (field === null) {
@@ -402,7 +404,7 @@ export function TripEditor({
             : "sticky top-0 z-20 h-[140px] border-b border-rule bg-paper-sunken lg:static lg:z-auto lg:h-full lg:min-h-0 lg:border-b-0"
         }
       >
-        <div className="relative h-full w-full">
+        <div ref={mapBox} className="relative h-full w-full">
           {selected === undefined ? null : (
             <TripMap
               hoveredStopId={hoveredStopId}
@@ -470,6 +472,7 @@ export function TripEditor({
                   dayId={selected.plan.id}
                   dayName={`Day ${String(selectedIndex + 1)}`}
                   field={searchField}
+                  mapBox={mapBox}
                   near={searchBias(
                     days.map((day) => day.plan),
                     selectedIndex,

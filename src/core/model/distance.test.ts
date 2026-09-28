@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatDistance, metersBetween } from "./distance";
+import { boxAround, formatDistance, metersBetween } from "./distance";
 
 const ADELAIDE = { lat: -34.9285, lng: 138.6007 };
 const MELBOURNE = { lat: -37.8136, lng: 144.9631 };
@@ -48,5 +48,32 @@ describe("formatDistance", () => {
 
   it("rounds to whole kilometres from ten up", () => {
     expect(formatDistance(12029)).toBe("12 km");
+  });
+});
+
+describe("boxAround", () => {
+  it("reaches the radius each way from the centre", () => {
+    const box = boxAround(ADELAIDE, 15_000);
+    const north = { lat: box.high.lat, lng: ADELAIDE.lng };
+    const east = { lat: ADELAIDE.lat, lng: box.high.lng };
+    expect(metersBetween(ADELAIDE, north)).toBe(15_000);
+    expect(Math.abs(metersBetween(ADELAIDE, east) - 15_000)).toBeLessThan(50);
+  });
+
+  it("is wider in degrees of longitude away from the equator", () => {
+    const atEquator = boxAround({ lat: 0, lng: 0 }, 15_000);
+    const box = boxAround(ADELAIDE, 15_000);
+    expect(box.high.lng - box.low.lng).toBeGreaterThan(atEquator.high.lng - atEquator.low.lng);
+  });
+
+  it("keeps its corners either side of the 180th meridian", () => {
+    const box = boxAround({ lat: -17.7, lng: 179.9 }, 20_000);
+    expect(box.low.lng).toBeLessThan(180);
+    expect(box.low.lng).toBeGreaterThan(179);
+    expect(box.high.lng).toBeLessThan(-179);
+  });
+
+  it("stops at a pole rather than past it", () => {
+    expect(boxAround({ lat: 89.95, lng: 0 }, 20_000).high.lat).toBe(90);
   });
 });

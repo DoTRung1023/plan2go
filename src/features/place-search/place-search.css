@@ -3,8 +3,8 @@
  * bar", in everything but size: its colours, its edges and shadows, and the
  * way each part moves. The sizes are the product's own, so the bar keeps the
  * width it has over the place sheet and the words keep the type scale. The
- * panels that hang under it are not here: they are the product's own list,
- * in panel-styles.ts.
+ * lists in the panels that hang under it are the product's own, drawn here
+ * with the product's tokens and in the search's own tints.
  *
  * Its palette is here and nowhere else. The ink and the accent are the
  * product's tokens, mixed to the strengths the design gives them; the paper
@@ -332,7 +332,8 @@
 /* The panels under the bar, the places and the cities: on the bar's own
    surface and at its height off the map, exactly its width and 8px under it,
    so the bar and what it opens read as one thing. What is in them is the
-   product's own list, in panel-styles.ts. */
+   product's own list, drawn from the one set of classes below so the two
+   cannot drift apart. */
 .search-panel {
   position: absolute;
   top: calc(100% + 8px);
@@ -347,6 +348,199 @@
   border-radius: var(--radius-panel);
   background: var(--search-surface);
   box-shadow: var(--search-lift);
+}
+
+/* Where the rows scroll. Only the bar's own width on the right: the room a
+   row leaves beside whatever sits at its end is the row's own, so it can
+   match what that mark has on its other side. */
+.search-list {
+  min-height: 0;
+  padding: 7px 2px 7px 3px;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* The small heading over the rows: "Popular in Hanoi", "Matching places". */
+.search-heading {
+  padding: 4px 7px 9px;
+  color: var(--color-ink-muted);
+  font-size: var(--text-label);
+  font-weight: 600;
+  line-height: var(--text-label--line-height);
+}
+
+/* The one sentence the panel has when the rows are not doing the talking. */
+.search-line {
+  padding: 10px 7px;
+  color: var(--color-ink-muted);
+  font-size: var(--text-meta);
+  line-height: var(--text-meta--line-height);
+}
+
+/* A row, with whatever sits at its end: a plus, a tick, or nothing. Under
+   the pointer or the arrow keys it takes the search's warm tint, the one the
+   arrows take under the pointer too. */
+.search-row {
+  display: flex;
+  align-items: center;
+  padding-right: 6px;
+  border-radius: var(--radius-chip);
+}
+
+.search-row[data-active] {
+  background: var(--search-hover);
+}
+
+/* The row's own button, its mark and then its words. Close on its right, so
+   the words run up to whatever is at the end of the row. */
+.search-row-button {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  padding: 8px 6px 8px 7px;
+  border-radius: var(--radius-chip);
+  text-align: left;
+}
+
+.search-row-button:focus-visible {
+  outline: 2px solid var(--color-terracotta);
+  outline-offset: -2px;
+}
+
+.search-row-button:disabled {
+  opacity: 0.6;
+}
+
+/* The mark at the front of a row, a pin in the accent or a city's dot in its
+   place, and the glass at the front of the city field, which stands in the
+   same column. */
+.search-mark {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  color: var(--color-terracotta);
+}
+
+/* Wrapped greedily rather than prettily: the page keeps a last line from
+   being one word, which in a row this narrow moved a word down that fitted
+   and left the line short beside the mark at the end. */
+.search-row-words {
+  min-width: 0;
+  text-wrap: wrap;
+}
+
+/* A row's two lines, the same as a start or end of the day in the planner
+   beside the map: the name at the small step over its line at the micro step. */
+.search-row-name {
+  display: block;
+  color: var(--color-ink);
+  font-size: var(--text-small);
+  font-weight: 600;
+  line-height: var(--text-small--line-height);
+}
+
+.search-row-line {
+  display: block;
+  color: var(--color-ink-muted);
+  font-size: var(--text-micro);
+  line-height: var(--text-micro--line-height);
+}
+
+/* How far a city is from the day's, at the far end of its row, in the second
+   line's size and ink so it reads as said about the name rather than beside
+   it, and in even figures so a column of them lines up. */
+.search-row-distance {
+  flex-shrink: 0;
+  margin-left: auto;
+  padding-left: 10px;
+  color: var(--color-ink-muted);
+  font-size: var(--text-micro);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--text-micro--line-height);
+  white-space: nowrap;
+}
+
+/* What sits at the end of a row, on the same 26px either way: a place's plus,
+   or the tick of the city the day is in. */
+.search-row-end {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-pill);
+  color: var(--color-terracotta-700);
+}
+
+/* A place's plus, taking the pill's tint under the pointer, faded while the
+   place is on its way to the day. */
+.search-add:hover {
+  background: var(--search-pill);
+  color: var(--color-terracotta-900);
+}
+
+.search-add:disabled {
+  opacity: 0.45;
+}
+
+.search-add:focus-visible {
+  outline: 2px solid var(--color-terracotta);
+  outline-offset: 2px;
+}
+
+/* Once the place is on the day, a sage tick in the plus's place, which is
+   not pressed and does not answer the pointer. */
+.search-add[data-on-day] {
+  background: transparent;
+  color: var(--color-sage-700);
+  opacity: 1;
+}
+
+/* The city panel's own field, the same slim pill a start or end of the day
+   is searched for in. Its left and right edges stand where the rows' do, so
+   the glass sits in the column the pins do and the words start where the
+   names do. */
+.search-city-field-box {
+  padding: 7px 2px 0 3px;
+}
+
+.search-city-field {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 13px 0 6px;
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-pill);
+  background: var(--color-paper);
+}
+
+.search-city-field:focus-within {
+  border-color: var(--color-terracotta);
+}
+
+.search-city-field > .search-mark {
+  color: var(--color-ink-muted);
+}
+
+.search-city-field > input {
+  flex: 1;
+  align-self: stretch;
+  min-width: 0;
+  background: transparent;
+  color: var(--color-ink);
+  caret-color: var(--color-terracotta);
+  font-size: var(--text-small);
+  line-height: var(--text-small--line-height);
+  outline: none;
+}
+
+.search-city-field > input::placeholder {
+  color: var(--color-ink-faint);
 }
 
 /* The quick searches at the top of the place panel, drawn to design 10c of

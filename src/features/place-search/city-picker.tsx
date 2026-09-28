@@ -2,7 +2,7 @@
 
 import type { KeyboardEvent } from "react";
 import { useEffect, useId, useRef, useState } from "react";
-import { array, nullable, number, object, optional, safeParse, string } from "zod/mini";
+import { array, number, object, safeParse, string } from "zod/mini";
 import type { DayCity } from "@/core/model/day";
 import type { CityIdentity } from "@/core/model/day-city";
 import { sameCity } from "@/core/model/day-city";
@@ -12,46 +12,14 @@ import { CityDot, cityColor } from "@/ui/city-dot";
 import { Notice } from "@/ui/notice";
 import { useOutsidePress } from "@/ui/use-outside-press";
 import { useScrollBar } from "@/ui/use-scroll-bar";
-import {
-  PANEL,
-  PANEL_LABEL,
-  PANEL_LINE,
-  PANEL_LIST,
-  ROW,
-  ROW_ACTIVE,
-  ROW_BUTTON,
-  ROW_DISTANCE,
-  ROW_END,
-  ROW_LINE,
-  ROW_MARK,
-  ROW_NAME,
-  ROW_PIN,
-  ROW_WORDS,
-} from "./panel-styles";
-
-/**
- * Long enough that typing does not spend money on every letter, and short
- * enough that a pause is answered before it feels like waiting.
- */
-const DEBOUNCE_MS = 150;
-
-const MINIMUM_LETTERS = 2;
+import { askForPlaces } from "./search-api";
+import { useTypedSearch } from "./use-typed-search";
 
 /** Degrees kept on the bias point. Any more is spurious and misses the cache. */
 const BIAS_DECIMALS = 2;
 
 /** As many cities as the panel shows for one search. */
 const CITIES_ASKED = 8;
-
-const suggestionSchema = object({
-  providerPlaceId: string(),
-  name: string(),
-  address: nullable(string()),
-  /** From the day's city, which the search was asked near. */
-  distanceMeters: optional(nullable(number())),
-});
-
-const responseSchema = object({ suggestions: array(suggestionSchema) });
 
 /** The cities worth going to from a city, and how far each is, as the route answers. */
 const toVisitSchema = object({
@@ -60,8 +28,6 @@ const toVisitSchema = object({
 
 /** Cities asked for; the trip's own come out of these, so as many as the route gives. */
 const TO_VISIT_ASKED = 20;
-
-const refusalSchema = object({ error: string(), action: optional(string()) });
 
 /**
  * A city found by the search, or one worth visiting, the line under its name,
@@ -172,10 +138,6 @@ export function CityPicker({
   onMoved,
 }: CityPickerProps) {
   const [query, setQuery] = useState("");
-  const [found, setFound] = useState<readonly Found[]>([]);
-  /** The text the list on screen is an answer to. */
-  const [answered, setAnswered] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
   const [active, setActive] = useState(0);
   /** The city being written to the day, by name, while it is. */
   const [saving, setSaving] = useState<string | null>(null);
@@ -194,19 +156,10 @@ export function CityPicker({
     readonly about: string;
     readonly cities: readonly Found[];
   } | null>(null);
-  /**
-   * What each city search typed here came to, by the words and the city they
-   * were asked near, so backspacing to words already searched, or typing them
-   * again, is answered at once rather than asked again. Only answers are kept:
-   * a refusal is asked again, since it may not be one the next time.
-   */
-  const [typedAnswers, setTypedAnswers] = useState<Readonly<Record<string, readonly Found[]>>>({});
 
   const root = useRef<HTMLDivElement | null>(null);
   const pill = useRef<HTMLButtonElement | null>(null);
   const field = useRef<HTMLInputElement | null>(null);
-  /** Answers can arrive out of order, so only the newest is allowed to land. */
-  const newest = useRef(0);
   /**
    * Which city was last asked about, so each is asked once however often the
    * panel opens. A ref, because the effect that asks may not set state on the
@@ -234,30 +187,12 @@ export function CityPicker({
   const biasLng = city === null ? null : city.position.lng.toFixed(BIAS_DECIMALS);
 
   const trimmed = query.trim();
-  const searched = trimmed.length >= MINIMUM_LETTERS;
-  /** What a search is remembered by: the words, and the city they were asked near. */
-  const typedKey = `${trimmed}@${biasLat ?? ""},${biasLng ?? ""}`;
-  /** The answer these words had the last time they were typed here, if they have been. */
-  const recalled = searched ? typedAnswers[typedKey] : undefined;
-  const isRecalled = recalled !== undefined;
-  const searching = searched && answered !== trimmed && !isRecalled;
-
-  useEffect(() => {
-    if (!searched) {
-      return;
-    }
-    if (isRecalled) {
-      // Answered already, and shown from what came back then. An answer still
-      // on its way for other words is no longer the one wanted.
-      newest.current += 1;
-      return;
-    }
-    const timer = setTimeout(() => {
-      const attempt = newest.current + 1;
-      newest.current = attempt;
-
+  const typed = useTypedSearch<Found>(
+    trimmed,
+    `${biasLat ?? ""},${biasLng ?? ""}`,
+    async (words) => {
       const parameters = new URLSearchParams({
-        q: trimmed,
+        q: words,
         kind: "city",
         limit: String(CITIES_ASKED),
       });
@@ -266,50 +201,23 @@ export function CityPicker({
         parameters.set("lat", biasLat);
         parameters.set("lng", biasLng);
       }
-
-      const run = async (): Promise<void> => {
-        let body: unknown = null;
-        let ok = false;
-        try {
-          const response = await fetch(`/api/places/search?${parameters.toString()}`);
-          body = await response.json().catch(() => null);
-          ok = response.ok;
-        } catch {
-          body = null;
-        }
-        if (attempt !== newest.current) {
-          return;
-        }
-        setAnswered(trimmed);
-        setActive(0);
-        if (!ok) {
-          const refusal = safeParse(refusalSchema, body);
-          setFound([]);
-          setMessage(
-            refusal.success
-              ? [refusal.data.error, refusal.data.action].filter(Boolean).join(" ")
-              : "Could not reach the place search service. Your trip is saved, try again in a moment.",
-          );
-          return;
-        }
-        const parsed = safeParse(responseSchema, body);
-        const answer = (parsed.success ? parsed.data.suggestions : []).map((suggestion) => ({
-          providerPlaceId: suggestion.providerPlaceId,
-          name: suggestion.name,
-          line: suggestion.address,
-          distanceMeters: suggestion.distanceMeters ?? null,
-        }));
-        setFound(answer);
-        setTypedAnswers((known) => ({ ...known, [typedKey]: answer }));
-        setMessage(null);
-      };
-      void run();
-    }, DEBOUNCE_MS);
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [trimmed, searched, biasLat, biasLng, typedKey, isRecalled]);
+      const answer = await askForPlaces("/api/places/search", parameters);
+      return "error" in answer
+        ? answer
+        : {
+            found: answer.found.map((one) => ({
+              providerPlaceId: one.providerPlaceId,
+              name: one.name,
+              line: one.address,
+              distanceMeters: one.distanceMeters ?? null,
+            })),
+          };
+    },
+    () => {
+      setActive(0);
+    },
+  );
+  const { searched } = typed;
 
   const close = (): void => {
     onOpenChange(false);
@@ -354,7 +262,7 @@ export function CityPicker({
     .map((one) => ({ ...one, current: false, color: null }));
 
   const rows: readonly Row[] = searched
-    ? (recalled ?? found).map((one) => ({
+    ? typed.found.map((one) => ({
         ...one,
         current: sameCity(one, shown),
         color: cities.find((onTrip) => sameCity(onTrip, one))?.color ?? null,
@@ -441,14 +349,13 @@ export function CityPicker({
         ? "Looking for cities to visit."
         : "Type the name of a city.";
     }
-    // A refusal was about other words than these, which are answered already.
-    if (message !== null && !isRecalled) {
-      return message;
+    if (typed.refusal !== null) {
+      return typed.refusal;
     }
     if (rows.length > 0) {
       return null;
     }
-    return searching ? "Looking for cities." : `No city matches "${trimmed}"`;
+    return typed.searching ? "Looking for cities." : `No city matches "${trimmed}"`;
   })();
 
   const listed = rows.length > 0;
@@ -496,14 +403,10 @@ export function CityPicker({
       </button>
 
       {open ? (
-        <div id={panelId} role="dialog" aria-label={`The city ${dayName} is in`} className={PANEL}>
-          {/* The field a city is typed in, the same slim pill a start or end
-              of the day is searched for in. Its left and right edges stand
-              where the rows' do, so the glass sits in the column the pins do
-              and the words start where the names do. */}
-          <div className="pt-[7px] pr-[2px] pl-[3px]">
-            <div className="flex h-9 items-center gap-[7px] rounded-pill border border-rule bg-paper pr-[13px] pl-[6px] focus-within:border-terracotta">
-              <span className={`${ROW_MARK} text-ink-muted`}>
+        <div id={panelId} role="dialog" aria-label={`The city ${dayName} is in`} className="search-panel">
+          <div className="search-city-field-box">
+            <div className="search-city-field">
+              <span className="search-mark">
                 <SearchIcon size={15} strokeWidth={2.75} />
               </span>
               <label className="sr-only" htmlFor={`${panelId}-field`}>
@@ -529,17 +432,16 @@ export function CityPicker({
                   setError(null);
                 }}
                 onKeyDown={onKeyDown}
-                className="min-w-0 flex-1 self-stretch bg-transparent text-small text-ink caret-terracotta outline-none placeholder:text-ink-faint"
               />
             </div>
           </div>
 
-          <div ref={watchList} className={PANEL_LIST}>
-            {line === null ? null : <p className={PANEL_LINE}>{line}</p>}
+          <div ref={watchList} className="search-list scroll-line">
+            {line === null ? null : <p className="search-line">{line}</p>}
 
             {listed ? (
               <>
-                <p className={PANEL_LABEL}>{heading}</p>
+                <p className="search-heading">{heading}</p>
                 <ul
                   id={listId}
                   role="listbox"
@@ -555,7 +457,8 @@ export function CityPicker({
                       onMouseEnter={() => {
                         setActive(index);
                       }}
-                      className={`${ROW} ${index === activeIndex ? ROW_ACTIVE : ""}`}
+                      data-active={index === activeIndex ? "" : undefined}
+                      className="search-row"
                     >
                       <button
                         type="button"
@@ -564,35 +467,39 @@ export function CityPicker({
                         onClick={() => {
                           choose(row);
                         }}
-                        className={`${ROW_BUTTON} disabled:opacity-60`}
+                        className="search-row-button"
                       >
                         {/* A city the trip goes to shows the dot its days
                             carry, in the pin's place; one it does not go
                             to yet has no colour, and keeps the pin every
                             place in the search has. */}
-                        <span className={`${ROW_MARK} ${ROW_PIN}`}>
+                        <span className="search-mark">
                           {row.color === null ? (
                             <PinIcon size={15} strokeWidth={2.75} />
                           ) : (
                             <CityDot slot={row.color} size={9} />
                           )}
                         </span>
-                        <span className={ROW_WORDS}>
-                          <span className={ROW_NAME}>{row.name}</span>
-                          {row.line === null ? null : <span className={ROW_LINE}>{row.line}</span>}
+                        <span className="search-row-words">
+                          <span className="search-row-name">{row.name}</span>
+                          {row.line === null ? null : (
+                            <span className="search-row-line">{row.line}</span>
+                          )}
                         </span>
                         {/* How far it is from the day's city, at the far end
                             and inside the row's button, so it is chosen with
                             the rest of the row. The day's own city has its
                             tick there instead, and is no distance away. */}
                         {row.current || row.distanceMeters === null ? null : (
-                          <span className={ROW_DISTANCE}>{formatDistance(row.distanceMeters)}</span>
+                          <span className="search-row-distance">
+                            {formatDistance(row.distanceMeters)}
+                          </span>
                         )}
                       </button>
                       {/* The tick stands where a place's plus does, so the
                           city the day is in is marked at the same edge. */}
                       {row.current ? (
-                        <span className={`${ROW_END} text-terracotta-700`}>
+                        <span className="search-row-end">
                           <CheckIcon size={14} strokeWidth={3} />
                         </span>
                       ) : null}

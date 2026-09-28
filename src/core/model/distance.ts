@@ -19,6 +19,32 @@ export function metersBetween(from: LatLng, to: LatLng): number {
   return Math.round(2 * EARTH_RADIUS_METERS * Math.asin(Math.min(1, Math.sqrt(a))));
 }
 
+/** The corners of a box on the map, south west and north east. */
+export interface Box {
+  readonly low: LatLng;
+  readonly high: LatLng;
+}
+
+/** A longitude brought back into -180 to 180, however far round it went. */
+function wrapLongitude(lng: number): number {
+  return ((((lng + 180) % 360) + 360) % 360) - 180;
+}
+
+/**
+ * The box a circle round a point fits in, for a search that can be held to a
+ * box but not to a circle. A box across the 180th meridian keeps its corners
+ * on either side of it, the east one west of the west one, which is how such a
+ * box is written; one reaching a pole stops at it.
+ */
+export function boxAround(centre: LatLng, radiusMeters: number): Box {
+  const degrees = (radiusMeters / EARTH_RADIUS_METERS) * (180 / Math.PI);
+  const lngDegrees = degrees / Math.cos(toRadians(centre.lat));
+  return {
+    low: { lat: Math.max(centre.lat - degrees, -90), lng: wrapLongitude(centre.lng - lngDegrees) },
+    high: { lat: Math.min(centre.lat + degrees, 90), lng: wrapLongitude(centre.lng + lngDegrees) },
+  };
+}
+
 /** "285 m", "1.5 km", "12 km". Metres under a kilometre, no decimals past ten. */
 export function formatDistance(meters: number): string {
   const whole = Math.max(0, Math.round(meters));

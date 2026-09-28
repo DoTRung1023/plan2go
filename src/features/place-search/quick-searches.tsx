@@ -2,45 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { PlaceKind } from "@/core/model/place-kind";
-import {
-  BagIcon,
-  BasketIcon,
-  BedIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  CupIcon,
-  LandmarkIcon,
-  MoonIcon,
-  MountainIcon,
-  TempleIcon,
-  TreesIcon,
-  UtensilsIcon,
-} from "@/ui/icons";
-
-/**
- * The kinds of place one press away before anything is typed, in the order
- * they are offered. A press lists the best known of that kind in the city,
- * found by what the places are rather than by what they are called, so "Park"
- * lists parks and not the Park Hyatt. `many` is the kind said of more than
- * one, for the heading over the list: "Parks in Hanoi".
- */
-export const QUICK_SEARCHES: readonly {
-  readonly kind: PlaceKind;
-  readonly label: string;
-  readonly many: string;
-  readonly Icon: typeof CupIcon;
-}[] = [
-  { kind: "cafe", label: "Café", many: "Cafés", Icon: CupIcon },
-  { kind: "street-food", label: "Street food", many: "Street food", Icon: UtensilsIcon },
-  { kind: "museum", label: "Museum", many: "Museums", Icon: LandmarkIcon },
-  { kind: "temple", label: "Temple", many: "Temples", Icon: TempleIcon },
-  { kind: "market", label: "Market", many: "Markets", Icon: BasketIcon },
-  { kind: "viewpoint", label: "Viewpoint", many: "Viewpoints", Icon: MountainIcon },
-  { kind: "park", label: "Park", many: "Parks", Icon: TreesIcon },
-  { kind: "nightlife", label: "Nightlife", many: "Nightlife", Icon: MoonIcon },
-  { kind: "hotel", label: "Hotel", many: "Hotels", Icon: BedIcon },
-  { kind: "shopping", label: "Shopping", many: "Shopping", Icon: BagIcon },
-];
+import { PLACE_KINDS } from "@/core/model/place-kind";
+import { ChevronLeftIcon, ChevronRightIcon } from "@/ui/icons";
+import { KIND_WORDS } from "./place-kinds";
 
 /** How far one press of an arrow moves the row, in pixels: two or three chips. */
 const STEP_PX = 240;
@@ -63,8 +27,11 @@ interface QuickSearchesProps {
 }
 
 /**
- * The quick searches, in one row that scrolls sideways rather than wrapping,
- * so they take a single line of the panel however many there are. Drawn to
+ * The quick searches, one for every kind of place in the order they are
+ * named, in one row that scrolls sideways rather than wrapping, so they take a
+ * single line of the panel however many there are. A press lists the best
+ * known of that kind in the city, found by what the places are rather than by
+ * what they are called, so "Park" lists parks and not the Park Hyatt. Drawn to
  * design 10c of "PlanToGo quick search options"; the look and the press are
  * in place-search.css.
  *
@@ -123,25 +90,28 @@ export function QuickSearches({ chosen, onChoose }: QuickSearchesProps) {
           className="search-kinds-row"
           style={{ maskImage: fade, WebkitMaskImage: fade }}
         >
-          {QUICK_SEARCHES.map(({ kind, label, Icon }) => (
-            <button
-              key={kind}
-              type="button"
-              aria-pressed={chosen === kind}
-              // The cursor stays in the field, so typing still searches while
-              // a kind is being shown.
-              onMouseDown={(event) => {
-                event.preventDefault();
-              }}
-              onClick={() => {
-                onChoose(chosen === kind ? null : kind);
-              }}
-              className="search-kind"
-            >
-              <Icon size={14} strokeWidth={2.5} />
-              {label}
-            </button>
-          ))}
+          {PLACE_KINDS.map((kind) => {
+            const { label, Icon } = KIND_WORDS[kind];
+            return (
+              <button
+                key={kind}
+                type="button"
+                aria-pressed={chosen === kind}
+                // The cursor stays in the field, so typing still searches
+                // while a kind is being shown.
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                }}
+                onClick={() => {
+                  onChoose(chosen === kind ? null : kind);
+                }}
+                className="search-kind"
+              >
+                <Icon size={14} strokeWidth={2.5} />
+                {label}
+              </button>
+            );
+          })}
         </div>
 
         {more.before ? (

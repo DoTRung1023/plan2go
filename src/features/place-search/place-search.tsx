@@ -2,59 +2,30 @@
 
 import type { KeyboardEvent, RefObject } from "react";
 import { useEffect, useId, useRef, useState } from "react";
-import type { infer as Infer } from "zod/mini";
-import { array, nullable, number, object, optional, safeParse, string } from "zod/mini";
+import { nullable, number, object, safeParse, string } from "zod/mini";
 import type { DayCity } from "@/core/model/day";
 import type { CityIdentity } from "@/core/model/day-city";
 import type { PlaceKind } from "@/core/model/place-kind";
 import type { LatLng, Place } from "@/core/model/place";
-import { CheckIcon, CloseIcon, PinIcon, PlusIcon, SearchIcon } from "@/ui/icons";
+import { CheckIcon, CloseIcon, SearchIcon } from "@/ui/icons";
 import { useScrollBar } from "@/ui/use-scroll-bar";
 import { Notice } from "@/ui/notice";
 import { useOutsidePress } from "@/ui/use-outside-press";
 import { CityPicker } from "./city-picker";
-import {
-  PANEL,
-  PANEL_LABEL,
-  PANEL_LINE,
-  PANEL_LIST,
-  ROW,
-  ROW_ACTIVE,
-  ROW_BUTTON,
-  ROW_END,
-  ROW_LINE,
-  ROW_MARK,
-  ROW_NAME,
-  ROW_PIN,
-  ROW_WORDS,
-} from "./panel-styles";
-import { QUICK_SEARCHES, QuickSearches } from "./quick-searches";
+import { cityListWords } from "./place-kinds";
+import { PlaceRows } from "./place-rows";
+import { QuickSearches } from "./quick-searches";
+import type { Suggestion } from "./search-api";
+import { askForPlaces, refusalSentence } from "./search-api";
+import { useCityList } from "./use-city-list";
+import { useTypedSearch } from "./use-typed-search";
 import "./place-search.css";
-
-/**
- * Long enough that typing does not spend money on every letter, and short
- * enough that a pause is answered before it feels like waiting.
- */
-const DEBOUNCE_MS = 150;
-
-const MINIMUM_LETTERS = 2;
 
 /** Degrees kept on the bias point. Any more is spurious and misses the cache. */
 const BIAS_DECIMALS = 4;
 
-/** Recommendations shown, once whatever is already on the trip is out of them. */
+/** The city's best known shown, once whatever is already on the trip is out of them. */
 const RECOMMENDED_SHOWN = 6;
-
-/**
- * Recommendations asked for, which is more than are shown. What the trip
- * already holds comes out of this list, and the next in line takes its place,
- * so the list stays the same length for as long as there is anything left to
- * fill it from. This is every place the provider will name for one question
- * and it costs no more than asking for six, so the whole of it is asked for
- * at once: a traveller who has taken fourteen of a city's best known places
- * has been offered the lot, and there is no page after this one to turn to.
- */
-const RECOMMENDED_ASKED = 20;
 
 /**
  * What the empty field offers to look for, turned over one after another, so
@@ -63,26 +34,16 @@ const RECOMMENDED_ASKED = 20;
  * matches names, so "parks" typed finds the Park Hyatt, and a park is found
  * with the chip.
  */
-const KINDS = ["for a place", "cafés", "museums", "hotels"] as const;
+const HINTS = ["for a place", "cafés", "museums", "hotels"] as const;
 
 /** How long each of those stays before the next. */
-const KINDS_EVERY_MS = 2600;
+const HINT_EVERY_MS = 2600;
 
 /** How long the sentence at the foot of the map says what just happened. */
 const TOAST_MS = 2400;
 
 /** Room between the sentence and the foot of the map, in pixels. */
 const TOAST_LIFT = 32;
-
-const suggestionSchema = object({
-  providerPlaceId: string(),
-  name: string(),
-  address: nullable(string()),
-});
-
-const searchResponseSchema = object({ suggestions: array(suggestionSchema) });
-
-const refusalSchema = object({ error: string(), action: optional(string()) });
 
 /** Where a chosen place is and what it is called, as the preview answers. */
 const previewSchema = object({
@@ -93,8 +54,6 @@ const previewSchema = object({
     position: object({ lat: number(), lng: number() }),
   }),
 });
-
-type Suggestion = Infer<typeof suggestionSchema>;
 
 interface AddPlaceOutcome {
   readonly added: string | null;
@@ -109,6 +68,9 @@ interface Toast {
   readonly bottom: number;
 }
 
+/** Which panel hangs from the bar: its places, the city pill's cities, or neither. Never both. */
+type Panel = "places" | "cities" | null;
+
 interface PlaceSearchProps {
   readonly slug: string;
   /** Travels with the look at a chosen place: only an editor may look before adding. */
@@ -121,6 +83,11 @@ interface PlaceSearchProps {
    * empty day offers a way to start looking, and this is where it points.
    */
   readonly field: RefObject<HTMLInputElement | null>;
+  /**
+   * The map the bar floats over, so what just happened is said at its foot,
+   * in the middle of it, wherever the bar itself is.
+   */
+  readonly mapBox: RefObject<HTMLElement | null>;
   /** Where to look first, or null when the trip has nothing on it yet. */
   readonly near: LatLng | null;
   /**
@@ -192,70 +159,13 @@ function typingIn(target: EventTarget | null): boolean {
 }
 
 /**
- * What the city is known for, or nothing. Every refusal is a plain one: nobody
- * asked for this out loud, so the field says nothing about a list it never
- * requested, and two letters still search.
- */
-async function askAboutCity(city: LatLng): Promise<readonly Suggestion[]> {
-  const parameters = new URLSearchParams({
-    lat: city.lat.toFixed(BIAS_DECIMALS),
-    lng: city.lng.toFixed(BIAS_DECIMALS),
-    limit: String(RECOMMENDED_ASKED),
-  });
-  try {
-    const response = await fetch(`/api/places/nearby?${parameters.toString()}`);
-    if (!response.ok) {
-      return [];
-    }
-    const body: unknown = await response.json();
-    const parsed = safeParse(searchResponseSchema, body);
-    return parsed.success ? parsed.data.suggestions : [];
-  } catch {
-    return [];
-  }
-}
-
-/** What asking for one kind of place in a city came to: the places, or why not. */
-type KindAnswer = { readonly places: readonly Suggestion[] } | { readonly error: string };
-
-const UNREACHABLE = "Could not reach the place search service. Your trip is saved, try again in a moment.";
-
-/**
- * The best known places of one kind in the city. Asked for out loud, with a
- * press, so a refusal comes back as the sentence the panel shows instead.
- */
-async function askAboutKind(kind: PlaceKind, city: LatLng): Promise<KindAnswer> {
-  const parameters = new URLSearchParams({
-    kind,
-    lat: city.lat.toFixed(BIAS_DECIMALS),
-    lng: city.lng.toFixed(BIAS_DECIMALS),
-  });
-  try {
-    const response = await fetch(`/api/places/kind?${parameters.toString()}`);
-    const body: unknown = await response.json().catch(() => null);
-    if (!response.ok) {
-      const refusal = safeParse(refusalSchema, body);
-      return {
-        error: refusal.success
-          ? [refusal.data.error, refusal.data.action].filter(Boolean).join(" ")
-          : UNREACHABLE,
-      };
-    }
-    const parsed = safeParse(searchResponseSchema, body);
-    return parsed.success ? { places: parsed.data.suggestions } : { error: UNREACHABLE };
-  } catch {
-    return { error: UNREACHABLE };
-  }
-}
-
-/**
  * Search for a place, and open it to look at before it goes on the day.
  *
  * The bar sits in the top left corner of the map, where a map search belongs,
  * and the day it searches for is the one chosen in the tabs beside it. It is
  * drawn to the design file for it in everything but size; the look and the
- * movement are in place-search.css. The panel of places under it is the
- * exception, and keeps the product's own list, drawn here.
+ * movement are in place-search.css, with the product's own list in the panel
+ * under it.
  *
  * Choosing a place does not put it on the day: it is looked up, pinned on the
  * map and opened in the sheet, where what it is like can be read and the day
@@ -283,6 +193,7 @@ export function PlaceSearch({
   dayId,
   dayName,
   field,
+  mapBox,
   near,
   dayCity,
   cities,
@@ -297,18 +208,12 @@ export function PlaceSearch({
   const [query, setQuery] = useState(showing ?? "");
   /** The name the field was last given to hold, so a new one is told from a re-render. */
   const [held, setHeld] = useState(showing);
-  const [suggestions, setSuggestions] = useState<readonly Suggestion[]>([]);
   const [active, setActive] = useState(0);
-  /** The panel of places, which the city panel takes the place of while it is open. */
-  const [open, setOpen] = useState(false);
-  const [cityOpen, setCityOpen] = useState(false);
+  const [panel, setPanel] = useState<Panel>(null);
   /** The cursor is in the field, which lights the bar. */
   const [focused, setFocused] = useState(false);
-  /** Which kind of place the empty field is offering now. */
-  const [kind, setKind] = useState(0);
-  /** The text the suggestions on screen are an answer to. */
-  const [answered, setAnswered] = useState<string | null>(null);
-  const [searchMessage, setSearchMessage] = useState<string | null>(null);
+  /** Which of the hints the empty field is offering now. */
+  const [hint, setHint] = useState(0);
   /** The place chosen and being looked up, by name, or null between choices. */
   const [lookingUp, setLookingUp] = useState<string | null>(null);
   /** What went wrong with the last look, until the next search or choice. */
@@ -325,50 +230,21 @@ export function PlaceSearch({
   /** What went wrong with the last add from a row, under the list. */
   const [addError, setAddError] = useState<string | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
-  /**
-   * What a city is known for, for the field nobody has typed in yet, and
-   * which city it is an answer about. Null until a city has answered.
-   */
-  const [popular, setPopular] = useState<{
-    readonly about: string;
-    readonly places: readonly Suggestion[];
-  } | null>(null);
   /** The quick search the list is showing in place of the city's best known, or null. */
   const [picked, setPicked] = useState<PlaceKind | null>(null);
-  /**
-   * What each kind came to, by kind and city, kept for as long as the bar is
-   * here so that going back to a kind already looked at is instant.
-   */
-  const [kindAnswers, setKindAnswers] = useState<Readonly<Record<string, KindAnswer>>>({});
-  /**
-   * What each search typed here came to, by the words and where they were
-   * asked near, kept for as long as the bar is here so that backspacing to
-   * words already searched, or typing them again, is answered at once rather
-   * than asked again. Only answers are kept: a refusal is asked again, since
-   * it may not be one the next time.
-   */
-  const [typedAnswers, setTypedAnswers] = useState<Readonly<Record<string, readonly Suggestion[]>>>(
-    {},
-  );
 
   const fieldId = useId();
   const listId = `${fieldId}-list`;
   const container = useRef<HTMLDivElement | null>(null);
-  const input = field;
   const watchList = useScrollBar("y");
   /** One session covers the typing and the detail lookup that follows it. */
   const session = useRef<string | null>(null);
-  /** Answers can arrive out of order, so only the newest is allowed to land. */
-  const newest = useRef(0);
   /**
-   * Which city was last asked about, so each is asked about once however often
-   * the panel is opened, and a day in another city is asked about afresh. A
-   * ref rather than state, because the effect that asks may not set state on
-   * the way in, only in the answer.
+   * Only the newest look at a chosen place is allowed to land: choosing
+   * another, emptying the field or typing on leaves one still on its way
+   * behind.
    */
-  const askedAboutCity = useRef<string | null>(null);
-  /** The kinds asked about in each city, by the same key as their answers, for the same reason. */
-  const askedAboutKinds = useRef(new Set<string>());
+  const newestLook = useRef(0);
   /**
    * Adds from rows go one at a time, in the order they were pressed. The way
    * to a new stop is measured from the stop before it, so the server has to
@@ -378,8 +254,12 @@ export function PlaceSearch({
    */
   const queue = useRef<Promise<void>>(Promise.resolve());
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const panelOpen = open && !cityOpen;
+  /**
+   * Whether the next mouseup in the field is the one that follows focus
+   * taking the whole of a held name. Left to the browser it would put the
+   * caret where the click landed and undo the selection focus just made.
+   */
+  const keepWhole = useRef(false);
 
   // Given a name to hold, the field takes it, and given none it lets go of
   // the one it had, unless something else has been typed over it since.
@@ -399,75 +279,30 @@ export function PlaceSearch({
    * What has been typed, as against the name of the open place the field
    * was given to hold: that is the map's answer, not a question for it.
    */
-  const typed = showing !== null && trimmed === showing.trim() ? "" : trimmed;
-  const holding = typed === "" && trimmed !== "";
-  const searched = typed.length >= MINIMUM_LETTERS;
-  /** What a search is remembered by: the words, and the point they were asked near. */
-  const typedKey =
-    near === null
-      ? typed
-      : `${typed}@${near.lat.toFixed(BIAS_DECIMALS)},${near.lng.toFixed(BIAS_DECIMALS)}`;
-  /** The answer these words had the last time they were typed here, if they have been. */
-  const recalled = searched ? typedAnswers[typedKey] : undefined;
-  const isRecalled = recalled !== undefined;
-  /** Derived, so nothing has to remember to turn it off. */
-  const searching = searched && answered !== typed && !isRecalled;
+  const words = showing !== null && trimmed === showing.trim() ? "" : trimmed;
+  const holding = words === "" && trimmed !== "";
+  const placesOpen = panel === "places";
 
-  useEffect(() => {
-    if (typed.length < MINIMUM_LETTERS) {
-      return;
-    }
-    if (isRecalled) {
-      // Answered already, and shown from what came back then. An answer still
-      // on its way for other words is no longer the one wanted.
-      newest.current += 1;
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      const attempt = newest.current + 1;
-      newest.current = attempt;
+  const typed = useTypedSearch(
+    words,
+    near === null ? "" : `${near.lat.toFixed(BIAS_DECIMALS)},${near.lng.toFixed(BIAS_DECIMALS)}`,
+    (asked) => {
       session.current ??= crypto.randomUUID();
-
-      const parameters = new URLSearchParams({ q: typed, session: session.current });
+      const parameters = new URLSearchParams({ q: asked, session: session.current });
       if (near !== null) {
         parameters.set("lat", near.lat.toFixed(BIAS_DECIMALS));
         parameters.set("lng", near.lng.toFixed(BIAS_DECIMALS));
       }
+      return askForPlaces("/api/places/search", parameters);
+    },
+    () => {
+      setActive(0);
+      // An answer opens the panel it belongs in, and never over the city's.
+      setPanel((now) => now ?? "places");
+    },
+  );
 
-      const run = async (): Promise<void> => {
-        const response = await fetch(`/api/places/search?${parameters.toString()}`);
-        const body: unknown = await response.json().catch(() => null);
-        if (attempt !== newest.current) {
-          return;
-        }
-        setAnswered(typed);
-        setOpen(true);
-        if (!response.ok) {
-          const refusal = safeParse(refusalSchema, body);
-          setSuggestions([]);
-          setSearchMessage(
-            refusal.success
-              ? [refusal.data.error, refusal.data.action].filter(Boolean).join(" ")
-              : "Could not reach the place search service. Your trip is saved, try again in a moment.",
-          );
-          return;
-        }
-        const parsed = safeParse(searchResponseSchema, body);
-        const answer = parsed.success ? parsed.data.suggestions : [];
-        setSuggestions(answer);
-        setTypedAnswers((known) => ({ ...known, [typedKey]: answer }));
-        setActive(0);
-        setSearchMessage(null);
-      };
-
-      void run();
-    }, DEBOUNCE_MS);
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [typed, near, typedKey, isRecalled]);
+  const cityList = useCityList(picked, dayCity?.position ?? null, placesOpen && !typed.searched);
 
   /**
    * The kind of place the empty field offers, turned over while it is empty.
@@ -479,8 +314,8 @@ export function PlaceSearch({
       return;
     }
     const timer = setInterval(() => {
-      setKind((at) => (at + 1) % KINDS.length);
-    }, KINDS_EVERY_MS);
+      setHint((at) => (at + 1) % HINTS.length);
+    }, HINT_EVERY_MS);
     return () => {
       clearInterval(timer);
     };
@@ -494,20 +329,19 @@ export function PlaceSearch({
     const onKey = (event: globalThis.KeyboardEvent): void => {
       if (event.key === "/" && !typingIn(event.target)) {
         event.preventDefault();
-        input.current?.focus();
+        field.current?.focus();
         return;
       }
-      if (event.key === "Escape" && (open || cityOpen)) {
-        setOpen(false);
-        setCityOpen(false);
-        input.current?.blur();
+      if (event.key === "Escape" && panel !== null) {
+        setPanel(null);
+        field.current?.blur();
       }
     };
     document.addEventListener("keydown", onKey);
     return () => {
       document.removeEventListener("keydown", onKey);
     };
-  }, [open, cityOpen, input]);
+  }, [panel, field]);
 
   useEffect(
     () => () => {
@@ -518,84 +352,19 @@ export function PlaceSearch({
     [],
   );
 
-  /**
-   * Asked when the panel first opens on an empty field, and not on mounting:
-   * the call is metered, and a reader who types straight away should never
-   * cause it. Once for each city, so a day in the next city of the trip is
-   * asked about the first time its field is opened, and a day back in one
-   * already asked about is answered from what came back then.
-   */
-  const cityLat = dayCity?.position.lat ?? null;
-  const cityLng = dayCity?.position.lng ?? null;
-  /** The city as the question is asked about it, which is where it is. */
-  const cityKey =
-    cityLat === null || cityLng === null
-      ? null
-      : `${cityLat.toFixed(BIAS_DECIMALS)},${cityLng.toFixed(BIAS_DECIMALS)}`;
-  useEffect(() => {
-    if (
-      !open ||
-      searched ||
-      cityLat === null ||
-      cityLng === null ||
-      cityKey === null ||
-      askedAboutCity.current === cityKey
-    ) {
-      return;
-    }
-    askedAboutCity.current = cityKey;
-    void askAboutCity({ lat: cityLat, lng: cityLng }).then((places) => {
-      setPopular({ about: cityKey, places });
-    });
-  }, [open, searched, cityLat, cityLng, cityKey]);
-
-  /**
-   * A kind is asked about in the city the first time it is chosen there, and
-   * answered from what came back after that. A refusal is not kept as asked,
-   * so choosing the kind again asks again.
-   */
-  const kindKey = picked === null || cityKey === null ? null : `${picked}@${cityKey}`;
-  useEffect(() => {
-    if (
-      !open ||
-      searched ||
-      picked === null ||
-      kindKey === null ||
-      cityLat === null ||
-      cityLng === null ||
-      askedAboutKinds.current.has(kindKey)
-    ) {
-      return;
-    }
-    askedAboutKinds.current.add(kindKey);
-    void askAboutKind(picked, { lat: cityLat, lng: cityLng }).then((answer) => {
-      if ("error" in answer) {
-        askedAboutKinds.current.delete(kindKey);
-      }
-      setKindAnswers((now) => ({ ...now, [kindKey]: answer }));
-    });
-  }, [open, searched, picked, kindKey, cityLat, cityLng]);
-
-  useOutsidePress(container, open, () => {
-    setOpen(false);
+  useOutsidePress(container, placesOpen, () => {
+    setPanel(null);
   });
 
   /** Everything the bar has open, closed, and the cursor let go of. */
   const closeAll = (): void => {
-    setOpen(false);
-    setCityOpen(false);
-    input.current?.blur();
+    setPanel(null);
+    field.current?.blur();
   };
 
-  /**
-   * Say what just happened at the foot of the map, in the middle of it. The
-   * bar hangs from the map's corner, and the map is the box that corner is
-   * in, so that is the box measured.
-   */
+  /** Say what just happened at the foot of the map, in the middle of it. */
   const say = (message: string): void => {
-    const corner = container.current?.offsetParent;
-    const map = corner instanceof HTMLElement ? corner.offsetParent : null;
-    const area = map?.getBoundingClientRect() ?? {
+    const area = mapBox.current?.getBoundingClientRect() ?? {
       left: 0,
       width: window.innerWidth,
       bottom: window.innerHeight,
@@ -614,21 +383,19 @@ export function PlaceSearch({
     }, TOAST_MS);
   };
 
-  const clear = (): void => {
-    newest.current += 1;
-    setQuery("");
-    setSuggestions([]);
-    setSearchMessage(null);
-    onClear();
-    input.current?.focus();
+  /** Let go of a look still on its way, so it neither lands nor goes on saying it is looking. */
+  const leaveLook = (): void => {
+    newestLook.current += 1;
+    setLookingUp(null);
   };
 
-  /**
-   * Whether the next mouseup in the field is the one that follows focus
-   * taking the whole of a held name. Left to the browser it would put the
-   * caret where the click landed and undo the selection focus just made.
-   */
-  const keepWhole = useRef(false);
+  const clear = (): void => {
+    leaveLook();
+    typed.reset();
+    setQuery("");
+    onClear();
+    field.current?.focus();
+  };
 
   /**
    * Look a chosen place up, and hand it over to be looked at.
@@ -646,14 +413,13 @@ export function PlaceSearch({
     const chosenIn = session.current;
     session.current = null;
 
-    newest.current += 1;
-    const attempt = newest.current;
+    newestLook.current += 1;
+    const attempt = newestLook.current;
+    typed.reset();
     setQuery("");
-    setSuggestions([]);
-    setSearchMessage(null);
     setLookError(null);
     setLookingUp(name);
-    setOpen(true);
+    setPanel("places");
 
     const parameters = new URLSearchParams({ slug, key: editKey, id: providerPlaceId });
     if (chosenIn !== null) {
@@ -670,21 +436,21 @@ export function PlaceSearch({
       } catch {
         body = null;
       }
-      if (attempt !== newest.current) {
+      if (attempt !== newestLook.current) {
         return;
       }
       setLookingUp(null);
       const parsed = ok ? safeParse(previewSchema, body) : null;
       if (parsed === null || !parsed.success) {
-        const refusal = safeParse(refusalSchema, body);
         setLookError(
-          refusal.success
-            ? [refusal.data.error, refusal.data.action].filter(Boolean).join(" ")
-            : "Could not reach the place service. Your trip is saved, try again in a moment.",
+          refusalSentence(
+            body,
+            "Could not reach the place service. Your trip is saved, try again in a moment.",
+          ),
         );
         return;
       }
-      setOpen(false);
+      setPanel((now) => (now === "places" ? null : now));
       const { place } = parsed.data;
       onChoose({
         id: place.providerPlaceId,
@@ -731,31 +497,22 @@ export function PlaceSearch({
   };
 
   /**
-   * What the city is known for, less everywhere the trip already goes, and cut
-   * to the handful the panel has room for.
+   * What the list about the city offers. Of the city's best known, the
+   * handful the panel has room for, less everywhere the trip already goes; of
+   * a kind, all of them, with the ones on the trip ticked.
    *
    * Filtered here rather than asked for filtered, because the answer is cached
    * for every trip to this city at once and one traveller's itinerary is no
    * part of that question. It also means a place recommended a moment ago
    * leaves the list the instant it lands on a day, without asking again.
    */
-  const aboutThisCity = popular !== null && popular.about === cityKey ? popular.places : null;
-  const recommended = (aboutThisCity ?? [])
-    .filter((one) => !onTheTrip.has(one.providerPlaceId))
-    .slice(0, RECOMMENDED_SHOWN);
-
-  /**
-   * The last answer stays on screen while the next one is being worked out,
-   * rather than blinking out and back. Below two letters the panel falls back
-   * to the city, which is what a field nobody has typed in has to offer.
-   * Derived rather than stored, so typing cannot cascade renders.
-   */
-  const kindAnswer = kindKey === null ? undefined : kindAnswers[kindKey];
-  const ofKind = kindAnswer !== undefined && "places" in kindAnswer ? kindAnswer.places : [];
-  const visible = searched ? (recalled ?? suggestions) : picked !== null ? ofKind : recommended;
-
-  /** The quick search being shown, with its words, while nothing is typed. */
-  const shownKind = searched ? null : (QUICK_SEARCHES.find((one) => one.kind === picked) ?? null);
+  const inCity = cityList !== undefined && "found" in cityList ? cityList.found : [];
+  const offered =
+    picked === null
+      ? inCity.filter((one) => !onTheTrip.has(one.providerPlaceId)).slice(0, RECOMMENDED_SHOWN)
+      : inCity;
+  /** Below two letters the panel falls back to the city, which is what a field nobody has typed in has to offer. */
+  const visible = typed.searched ? typed.found : offered;
 
   /**
    * Named where the trip knows the name. It reads better, and on a trip to
@@ -763,18 +520,8 @@ export function PlaceSearch({
    * underneath actually is.
    */
   const cityLabel = dayCity?.name ?? "this city";
-  const heading = searched
-    ? "Matching places"
-    : shownKind !== null
-      ? `${shownKind.many} in ${cityLabel}`
-      : `Popular in ${cityLabel}`;
-
-  /**
-   * True until the city has answered. Only read once the empty field is open,
-   * which is the moment the effect above asks, so unanswered is the same as
-   * being asked about. Derived, like `searching`.
-   */
-  const askingCity = cityKey !== null && aboutThisCity === null;
+  const cityWords = cityListWords(picked, cityLabel);
+  const heading = typed.searched ? "Matching places" : cityWords.heading;
 
   /**
    * Clamped, because the list under the field is swapped for a shorter one the
@@ -784,7 +531,7 @@ export function PlaceSearch({
   const activeIndex = active < visible.length ? active : 0;
 
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
-    if (visible.length === 0 || !open) {
+    if (visible.length === 0 || !placesOpen) {
       return;
     }
     if (event.key === "ArrowDown") {
@@ -804,11 +551,11 @@ export function PlaceSearch({
 
   /**
    * The one sentence the panel has when it is not showing a list: the place
-   * being looked up, what went wrong with the last look, the city being
-   * asked about, a refusal, the search being run, or nothing having matched.
-   * Null when the list is doing the talking, and null on a field nobody has
-   * typed in whose city had nothing to offer, so a trip with no city has the
-   * quick searches and nothing more.
+   * being looked up, what went wrong with the last look, the list about the
+   * city being asked about, refused or empty, a refusal of what was typed,
+   * the search being run, or nothing having matched. Null when the list is
+   * doing the talking, and on a trip with no city, which has nothing to offer
+   * before anything is typed.
    */
   const line = ((): string | null => {
     if (lookingUp !== null) {
@@ -817,44 +564,42 @@ export function PlaceSearch({
     if (lookError !== null) {
       return lookError;
     }
-    if (shownKind !== null) {
-      const many = shownKind.many.toLowerCase();
-      if (kindAnswer === undefined) {
-        return `Looking for ${many} in ${cityLabel}.`;
+    if (!typed.searched) {
+      if (dayCity === null) {
+        return null;
       }
-      if ("error" in kindAnswer) {
-        return kindAnswer.error;
+      if (cityList === undefined) {
+        return cityWords.waiting;
       }
-      return kindAnswer.places.length > 0
-        ? null
-        : `No ${many} turned up in ${cityLabel}. Try typing the name of one instead.`;
+      if ("error" in cityList) {
+        return cityList.error;
+      }
+      return offered.length > 0 ? null : cityWords.empty;
     }
-    if (!searched) {
-      return askingCity ? `Looking for places in ${cityLabel}.` : null;
-    }
-    // A refusal was about other words than these, which are answered already.
-    if (searchMessage !== null && !isRecalled) {
-      return searchMessage;
+    if (typed.refusal !== null) {
+      return typed.refusal;
     }
     if (visible.length > 0) {
       return null;
     }
-    return searching
+    return typed.searching
       ? "Looking for places."
       : "Nothing matched. Try the name of the place, or the street it is on.";
   })();
 
   const listed = visible.length > 0;
-  const panel = panelOpen && (!searched || listed || line !== null);
-  const busy = (searched && searching) || lookingUp !== null;
+  /** The quick searches, on an empty field, where there is a city to find them in. */
+  const chips = !typed.searched && dayCity !== null;
+  const shown = placesOpen && (chips || listed || line !== null);
+  const busy = typed.searching || lookingUp !== null;
 
   return (
     <div className="place-search relative" ref={container}>
       {/* The page under the bar, dimmed while it is in use; a press on it
           closes the bar rather than landing on the map. */}
-      {open || cityOpen ? <div aria-hidden="true" className="search-scrim" onClick={closeAll} /> : null}
+      {panel === null ? null : <div aria-hidden="true" className="search-scrim" onClick={closeAll} />}
 
-      <div className="search-bar" data-active={focused || open || cityOpen ? "" : undefined}>
+      <div className="search-bar" data-active={focused || panel !== null ? "" : undefined}>
         {/* Which city the search is in comes first, since a place is looked
             for in it. */}
         <CityPicker
@@ -863,17 +608,18 @@ export function PlaceSearch({
           cities={cities}
           dayName={dayName}
           colorFor={cityColorFor}
-          open={cityOpen}
+          open={panel === "cities"}
           onOpenChange={(next) => {
             if (next) {
-              setOpen(false);
+              setPanel("cities");
+            } else {
+              setPanel((now) => (now === "cities" ? null : now));
             }
-            setCityOpen(next);
           }}
           onChoose={onChangeCity}
           onMoved={(name) => {
             say(`${dayName} is now in ${name}`);
-            input.current?.focus();
+            field.current?.focus();
           }}
         />
         <span aria-hidden="true" className="search-divider" />
@@ -888,31 +634,33 @@ export function PlaceSearch({
           </label>
           <input
             id={fieldId}
-            ref={input}
+            ref={field}
             type="text"
             role="combobox"
             autoComplete="off"
             aria-keyshortcuts="/"
-            aria-expanded={panelOpen && listed}
+            aria-expanded={placesOpen && listed}
             aria-controls={listId}
             aria-autocomplete="list"
             aria-activedescendant={
-              panelOpen && listed ? `${listId}-option-${String(activeIndex)}` : undefined
+              placesOpen && listed ? `${listId}-option-${String(activeIndex)}` : undefined
             }
             value={query}
             onChange={(event) => {
+              // Typing on is choosing something else: a look still on its
+              // way is no longer the one wanted.
+              leaveLook();
               setQuery(event.target.value);
               setLookError(null);
-              setOpen(true);
+              setPanel("places");
             }}
             onFocus={(event) => {
               setFocused(true);
-              setCityOpen(false);
               if (holding) {
                 event.currentTarget.select();
                 keepWhole.current = true;
               }
-              setOpen(true);
+              setPanel("places");
             }}
             onMouseUp={(event) => {
               if (keepWhole.current) {
@@ -934,8 +682,8 @@ export function PlaceSearch({
           {query === "" ? (
             <span aria-hidden="true" className="search-words">
               {"Search "}
-              <span key={kind} className="search-word">
-                {KINDS[kind]}
+              <span key={hint} className="search-word">
+                {HINTS[hint]}
               </span>
             </span>
           ) : null}
@@ -956,11 +704,10 @@ export function PlaceSearch({
 
         {/* Hung from the bar itself, as the city panel is, so the two are
             the same width and the same distance under it. */}
-        {panel ? (
-          <div className={PANEL}>
-            <div ref={watchList} className={PANEL_LIST}>
-              {/* Only where there is a city to find them in. */}
-              {searched || cityKey === null ? null : (
+        {shown ? (
+          <div className="search-panel">
+            <div ref={watchList} className="search-list scroll-line">
+              {chips ? (
                 <QuickSearches
                   chosen={picked}
                   onChoose={(next) => {
@@ -969,97 +716,26 @@ export function PlaceSearch({
                     setLookError(null);
                   }}
                 />
-              )}
+              ) : null}
 
-              {line === null ? null : <p className={PANEL_LINE}>{line}</p>}
+              {line === null ? null : <p className="search-line">{line}</p>}
 
               {listed ? (
-                <>
-                  <p className={PANEL_LABEL}>{heading}</p>
-                  <ul
-                    id={listId}
-                    role="listbox"
-                    aria-label={searched ? "Places that match" : heading}
-                  >
-                    {visible.map((suggestion, index) => {
-                      const onItsWay = adding.has(suggestion.providerPlaceId);
-                      const onTheDay =
-                        added.has(suggestion.providerPlaceId) ||
-                        onTheTrip.has(suggestion.providerPlaceId);
-                      return (
-                        /* The row opens the place; the plus at its end adds it
-                           without the look. Two controls in one option, with
-                           the highlight on the option so it is one row under
-                           the pointer whichever half the pointer is on. */
-                        <li
-                          key={suggestion.providerPlaceId}
-                          id={`${listId}-option-${String(index)}`}
-                          role="option"
-                          aria-selected={index === activeIndex}
-                          onMouseEnter={() => {
-                            setActive(index);
-                          }}
-                          // The same room on the far side of the plus as the
-                          // words leave on its near side, so its hover disc
-                          // sits clear of the panel's edge rather than against it.
-                          className={`${ROW} ${index === activeIndex ? ROW_ACTIVE : ""}`}
-                        >
-                          <button
-                            type="button"
-                            onClick={() => {
-                              choose(suggestion);
-                            }}
-                            // Close on its right, so the words run up to the
-                            // plus rather than wrapping a word early to leave
-                            // room the plus does not need. The pin is centred
-                            // on the row, as the plus is, so the two marks at
-                            // either end sit on one line however many lines
-                            // the name and address take between them.
-                            className={ROW_BUTTON}
-                          >
-                            <span className={`${ROW_MARK} ${ROW_PIN}`}>
-                              <PinIcon size={15} strokeWidth={2.75} />
-                            </span>
-                            <span className={ROW_WORDS}>
-                              <span className={ROW_NAME}>{suggestion.name}</span>
-                              {suggestion.address === null ? null : (
-                                <span className={ROW_LINE}>{suggestion.address}</span>
-                              )}
-                            </span>
-                          </button>
-                          {/* A tick once it is on the day, so a search answer
-                              that still lists the place says so instead of
-                              offering it again. */}
-                          <button
-                            type="button"
-                            disabled={onItsWay || onTheDay}
-                            aria-busy={onItsWay}
-                            aria-label={
-                              onTheDay
-                                ? `${suggestion.name} is on ${dayName}`
-                                : `Add ${suggestion.name} to ${dayName}`
-                            }
-                            title={onTheDay ? `On ${dayName}` : `Add to ${dayName}`}
-                            onClick={() => {
-                              addNow(suggestion);
-                            }}
-                            className={`${ROW_END} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
-                              onTheDay
-                                ? "text-sage-700"
-                                : "text-terracotta-700 hover:bg-(--search-pill) hover:text-terracotta-900 disabled:opacity-45"
-                            }`}
-                          >
-                            {onTheDay ? (
-                              <CheckIcon size={14} strokeWidth={3} />
-                            ) : (
-                              <PlusIcon size={14} strokeWidth={3} />
-                            )}
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </>
+                <PlaceRows
+                  listId={listId}
+                  heading={heading}
+                  label={typed.searched ? "Places that match" : heading}
+                  places={visible}
+                  activeIndex={activeIndex}
+                  onActive={setActive}
+                  onChoose={choose}
+                  onAdd={addNow}
+                  adding={adding}
+                  onTheDay={(place) =>
+                    added.has(place.providerPlaceId) || onTheTrip.has(place.providerPlaceId)
+                  }
+                  dayName={dayName}
+                />
               ) : null}
 
               {addError === null ? null : (

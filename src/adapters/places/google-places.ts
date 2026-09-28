@@ -5,13 +5,13 @@ import type {
   Weekday,
   WeeklyOpeningHours,
 } from "@/core/model/place";
+import { boxAround } from "@/core/model/distance";
 import type { PlaceKind } from "@/core/model/place-kind";
 import type {
   LandmarkPlace,
   LandmarkRequest,
   NearbyPlacesRequest,
   PlaceDetails,
-  PlacesOfKindRequest,
   PlaceImage,
   PlaceSearchRequest,
   PlaceSuggestion,
@@ -109,14 +109,6 @@ const KIND_QUERIES: Readonly<Record<PlaceKind, string>> = {
   hotel: "hotels",
   shopping: "shopping",
 };
-
-/** Metres in a degree of latitude, near enough anywhere on earth. */
-const METERS_PER_DEGREE = 111_320;
-
-/** A longitude brought back into the range a request may carry. */
-function wrapLongitude(lng: number): number {
-  return ((((lng + 180) % 360) + 360) % 360) - 180;
-}
 
 const WEEKDAYS: readonly Weekday[] = [0, 1, 2, 3, 4, 5, 6];
 
@@ -365,6 +357,36 @@ export function createGooglePlacesProvider(options: GooglePlacesOptions): Places
     "X-Goog-Api-Key": options.apiKey,
   };
 
+  /**
+   * The best known places of one kind in a circle. There is no place type for
+   * several kinds, so it is a text search for the kind's words, and a text
+   * search can be held to a box but not to a circle, so it is held to the box
+   * the circle fits in: the city, and not the country around it.
+   */
+  const ofKind = async (
+    kind: PlaceKind,
+    request: NearbyPlacesRequest,
+  ): Promise<readonly PlaceSuggestion[]> => {
+    const { low, high } = boxAround(request.centre, request.radiusMeters);
+    const response = await fetch(TEXT_SEARCH_URL, {
+      method: "POST",
+      headers: { ...headers, "X-Goog-FieldMask": NEARBY_FIELDS },
+      body: JSON.stringify({
+        textQuery: KIND_QUERIES[kind],
+        languageCode: PLACE_LANGUAGE,
+        pageSize: Math.min(request.limit, TEXT_SEARCH_MAX_RESULTS),
+        locationRestriction: {
+          rectangle: {
+            low: { latitude: low.lat, longitude: low.lng },
+            high: { latitude: high.lat, longitude: high.lng },
+          },
+        },
+      }),
+    });
+    const parsed = nearbySchema.parse(await readJson(response, "places of a kind"));
+    return suggestionsOf(parsed, request.limit);
+  };
+
   return {
     name: "google-places",
 
@@ -416,6 +438,9 @@ export function createGooglePlacesProvider(options: GooglePlacesOptions): Places
     },
 
     async nearby(request: NearbyPlacesRequest): Promise<readonly PlaceSuggestion[]> {
+      if (request.kind !== null) {
+        return ofKind(request.kind, request);
+      }
       const response = await fetch(NEARBY_URL, {
         method: "POST",
         headers: { ...headers, "X-Goog-FieldMask": NEARBY_FIELDS },
@@ -436,37 +461,6 @@ export function createGooglePlacesProvider(options: GooglePlacesOptions): Places
         }),
       });
       const parsed = nearbySchema.parse(await readJson(response, "places nearby"));
-      return suggestionsOf(parsed, request.limit);
-    },
-
-    async ofKind(request: PlacesOfKindRequest): Promise<readonly PlaceSuggestion[]> {
-      // A text search can be held to a box but not to a circle, so it is held
-      // to the box the circle fits in: the city, and not the country around it.
-      const latSpan = request.radiusMeters / METERS_PER_DEGREE;
-      const lngSpan =
-        request.radiusMeters / (METERS_PER_DEGREE * Math.cos((request.centre.lat * Math.PI) / 180));
-      const response = await fetch(TEXT_SEARCH_URL, {
-        method: "POST",
-        headers: { ...headers, "X-Goog-FieldMask": NEARBY_FIELDS },
-        body: JSON.stringify({
-          textQuery: KIND_QUERIES[request.kind],
-          languageCode: PLACE_LANGUAGE,
-          pageSize: Math.min(request.limit, TEXT_SEARCH_MAX_RESULTS),
-          locationRestriction: {
-            rectangle: {
-              low: {
-                latitude: Math.max(request.centre.lat - latSpan, -90),
-                longitude: wrapLongitude(request.centre.lng - lngSpan),
-              },
-              high: {
-                latitude: Math.min(request.centre.lat + latSpan, 90),
-                longitude: wrapLongitude(request.centre.lng + lngSpan),
-              },
-            },
-          },
-        }),
-      });
-      const parsed = nearbySchema.parse(await readJson(response, "places of a kind"));
       return suggestionsOf(parsed, request.limit);
     },
 

@@ -11,46 +11,31 @@ import { pointKey, suggestionsFor } from "./suggestion-cache";
 const CITY_RADIUS_METERS = 15_000;
 
 /**
- * The question has no words of its own, so it is filed under a fixed name and
- * told apart by where it was asked. Two trips to the same city therefore share
- * one answer, and the second of them costs nothing.
+ * The question has no words of its own, so it is filed under a fixed name for
+ * what is asked, the city's best known or the best known of one kind, and told
+ * apart by where it was asked. Two trips to the same city therefore share one
+ * answer for each, and the second of them costs nothing.
  */
-const QUERY_KEY = "nearby:popular";
-
-/**
- * What the city a trip is in is known for, for the field nobody has typed in
- * yet. Cached exactly as a typed search is, and by a key coarse enough that
- * every trip to a city asks the same question.
- */
-export async function recommendPlaces(
-  centre: LatLng,
-  limit: number,
-  provider: PlacesProvider,
-  now: Date = new Date(),
-): Promise<readonly PlaceSuggestion[]> {
-  return suggestionsFor(
-    { query: QUERY_KEY, biasKey: pointKey(centre), size: limit },
-    () => provider.nearby({ centre, radiusMeters: CITY_RADIUS_METERS, limit }),
-    now,
-  );
+function queryKey(kind: PlaceKind | null): string {
+  return kind === null ? "nearby:popular" : `kind:${kind}`;
 }
 
 /**
- * The best known places of one kind in the city a trip is in, for a quick
- * search. Filed by the kind and the city, so every trip to a city shares one
- * answer for each kind, and a reader flicking between them costs the provider
- * nothing after the first press of each.
+ * The best known places in the city a trip is in, for the field nobody has
+ * typed in yet: what the city is known for, or with a quick search pressed,
+ * the best known of that kind. Cached exactly as a typed search is, and by a
+ * key coarse enough that every trip to a city asks the same question.
  */
-export async function placesOfKind(
-  kind: PlaceKind,
+export async function recommendPlaces(
+  kind: PlaceKind | null,
   centre: LatLng,
   limit: number,
   provider: PlacesProvider,
   now: Date = new Date(),
 ): Promise<readonly PlaceSuggestion[]> {
   return suggestionsFor(
-    { query: `kind:${kind}`, biasKey: pointKey(centre), size: limit },
-    () => provider.ofKind({ kind, centre, radiusMeters: CITY_RADIUS_METERS, limit }),
+    { query: queryKey(kind), biasKey: pointKey(centre), size: limit },
+    () => provider.nearby({ kind, centre, radiusMeters: CITY_RADIUS_METERS, limit }),
     now,
   );
 }
