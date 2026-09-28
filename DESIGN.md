@@ -502,12 +502,19 @@ chevron, 8px in from the field's edge so its curve runs inside the field's. The 
 in the field name the city too, "Search places in Hanoi", and the empty field offers
 what that city is known for. Pressed, the pill opens a panel under the field from its
 left edge, 300px wide, at the `panel` radius under `shadow-md`: a field of its own for
-typing a city, and under it the cities the trip already goes to, each on a row with a
-dot of its colour on a disc of `paper-sunken`, the name, and under it the days spent there, "Days 1 to
-3 and 6". The city the day is in comes first, its pin in `terracotta-700` and a tick at
-the end of its row. Typing a city lists the cities that match, nearest the day's city
+typing a city, and under it, headed "Popular in Vietnam", the cities worth visiting in
+the country the day's city is in, each on a row with a plain pin on a disc of
+`paper-sunken`, the name, and under it the province and country. Every city the trip
+already goes to is left out of that list, the day's own among them: the pill already
+says it, and the list is for somewhere the trip has not been yet. There is no list of
+popular cities to be had from the places provider, so it is made from the country's
+best known landmarks, each counted to the city its address puts it in, and ranked by how
+many landmarks each city has; it is asked once a day for each country and kept, and it
+is rough at its tail, where a city with one landmark can come up as the district the
+landmark stands in. Typing a city lists the cities that match, nearest the day's city
 first, each the trip already goes to with its dot and any other with a plain pin, since
-a city has no colour until a day is in it. Choosing one moves the day there, and with it the days straight after it that
+a city has no colour until a day is in it; the city the day is in is ticked at the end
+of its row. Choosing one moves the day there, and with it the days straight after it that
 were in the same city, up to the first that was somewhere else; the days before it
 never move, and nothing on a moved day moves with it. A day added to the end of the
 trip is in the city the last day was in. An empty day opens the map on its city, so

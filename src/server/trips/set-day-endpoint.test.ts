@@ -124,6 +124,7 @@ function providerFor(known: Place | null): {
       name: "stub",
       search: () => Promise.reject(new Error(NOT_STUBBED)),
       nearby: () => Promise.reject(new Error(NOT_STUBBED)),
+      landmarks: () => Promise.reject(new Error(NOT_STUBBED)),
       details: (providerPlaceId) => {
         asked.push(providerPlaceId);
         return Promise.resolve(known === null ? null : { ...known, timeZone: null });

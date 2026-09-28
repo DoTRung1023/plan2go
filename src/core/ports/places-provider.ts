@@ -33,6 +33,26 @@ export interface NearbyPlacesRequest {
 }
 
 /**
+ * What a country is worth visiting for, asked in words, "best cities to visit
+ * in Vietnam". The answer is places rather than cities, since that is what a
+ * search that good at places knows how to rank, and where each one is in its
+ * country is how the cities are found.
+ */
+export interface LandmarkRequest {
+  readonly query: string;
+  readonly limit: number;
+}
+
+/** A well known place, and what its address says about where it is. */
+export interface LandmarkPlace {
+  readonly name: string;
+  /** The town or city its address names, or null when it names none. */
+  readonly locality: string | null;
+  /** The province, state or prefecture it is in, or null when it names none. */
+  readonly region: string | null;
+}
+
+/**
  * A search hit, which is cheap. It carries no coordinates and no opening hours,
  * because those cost a second and dearer call. Ask for details once the person
  * has actually chosen something.
@@ -63,6 +83,8 @@ export interface PlacesProvider {
    * than by how close they sit to the point given. Answers the empty field.
    */
   nearby(request: NearbyPlacesRequest): Promise<readonly PlaceSuggestion[]>;
+  /** The places a question in words is answered with, and where each one is. */
+  landmarks(request: LandmarkRequest): Promise<readonly LandmarkPlace[]>;
   details(providerPlaceId: string, session: string | null): Promise<PlaceDetails | null>;
   /**
    * What a place is like: its rating, its pictures and what people say. The

@@ -6,6 +6,8 @@ import type {
   WeeklyOpeningHours,
 } from "@/core/model/place";
 import type {
+  LandmarkPlace,
+  LandmarkRequest,
   NearbyPlacesRequest,
   PlaceDetails,
   PlaceImage,
@@ -17,6 +19,7 @@ import { MINUTES_PER_DAY, clockToMinutes } from "@/core/time/minutes";
 
 const AUTOCOMPLETE_URL = "https://places.googleapis.com/v1/places:autocomplete";
 const NEARBY_URL = "https://places.googleapis.com/v1/places:searchNearby";
+const TEXT_SEARCH_URL = "https://places.googleapis.com/v1/places:searchText";
 
 /**
  * The language a place comes back in. Fixed rather than taken from the reader,
@@ -77,6 +80,15 @@ const NEARBY_TYPES = ["tourist_attraction", "museum", "park"];
 /** Google will not return more than this from one nearby search. */
 const NEARBY_MAX_RESULTS = 20;
 
+/**
+ * A landmark's name and the parts of its address, and nothing dearer. Where it
+ * is on the map is no part of the question, which is only which city it is in.
+ */
+const LANDMARK_FIELDS = "places.displayName,places.addressComponents";
+
+/** Nor more than this from one text search. */
+const TEXT_SEARCH_MAX_RESULTS = 20;
+
 const WEEKDAYS: readonly Weekday[] = [0, 1, 2, 3, 4, 5, 6];
 
 const predictionSchema = z.object({
@@ -107,6 +119,20 @@ const nearbySchema = z.object({
         id: z.string(),
         displayName: z.object({ text: z.string() }).optional(),
         formattedAddress: z.string().optional(),
+      }),
+    )
+    .optional(),
+});
+
+/** Likewise for a text search that found nothing. */
+const landmarksSchema = z.object({
+  places: z
+    .array(
+      z.object({
+        displayName: z.object({ text: z.string() }).optional(),
+        addressComponents: z
+          .array(z.object({ longText: z.string(), types: z.array(z.string()) }))
+          .optional(),
       }),
     )
     .optional(),
@@ -368,6 +394,36 @@ export function createGooglePlacesProvider(options: GooglePlacesOptions): Places
         });
       }
       return suggestions.slice(0, request.limit);
+    },
+
+    async landmarks(request: LandmarkRequest): Promise<readonly LandmarkPlace[]> {
+      const response = await fetch(TEXT_SEARCH_URL, {
+        method: "POST",
+        headers: { ...headers, "X-Goog-FieldMask": LANDMARK_FIELDS },
+        body: JSON.stringify({
+          textQuery: request.query,
+          languageCode: PLACE_LANGUAGE,
+          pageSize: Math.min(request.limit, TEXT_SEARCH_MAX_RESULTS),
+        }),
+      });
+      const parsed = landmarksSchema.parse(await readJson(response, "landmarks"));
+
+      const landmarks: LandmarkPlace[] = [];
+      for (const place of parsed.places ?? []) {
+        const name = place.displayName?.text ?? null;
+        if (name === null) {
+          continue;
+        }
+        const part = (type: string): string | null =>
+          place.addressComponents?.find((component) => component.types.includes(type))
+            ?.longText ?? null;
+        landmarks.push({
+          name,
+          locality: part("locality"),
+          region: part("administrative_area_level_1"),
+        });
+      }
+      return landmarks.slice(0, request.limit);
     },
 
     async details(

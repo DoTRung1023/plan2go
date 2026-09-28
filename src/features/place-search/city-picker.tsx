@@ -17,7 +17,6 @@ import { CityDot } from "@/ui/city-dot";
 import { Notice } from "@/ui/notice";
 import { useOutsidePress } from "@/ui/use-outside-press";
 import { useScrollBar } from "@/ui/use-scroll-bar";
-import type { CityOption } from "./city-options";
 
 /** Long enough that typing does not spend money on every letter. */
 const DEBOUNCE_MS = 250;
@@ -37,6 +36,43 @@ const suggestionSchema = object({
 });
 
 const responseSchema = object({ suggestions: array(suggestionSchema) });
+
+/** The cities worth visiting in a country, and which country, as the route answers. */
+const popularSchema = object({ country: string(), suggestions: array(suggestionSchema) });
+
+/** Popular cities asked for; the trip's own come out of these, so a few more than fit. */
+const POPULAR_ASKED = 10;
+
+/**
+ * The cities worth visiting in the country a city is in, or nothing. Every
+ * refusal is a plain one: nobody asked for this list out loud, so the panel
+ * says nothing about one it never got, and typing a city still works.
+ */
+async function askForPopular(
+  providerPlaceId: string,
+): Promise<{ readonly country: string; readonly cities: readonly Found[] } | null> {
+  const parameters = new URLSearchParams({ city: providerPlaceId, limit: String(POPULAR_ASKED) });
+  try {
+    const response = await fetch(`/api/places/cities?${parameters.toString()}`);
+    if (!response.ok) {
+      return null;
+    }
+    const parsed = safeParse(popularSchema, await response.json());
+    if (!parsed.success) {
+      return null;
+    }
+    return {
+      country: parsed.data.country,
+      cities: parsed.data.suggestions.map((one) => ({
+        providerPlaceId: one.providerPlaceId,
+        name: one.name,
+        line: one.address,
+      })),
+    };
+  } catch {
+    return null;
+  }
+}
 
 const refusalSchema = object({ error: string(), action: optional(string()) });
 
@@ -60,8 +96,11 @@ interface Row extends Found {
 interface CityPickerProps {
   /** The city the open day is in, or null on a trip with no city at all. */
   readonly city: DayCity | null;
-  /** Every city the trip goes to, which is what is offered before typing. */
-  readonly cities: readonly CityOption[];
+  /**
+   * Every city the trip goes to, for the colour each one's row shows and to
+   * be left out of the cities offered before anything is typed.
+   */
+  readonly cities: readonly DayCity[];
   /** What the day is called in the tabs, so the sentence says which day moves. */
   readonly dayName: string;
   /**
@@ -108,12 +147,27 @@ export function CityPicker({ city, cities, dayName, colorFor, onOpen, onChoose }
   const [error, setError] = useState<string | null>(null);
   /** A city chosen and written, held on the pill until the day comes back in it. */
   const [moved, setMoved] = useState<(CityIdentity & { readonly color: number }) | null>(null);
+  /**
+   * The cities worth visiting in the day's country, which city's country they
+   * were asked about, and the country's name. Null until an answer lands.
+   */
+  const [popular, setPopular] = useState<{
+    readonly about: string;
+    readonly country: string | null;
+    readonly cities: readonly Found[];
+  } | null>(null);
 
   const root = useRef<HTMLDivElement | null>(null);
   const pill = useRef<HTMLButtonElement | null>(null);
   const field = useRef<HTMLInputElement | null>(null);
   /** Answers can arrive out of order, so only the newest is allowed to land. */
   const newest = useRef(0);
+  /**
+   * Which city's country was last asked about, so each is asked once however
+   * often the panel opens. A ref, because the effect that asks may not set
+   * state on the way in, only in the answer.
+   */
+  const askedAbout = useRef<string | null>(null);
   const watchList = useScrollBar("y");
   const panelId = useId();
   const listId = `${panelId}-list`;
@@ -204,38 +258,50 @@ export function CityPicker({ city, cities, dayName, colorFor, onOpen, onChoose }
   useOutsidePress(root, open, close);
 
   /**
-   * Before anything is typed: the city the day is in first, ticked, and then
-   * every other city the trip goes to, each with the days it holds. A city
-   * known only by its name, from a trip opened before cities were told apart
-   * by identifier, cannot be written to a day and is left out unless it is
-   * the one the day is already in.
+   * Asked when the panel first opens on an empty field, and not on mounting:
+   * the answer costs a search the first time a country is asked about, and a
+   * reader who never opens the picker should never cause it. Asked about the
+   * day's own city, which is where its country comes from; a city kept from
+   * before cities had identifiers has no country to go on, and gets none.
    */
-  const onTheTrip: readonly Row[] = [...cities]
-    .sort((a, b) => Number(sameCity(b.city, shown)) - Number(sameCity(a.city, shown)))
-    .flatMap((option) => {
-      const current = sameCity(option.city, shown);
-      const id = option.city.providerPlaceId;
-      if (id === null && !current) {
-        return [];
-      }
-      return [
-        {
-          providerPlaceId: id ?? "",
-          name: option.city.name,
-          line: option.days,
-          current,
-          color: option.city.color,
-        },
-      ];
+  const askAbout = city?.providerPlaceId ?? null;
+  useEffect(() => {
+    if (!open || searched || askAbout === null || askedAbout.current === askAbout) {
+      return;
+    }
+    askedAbout.current = askAbout;
+    // An answer that did not come is kept as an empty one, so the panel
+    // stops saying it is looking and offers the search instead.
+    void askForPopular(askAbout).then((answer) => {
+      setPopular({
+        about: askAbout,
+        country: answer?.country ?? null,
+        cities: answer?.cities ?? [],
+      });
     });
+  }, [open, searched, askAbout]);
+
+  /** The answer about this day's city, and not one left from another day's. */
+  const popularHere = popular !== null && popular.about === askAbout ? popular : null;
+
+  /**
+   * Before anything is typed: the cities worth visiting in the country, less
+   * every city the trip already goes to, the day's own among them. The pill
+   * already says the day's city, and a city the trip goes to is a search
+   * away; this list is for somewhere the trip has not been yet, so none of
+   * its rows carries a colour.
+   */
+  const toVisit: readonly Row[] = (popularHere?.cities ?? [])
+    .filter((one) => !cities.some((onTrip) => sameCity(onTrip, one)) && !sameCity(one, shown))
+    .map((one) => ({ ...one, current: false, color: null }));
 
   const rows: readonly Row[] = searched
     ? found.map((one) => ({
         ...one,
         current: sameCity(one, shown),
-        color: cities.find((option) => sameCity(option.city, one))?.city.color ?? null,
+        color: cities.find((onTrip) => sameCity(onTrip, one))?.color ?? null,
       }))
-    : onTheTrip;
+    : toVisit;
   const activeIndex = active < rows.length ? active : 0;
 
   const choose = (row: Row): void => {
@@ -310,7 +376,12 @@ export function CityPicker({ city, cities, dayName, colorFor, onOpen, onChoose }
       return `Moving ${dayName} to ${saving}.`;
     }
     if (!searched) {
-      return rows.length === 0 ? "Type the name of a city." : null;
+      if (rows.length > 0) {
+        return null;
+      }
+      return askAbout !== null && popularHere === null
+        ? "Looking for cities to visit."
+        : "Type the name of a city.";
     }
     if (message !== null) {
       return message;
@@ -400,12 +471,16 @@ export function CityPicker({ city, cities, dayName, colorFor, onOpen, onChoose }
             {listed ? (
               <>
                 <p className="px-[7px] pt-1 pb-[7px] text-label font-semibold text-ink-muted">
-                  {searched ? "Matching cities" : "Cities on this trip"}
+                  {searched ? "Matching cities" : `Popular in ${popularHere?.country ?? "this country"}`}
                 </p>
                 <ul
                   id={listId}
                   role="listbox"
-                  aria-label={searched ? "Cities that match" : "Cities on this trip"}
+                  aria-label={
+                    searched
+                      ? "Cities that match"
+                      : `Popular in ${popularHere?.country ?? "this country"}`
+                  }
                   aria-busy={saving !== null}
                 >
                   {rows.map((row, index) => (

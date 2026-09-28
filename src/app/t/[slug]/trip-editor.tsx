@@ -13,8 +13,8 @@ import { PaneHandle } from "./pane-handle";
 import { PrintedTrip } from "@/features/day-planner/printed-trip";
 import { placesOnTheTrip } from "@/features/place-search/places-on-the-trip";
 import { searchBias } from "@/features/place-search/search-bias";
-import { cityOptions } from "@/features/place-search/city-options";
 import { colorAfterMove } from "@/core/model/city-colors";
+import { citiesOf } from "@/core/model/day-city";
 import { TripMenu } from "@/features/trip-settings/trip-menu";
 import { TripExport } from "@/features/trip-settings/trip-export";
 import { ShareLinks } from "@/features/trip-settings/share-links";
@@ -453,7 +453,7 @@ export function TripEditor({
                     selectedIndex,
                   )}
                   dayCity={selected.plan.city}
-                  cities={cityOptions(days.map((day) => day.plan))}
+                  cities={citiesOf(days.map((day) => day.plan))}
                   cityColorFor={(city) =>
                     colorAfterMove(
                       days.map((day) => day.plan),

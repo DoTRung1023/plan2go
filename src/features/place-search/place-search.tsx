@@ -11,7 +11,6 @@ import { CheckIcon, CloseIcon, PinIcon, PlusIcon, SearchIcon } from "@/ui/icons"
 import { useScrollBar } from "@/ui/use-scroll-bar";
 import { Notice } from "@/ui/notice";
 import { useOutsidePress } from "@/ui/use-outside-press";
-import type { CityOption } from "./city-options";
 import { CityPicker } from "./city-picker";
 
 /** Long enough that typing does not spend money on every letter. */
@@ -87,8 +86,8 @@ interface PlaceSearchProps {
    * which is true and says less.
    */
   readonly dayCity: DayCity | null;
-  /** Every city the trip goes to, for the pill to offer before a city is typed. */
-  readonly cities: readonly CityOption[];
+  /** Every city the trip goes to, for the picker's colours and to leave out of its list. */
+  readonly cities: readonly DayCity[];
   /** The colour a city will have once the open day is moved to it. */
   readonly cityColorFor: (city: CityIdentity) => number;
   /**
