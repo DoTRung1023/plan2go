@@ -27,8 +27,8 @@ export const HEADING_BAND =
   "flex items-center gap-[10px] rounded-pill border border-rule bg-paper-raised py-[10px] pr-3 pl-[18px] shadow-sm";
 
 /**
- * The second is the strip of days, on one card of paper, a step up from the
- * ground and a step under the raised cards the stops are on. The card holds
+ * The second is the strip of days, on one pill of paper, a step up from the
+ * ground and a step under the raised cards the stops are on. The pill holds
  * the strip close, seven in from every edge, so it reads as one control made
  * of days rather than a shelf they stand on. Three over the strip, which
  * carries four of its own as room for a focus ring, makes seven; nothing
@@ -36,9 +36,16 @@ export const HEADING_BAND =
  * scrollbar; seven either side, four of which the strip reaches out into for
  * the ring as well.
  *
+ * Sixty tall, so its ends are thirty round: a pill while it holds the strip
+ * alone, and the same corners rather than a swollen one when a sentence
+ * under the strip makes it taller. The day pills stand eight in from its
+ * edge at twenty two, so each curve runs alongside the other. It clips what
+ * it holds to that shape, since a strip scrolled under its ends would
+ * otherwise show a cut off day outside the curve.
+ *
  * There is no line under the strip naming the open day any more. The tab
  * says which day it is and its date, and when the day leaves is set on the
  * day itself, on the time it leaves at.
  */
 export const HEADING_BODY =
-  "mt-3 rounded-row border border-rule bg-paper px-[7px] pt-[3px] pb-0";
+  "mt-3 overflow-hidden rounded-[30px] border border-rule bg-paper px-[7px] pt-[3px] pb-0";

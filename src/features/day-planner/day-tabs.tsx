@@ -1,7 +1,7 @@
 "use client";
 
 import type { KeyboardEvent } from "react";
-import { useRef, useState, useTransition } from "react";
+import { useLayoutEffect, useRef, useState, useTransition } from "react";
 import { useScrollBar } from "@/ui/use-scroll-bar";
 import type { DayPlan } from "@/core/model/day";
 import { PlusIcon } from "@/ui/icons";
@@ -47,14 +47,18 @@ function stopLine(day: DayPlan): string {
  * Wednesday. A date wider than that still gets its room. 44 tall, the height
  * a finger needs, with the two lines four apart centred in it. Stated rather
  * than left to the lines and their padding, which came to 44.5 and put every
- * pill, and everything under the strip, on half a pixel.
+ * tab, and everything under the strip, on half a pixel.
+ *
+ * A pill inside the strip's pill, eight in from its edge, so the two curves
+ * run alongside each other. Positioned, so each day is drawn over the chosen
+ * day's pill sliding under them.
  *
  * The ring is drawn outside, the way it is on every other control: inside,
  * it was terracotta on the chosen day's dark pill, and hard to find. The
  * strip keeps the room for it.
  */
 const TAB =
-  "flex h-11 min-w-[82px] shrink-0 flex-col items-center justify-center gap-1 rounded-pill border-0 px-[15px] whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "day-tab relative flex h-11 min-w-[82px] shrink-0 flex-col items-center justify-center gap-1 rounded-pill border-0 px-[15px] whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 /**
  * The day's number: the one uppercase label in the product, at the micro
@@ -70,6 +74,7 @@ const TAB_DATE = "text-small/none font-semibold tabular-nums";
 
 export function DayTabs({ days, selectedIndex, onSelect, onAddDay }: DayTabsProps) {
   const tabs = useRef<(HTMLButtonElement | null)[]>([]);
+  const list = useRef<HTMLDivElement | null>(null);
   /**
    * Today on the reader's own clock, which is the day they mean by it. It
    * matches no day at all on a trip that has not started or is over, which
@@ -96,6 +101,38 @@ export function DayTabs({ days, selectedIndex, onSelect, onAddDay }: DayTabsProp
       }
     });
   };
+
+  /**
+   * Lays the chosen day's pill under the chosen day. Told to the stylesheet
+   * rather than held as state, since only the pill moves and the transition
+   * in day-tabs.css does the moving. Said again whenever the list changes
+   * size, which is when a tab can have moved without a new day being chosen.
+   *
+   * Marked placed once it has been, and not before: until then the chosen
+   * tab paints its own pill, so the strip is right from the first paint,
+   * before anything here has run.
+   */
+  useLayoutEffect(() => {
+    const strip = list.current;
+    if (strip === null) {
+      return;
+    }
+    const place = (): void => {
+      const tab = tabs.current[selectedIndex];
+      if (tab === undefined || tab === null) {
+        return;
+      }
+      strip.style.setProperty("--pill-x", `${String(tab.offsetLeft)}px`);
+      strip.style.setProperty("--pill-w", `${String(tab.offsetWidth)}px`);
+      strip.dataset.placed = "";
+    };
+    place();
+    const observer = new ResizeObserver(place);
+    observer.observe(strip);
+    return () => {
+      observer.disconnect();
+    };
+  }, [selectedIndex, days]);
 
   const move = (event: KeyboardEvent<HTMLButtonElement>, index: number): void => {
     const last = days.length - 1;
@@ -147,10 +184,15 @@ export function DayTabs({ days, selectedIndex, onSelect, onAddDay }: DayTabsProp
         className="day-tabs scroll-line scroll-shy -mx-[4px] flex scroll-px-[4px] items-center gap-2 px-[4px] pt-[4px] pb-[7px]"
       >
         <div
+          ref={list}
           role="tablist"
           aria-label="Days of this trip"
-          className="flex shrink-0 items-center gap-1"
+          className="group/days relative flex shrink-0 items-center gap-1"
         >
+          {/* The chosen day's pill, one for the strip rather than one per
+              tab, so choosing a day slides it there instead of one pill
+              going out and another coming on. */}
+          <span aria-hidden="true" className="day-pill h-11 rounded-pill bg-terracotta-800" />
           {days.map((day, index) => {
             const selected = index === selectedIndex;
             /**
@@ -184,7 +226,7 @@ export function DayTabs({ days, selectedIndex, onSelect, onAddDay }: DayTabsProp
                 // this card's paper it was hardly a change at all.
                 className={`${TAB} ${
                   selected
-                    ? "bg-terracotta-800 text-paper"
+                    ? "bg-terracotta-800 text-paper group-data-[placed]/days:bg-transparent"
                     : isToday
                       ? "bg-sage-100 text-sage-800 hover:bg-sage-200"
                       : "bg-transparent text-ink-muted hover:bg-paper-sunken hover:text-ink"

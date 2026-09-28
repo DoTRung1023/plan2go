@@ -278,14 +278,16 @@ and only the day itself scrolls, so what is being read is always named above it.
 The list pane stands on sunken paper, and everything on it is laid on that ground 14px
 in from the edge, 12px apart. The trip comes first, on a pill of raised paper under a
 floating control's shadow: its name at the title step, its dates, and its menu, one row
-about the whole trip. Under it the days, on one card of paper at the `row` radius: the
-strip of tabs and nothing else, held close: seven in from every edge, so the card reads
-as one control made of days. Each tab is a pill 44px tall, the height a finger needs,
-with two lines centred in it, **DAY 1** over **Sat 26**: the number uppercase at the
+about the whole trip. Under it the days, on one pill of paper 60px tall with 30px ends,
+the way a phone app's tab bar is drawn: the strip of tabs and nothing else, held close:
+seven in from every edge, so the pill reads as one control made of days. Each tab is a
+pill 44px tall, the height a finger needs, eight in from the strip's edge so the two
+curves run alongside each other, with two lines centred in it, **DAY 1** over **Sat 26**: the number uppercase at the
 micro step, the date at the small step, both 600, four apart. Every tab is as wide as
 the widest date needs, 82px, so the row reads as days rather than words, and they stand
-four apart. The chosen day is on `terracotta-800` with its date in `paper` and its
-number at 85 percent of it; the rest are in `ink-muted`, and today in sage as before.
+four apart. The chosen day is on a pill of `terracotta-800`, one for the whole strip
+that slides along under the days to whichever is chosen, with its date in `paper` and
+its number at 85 percent of it; the rest are in `ink-muted`, and today in sage as before.
 Under the pointer a day that is not chosen takes `paper-sunken`, the step every control
 on paper takes, with its words in `ink`, and today goes from sage 100 to 200. After the
 last tab, eight off, the button that adds a day: a 32px dashed ring in `rule-strong`
@@ -518,8 +520,8 @@ and it is the product's own.
 
 ## Motion
 
-Three things animate: reordering a stop, the trip's actions unfolding, and a place's
-sheet arriving and leaving.
+Four things animate: reordering a stop, the trip's actions unfolding, a place's sheet
+arriving and leaving, and the chosen day's pill moving along the strip.
 
 Reordering: `transform` over 160ms `ease-out` on the card being moved and on the cards
 displacing around it. Nothing else, no opacity, no scale.
@@ -536,13 +538,22 @@ Nothing else moves, no opacity. It is laid over the map, and a sheet that appear
 one frame read as the map being replaced rather than covered; sliding out is how it
 says where it went. The picture viewer it opens is the whole window and appears at once.
 
-Nothing else. No transitions on focus, tab switching, any other panel opening, or map
-interaction, and no other transition on hover. Those changes are instant.
+The chosen day's pill: `translate` and `width` over 250ms on `cubic-bezier(0.22, 1, 0.36,
+1)`, which covers most of the way at once and settles into the rest, so a choice is
+answered straight away and still seen to travel. One pill for the strip rather than one
+per tab, so choosing a day moves it there rather than one going out and another coming
+on, the way a phone app's tab bar moves its highlight. The words on the days change
+colour over the same time and curve, so a date is never `paper` on paper while the pill
+is on its way to it; that holds under the pointer too, where a day's words go to `ink`.
+
+Nothing else. No transitions on focus, any other panel opening, or map interaction, and
+no other transition on hover. Those changes are instant.
 
 Focus is a 2px `terracotta` ring at 2px offset, visible immediately, on every
 interactive element.
 
-Under `prefers-reduced-motion: reduce`, reordering and the sheet are instant too.
+Under `prefers-reduced-motion: reduce`, reordering, the sheet and the day's pill are
+instant too.
 
 ## Print
 
