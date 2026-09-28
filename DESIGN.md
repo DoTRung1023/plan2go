@@ -540,18 +540,25 @@ The place panel: before anything is typed, at its top and with no heading, a chi
 each kind of place: Café, Street food, Museum, Temple, Market, Viewpoint, Park,
 Nightlife, Hotel, Shopping. A press lists the best known places of that kind in the
 day's city under "Parks in Hanoi", in place of the city's best known, and holds the chip
-down, its edge in the accent on `terracotta-100` with its words in `terracotta-900`;
-pressing it again lets go and the city's best known come back. The kind is found by
+down; pressing it again lets go and the city's best known come back. The kind is found by
 what the places are, not by what they are called, which is why it is a chip and not a
 word typed: typed, "Park" finds the Park Hyatt and car parks. While the kind is being
 asked about the panel says "Looking for parks in Hanoi." They stand in one row that scrolls sideways rather than wrapping, with no
-scrollbar. Each is a pill of `paper-raised` inside a hairline, a 15px icon of what it
-finds before its word at the meta step in 600 `ink`, the same as a place's name so the
-chips weigh no more than the list under them, taking the accent's edge on
-`terracotta-100` under the pointer. Where there is more of the row beyond an end, the
-chips fade out over the last 40px towards it and a 28px round arrow of `paper-raised`
-inside a hairline, under `shadow-sm`, stands over that end and moves the row on by
-seven tenths of its width. The arrows never take the cursor from the field; a keyboard
+scrollbar, 8px under the panel's top and 10px over the heading beneath.
+
+The row is drawn to design 10c of "PlanToGo quick search options", in the search's own
+palette in `place-search.css`, since it is the search's and not the list's. Each chip
+is a pill of the bar's surface inside an edge of ink at 14 percent, a 14px icon of what
+it finds before its word at the meta step in 600 `ink`, the same as a place's name so
+the chips weigh no more than the list under them. Under the pointer its edge takes the
+accent; pressed, it sinks to 95 percent over 0.12s and comes back as it is let go, as
+the city pill does; held down, it takes the city pill's colours, its
+tint with the pill's brown words, inside the accent's edge. Colours and edges change
+over 0.15s. Where there is more of the row beyond an end the chips fade out towards
+it, over 56px on the left and 80px on the right, and a 30px round arrow of the
+surface inside an edge of ink at 12 percent, with no shadow, stands 4px in from that
+end, warming to the row tint under the pointer, and moves the row on by 240px. The
+arrows never take the cursor from the field; a keyboard
 goes from chip to chip instead, each scrolled into view as it takes the focus. Under
 the chips, the city's best known places headed "Popular in Hanoi", and once
 something is typed, "Matching places", each heading at the
@@ -638,8 +645,8 @@ and it is the product's own.
 Five things animate: reordering a stop, the trip's actions unfolding, a place's sheet
 arriving and leaving, the chosen day's pill moving along the strip, and the search on the
 map, whose movement is its design file's and is written out under Components and in
-`place-search.css`: its glow on and off, the quick searches gliding along when an
-arrow moves them, the pill's colours and chevron turning, its
+`place-search.css`: its glow on and off, a quick search sinking a little as it is
+pressed and gliding along when an arrow moves the row, the pill's colours and chevron turning, its
 dot popping and name sliding in on a move, the empty field's words turning over, a
 spinner while it waits, and a sentence rising at the foot of the map when something is
 done. A city's dot

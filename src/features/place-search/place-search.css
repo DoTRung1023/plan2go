@@ -20,11 +20,13 @@
   --search-pill-open-hover: #5c2e0f;
   --search-pill-open-ink: #f9f1e2;
   --search-disc: #f1e7d3;
+  --search-hover: #f8ebdd;
   --search-toast-tick: #e3b38d;
 
   --search-ink-6: color-mix(in srgb, var(--color-ink) 6%, transparent);
   --search-ink-10: color-mix(in srgb, var(--color-ink) 10%, transparent);
   --search-ink-12: color-mix(in srgb, var(--color-ink) 12%, transparent);
+  --search-ink-14: color-mix(in srgb, var(--color-ink) 14%, transparent);
   --search-ink-16: color-mix(in srgb, var(--color-ink) 16%, transparent);
   --search-ink-60: color-mix(in srgb, var(--color-ink) 60%, transparent);
   --search-ink-62: color-mix(in srgb, var(--color-ink) 62%, transparent);
@@ -323,6 +325,103 @@
   color: var(--color-ink);
 }
 
+/* The quick searches at the top of the place panel, drawn to design 10c of
+   "PlanToGo quick search options": one row that scrolls sideways, fading out
+   under a round arrow wherever there is more of it. */
+.search-kinds {
+  padding: 8px 0 10px;
+}
+
+.search-kinds-box {
+  position: relative;
+}
+
+.search-kinds-row {
+  display: flex;
+  gap: 6px;
+  padding: 0 7px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.search-kinds-row::-webkit-scrollbar {
+  display: none;
+}
+
+/* A chip: the bar's surface inside a faint edge, taking the accent's edge
+   under the pointer, and pressing in a little when pressed. Held down, it
+   takes the city pill's colours inside the accent's edge. */
+.search-kind {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px 8px 10px;
+  border: 1px solid var(--search-ink-14);
+  border-radius: var(--radius-pill);
+  background: var(--search-surface);
+  color: var(--color-ink);
+  font-size: var(--text-meta);
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    transform 0.12s;
+}
+
+.search-kind:hover {
+  border-color: var(--color-terracotta);
+}
+
+.search-kind:active {
+  transform: scale(0.95);
+}
+
+.search-kind[aria-pressed="true"] {
+  border-color: var(--color-terracotta);
+  background: var(--search-pill);
+  color: var(--search-pill-ink);
+}
+
+/* Inside its own edge, since the row clips anything drawn outside it. */
+.search-kind:focus-visible {
+  outline: 2px solid var(--color-terracotta);
+  outline-offset: -2px;
+}
+
+/* The round arrow over either end of the row, there only while there is
+   more of the row that way. */
+.search-kind-arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--search-ink-12);
+  border-radius: var(--radius-pill);
+  background: var(--search-surface);
+  color: var(--color-ink);
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.search-kind-arrow:hover {
+  background: var(--search-hover);
+}
+
+.search-kind-arrow[data-side="back"] {
+  left: 4px;
+}
+
+.search-kind-arrow[data-side="on"] {
+  right: 4px;
+}
+
 /* What just happened, said once at the foot of the map and gone again. */
 .search-toast {
   position: fixed;
@@ -354,8 +453,13 @@
   .search-pill,
   .search-chevron,
   .search-glass,
+  .search-kind,
   .search-clear {
     transition: none;
+  }
+
+  .search-kind:active {
+    transform: none;
   }
 
   .search-word,

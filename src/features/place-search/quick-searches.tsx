@@ -42,15 +42,18 @@ export const QUICK_SEARCHES: readonly {
   { kind: "shopping", label: "Shopping", many: "Shopping", Icon: BagIcon },
 ];
 
-/** How much of the row's width one press of an arrow moves it on by. */
-const PAGE = 0.7;
+/** How far one press of an arrow moves the row, in pixels: two or three chips. */
+const STEP_PX = 240;
 
-/** How far in from an end with more beyond it the chips fade out, in pixels. */
-const FADE_PX = 40;
+/**
+ * How far the chips fade out towards an end with more beyond it, in pixels.
+ * Longer on the right, the way the row is read and the way it usually goes.
+ */
+const FADE_BACK_PX = 56;
+const FADE_ON_PX = 80;
 
-/** The round arrow over either end of the row. Its side is the caller's. */
-const ARROW =
-  "absolute top-1/2 grid h-[28px] w-[28px] -translate-y-1/2 place-items-center rounded-pill border border-rule bg-paper-raised text-ink shadow-sm hover:bg-terracotta-100";
+/** Scrolled less than this from an end counts as at it, against rounding. */
+const AT_END_PX = 4;
 
 interface QuickSearchesProps {
   /** The kind the list under the row is showing, whose chip is held down. */
@@ -61,7 +64,9 @@ interface QuickSearchesProps {
 
 /**
  * The quick searches, in one row that scrolls sideways rather than wrapping,
- * so they take a single line of the panel however many there are.
+ * so they take a single line of the panel however many there are. Drawn to
+ * design 10c of "PlanToGo quick search options"; the look and the press are
+ * in place-search.css.
  *
  * Where there is more of the row beyond an end, the chips fade out towards it
  * and a round arrow over it pages the row on. Neither arrow takes the focus:
@@ -79,8 +84,8 @@ export function QuickSearches({ chosen, onChoose }: QuickSearchesProps) {
       return;
     }
     const measure = (): void => {
-      const before = strip.scrollLeft > 1;
-      const after = strip.scrollLeft + strip.clientWidth < strip.scrollWidth - 1;
+      const before = strip.scrollLeft > AT_END_PX;
+      const after = strip.scrollLeft + strip.clientWidth < strip.scrollWidth - AT_END_PX;
       setMore((now) => (now.before === before && now.after === after ? now : { before, after }));
     };
     // An observer calls back once as it starts watching, before the row is
@@ -101,19 +106,21 @@ export function QuickSearches({ chosen, onChoose }: QuickSearchesProps) {
     }
     const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     strip.scrollBy({
-      left: direction * strip.clientWidth * PAGE,
+      left: direction * STEP_PX,
       behavior: still ? "auto" : "smooth",
     });
   };
 
-  const fade = `linear-gradient(to right, ${more.before ? "transparent" : "#000"} 0, #000 ${String(FADE_PX)}px, #000 calc(100% - ${String(FADE_PX)}px), ${more.after ? "transparent" : "#000"} 100%)`;
+  const back = more.before ? `transparent 0, #000 ${String(FADE_BACK_PX)}px` : "#000 0";
+  const on = more.after ? `#000 calc(100% - ${String(FADE_ON_PX)}px), transparent 100%` : "#000 100%";
+  const fade = `linear-gradient(to right, ${back}, ${on})`;
 
   return (
-    <div className="pt-[5px] pb-[9px]">
-      <div className="relative">
+    <div className="search-kinds">
+      <div className="search-kinds-box">
         <div
           ref={row}
-          className="flex gap-[6px] overflow-x-auto px-[7px] py-[3px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="search-kinds-row"
           style={{ maskImage: fade, WebkitMaskImage: fade }}
         >
           {QUICK_SEARCHES.map(({ kind, label, Icon }) => (
@@ -129,9 +136,9 @@ export function QuickSearches({ chosen, onChoose }: QuickSearchesProps) {
               onClick={() => {
                 onChoose(chosen === kind ? null : kind);
               }}
-              className="flex shrink-0 items-center gap-[6px] rounded-pill border border-rule bg-paper-raised py-[7px] pr-[12px] pl-[10px] text-meta/none font-semibold whitespace-nowrap text-ink hover:border-terracotta hover:bg-terracotta-100 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta aria-pressed:border-terracotta aria-pressed:bg-terracotta-100 aria-pressed:text-terracotta-900"
+              className="search-kind"
             >
-              <Icon size={15} strokeWidth={2.25} />
+              <Icon size={14} strokeWidth={2.5} />
               {label}
             </button>
           ))}
@@ -148,9 +155,10 @@ export function QuickSearches({ chosen, onChoose }: QuickSearchesProps) {
             onClick={() => {
               page(-1);
             }}
-            className={`${ARROW} left-[2px]`}
+            data-side="back"
+            className="search-kind-arrow"
           >
-            <ChevronLeftIcon size={14} strokeWidth={2.75} />
+            <ChevronLeftIcon size={13} strokeWidth={3} />
           </button>
         ) : null}
         {more.after ? (
@@ -164,9 +172,10 @@ export function QuickSearches({ chosen, onChoose }: QuickSearchesProps) {
             onClick={() => {
               page(1);
             }}
-            className={`${ARROW} right-[2px]`}
+            data-side="on"
+            className="search-kind-arrow"
           >
-            <ChevronRightIcon size={14} strokeWidth={2.75} />
+            <ChevronRightIcon size={13} strokeWidth={3} />
           </button>
         ) : null}
       </div>
