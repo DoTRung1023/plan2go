@@ -7,17 +7,16 @@ import type { LatLng, Place, PlaceId } from "@/core/model/place";
 import type { ComputedDay, ComputedStop } from "@/core/time/compute-day";
 import { formatClock } from "@/core/time/minutes";
 import { weekdayOf } from "@/core/time/zoned";
-import { ClockIcon, FlagIcon, HomeIcon, PlusIcon } from "@/ui/icons";
+import { ClockIcon, CloseIcon, FlagIcon, HomeIcon, PencilIcon, PlusIcon } from "@/ui/icons";
 import type { PlannedDay } from "./compute-trip";
 import type { DayActions } from "./day-actions";
 import { EmptyDay } from "./empty-day";
-import { EndpointMenu } from "./endpoint-menu";
 import { EndpointPicker } from "./endpoint-picker";
 import { formatDayDate } from "./format-day-date";
 import { formatOpeningHours } from "./format-opening-hours";
 import { LeaveAt } from "./leave-at";
 import { LegRow } from "./leg-row";
-import { AboutPlaceButton, StopCard, TOOL_GLYPH } from "./stop-card";
+import { AboutPlaceButton, StopCard, TOOL, TOOL_GLYPH } from "./stop-card";
 import { Notice } from "@/ui/notice";
 
 /**
@@ -227,30 +226,45 @@ function Anchor({
 
       {/* The time, and under it what can be done to this end of the day: the
           same column a stop card keeps at its top right, on the same right
-          edge, so the times of the whole day stand in one column. A reader
-          gets the glyph that opens the place; someone who may change the end
-          gets the three dots that open its menu, where opening the place is
-          the first row. Drawn at 55 percent until the row is under the
-          pointer, as a card's tools are, and whole while the menu is open,
-          so the menu is never drawn faded. */}
+          edge, so the times of the whole day stand in one column, and the
+          same tools in the same row, each in sight rather than behind a
+          menu. The glyph that opens the place comes first, since a reader
+          gets it too, then for someone who may change the end the pencil
+          that changes it and the cross that takes it off. The word each
+          glyph stands for is its name and its tooltip, so it is read out and
+          can be hovered for. Drawn at 55 percent until the row is under the
+          pointer, as a card's tools are. */}
       <div className="flex flex-none flex-col items-end gap-[3px] self-start">
         {setTime ?? (
           <p className="font-display text-time whitespace-nowrap text-terracotta-700 tabular-nums">
             {time ?? "Time not known"}
           </p>
         )}
-        <span className="-mr-1 flex items-center opacity-55 group-hover:opacity-100 focus-within:opacity-100 [&:has([aria-expanded=true])]:opacity-100">
-          {onChange === null || onRemove === null ? (
-            <AboutPlaceButton name={endpoint.place.name} onOpen={onOpen} />
-          ) : (
-            <EndpointMenu
-              which={which}
-              placeName={endpoint.place.name}
+        <span className="-mr-1 flex items-center opacity-55 group-hover:opacity-100 focus-within:opacity-100">
+          <AboutPlaceButton name={endpoint.place.name} onOpen={onOpen} />
+          {onChange === null ? null : (
+            <button
+              type="button"
               disabled={saving}
-              onAbout={onOpen}
-              onChange={onChange}
-              onRemove={onRemove}
-            />
+              onClick={onChange}
+              title="Change"
+              aria-label={ENDS[which].change}
+              className={TOOL}
+            >
+              <PencilIcon size={TOOL_GLYPH.pencil} strokeWidth={TOOL_GLYPH.stroke} />
+            </button>
+          )}
+          {onRemove === null ? null : (
+            <button
+              type="button"
+              disabled={saving}
+              onClick={onRemove}
+              title="Remove"
+              aria-label={ENDS[which].remove}
+              className={TOOL}
+            >
+              <CloseIcon size={TOOL_GLYPH.close} strokeWidth={TOOL_GLYPH.stroke} />
+            </button>
           )}
         </span>
       </div>
@@ -264,7 +278,7 @@ function Anchor({
  * marker the end will get, the name of the end and what goes there, and a
  * plus at the end of the row. On the anchor's grid, so the marker and the
  * words stand where the place's will once there is one. The empty row can
- * be a little shorter because it has no clock or menu. On paper, a step under
+ * be a little shorter because it has no clock or tools. On paper, a step under
  * the raised cards the stops are on and level with a leg, since it is an
  * offer rather than a place. The dash takes the accent under the pointer and
  * the paper lifts.
@@ -277,11 +291,15 @@ const ENDS = {
     add: "Add start point",
     hint: "Hotel, home or pickup",
     label: "Where the day starts",
+    change: "Change where the day starts",
+    remove: "Remove where the day starts",
   },
   end: {
     add: "Add end point",
     hint: "Hotel, station or airport",
     label: "Where the day ends",
+    change: "Change where the day ends",
+    remove: "Remove where the day ends",
   },
 } as const;
 
@@ -405,7 +423,7 @@ function EndpointSlot({
               <span className="block text-small/[1.15] font-semibold text-ink">{words.add}</span>
               <span className="mt-[3px] block text-micro/[1.25] text-ink-muted">{words.hint}</span>
             </span>
-            {/* The plus sits at the same right edge as the filled row's menu. */}
+            {/* The plus sits at the same right edge as the filled row's tools. */}
             <span className="-mr-1 grid h-[22px] w-[22px] place-items-center text-ink-faint group-hover:text-terracotta-700">
               <PlusIcon size={15} strokeWidth={TOOL_GLYPH.stroke} />
             </span>

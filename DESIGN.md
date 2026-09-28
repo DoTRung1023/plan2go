@@ -351,13 +351,10 @@ to know about as a museum that shuts at five.
 An end's row is laid on a stop card's grid to the pixel: the name and address on the
 stops' left edge, in words rather than as a button, and at the top right the time, on
 the stops' right edge so the day's times stand in one column, with the tools under it.
-A reader gets the glyph that opens the place. Someone who may edit gets one tool
-instead, three dots, which opens a menu drawn with the trip menu's rows: **About this
-place**, **Change start point**, and under a rule **Remove start point** (or the end's).
-An end has three things to do to it and a row a third shorter than a card, so they are
-words in a menu rather than three glyphs in a row. The tool is drawn at 55 percent
-until the pointer is over the row, as a card's are, and whole while its menu is open.
-The menu opens down from the start of the day and up from its end, over the day.
+The tools are a card's, in sight rather than behind a menu: the glyph that opens the
+place, which a reader gets too, and for someone who may edit a pencil that changes the
+end and the cross that takes it off, each named for what it does and drawn at 55
+percent until the pointer is over the row, as a card's are.
 
 A stop says when it is arrived at and when it is left, the pair at the top right with an
 arrow between them. The second is the first plus the stay set underneath, which is
