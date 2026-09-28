@@ -269,9 +269,11 @@ one place such a number may appear. Every element that renders a time or a durat
 - **body:** running text.
 - **meta:** secondary text, addresses, the words in a leg row.
 - **micro:** the second line of a search result, and the sentence in a conflict.
-- **label:** the small heading above a value. Sentence case, 600, never uppercase. The one
-  uppercase heading in the product is the day's number on a day tab, which is set at the
-  micro step rather than this one, over the date the way a calendar heads a column.
+- **label:** the small heading above a value. Sentence case, 600, never uppercase, with
+  two exceptions: the day's number on a day tab, which is set at the micro step rather
+  than this one, over the date the way a calendar heads a column, and the headings in the
+  search's panels, which the search's design file sets in capitals at 700 with a little
+  tracking.
 
 There was an eleventh, tick, at 9.5px, for the date and the stop count under a day
 tab's name. It went when the tab became the day's number over its date, which is set at
@@ -495,38 +497,67 @@ and it is shown whole once its words and pictures are all here rather than as th
 arrive. Every picture and rating in it is credited to where it came from.
 
 A trip can move between cities, so every day is in one: its own once it has been moved,
-and the city the trip was opened in until then. The search field says which, first
-thing in it: a 32px pill of `paper-sunken`, flat, with no edge and no shadow, sunk
-into the field rather than floating on it, with a 9px dot of the city's colour, the
-city's name at the small step and a chevron, both in `terracotta-800` and
-`terracotta-900` under the pointer, 8px in from the field's edge so its curve runs
-inside the field's. The words
-in the field name the city too, "Search places in Hanoi", and the empty field offers
-what that city is known for. Pressed, the pill opens the same panel a search for places
-does, the field's width at the `panel` radius under `shadow-md`, drawn from one set of
-classes so the two lists cannot drift apart: rows of the same size and padding, a pin
-in the accent at the front of each, the name at the meta step over its line at the
-micro step, the same highlight, and whatever marks a row at the same end, a place's
-plus or a city's tick. Over the rows, a field of its own for typing a city: the slim
-pill a start or end of the day is searched for in, 36px on `paper` inside a hairline
-that takes the accent while it is typed in, with its glass in the column the pins
-stand in and its words where the names start. Under it, headed "Popular in Vietnam",
-the cities worth visiting in the country the day's city is in, each with the province
-and country under its name. Every city the trip
-already goes to is left out of that list, the day's own among them: the pill already
-says it, and the list is for somewhere the trip has not been yet. There is no list of
-popular cities to be had from the places provider, so it is made from the country's
-best known landmarks, each counted to the city its address puts it in, and ranked by how
-many landmarks each city has; it is asked once a day for each country and kept, and it
-is rough at its tail, where a city with one landmark can come up as the district the
-landmark stands in. Typing a city lists the cities that match, nearest the day's city
-first, each the trip already goes to with its dot and any other with a plain pin, since
-a city has no colour until a day is in it; the city the day is in is ticked at the end
-of its row. Choosing one moves the day there, and with it the days straight after it that
-were in the same city, up to the first that was somewhere else; the days before it
-never move, and nothing on a moved day moves with it. A day added to the end of the
-trip is in the city the last day was in. An empty day opens the map on its city, so
-the next city of the trip is where the map goes when its first day is chosen.
+and the city the trip was opened in until then.
+
+The search on the map is drawn to the design file for it, "PlanToGo search bar", in
+everything but size: the colours, edges, shadows and movement are the file's, and the
+sizes are this product's, so the bar keeps its 48px and the width that sits it over
+the place sheet, and every word stays on the type scale. Its palette is its own and
+lives in `place-search.css` and nowhere else: a surface a step warmer than
+`paper-raised`, a well of warm paper for fields and the key hint, tints of the accent
+for the pill, the tiles and the row under the pointer, and the ink and the accent
+mixed to the strengths the file gives them.
+
+The bar: the surface inside a 1.5px edge of ink at 6 percent under a soft shadow,
+padded 5px, and while it is in use, typed in or with either panel open, the edge takes
+the accent at 60 percent and a 5px glow of the accent at 12 percent rings a deeper
+shadow. In it, in order: the city pill; a 22px hairline; the glass, which takes
+`terracotta-700` while the field has the cursor; the field, whose empty words say
+"Search for a place in Hanoi" and turn the kind of place over every few seconds, cafés,
+museums, street food, viewpoints; a spinner of the accent while a search or a look is
+running; the cross once anything is typed; and at rest a "/" in a key, since "/" from
+anywhere that is not a field brings the cursor to the search. While the bar is in use
+the page under it is dimmed with ink at 6 percent, and a press on it, or Escape,
+closes everything.
+
+The city pill: the city's dot and name in bold on a tint of the accent, darker under the
+pointer, pressing in a little when pressed. Open, it turns to the accent's deepest brown
+with its words in warm paper, its dot takes the lighter tint of the city's colour and
+its chevron turns over. Choosing a city pops the dot with a ring of its colour spreading
+from it and slides the new name in, and a dark pill at the foot of the map says "Day 2
+is now in Hue".
+
+The panels hang 10px under the bar at its width, on the surface at a 24px radius inside
+an edge of ink at 10 percent under a deep shadow, and fade and settle in from a little
+above and smaller, and leave the same way, rather than appearing. Their rows arrive one
+after another. The place panel: before anything is typed, "Quick search" chips that
+search for a kind of place, then the city's best known places headed "Popular in Hanoi",
+and once something is typed, "Results in Hanoi"; its headings are the one place labels
+are set in capitals, at the label step with a little tracking, as the file sets them,
+with a hint at the right of how to move and open. A place's row has its pin on a rounded
+square of the accent's tint, its name with what was typed picked out in bold
+`terracotta-700`, and its address under it, and the row under the pointer or the arrow
+keys shows "Add to Day 2", a pill of the accent that puts the place on the day without
+the look; the row itself opens the place. Nothing matching says so and offers to search
+in another city. Adding says so at the foot of the map, as moving does.
+
+The city panel: a field of its own in the well, lifting to the surface inside the
+accent's edge while a city is typed in it, and under it the cities worth visiting in the
+country the day's city is in, each on a round of warm paper with a pin, its name in bold
+and its province and country under it. Every city the trip already goes to is left out
+of that list, the day's own among them: the pill already says it, and the list is for
+somewhere the trip has not been yet. There is no list of popular cities to be had from
+the places provider, so it is made from the country's best known landmarks, each counted
+to the city its address puts it in, and ranked by how many landmarks each city has; it
+is asked once a day for each country and kept, and it is rough at its tail, where a city
+with one landmark can come up as the district the landmark stands in. Typing a city lists
+the cities that match, nearest the day's city first, each the trip already goes to with
+its dot on a round and any other with a pin, and the city the day is in ticked. Choosing
+one moves the day there, and with it the days straight after it that were in the same
+city, up to the first that was somewhere else; the days before it never move, and
+nothing on a moved day moves with it. A day added to the end of the trip is in the city
+the last day was in. An empty day opens the map on its city, so the next city of the
+trip is where the map goes when its first day is chosen.
 
 ## The map
 
@@ -576,8 +607,14 @@ and it is the product's own.
 
 ## Motion
 
-Four things animate: reordering a stop, the trip's actions unfolding, a place's sheet
-arriving and leaving, and the chosen day's pill moving along the strip. A city's dot
+Five things animate: reordering a stop, the trip's actions unfolding, a place's sheet
+arriving and leaving, the chosen day's pill moving along the strip, and the search on the
+map, whose movement is its design file's and is written out under Components and in
+`place-search.css`: its glow on and off, its panels fading and settling in and out, their
+rows and chips arriving one after another, the pill's colours and chevron turning, its
+dot popping and name sliding in on a move, the empty field's words turning over, a
+spinner while it waits, and a sentence rising at the foot of the map when something is
+done. A city's dot
 also turns to the next city's colour over 200ms `ease-out` when what it marks changes
 city, with the name beside it, so the pill in the search does not flash as days change.
 
@@ -603,14 +640,16 @@ per tab, so choosing a day moves it there rather than one going out and another 
 on, the way a phone app's tab bar moves its highlight. Nothing else on the strip
 moves: a day's words and dot are the same on the pill as off it.
 
-Nothing else. No transitions on focus, any other panel opening, or map interaction, and
-no other transition on hover. Those changes are instant.
+Nothing else. No transitions on focus outside the search, any other panel opening, or map
+interaction, and no other transition on hover. Those changes are instant.
 
 Focus is a 2px `terracotta` ring at 2px offset, visible immediately, on every
 interactive element.
 
-Under `prefers-reduced-motion: reduce`, reordering, the sheet, the day's pill and a
-city's dot are instant too.
+Under `prefers-reduced-motion: reduce`, reordering, the sheet, the day's pill, a city's
+dot and everything in the search are instant too, and the empty field's words stay on
+the first of them rather than turning over. The spinner still turns, since it is what
+says the search is waiting.
 
 ## Print
 

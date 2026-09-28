@@ -1,0 +1,789 @@
+/*
+ * The search on the map, drawn to the design file for it, "PlanToGo search
+ * bar", in everything but size: its colours, its edges and shadows, and the
+ * way each part moves. The sizes are the product's own, so the bar keeps the
+ * width it has over the place sheet and the words keep the type scale.
+ *
+ * Its palette is here and nowhere else. The ink and the accent are the
+ * product's tokens, mixed to the strengths the design gives them; the paper
+ * tints are the design's own, a step warmer than the planner's paper, since
+ * the bar floats over a map rather than lying on the page.
+ */
+.place-search {
+  --search-surface: #fdf8ee;
+  --search-well: #f9f1e2;
+  --search-pill: #f3e0cd;
+  --search-pill-hover: #ecd2b9;
+  --search-pill-ink: #6d3712;
+  --search-pill-open: #6d3712;
+  --search-pill-open-hover: #5c2e0f;
+  --search-pill-open-ink: #f9f1e2;
+  --search-row-active: #f8ebdd;
+  --search-tile: #f3e0cd;
+  --search-tile-active: #f3d6bd;
+  --search-disc: #f1e7d3;
+  --search-disc-trip: #f5ecdb;
+  --search-toast-tick: #e3b38d;
+
+  --search-ink-6: color-mix(in srgb, var(--color-ink) 6%, transparent);
+  --search-ink-10: color-mix(in srgb, var(--color-ink) 10%, transparent);
+  --search-ink-12: color-mix(in srgb, var(--color-ink) 12%, transparent);
+  --search-ink-14: color-mix(in srgb, var(--color-ink) 14%, transparent);
+  --search-ink-16: color-mix(in srgb, var(--color-ink) 16%, transparent);
+  --search-ink-60: color-mix(in srgb, var(--color-ink) 60%, transparent);
+  --search-ink-62: color-mix(in srgb, var(--color-ink) 62%, transparent);
+  --search-ink-66: color-mix(in srgb, var(--color-ink) 66%, transparent);
+  --search-ink-68: color-mix(in srgb, var(--color-ink) 68%, transparent);
+  --search-ink-70: color-mix(in srgb, var(--color-ink) 70%, transparent);
+  --search-ink-72: color-mix(in srgb, var(--color-ink) 72%, transparent);
+
+  --search-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes search-words-in {
+  from {
+    opacity: 0;
+    transform: translateY(60%);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes search-swap-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes search-dot-pop {
+  0% {
+    transform: scale(0.4);
+  }
+  60% {
+    transform: scale(1.25);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes search-ripple {
+  from {
+    transform: scale(0.6);
+    opacity: 0.5;
+  }
+  to {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+@keyframes search-item-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes search-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes search-toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 10px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/*
+ * Laid over everything while the search is open, so a press anywhere else
+ * closes it rather than landing on the map underneath.
+ */
+.search-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: auto;
+  background: var(--search-ink-6);
+}
+
+/* The bar: a faint edge and a soft shadow at rest, the accent's edge and a
+   glow round it while it is in use. */
+.search-bar {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 48px;
+  padding: 5px 6px 5px 5px;
+  border: 1.5px solid var(--search-ink-6);
+  border-radius: var(--radius-pill);
+  background: var(--search-surface);
+  box-shadow: 0 4px 14px var(--search-ink-10);
+  transition:
+    border-color 0.2s,
+    box-shadow 0.3s;
+}
+
+.search-bar[data-active] {
+  border-color: color-mix(in srgb, var(--color-terracotta) 60%, transparent);
+  box-shadow:
+    0 10px 30px var(--search-ink-16),
+    0 0 0 5px color-mix(in srgb, var(--color-terracotta) 12%, transparent);
+}
+
+.search-pill {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  max-width: 150px;
+  padding: 10px 12px 10px 13px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--search-pill);
+  color: var(--search-pill-ink);
+  font-size: var(--text-body);
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    color 0.2s,
+    transform 0.12s;
+}
+
+.search-pill:hover {
+  background: var(--search-pill-hover);
+}
+
+.search-pill:active {
+  transform: scale(0.96);
+}
+
+.search-pill[aria-expanded="true"] {
+  background: var(--search-pill-open);
+  color: var(--search-pill-open-ink);
+}
+
+.search-pill[aria-expanded="true"]:hover {
+  background: var(--search-pill-open-hover);
+}
+
+.search-pill:focus-visible,
+.search-clear:focus-visible,
+.search-chip:focus-visible,
+.search-add:focus-visible,
+.search-elsewhere:focus-visible {
+  outline: 2px solid var(--color-terracotta);
+  outline-offset: 2px;
+}
+
+.search-chevron {
+  flex: none;
+  transition: transform 0.25s var(--search-ease);
+}
+
+.search-pill[aria-expanded="true"] .search-chevron {
+  transform: rotate(180deg);
+}
+
+/* The dot on the pill, popped when the day is moved to another city, with a
+   ring of its own colour spreading out from it. */
+.search-dot {
+  position: relative;
+  flex: none;
+  width: 10px;
+  height: 10px;
+}
+
+.search-dot > * {
+  position: absolute;
+  inset: 0;
+}
+
+.search-dot[data-moved] > :first-child {
+  animation: search-dot-pop 0.45s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+
+.search-ripple {
+  border-radius: var(--radius-pill);
+  animation: search-ripple 0.6s ease-out forwards;
+}
+
+.search-name {
+  display: inline-block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-name[data-moved] {
+  animation: search-swap-in 0.32s var(--search-ease);
+}
+
+.search-divider {
+  flex: none;
+  width: 1px;
+  height: 22px;
+  margin: 0 6px 0 4px;
+  background: var(--search-ink-12);
+}
+
+.search-glass {
+  flex: none;
+  color: var(--search-ink-60);
+  transition: color 0.2s;
+}
+
+.search-bar:has(.search-input:focus) .search-glass {
+  color: var(--color-terracotta-700);
+}
+
+.search-typing {
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  min-width: 0;
+  height: 36px;
+  margin-left: 6px;
+}
+
+.search-input {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--color-ink);
+  caret-color: var(--color-terracotta);
+  font-size: var(--text-body);
+  font-weight: 500;
+  line-height: 1;
+}
+
+/* What the empty field says, drawn over it so the kind of place it names
+   can turn over without the field itself changing. */
+.search-words {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  overflow: hidden;
+  color: var(--search-ink-60);
+  font-size: var(--text-body);
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.search-word {
+  display: inline-block;
+  animation: search-words-in 0.4s var(--search-ease);
+}
+
+.search-spinner {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin: 0 6px;
+  border: 2px solid color-mix(in srgb, var(--color-terracotta) 25%, transparent);
+  border-top-color: var(--color-terracotta);
+  border-radius: var(--radius-pill);
+  animation: search-spin 0.7s linear infinite;
+}
+
+.search-clear {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--search-ink-62);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.search-clear:hover {
+  background: var(--search-disc);
+  color: var(--color-ink);
+}
+
+.search-kbd {
+  display: grid;
+  flex: none;
+  place-items: center;
+  min-width: 24px;
+  height: 24px;
+  margin-right: 6px;
+  border: 1px solid var(--search-ink-16);
+  border-radius: 8px;
+  background: var(--search-well);
+  color: var(--search-ink-66);
+  font-size: var(--text-meta);
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* The panels under the bar. Mounted all the time, so they can leave as they
+   came: fading, and settling up and in towards the bar. */
+.search-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  left: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  max-height: 330px;
+  padding: 8px;
+  border: 1px solid var(--search-ink-10);
+  border-radius: 24px;
+  background: var(--search-surface);
+  box-shadow: 0 18px 44px color-mix(in srgb, var(--color-ink) 20%, transparent);
+  opacity: 0;
+  transform: translateY(-8px) scale(0.98);
+  pointer-events: none;
+  transition:
+    opacity 0.18s ease,
+    transform 0.26s var(--search-ease);
+}
+
+.search-panel[data-city] {
+  transform: translateY(-8px) scale(0.96);
+  transform-origin: 30px 0;
+}
+
+.search-panel[data-open] {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+.search-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.search-heading {
+  color: var(--search-ink-70);
+  font-size: var(--text-label);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.search-quick {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 10px 12px;
+}
+
+.search-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.search-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 11px;
+  border: 1px solid var(--search-ink-14);
+  border-radius: var(--radius-pill);
+  background: var(--search-surface);
+  color: var(--color-ink);
+  font-size: var(--text-small);
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    transform 0.12s;
+}
+
+.search-chip {
+  animation: search-item-in 0.24s both;
+}
+
+.search-chip:hover {
+  background: var(--search-row-active);
+  border-color: var(--color-terracotta);
+}
+
+.search-chip:active {
+  transform: scale(0.95);
+}
+
+.search-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+}
+
+.search-header > .search-heading {
+  flex: 1;
+}
+
+.search-hint {
+  color: var(--search-ink-62);
+  font-size: var(--text-micro);
+  font-weight: 500;
+  line-height: 1;
+}
+
+/* A row, in either panel. Each arrives a moment after the one above it. */
+.search-row {
+  display: flex;
+  align-items: center;
+  border-radius: 16px;
+  background: transparent;
+  transition: background 0.12s;
+  animation: search-item-in 0.26s both;
+}
+
+.search-row[data-active] {
+  background: var(--search-row-active);
+}
+
+.search-row-button {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.search-row-button:focus-visible {
+  outline: 2px solid var(--color-terracotta);
+  outline-offset: -2px;
+}
+
+.search-row-button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.search-panel[data-city] .search-row {
+  animation-duration: 0.24s;
+}
+
+.search-panel[data-city] .search-row-button {
+  gap: 11px;
+}
+
+.search-row-button > .search-tick {
+  margin-right: 0;
+}
+
+/* A place's pin on a rounded square of the accent's lightest tint. */
+.search-tile {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: var(--search-tile);
+  color: var(--color-terracotta-700);
+  transition: background 0.15s;
+}
+
+.search-row[data-active] .search-tile {
+  background: var(--search-tile-active);
+}
+
+/* A city's mark: its dot on a round of warm paper for a city the trip goes
+   to, and a plain pin for one it does not go to yet. */
+.search-disc {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-pill);
+  background: var(--search-disc);
+  color: var(--search-ink-62);
+}
+
+.search-disc[data-trip] {
+  background: var(--search-disc-trip);
+}
+
+.search-words-of {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.search-place-name {
+  overflow: hidden;
+  color: var(--color-ink);
+  font-size: var(--text-small);
+  font-weight: 500;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-place-name > strong {
+  color: var(--color-terracotta-700);
+  font-weight: 800;
+}
+
+.search-place-line {
+  overflow: hidden;
+  color: var(--search-ink-68);
+  font-size: var(--text-meta);
+  font-weight: 400;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-panel[data-city] .search-words-of {
+  gap: 3px;
+}
+
+.search-city-name {
+  color: var(--color-ink);
+  font-size: var(--text-small);
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.search-city-line {
+  color: var(--search-ink-68);
+  font-size: var(--text-micro);
+  font-weight: 500;
+  line-height: 1;
+}
+
+.search-tick {
+  flex: none;
+  margin-right: 10px;
+  color: var(--color-terracotta-700);
+}
+
+.search-tick[data-on-day] {
+  color: var(--color-sage-700);
+}
+
+/* The way to put a place on the day, shown on the row that is picked out. */
+.search-add {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 5px;
+  margin-right: 10px;
+  padding: 7px 11px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-terracotta);
+  color: var(--search-surface);
+  font-size: var(--text-meta);
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateX(6px);
+  transition:
+    opacity 0.15s,
+    transform 0.2s var(--search-ease);
+}
+
+.search-row[data-active] .search-add,
+.search-add:focus-visible {
+  opacity: 1;
+  transform: none;
+}
+
+.search-add:disabled {
+  cursor: default;
+}
+
+.search-row[data-active] .search-add:disabled {
+  opacity: 0.45;
+}
+
+.search-line {
+  padding: 12px 10px 14px;
+  color: var(--search-ink-72);
+  font-size: var(--text-small);
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.search-panel[data-city] .search-line {
+  padding: 14px 10px;
+  color: var(--search-ink-70);
+  line-height: 1.4;
+}
+
+.search-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 10px 14px;
+}
+
+.search-empty > .search-line {
+  padding: 0;
+}
+
+.search-elsewhere {
+  padding: 8px 13px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--search-pill);
+  color: var(--search-pill-ink);
+  font-size: var(--text-small);
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.search-elsewhere:hover {
+  background: var(--search-pill-hover);
+}
+
+/* The city panel's own field: a well of warm paper that lifts to the bar's
+   surface, edged in the accent, while a city is typed in it. */
+.search-city-field {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  margin-bottom: 6px;
+  padding: 0 12px;
+  border: 1.5px solid var(--search-ink-12);
+  border-radius: var(--radius-pill);
+  background: var(--search-well);
+  color: var(--search-ink-60);
+  transition: border-color 0.2s;
+}
+
+.search-city-field:focus-within {
+  border-color: var(--color-terracotta);
+  background: var(--search-surface);
+}
+
+.search-city-field > input {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--color-ink);
+  caret-color: var(--color-terracotta);
+  font-size: var(--text-small);
+  font-weight: 500;
+  line-height: 1;
+}
+
+.search-city-field > input::placeholder {
+  color: var(--search-ink-60);
+}
+
+/* What just happened, said once at the foot of the map and gone again. */
+.search-toast {
+  position: fixed;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 18px;
+  border-radius: var(--radius-pill);
+  background: var(--color-ink);
+  color: var(--search-surface);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--color-ink) 25%, transparent);
+  font-size: var(--text-small);
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translate(-50%, 0);
+  animation: search-toast-in 0.28s var(--search-ease);
+}
+
+.search-toast > svg {
+  flex: none;
+  color: var(--search-toast-tick);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .search-bar,
+  .search-pill,
+  .search-chevron,
+  .search-glass,
+  .search-panel,
+  .search-row,
+  .search-tile,
+  .search-add,
+  .search-chip,
+  .search-clear {
+    transition: none;
+  }
+
+  .search-word,
+  .search-chip,
+  .search-dot[data-moved] > :first-child,
+  .search-ripple,
+  .search-name[data-moved],
+  .search-row,
+  .search-toast {
+    animation: none;
+  }
+}

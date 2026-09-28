@@ -12,21 +12,7 @@ import { useScrollBar } from "@/ui/use-scroll-bar";
 import { Notice } from "@/ui/notice";
 import { useOutsidePress } from "@/ui/use-outside-press";
 import { CityPicker } from "./city-picker";
-import {
-  PANEL,
-  PANEL_LABEL,
-  PANEL_LINE,
-  PANEL_LIST,
-  ROW,
-  ROW_ACTIVE,
-  ROW_BUTTON,
-  ROW_END,
-  ROW_LINE,
-  ROW_MARK,
-  ROW_NAME,
-  ROW_PIN,
-  ROW_WORDS,
-} from "./panel-styles";
+import "./place-search.css";
 
 /** Long enough that typing does not spend money on every letter. */
 const DEBOUNCE_MS = 250;
@@ -49,6 +35,27 @@ const RECOMMENDED_SHOWN = 6;
  * has been offered the lot, and there is no page after this one to turn to.
  */
 const RECOMMENDED_ASKED = 20;
+
+/**
+ * What the empty field offers to look for, turned over one after another, so
+ * a reader who has not decided what they want is reminded what they can ask.
+ */
+const KINDS = ["for a place", "cafés", "museums", "street food", "viewpoints"] as const;
+
+/** How long each of those stays before the next. */
+const KINDS_EVERY_MS = 2600;
+
+/** The searches one press away before anything is typed. */
+const QUICK_SEARCHES = ["Café", "Museum", "Street food", "Temple", "Market"] as const;
+
+/** How far apart the rows and chips arrive, one after another, in seconds. */
+const ROW_STAGGER_S = 0.03;
+
+/** How long the sentence at the foot of the map says what just happened. */
+const TOAST_MS = 2400;
+
+/** Room between the sentence and the foot of the map, in pixels. */
+const TOAST_LIFT = 32;
 
 const suggestionSchema = object({
   providerPlaceId: string(),
@@ -77,12 +84,20 @@ interface AddPlaceOutcome {
   readonly error: string | null;
 }
 
+/** What just happened, where it is said, and which saying of it this is. */
+interface Toast {
+  readonly message: string;
+  readonly key: number;
+  readonly left: number;
+  readonly bottom: number;
+}
+
 interface PlaceSearchProps {
   readonly slug: string;
   /** Travels with the look at a chosen place: only an editor may look before adding. */
   readonly editKey: string;
   readonly dayId: string;
-  /** What the day is called in the tabs, so a row's plus says where a place would go. */
+  /** What the day is called in the tabs, so a row's button says where a place would go. */
   readonly dayName: string;
   /**
    * The field itself, for whoever else needs to bring the reader here: the
@@ -93,7 +108,7 @@ interface PlaceSearchProps {
   readonly near: LatLng | null;
   /**
    * The city the open day is in: what the panel offers before anything is
-   * typed is what it is known for, and the pill at the front of the field
+   * typed is what it is known for, and the pill at the front of the bar
    * names it. Deliberately not `near`: that one follows the stops on the
    * day, and a day whose stops are all in one suburb would have the empty
    * field recommending that suburb rather than the city. Null on a trip
@@ -149,22 +164,30 @@ interface PlaceSearchProps {
 }
 
 /**
- * The field floats over the map, so it carries its own surface and an elevation
- * step. A pill, like every other small control in this product, at the 48px a
- * map search is drawn at, so that over the sheet it sits in it the way one does.
- * Ringed while the words are being typed in it, and not while the city pill
- * inside it, or the panel that pill opens, has the focus: those have their own.
+ * What the reader is typing into, which "/" should leave alone: it is a
+ * character there, not a way to the search.
  */
-const FIELD =
-  "flex h-[48px] items-center gap-[9px] rounded-pill border border-rule bg-paper-raised px-2 shadow-sm has-[>input:focus]:outline-2 has-[>input:focus]:outline-offset-2 has-[>input:focus]:outline-terracotta";
+function typingIn(target: EventTarget | null): boolean {
+  return (
+    target instanceof HTMLElement &&
+    (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))
+  );
+}
 
-/**
- * The glass at the front of the field and the cross at its end: the same small
- * pill, either end, its centre 24px in from the field's edge.
- */
-const FIELD_BUTTON =
-  "grid h-[32px] w-[32px] shrink-0 place-items-center rounded-pill text-ink-muted hover:bg-neutral-200 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
-
+/** A place's name with what was typed picked out in it, where it appears. */
+function Matched({ name, typed }: { readonly name: string; readonly typed: string }) {
+  const at = typed === "" ? -1 : name.toLowerCase().indexOf(typed.toLowerCase());
+  if (at === -1) {
+    return name;
+  }
+  return (
+    <>
+      {name.slice(0, at)}
+      <strong>{name.slice(at, at + typed.length)}</strong>
+      {name.slice(at + typed.length)}
+    </>
+  );
+}
 
 /**
  * What the city is known for, or nothing. Every refusal is a plain one: nobody
@@ -193,27 +216,27 @@ async function askAboutCity(city: LatLng): Promise<readonly Suggestion[]> {
 /**
  * Search for a place, and open it to look at before it goes on the day.
  *
- * The field sits in the top left corner of the map, where a map search belongs,
- * and the day it names is the one chosen in the tabs beside it. Choosing a
- * place does not put it on the day: it is looked up, pinned on the map and
- * opened in the sheet, where what it is like can be read and the day it would
- * join is one button away. A search that added on the spot was a search that
- * put the wrong Central Market on the day and left the reader to find out.
+ * The bar sits in the top left corner of the map, where a map search belongs,
+ * and the day it searches for is the one chosen in the tabs beside it. It is
+ * drawn to the design file for it in everything but size; the look and the
+ * movement are in place-search.css.
  *
- * A place the reader already knows has a shorter way: the plus at the end of
- * its row puts it on the day without the look. The row itself still opens
- * the place, so the shorter way is never the one a stray click takes.
+ * Choosing a place does not put it on the day: it is looked up, pinned on the
+ * map and opened in the sheet, where what it is like can be read and the day
+ * it would join is one button away. A search that added on the spot was a
+ * search that put the wrong Central Market on the day and left the reader to
+ * find out. A place the reader already knows has a shorter way: the row
+ * picked out carries a button that puts it on the day without the look.
  *
  * While a place is open beside the map the field holds its name, whether it
- * was found here or opened from the day, and the cross on the field is what
+ * was found here or opened from the day, and the cross in the bar is what
  * closes it: the same as a map search, where the place is what was searched
  * for. Focus takes the whole name, so typing starts the next search rather
  * than adding to it.
  *
- * Everything transient lives in the panel under the field: the matches, the
- * line saying a search is running, the sentence saying nothing matched, and
- * the line saying a chosen place is being looked up. It hangs over the map
- * rather than pushing anything down.
+ * While the bar is in use it glows, and the page under it is dimmed a shade;
+ * a press anywhere on the dimmed page closes it, as does Escape, and "/" from
+ * anywhere that is not a field brings the cursor back to it.
  */
 export function PlaceSearch({
   slug,
@@ -237,7 +260,13 @@ export function PlaceSearch({
   const [held, setHeld] = useState(showing);
   const [suggestions, setSuggestions] = useState<readonly Suggestion[]>([]);
   const [active, setActive] = useState(0);
+  /** The panel of places, which the city panel takes the place of while it is open. */
   const [open, setOpen] = useState(false);
+  const [cityOpen, setCityOpen] = useState(false);
+  /** The cursor is in the field, which is what the "/" at its end is shown for the want of. */
+  const [focused, setFocused] = useState(false);
+  /** Which kind of place the empty field is offering now. */
+  const [kind, setKind] = useState(0);
   /** The text the suggestions on screen are an answer to. */
   const [answered, setAnswered] = useState<string | null>(null);
   const [searchMessage, setSearchMessage] = useState<string | null>(null);
@@ -256,8 +285,10 @@ export function PlaceSearch({
   const [added, setAdded] = useState<ReadonlySet<string>>(new Set());
   /** What went wrong with the last add from a row, under the list. */
   const [addError, setAddError] = useState<string | null>(null);
-  /** The last place to land, for a reader who cannot see it appear on the day. */
-  const [landed, setLanded] = useState<string | null>(null);
+  const [toast, setToast] = useState<Toast | null>(null);
+  /** How many times the panel has opened, so its rows arrive afresh each time. */
+  const [openings, setOpenings] = useState(0);
+  const [wasOpen, setWasOpen] = useState(false);
   /**
    * What a city is known for, for the field nobody has typed in yet, and
    * which city it is an answer about. Null until a city has answered.
@@ -291,17 +322,27 @@ export function PlaceSearch({
    * either landed.
    */
   const queue = useRef<Promise<void>>(Promise.resolve());
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const panelOpen = open && !cityOpen;
 
   // Given a name to hold, the field takes it, and given none it lets go of
   // the one it had, unless something else has been typed over it since.
   // Adjusted during the render that carries the change rather than in an
   // effect, so the field is never painted with the name it has just lost.
+  // The panel opening is counted the same way, so its rows arrive afresh.
   if (held !== showing) {
     setHeld(showing);
     if (showing !== null) {
       setQuery(showing);
     } else if (query === held) {
       setQuery("");
+    }
+  }
+  if (wasOpen !== panelOpen) {
+    setWasOpen(panelOpen);
+    if (panelOpen) {
+      setOpenings((count) => count + 1);
     }
   }
 
@@ -365,6 +406,55 @@ export function PlaceSearch({
   }, [typed, near]);
 
   /**
+   * The kind of place the empty field offers, turned over while it is empty.
+   * Not for a reader who has asked for less movement, who is offered the
+   * first of them and left with it.
+   */
+  useEffect(() => {
+    if (query !== "" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return;
+    }
+    const timer = setInterval(() => {
+      setKind((at) => (at + 1) % KINDS.length);
+    }, KINDS_EVERY_MS);
+    return () => {
+      clearInterval(timer);
+    };
+  }, [query]);
+
+  /**
+   * "/" from anywhere that is not a field brings the cursor to the search, and
+   * Escape closes whatever the bar has open and lets go of the cursor.
+   */
+  useEffect(() => {
+    const onKey = (event: globalThis.KeyboardEvent): void => {
+      if (event.key === "/" && !typingIn(event.target)) {
+        event.preventDefault();
+        input.current?.focus();
+        return;
+      }
+      if (event.key === "Escape" && (open || cityOpen)) {
+        setOpen(false);
+        setCityOpen(false);
+        input.current?.blur();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open, cityOpen, input]);
+
+  useEffect(
+    () => () => {
+      if (toastTimer.current !== null) {
+        clearTimeout(toastTimer.current);
+      }
+    },
+    [],
+  );
+
+  /**
    * Asked when the panel first opens on an empty field, and not on mounting:
    * the call is metered, and a reader who types straight away should never
    * cause it. Once for each city, so a day in the next city of the trip is
@@ -399,12 +489,45 @@ export function PlaceSearch({
     setOpen(false);
   });
 
+  /** Everything the bar has open, closed, and the cursor let go of. */
+  const closeAll = (): void => {
+    setOpen(false);
+    setCityOpen(false);
+    input.current?.blur();
+  };
+
+  /**
+   * Say what just happened at the foot of the map, in the middle of it. The
+   * bar hangs from the map's corner, and the map is the box that corner is
+   * in, so that is the box measured.
+   */
+  const say = (message: string): void => {
+    const corner = container.current?.offsetParent;
+    const map = corner instanceof HTMLElement ? corner.offsetParent : null;
+    const area = map?.getBoundingClientRect() ?? {
+      left: 0,
+      width: window.innerWidth,
+      bottom: window.innerHeight,
+    };
+    if (toastTimer.current !== null) {
+      clearTimeout(toastTimer.current);
+    }
+    setToast((last) => ({
+      message,
+      key: (last?.key ?? 0) + 1,
+      left: area.left + area.width / 2,
+      bottom: window.innerHeight - area.bottom + TOAST_LIFT,
+    }));
+    toastTimer.current = setTimeout(() => {
+      setToast(null);
+    }, TOAST_MS);
+  };
+
   const clear = (): void => {
     newest.current += 1;
     setQuery("");
     setSuggestions([]);
     setSearchMessage(null);
-    setOpen(false);
     onClear();
     input.current?.focus();
   };
@@ -419,11 +542,11 @@ export function PlaceSearch({
   /**
    * Look a chosen place up, and hand it over to be looked at.
    *
-   * The field is cleared and closed the moment a place is chosen, and the
-   * panel says the place is being looked up until it is: where it is has to
-   * be asked for, since a search answers with names and not positions, and
-   * the pin and the sheet both need the position. The next choice, if one is
-   * made before the answer, is the one that counts.
+   * The field is cleared the moment a place is chosen, and the panel says the
+   * place is being looked up until it is: where it is has to be asked for,
+   * since a search answers with names and not positions, and the pin and the
+   * sheet both need the position. The next choice, if one is made before the
+   * answer, is the one that counts.
    */
   const choose = (suggestion: Suggestion): void => {
     const { providerPlaceId, name } = suggestion;
@@ -508,7 +631,7 @@ export function PlaceSearch({
         return;
       }
       setAdded((soFar) => new Set(soFar).add(providerPlaceId));
-      setLanded(`${outcome.added ?? name} is on ${dayName}.`);
+      say(`Added ${outcome.added ?? name} to ${dayName}`);
     };
     // Behind whatever is already going, and behind it whether that one
     // landed or was refused: a refusal is this trip answering, not a reason
@@ -547,7 +670,7 @@ export function PlaceSearch({
    * underneath actually is.
    */
   const cityLabel = dayCity?.name ?? "this city";
-  const popularIn = `Popular in ${cityLabel}`;
+  const heading = recommending ? `Popular in ${cityLabel}` : `Results in ${cityLabel}`;
 
   /**
    * True until the city has answered. Only read once the empty field is open,
@@ -563,26 +686,7 @@ export function PlaceSearch({
    */
   const activeIndex = active < visible.length ? active : 0;
 
-  /**
-   * The glass at the front of the field, a button as it is on a map search.
-   * Pressed with the matches showing it takes the one picked out, the way
-   * Enter does; otherwise it puts the cursor in the field, which opens the
-   * panel, so it is never a button that does nothing.
-   */
-  const search = (): void => {
-    const chosen = visible[activeIndex];
-    if (open && searched && chosen !== undefined) {
-      choose(chosen);
-      return;
-    }
-    input.current?.focus();
-  };
-
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
-    if (event.key === "Escape") {
-      setOpen(false);
-      return;
-    }
     if (visible.length === 0 || !open) {
       return;
     }
@@ -604,15 +708,11 @@ export function PlaceSearch({
   /**
    * The one sentence the panel has when it is not showing a list: the place
    * being looked up, what went wrong with the last look, the city being
-   * asked about, a refusal, the search being run, or nothing having matched.
-   * Null when the list is doing the talking, and null on a field nobody has
-   * typed in whose city had nothing to offer, so a trip with no city has a
-   * field and nothing more.
+   * asked about, a refusal, or the search being run. Null when the list is
+   * doing the talking, and when nothing matched, which the panel says with
+   * a way to look somewhere else instead.
    */
   const line = ((): string | null => {
-    if (!open) {
-      return null;
-    }
     if (lookingUp !== null) {
       return `Looking up ${lookingUp}.`;
     }
@@ -628,202 +728,280 @@ export function PlaceSearch({
     if (visible.length > 0) {
       return null;
     }
-    return searching
-      ? "Looking for places."
-      : "Nothing matched. Try the name of the place, or the street it is on.";
+    return searching ? "Looking for places." : null;
   })();
 
-  const listed = open && visible.length > 0;
-  const panel = listed || line !== null;
+  const listed = visible.length > 0;
+  const nothing = searched && !searching && line === null && !listed;
+  const busy = (searched && searching) || lookingUp !== null;
 
   return (
-    <div className="relative" ref={container}>
-      <div className={FIELD}>
-        {/* Search, not add: choosing a place opens it, and the plus on its
-            row is what puts it on the day. The label says only what the
-            field does, and the day is named where the adding is. */}
-        <label className="sr-only" htmlFor={fieldId}>
-          Search for a place
-        </label>
-        {/* Which city the search is in comes first, since a place is
-            looked for in it. Keyed by the day, so a city chosen for one day
-            and still on its way is not shown on the next. */}
+    <div className="place-search relative" ref={container}>
+      {/* The page under the bar, dimmed while it is in use; a press on it
+          closes the bar rather than landing on the map. */}
+      {open || cityOpen ? <div aria-hidden="true" className="search-scrim" onClick={closeAll} /> : null}
+
+      <div className="search-bar" data-active={focused || open || cityOpen ? "" : undefined}>
+        {/* Which city the search is in comes first, since a place is looked
+            for in it. */}
         <CityPicker
-          key={dayId}
+          dayId={dayId}
           city={dayCity}
           cities={cities}
           dayName={dayName}
           colorFor={cityColorFor}
-          onOpen={() => {
-            setOpen(false);
+          open={cityOpen}
+          onOpenChange={(next) => {
+            if (next) {
+              setOpen(false);
+            }
+            setCityOpen(next);
           }}
           onChoose={onChangeCity}
+          onMoved={(name) => {
+            say(`${dayName} is now in ${name}`);
+            input.current?.focus();
+          }}
         />
-        <button type="button" onClick={search} title="Search" aria-label="Search" className={FIELD_BUTTON}>
-          <SearchIcon size={18} strokeWidth={2.75} />
-        </button>
-        <input
-          id={fieldId}
-          ref={input}
-          type="text"
-          role="combobox"
-          autoComplete="off"
-          placeholder={dayCity === null ? "Search for a place" : `Search places in ${dayCity.name}`}
-          aria-expanded={listed}
-          aria-controls={listId}
-          aria-autocomplete="list"
-          aria-activedescendant={
-            listed ? `${listId}-option-${String(activeIndex)}` : undefined
-          }
-          value={query}
-          onChange={(event) => {
-            setQuery(event.target.value);
-            setLookError(null);
-            setOpen(true);
-          }}
-          onFocus={(event) => {
-            if (holding) {
-              event.currentTarget.select();
-              keepWhole.current = true;
+        <span aria-hidden="true" className="search-divider" />
+        <SearchIcon size={17} strokeWidth={2.75} className="search-glass" />
+
+        <div className="search-typing">
+          {/* Search, not add: choosing a place opens it, and the button on
+              its row is what puts it on the day. The label says only what
+              the field does, and the day is named where the adding is. */}
+          <label className="sr-only" htmlFor={fieldId}>
+            {`Search for a place in ${cityLabel}`}
+          </label>
+          <input
+            id={fieldId}
+            ref={input}
+            type="text"
+            role="combobox"
+            autoComplete="off"
+            aria-keyshortcuts="/"
+            aria-expanded={panelOpen && listed}
+            aria-controls={listId}
+            aria-autocomplete="list"
+            aria-activedescendant={
+              panelOpen && listed ? `${listId}-option-${String(activeIndex)}` : undefined
             }
-            setOpen(true);
-          }}
-          onMouseUp={(event) => {
-            if (keepWhole.current) {
-              event.preventDefault();
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setLookError(null);
+              setOpen(true);
+            }}
+            onFocus={(event) => {
+              setFocused(true);
+              setCityOpen(false);
+              if (holding) {
+                event.currentTarget.select();
+                keepWhole.current = true;
+              }
+              setOpen(true);
+            }}
+            onMouseUp={(event) => {
+              if (keepWhole.current) {
+                event.preventDefault();
+                keepWhole.current = false;
+              }
+            }}
+            onBlur={() => {
+              setFocused(false);
               keepWhole.current = false;
-            }
-          }}
-          onBlur={() => {
-            keepWhole.current = false;
-          }}
-          onKeyDown={onKeyDown}
-          className="min-w-0 flex-1 self-stretch text-body text-ink caret-terracotta outline-none placeholder:text-ink-faint"
-        />
+            }}
+            onKeyDown={onKeyDown}
+            className="search-input"
+          />
+          {/* The empty field says what it searches, drawn over it so the kind
+              of place can turn over without the field itself changing. */}
+          {query === "" ? (
+            <span aria-hidden="true" className="search-words">
+              Search
+              <span key={kind} className="search-word">
+                {KINDS[kind]}
+              </span>
+              <span>in {cityLabel}</span>
+            </span>
+          ) : null}
+        </div>
+
+        {busy ? <span aria-hidden="true" className="search-spinner" /> : null}
         {query === "" ? null : (
           <button
             type="button"
             onClick={clear}
             title="Clear"
             aria-label="Clear the search"
-            className={FIELD_BUTTON}
+            className="search-clear"
           >
-            <CloseIcon size={16} strokeWidth={2.75} />
+            <CloseIcon size={14} strokeWidth={2.75} />
           </button>
         )}
+        {!focused && query === "" ? (
+          <span aria-hidden="true" className="search-kbd">
+            /
+          </span>
+        ) : null}
       </div>
 
-      {panel ? (
-        <div className={PANEL}>
-          <div ref={watchList} className={PANEL_LIST}>
-            {line === null ? null : <p className={PANEL_LINE}>{line}</p>}
+      <div inert={!panelOpen} data-open={panelOpen ? "" : undefined} className="search-panel">
+        <div ref={watchList} key={openings} className="search-scroll scroll-line">
+          {searched ? null : (
+            <div className="search-quick">
+              <span className="search-heading">Quick search</span>
+              <div className="search-chips">
+                {QUICK_SEARCHES.map((label, index) => (
+                  <button
+                    key={label}
+                    type="button"
+                    className="search-chip"
+                    style={{ animationDelay: `${(index * ROW_STAGGER_S).toFixed(2)}s` }}
+                    onMouseDown={(event) => {
+                      event.preventDefault();
+                    }}
+                    onClick={() => {
+                      setQuery(label);
+                      setLookError(null);
+                      setOpen(true);
+                      input.current?.focus();
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
-            {listed ? (
-              <>
-                <p className={PANEL_LABEL}>
-                  {recommending ? popularIn : "Matching places"}
-                </p>
-                <ul
-                  id={listId}
-                  role="listbox"
-                  aria-label={
-                    recommending ? popularIn : "Places that match"
-                  }
-                >
-                  {visible.map((suggestion, index) => {
-                    const onItsWay = adding.has(suggestion.providerPlaceId);
-                    const onTheDay =
-                      added.has(suggestion.providerPlaceId) ||
-                      onTheTrip.has(suggestion.providerPlaceId);
-                    return (
-                      /* The row opens the place; the plus at its end adds it
-                         without the look. Two controls in one option, with the
-                         highlight on the option so it is one row under the
-                         pointer whichever half the pointer is on. */
-                      <li
-                        key={suggestion.providerPlaceId}
-                        id={`${listId}-option-${String(index)}`}
-                        role="option"
-                        aria-selected={index === activeIndex}
-                        onMouseEnter={() => {
-                          setActive(index);
+          {line === null ? null : <p className="search-line">{line}</p>}
+
+          {listed ? (
+            <>
+              <div className="search-header">
+                <span className="search-heading">{heading}</span>
+                <span className="search-hint">↑↓ to move · Enter to open</span>
+              </div>
+              <ul id={listId} role="listbox" aria-label={heading} className="flex flex-col gap-px">
+                {visible.map((suggestion, index) => {
+                  const onItsWay = adding.has(suggestion.providerPlaceId);
+                  const onTheDay =
+                    added.has(suggestion.providerPlaceId) ||
+                    onTheTrip.has(suggestion.providerPlaceId);
+                  return (
+                    /* The row opens the place; the button at its end adds it
+                       without the look. Two controls in one option, with the
+                       highlight on the option so it is one row under the
+                       pointer whichever half the pointer is on. */
+                    <li
+                      key={suggestion.providerPlaceId}
+                      id={`${listId}-option-${String(index)}`}
+                      role="option"
+                      aria-selected={index === activeIndex}
+                      onMouseEnter={() => {
+                        setActive(index);
+                      }}
+                      data-active={index === activeIndex ? "" : undefined}
+                      className="search-row"
+                      style={{ animationDelay: `${(index * ROW_STAGGER_S).toFixed(2)}s` }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          choose(suggestion);
                         }}
-                        // The same room on the far side of the plus as the
-                        // words leave on its near side, so its hover disc sits
-                        // clear of the bar rather than against it.
-                        className={`${ROW} ${index === activeIndex ? ROW_ACTIVE : ""}`}
+                        className="search-row-button"
                       >
-                        <button
-                          type="button"
-                          onClick={() => {
-                            choose(suggestion);
-                          }}
-                          // Close on its right, so the words run up to the
-                          // plus rather than wrapping a word early to leave
-                          // room the plus does not need. The pin is centred
-                          // on the row, as the plus is, so the two marks at
-                          // either end sit on one line however many lines
-                          // the name and address take between them.
-                          className={ROW_BUTTON}
+                        <span className="search-tile">
+                          <PinIcon size={17} strokeWidth={2.5} />
+                        </span>
+                        <span className="search-words-of">
+                          <span className="search-place-name">
+                            <Matched name={suggestion.name} typed={searched ? typed : ""} />
+                          </span>
+                          {suggestion.address === null ? null : (
+                            <span className="search-place-line">{suggestion.address}</span>
+                          )}
+                        </span>
+                      </button>
+                      {/* A tick once it is on the day, so a search answer that
+                          still lists the place says so instead of offering it
+                          again. */}
+                      {onTheDay ? (
+                        <span
+                          className="search-tick"
+                          data-on-day=""
+                          title={`On ${dayName}`}
+                          role="img"
+                          aria-label={`${suggestion.name} is on ${dayName}`}
                         >
-                          <span className={`${ROW_MARK} ${ROW_PIN}`}>
-                            <PinIcon size={15} strokeWidth={2.75} />
-                          </span>
-                          <span className={ROW_WORDS}>
-                            <span className={ROW_NAME}>{suggestion.name}</span>
-                            {suggestion.address === null ? null : (
-                              <span className={ROW_LINE}>{suggestion.address}</span>
-                            )}
-                          </span>
-                        </button>
-                        {/* A tick once it is on the day, so a search answer
-                            that still lists the place says so instead of
-                            offering it again. */}
+                          <CheckIcon size={15} strokeWidth={3} />
+                        </span>
+                      ) : (
                         <button
                           type="button"
-                          disabled={onItsWay || onTheDay}
+                          disabled={onItsWay}
                           aria-busy={onItsWay}
-                          aria-label={
-                            onTheDay
-                              ? `${suggestion.name} is on ${dayName}`
-                              : `Add ${suggestion.name} to ${dayName}`
-                          }
-                          title={onTheDay ? `On ${dayName}` : `Add to ${dayName}`}
+                          aria-label={`Add ${suggestion.name} to ${dayName}`}
                           onClick={() => {
                             addNow(suggestion);
                           }}
-                          className={`${ROW_END} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
-                            onTheDay
-                              ? "text-sage-700"
-                              : "text-terracotta-700 hover:bg-terracotta-200 hover:text-terracotta-900 disabled:opacity-45"
-                          }`}
+                          className="search-add"
                         >
-                          {onTheDay ? (
-                            <CheckIcon size={14} strokeWidth={3} />
-                          ) : (
-                            <PlusIcon size={14} strokeWidth={3} />
-                          )}
+                          <PlusIcon size={11} strokeWidth={3} />
+                          {`Add to ${dayName}`}
                         </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </>
-            ) : null}
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          ) : null}
 
-            {addError === null ? null : (
-              <Notice role="alert" size="meta" className="mx-[4px] mt-1">
-                  {addError}
-              </Notice>
-            )}
-          </div>
+          {nothing ? (
+            <div className="search-empty">
+              <p className="search-line">{`Nothing in ${cityLabel} matches "${typed}".`}</p>
+              <button
+                type="button"
+                className="search-elsewhere"
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                }}
+                onClick={() => {
+                  setOpen(false);
+                  setCityOpen(true);
+                }}
+              >
+                Search in another city
+              </button>
+            </div>
+          ) : null}
+
+          {addError === null ? null : (
+            <Notice role="alert" size="meta" className="mx-[4px] mt-1">
+              {addError}
+            </Notice>
+          )}
         </div>
-      ) : null}
+      </div>
 
-      {/* The stop appears in the day beside the map, so the only reader who
-          needs this sentence is the one who cannot see that happen. */}
+      {toast === null ? null : (
+        <div
+          key={toast.key}
+          aria-hidden="true"
+          className="search-toast"
+          style={{ left: toast.left, bottom: toast.bottom }}
+        >
+          <CheckIcon size={14} strokeWidth={3} />
+          {toast.message}
+        </div>
+      )}
+      {/* The same sentence for a reader who cannot see it, in a region that
+          is always there so each new one is read out. */}
       <p aria-live="polite" className="sr-only">
-        {landed ?? ""}
+        {toast?.message ?? ""}
       </p>
     </div>
   );

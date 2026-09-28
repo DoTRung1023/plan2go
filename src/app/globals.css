@@ -59,6 +59,14 @@
   --color-city-4: #8c491a;
   --color-city-5: #4d5936;
   --color-city-6: #b5654a;
+  /* The same six, lightened, for a dot on the city pill while its panel is
+     open and the pill is dark. */
+  --color-city-1-light: #e3a57a;
+  --color-city-2-light: #a9b88d;
+  --color-city-3-light: #ecc673;
+  --color-city-4-light: #d49a6e;
+  --color-city-5-light: #a9b88d;
+  --color-city-6-light: #e2a590;
 
   /*
    * The map has no hues of its own any more.

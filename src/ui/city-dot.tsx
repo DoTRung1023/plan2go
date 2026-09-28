@@ -12,9 +12,20 @@ const CITY_COLORS = [
   "var(--color-city-6)",
 ] as const;
 
+/** The same colours, lightened, for a dot on something dark. */
+const CITY_COLORS_LIGHT = [
+  "var(--color-city-1-light)",
+  "var(--color-city-2-light)",
+  "var(--color-city-3-light)",
+  "var(--color-city-4-light)",
+  "var(--color-city-5-light)",
+  "var(--color-city-6-light)",
+] as const;
+
 /** What the colour in a slot is, going round again past the last. */
-export function cityColor(slot: number): string {
-  return CITY_COLORS[slot % CITY_COLORS.length] ?? CITY_COLORS[0];
+export function cityColor(slot: number, light = false): string {
+  const colors = light ? CITY_COLORS_LIGHT : CITY_COLORS;
+  return colors[slot % colors.length] ?? colors[0];
 }
 
 interface CityDotProps {
@@ -22,16 +33,19 @@ interface CityDotProps {
   readonly slot: number;
   /** Edge of the dot, in pixels. */
   readonly size: number;
+  /** On something dark: the lighter tint of the colour, so it still shows. */
+  readonly light?: boolean;
 }
 
 /**
  * Which city something is in, as a dot of that city's colour. Decorative:
  * whatever carries the dot says the city in words for a reader who cannot
- * see it. Always drawn on paper, so always in its own colour. It turns over
- * 200ms when what it stands for changes to another city, with the city's
- * name beside it.
+ * see it. In its own colour on paper, and in the lighter tint of it on the
+ * one dark thing a dot is drawn on, the city pill with its panel open. It
+ * turns over 200ms when what it stands for changes, with the city's name
+ * beside it.
  */
-export function CityDot({ slot, size }: CityDotProps) {
+export function CityDot({ slot, size, light = false }: CityDotProps) {
   return (
     <span
       aria-hidden="true"
@@ -39,7 +53,7 @@ export function CityDot({ slot, size }: CityDotProps) {
       style={{
         width: size,
         height: size,
-        backgroundColor: cityColor(slot),
+        backgroundColor: cityColor(slot, light),
       }}
     />
   );

@@ -6,32 +6,11 @@ import { array, nullable, object, optional, safeParse, string } from "zod/mini";
 import type { DayCity } from "@/core/model/day";
 import type { CityIdentity } from "@/core/model/day-city";
 import { sameCity } from "@/core/model/day-city";
-import {
-  CheckIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-  PinIcon,
-  SearchIcon,
-} from "@/ui/icons";
-import { CityDot } from "@/ui/city-dot";
+import { CheckIcon, ChevronDownIcon, PinIcon, SearchIcon } from "@/ui/icons";
+import { CityDot, cityColor } from "@/ui/city-dot";
 import { Notice } from "@/ui/notice";
 import { useOutsidePress } from "@/ui/use-outside-press";
 import { useScrollBar } from "@/ui/use-scroll-bar";
-import {
-  PANEL,
-  PANEL_LABEL,
-  PANEL_LINE,
-  PANEL_LIST,
-  ROW,
-  ROW_ACTIVE,
-  ROW_BUTTON,
-  ROW_END,
-  ROW_LINE,
-  ROW_MARK,
-  ROW_NAME,
-  ROW_PIN,
-  ROW_WORDS,
-} from "./panel-styles";
 
 /** Long enough that typing does not spend money on every letter. */
 const DEBOUNCE_MS = 250;
@@ -43,6 +22,9 @@ const BIAS_DECIMALS = 2;
 
 /** As many cities as the panel shows for one search. */
 const CITIES_ASKED = 8;
+
+/** How far apart the rows arrive, one after another, in seconds. */
+const ROW_STAGGER_S = 0.025;
 
 const suggestionSchema = object({
   providerPlaceId: string(),
@@ -57,6 +39,25 @@ const popularSchema = object({ country: string(), suggestions: array(suggestionS
 
 /** Popular cities asked for; the trip's own come out of these, so a few more than fit. */
 const POPULAR_ASKED = 10;
+
+const refusalSchema = object({ error: string(), action: optional(string()) });
+
+/** A city found by the search, or one worth visiting, and the line under its name. */
+interface Found {
+  readonly providerPlaceId: string;
+  readonly name: string;
+  readonly line: string | null;
+}
+
+/**
+ * One row of the list, whether it is the city the day is in, and the colour
+ * it holds when the trip already goes there: null for a city new to the trip,
+ * which has no colour until a day is in it.
+ */
+interface Row extends Found {
+  readonly current: boolean;
+  readonly color: number | null;
+}
 
 /**
  * The cities worth visiting in the country a city is in, or nothing. Every
@@ -89,26 +90,9 @@ async function askForPopular(
   }
 }
 
-const refusalSchema = object({ error: string(), action: optional(string()) });
-
-/** A city found by the search, or one the trip goes to, and the line under its name. */
-interface Found {
-  readonly providerPlaceId: string;
-  readonly name: string;
-  readonly line: string | null;
-}
-
-/**
- * One row of the list, whether it is the city the day is in, and the colour
- * it holds when the trip already goes there: null for a city new to the trip,
- * which has no colour until a day is in it.
- */
-interface Row extends Found {
-  readonly current: boolean;
-  readonly color: number | null;
-}
-
 interface CityPickerProps {
+  /** The day open in the tabs, so a city still on its way to one is not shown on the next. */
+  readonly dayId: string;
   /** The city the open day is in, or null on a trip with no city at all. */
   readonly city: DayCity | null;
   /**
@@ -123,34 +107,46 @@ interface CityPickerProps {
    * show it the moment the city is chosen rather than when the page catches up.
    */
   readonly colorFor: (city: CityIdentity) => number;
-  /** The panel is about to open, so whatever else hangs under the field closes. */
-  readonly onOpen: () => void;
+  /** Whether the panel is open. Held by the bar, which glows and dims the page while it is. */
+  readonly open: boolean;
+  readonly onOpenChange: (open: boolean) => void;
   /** A city chosen: the day moves there, and so does the run of days after it. */
   readonly onChoose: (providerPlaceId: string) => Promise<{ readonly error: string | null }>;
+  /** The day is in the city now, for the bar to say so and turn back to places. */
+  readonly onMoved: (cityName: string) => void;
 }
 
 /**
- * The city the open day is in, at the front of the search field, and the way
- * to move the day to another.
+ * The city the open day is in, at the front of the search bar, and the way to
+ * move the day to another.
  *
  * A trip can be three days in one city and two in the next, so the search
  * asks which city it is searching before it asks for a place in it. The pill
- * says the city in words, in the dark the chosen day is drawn in, since this
- * is that day's city; pressed, it opens a panel under the field with a search
- * of its own for cities, and the cities the trip already goes to listed
- * before anything is typed, the one the day is in ticked.
+ * says the city with its dot, the one its days carry in the strip; pressed,
+ * it turns dark and opens a panel under the bar with a search of its own for
+ * cities, and the cities worth visiting in the country listed before anything
+ * is typed.
  *
  * Choosing a city moves the day and the days straight after it that were in
  * the same city, which is decided on the server from the trip as it stands.
- * The pill says the new city from the moment the choice is made, so it does
- * not blink back to the old one while the page catches up.
+ * The pill says the new city from the moment the choice is made: its name
+ * slides in, and its dot pops with a ring of its colour spreading from it,
+ * so it does not blink back to the old one while the page catches up.
  *
- * Laid out as part of the field rather than in a box of its own, so the pill
- * is a flex item of the field and the panel hangs from the field's container,
- * the same as the search's own panel does.
+ * Laid out as part of the bar rather than in a box of its own, so the pill is
+ * a flex item of the bar and the panel hangs from the bar itself.
  */
-export function CityPicker({ city, cities, dayName, colorFor, onOpen, onChoose }: CityPickerProps) {
-  const [open, setOpen] = useState(false);
+export function CityPicker({
+  dayId,
+  city,
+  cities,
+  dayName,
+  colorFor,
+  open,
+  onOpenChange,
+  onChoose,
+  onMoved,
+}: CityPickerProps) {
   const [query, setQuery] = useState("");
   const [found, setFound] = useState<readonly Found[]>([]);
   /** The text the list on screen is an answer to. */
@@ -162,6 +158,13 @@ export function CityPicker({ city, cities, dayName, colorFor, onOpen, onChoose }
   const [error, setError] = useState<string | null>(null);
   /** A city chosen and written, held on the pill until the day comes back in it. */
   const [moved, setMoved] = useState<(CityIdentity & { readonly color: number }) | null>(null);
+  /** How many times the day has been moved from here, which is what replays the pill's pop. */
+  const [moves, setMoves] = useState(0);
+  /** The day the pill is about, so moving to another day lets go of a move in flight. */
+  const [forDay, setForDay] = useState(dayId);
+  /** How many times the panel has opened, so its rows arrive afresh each time. */
+  const [openings, setOpenings] = useState(0);
+  const [wasOpen, setWasOpen] = useState(open);
   /**
    * The cities worth visiting in the day's country, which city's country they
    * were asked about, and the country's name. Null until an answer lands.
@@ -187,11 +190,23 @@ export function CityPicker({ city, cities, dayName, colorFor, onOpen, onChoose }
   const panelId = useId();
   const listId = `${panelId}-list`;
 
-  // The day has come back in the city it was moved to, so the pill can say
-  // what the day says again. Adjusted during the render that carries the new
-  // city rather than in an effect, so the old name is never painted between.
+  // Adjusted during the render that carries the change rather than in an
+  // effect, so nothing is ever painted in the state it has just left: a new
+  // day lets go of a move made on the last one, the day come back in the
+  // city it was moved to lets the pill say what the day says again, and the
+  // panel opening counts as another opening.
+  if (forDay !== dayId) {
+    setForDay(dayId);
+    setMoved(null);
+  }
   if (moved !== null && sameCity(city, moved)) {
     setMoved(null);
+  }
+  if (wasOpen !== open) {
+    setWasOpen(open);
+    if (open) {
+      setOpenings((count) => count + 1);
+    }
   }
   const shown: (CityIdentity & { readonly color: number }) | null = moved ?? city;
   /** Rounded, and plain numbers, so a trip redrawn with the same city asks nothing again. */
@@ -265,7 +280,7 @@ export function CityPicker({ city, cities, dayName, colorFor, onOpen, onChoose }
   }, [trimmed, searched, biasLat, biasLng]);
 
   const close = (): void => {
-    setOpen(false);
+    onOpenChange(false);
     setQuery("");
     setError(null);
   };
@@ -273,11 +288,11 @@ export function CityPicker({ city, cities, dayName, colorFor, onOpen, onChoose }
   useOutsidePress(root, open, close);
 
   /**
-   * Asked when the panel first opens on an empty field, and not on mounting:
-   * the answer costs a search the first time a country is asked about, and a
-   * reader who never opens the picker should never cause it. Asked about the
-   * day's own city, which is where its country comes from; a city kept from
-   * before cities had identifiers has no country to go on, and gets none.
+   * Asked when the panel first opens, and not on mounting: the answer costs a
+   * search the first time a country is asked about, and a reader who never
+   * opens the picker should never cause it. Asked about the day's own city,
+   * which is where its country comes from; a city kept from before cities
+   * had identifiers has no country to go on, and gets none.
    */
   const askAbout = city?.providerPlaceId ?? null;
   useEffect(() => {
@@ -320,7 +335,7 @@ export function CityPicker({ city, cities, dayName, colorFor, onOpen, onChoose }
   const activeIndex = active < rows.length ? active : 0;
 
   const choose = (row: Row): void => {
-    if (row.current || row.providerPlaceId === "") {
+    if (row.current) {
       close();
       pill.current?.focus();
       return;
@@ -338,8 +353,9 @@ export function CityPicker({ city, cities, dayName, colorFor, onOpen, onChoose }
         name: row.name,
         color: colorFor({ providerPlaceId: row.providerPlaceId, name: row.name }),
       });
+      setMoves((count) => count + 1);
       close();
-      pill.current?.focus();
+      onMoved(row.name);
     });
   };
 
@@ -348,8 +364,7 @@ export function CityPicker({ city, cities, dayName, colorFor, onOpen, onChoose }
       close();
       return;
     }
-    onOpen();
-    setOpen(true);
+    onOpenChange(true);
   };
 
   // The panel opens with the cursor in its own field, so typing a city is
@@ -404,11 +419,11 @@ export function CityPicker({ city, cities, dayName, colorFor, onOpen, onChoose }
     if (rows.length > 0) {
       return null;
     }
-    return searching ? "Looking for cities." : "No city matches that. Check the spelling.";
+    return searching ? "Looking for cities." : `No city matches "${trimmed}"`;
   })();
 
   const listed = rows.length > 0;
-  const heading = searched ? "Matching cities" : `Popular in ${popularHere?.country ?? "this country"}`;
+  const moveKey = String(moves);
 
   return (
     <div ref={root} className="contents">
@@ -416,6 +431,7 @@ export function CityPicker({ city, cities, dayName, colorFor, onOpen, onChoose }
         ref={pill}
         type="button"
         onClick={toggle}
+        aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls={panelId}
         aria-label={
@@ -423,131 +439,136 @@ export function CityPicker({ city, cities, dayName, colorFor, onOpen, onChoose }
             ? `Choose the city ${dayName} is in`
             : `${dayName} is in ${shown.name}. Change the city`
         }
-        className="flex h-[32px] max-w-[150px] shrink-0 items-center gap-[6px] rounded-pill bg-paper-sunken pr-[10px] pl-[11px] text-small/none font-semibold text-terracotta-800 hover:text-terracotta-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+        className="search-pill"
       >
-        {/* The city's own dot, the one its days carry in the strip, which
-            makes the pill the key to them. */}
+        {/* Its own dot, the one its days carry in the strip, which makes the
+            pill the key to them; lightened while the pill is dark. Keyed by
+            the moves made here, so each one pops it afresh. */}
         {shown === null ? (
-          <PinIcon size={14} strokeWidth={2.75} className="shrink-0" />
+          <PinIcon size={13} strokeWidth={2.75} className="shrink-0" />
         ) : (
-          <CityDot slot={shown.color} size={9} />
+          <span key={moveKey} className="search-dot" data-moved={moves > 0 ? "" : undefined}>
+            <CityDot slot={shown.color} size={10} light={open} />
+            {moves > 0 ? (
+              <span
+                className="search-ripple"
+                style={{ backgroundColor: cityColor(shown.color, open) }}
+              />
+            ) : null}
+          </span>
         )}
-        <span className="min-w-0 truncate">{shown?.name ?? "City"}</span>
-        {open ? (
-          <ChevronUpIcon size={14} strokeWidth={2.75} className="shrink-0" />
-        ) : (
-          <ChevronDownIcon size={14} strokeWidth={2.75} className="shrink-0" />
-        )}
+        <span key={`name-${moveKey}`} className="search-name" data-moved={moves > 0 ? "" : undefined}>
+          {shown?.name ?? "City"}
+        </span>
+        <span className="search-chevron">
+          <ChevronDownIcon size={12} strokeWidth={3} />
+        </span>
       </button>
 
-      {open ? (
-        <div id={panelId} role="dialog" aria-label={`The city ${dayName} is in`} className={PANEL}>
-          {/* The field a city is typed in, the same slim pill a start or
-              end of the day is searched for in. Its left and right edges
-              stand where the rows' do, so the glass sits in the column the
-              pins do and the words start where the names do. */}
-          <div className="pt-[7px] pr-[2px] pl-[3px]">
-            <div className="flex h-9 items-center gap-[7px] rounded-pill border border-rule bg-paper pr-[13px] pl-[6px] focus-within:border-terracotta">
-              <span className={`${ROW_MARK} text-ink-muted`}>
-                <SearchIcon size={15} strokeWidth={2.75} />
-              </span>
-              <label className="sr-only" htmlFor={`${panelId}-field`}>
-                Search for a city
-              </label>
-              <input
-                ref={field}
-                id={`${panelId}-field`}
-                type="text"
-                role="combobox"
-                autoComplete="off"
-                placeholder="Search for a city"
-                aria-expanded={listed}
-                aria-controls={listId}
-                aria-autocomplete="list"
-                aria-activedescendant={
-                  listed ? `${listId}-option-${String(activeIndex)}` : undefined
-                }
-                value={query}
-                disabled={saving !== null}
-                onChange={(event) => {
-                  setQuery(event.target.value);
-                  setError(null);
-                }}
-                onKeyDown={onKeyDown}
-                className="min-w-0 flex-1 self-stretch bg-transparent text-meta text-ink caret-terracotta outline-none placeholder:text-ink-faint"
-              />
-            </div>
-          </div>
-
-          <div ref={watchList} className={PANEL_LIST}>
-            {line === null ? null : <p className={PANEL_LINE}>{line}</p>}
-
-            {listed ? (
-              <>
-                <p className={PANEL_LABEL}>{heading}</p>
-                <ul
-                  id={listId}
-                  role="listbox"
-                  aria-label={searched ? "Cities that match" : heading}
-                  aria-busy={saving !== null}
-                >
-                  {rows.map((row, index) => (
-                    <li
-                      key={`${row.providerPlaceId}-${row.name}`}
-                      id={`${listId}-option-${String(index)}`}
-                      role="option"
-                      aria-selected={row.current}
-                      onMouseEnter={() => {
-                        setActive(index);
-                      }}
-                      className={`${ROW} ${index === activeIndex ? ROW_ACTIVE : ""}`}
-                    >
-                      <button
-                        type="button"
-                        tabIndex={-1}
-                        disabled={saving !== null}
-                        onClick={() => {
-                          choose(row);
-                        }}
-                        className={`${ROW_BUTTON} disabled:opacity-60`}
-                      >
-                        {/* A city the trip goes to shows the dot its days
-                            carry, in the pin's place; one it does not go
-                            to yet has no colour, and keeps the pin every
-                            place in the search has. */}
-                        <span className={`${ROW_MARK} ${ROW_PIN}`}>
-                          {row.color === null ? (
-                            <PinIcon size={15} strokeWidth={2.75} />
-                          ) : (
-                            <CityDot slot={row.color} size={9} />
-                          )}
-                        </span>
-                        <span className={ROW_WORDS}>
-                          <span className={ROW_NAME}>{row.name}</span>
-                          {row.line === null ? null : <span className={ROW_LINE}>{row.line}</span>}
-                        </span>
-                      </button>
-                      {/* The tick stands where a place's plus does, so the
-                          city the day is in is marked at the same edge. */}
-                      {row.current ? (
-                        <span className={`${ROW_END} text-terracotta-700`}>
-                          <CheckIcon size={14} strokeWidth={3} />
-                        </span>
-                      ) : null}
-                    </li>
-                  ))}
-                </ul>
-              </>
-            ) : null}
-
-            {error === null ? null : (
-              <Notice role="alert" size="meta" className="mx-[4px] mt-1">
-                {error}
-              </Notice>
-            )}
-          </div>
+      <div
+        id={panelId}
+        role="dialog"
+        aria-label={`The city ${dayName} is in`}
+        inert={!open}
+        data-open={open ? "" : undefined}
+        data-city=""
+        className="search-panel"
+      >
+        <div className="search-city-field">
+          <SearchIcon size={14} strokeWidth={2.75} className="shrink-0" />
+          <label className="sr-only" htmlFor={`${panelId}-field`}>
+            Search for a city
+          </label>
+          <input
+            ref={field}
+            id={`${panelId}-field`}
+            type="text"
+            role="combobox"
+            autoComplete="off"
+            placeholder="Search for a city"
+            aria-expanded={listed}
+            aria-controls={listId}
+            aria-autocomplete="list"
+            aria-activedescendant={listed ? `${listId}-option-${String(activeIndex)}` : undefined}
+            value={query}
+            disabled={saving !== null}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setError(null);
+            }}
+            onKeyDown={onKeyDown}
+          />
         </div>
-      ) : null}
+
+        <div ref={watchList} className="search-scroll scroll-line">
+          {line === null ? null : <p className="search-line">{line}</p>}
+
+          {listed ? (
+            <ul
+              key={openings}
+              id={listId}
+              role="listbox"
+              aria-label={
+                searched
+                  ? "Cities that match"
+                  : `Popular in ${popularHere?.country ?? "this country"}`
+              }
+              aria-busy={saving !== null}
+              className="flex flex-col gap-px"
+            >
+              {rows.map((row, index) => (
+                <li
+                  key={`${row.providerPlaceId}-${row.name}`}
+                  id={`${listId}-option-${String(index)}`}
+                  role="option"
+                  aria-selected={row.current}
+                  onMouseEnter={() => {
+                    setActive(index);
+                  }}
+                  data-active={index === activeIndex ? "" : undefined}
+                  className="search-row"
+                  style={{ animationDelay: `${(index * ROW_STAGGER_S).toFixed(3)}s` }}
+                >
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    disabled={saving !== null}
+                    onClick={() => {
+                      choose(row);
+                    }}
+                    className="search-row-button"
+                  >
+                    {/* A city the trip goes to shows the dot its days carry;
+                        one it does not go to yet has no colour, and a pin. */}
+                    <span className="search-disc" data-trip={row.color === null ? undefined : ""}>
+                      {row.color === null ? (
+                        <PinIcon size={12} strokeWidth={2.75} />
+                      ) : (
+                        <CityDot slot={row.color} size={10} />
+                      )}
+                    </span>
+                    <span className="search-words-of">
+                      <span className="search-city-name">{row.name}</span>
+                      {row.line === null ? null : <span className="search-city-line">{row.line}</span>}
+                    </span>
+                    {row.current ? (
+                      <span className="search-tick">
+                        <CheckIcon size={15} strokeWidth={3} />
+                      </span>
+                    ) : null}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          {error === null ? null : (
+            <Notice role="alert" size="meta" className="mx-[4px] mt-1">
+              {error}
+            </Notice>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
