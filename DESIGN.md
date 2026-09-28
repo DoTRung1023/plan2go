@@ -511,9 +511,13 @@ padded 5px, and while it is in use, typed in or with either panel open, the edge
 the accent at 60 percent and a 5px glow of the accent at 12 percent rings a deeper
 shadow. In it, in order: the city pill; a 22px hairline; the glass, which takes
 `terracotta-700` while the field has the cursor; the field, whose empty words say
-"Search for a place in Hanoi" and turn the kind of place over every few seconds, cafés,
-museums, street food, viewpoints; a spinner of the accent while a search or a look is
-running; and the cross once anything is typed. "/" from anywhere that is not a field
+"Search for a place" and turn the kind of place over every few seconds, through the
+quick searches: restaurants, cafés, museums, art galleries, aquariums, ice cream. The
+words leave the city to the pill beside them, which already says it, so they fit
+whatever the city is called; the field is never narrower than its longest words,
+"Search for ice cream", and on a narrow screen or in a city with a long name the pill
+cuts its name short first. Then a spinner of the accent while a search or a look is
+running, and the cross once anything is typed. "/" from anywhere that is not a field
 brings the cursor to the search, with nothing in the bar to say so. While the bar is in
 use the page under it is dimmed with ink at 6 percent, and a press on it, or Escape,
 closes everything.
@@ -532,10 +536,13 @@ under it at its width, `paper-raised` inside a hairline at the `panel` radius un
 `shadow-md`, there or not there with no movement, and no taller than 330px, past which
 it scrolls.
 
-The place panel: before anything is typed, headed "Quick search", a row of chips that
-each type a search into the field: Restaurant, Café, Museum, Art gallery, Aquarium, Ice
-cream. Each is a pill of `paper-raised` inside a hairline, its word at the small step in
-600 `ink`, taking the accent's edge on `terracotta-100` under the pointer. The search
+The place panel: before anything is typed, headed "Quick search", chips that each type
+a search into the field: Restaurant, Café, Museum, Art gallery, Aquarium, Ice cream. They
+stand in even columns, as many as fit, so the six are two full rows of three, or three
+of two on a narrow screen. Each is a pill of `paper-raised` inside a hairline, its word
+centred at the meta step in 600 `ink`, the same as a place's name so the chips weigh no
+more than the list under them, taking the accent's edge on `terracotta-100` under the
+pointer. The search
 matches names rather than kinds of place, so a chip is only a word that is part of the
 names of the right places in any city: "Park" finds hotels and car parks, "Market"
 finds marketing firms, and "Temple" and "Street food" hold up in Asia but not in Europe.

@@ -54,8 +54,18 @@ const RECOMMENDED_ASKED = 20;
 /**
  * What the empty field offers to look for, turned over one after another, so
  * a reader who has not decided what they want is reminded what they can ask.
+ * The same kinds of place as the quick searches in the panel under it, so the
+ * field never suggests a search those searches were chosen to leave out.
  */
-const KINDS = ["for a place", "cafés", "museums", "street food", "viewpoints"] as const;
+const KINDS = [
+  "for a place",
+  "restaurants",
+  "cafés",
+  "museums",
+  "art galleries",
+  "aquariums",
+  "for ice cream",
+] as const;
 
 /** How long each of those stays before the next. */
 const KINDS_EVERY_MS = 2600;
@@ -824,14 +834,15 @@ export function PlaceSearch({
             className="search-input"
           />
           {/* The empty field says what it searches, drawn over it so the kind
-              of place can turn over without the field itself changing. */}
+              of place can turn over without the field itself changing. The
+              city is left to the pill beside it, which already says it, so
+              the words fit whatever the city is called. */}
           {query === "" ? (
             <span aria-hidden="true" className="search-words">
-              Search
+              {"Search "}
               <span key={kind} className="search-word">
                 {KINDS[kind]}
               </span>
-              <span>in {cityLabel}</span>
             </span>
           ) : null}
         </div>
@@ -857,7 +868,10 @@ export function PlaceSearch({
               {searched ? null : (
                 <>
                   <p className={PANEL_LABEL}>Quick search</p>
-                  <div className="flex flex-wrap gap-[6px] px-[7px] pb-[12px]">
+                  {/* Even columns, as many as fit, so the six come out as two
+                      full rows of three, or three of two on a narrow screen,
+                      rather than a ragged last row. */}
+                  <div className="grid grid-cols-[repeat(auto-fill,minmax(104px,1fr))] gap-[6px] px-[7px] pb-[12px]">
                     {QUICK_SEARCHES.map((label) => (
                       <button
                         key={label}
@@ -873,7 +887,7 @@ export function PlaceSearch({
                           setOpen(true);
                           input.current?.focus();
                         }}
-                        className="rounded-pill border border-rule bg-paper-raised px-[11px] py-[7px] text-small/none font-semibold text-ink hover:border-terracotta hover:bg-terracotta-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+                        className="truncate rounded-pill border border-rule bg-paper-raised px-[11px] py-[7px] text-center text-meta/none font-semibold text-ink hover:border-terracotta hover:bg-terracotta-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
                       >
                         {label}
                       </button>

@@ -135,9 +135,10 @@
 .search-pill {
   position: relative;
   display: flex;
-  flex: none;
+  flex: 0 1 auto;
   align-items: center;
   gap: 8px;
+  min-width: 0;
   max-width: 150px;
   padding: 10px 12px 10px 13px;
   border: 0;
@@ -239,12 +240,15 @@
   color: var(--color-terracotta-700);
 }
 
+/* Never narrower than its longest words, "Search for ice cream": on a
+   narrow screen or in a city with a long name, the pill gives up its name
+   first. */
 .search-typing {
   position: relative;
   display: flex;
-  flex: 1;
+  flex: 1 0 0;
   align-items: center;
-  min-width: 0;
+  min-width: 10.5em;
   height: 36px;
   margin-left: 6px;
 }
@@ -265,24 +269,25 @@
 }
 
 /* What the empty field says, drawn over it so the kind of place it names
-   can turn over without the field itself changing. */
+   can turn over without the field itself changing. On the field's own 36px
+   line, so the words sit where typing starts, and cut short with an
+   ellipsis rather than mid letter if they ever run out of room. */
 .search-words {
   position: absolute;
   inset: 0;
-  display: flex;
-  align-items: center;
-  gap: 5px;
   overflow: hidden;
   color: var(--search-ink-60);
   font-size: var(--text-body);
   font-weight: 500;
-  line-height: 1;
+  line-height: 36px;
+  text-overflow: ellipsis;
   white-space: nowrap;
   pointer-events: none;
 }
 
 .search-word {
   display: inline-block;
+  line-height: 1;
   animation: search-words-in 0.4s var(--search-ease);
 }
 
