@@ -125,3 +125,34 @@ describe("photo", () => {
     await expect(createGooglePlacesProvider({ apiKey: "k" }).photo("places/p/photos/x", 800)).resolves.toBeNull();
   });
 });
+
+describe("landmarks", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("reads a landmark whose address has a part with no types, as Google sends", async () => {
+    const answer = {
+      places: [
+        {
+          displayName: { text: "Adelaide Himeji Garden" },
+          addressComponents: [
+            { longText: "Cnr South Terrace &" },
+            { longText: "Adelaide", types: ["locality", "political"] },
+            { longText: "South Australia", types: ["administrative_area_level_1", "political"] },
+          ],
+        },
+      ],
+    };
+    vi.stubGlobal("fetch", vi.fn(async () => Response.json(answer)));
+
+    const landmarks = await createGooglePlacesProvider({ apiKey: "k" }).landmarks({
+      query: "weekend getaways from Adelaide, Australia",
+      limit: 20,
+    });
+
+    expect(landmarks).toEqual([
+      { name: "Adelaide Himeji Garden", locality: "Adelaide", region: "South Australia" },
+    ]);
+  });
+});

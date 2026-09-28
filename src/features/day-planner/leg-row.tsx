@@ -6,8 +6,8 @@ import type { ComputedLeg } from "@/core/time/compute-day";
 import { formatDuration } from "@/core/time/minutes";
 import { ChevronDownIcon, ChevronUpIcon } from "@/ui/icons";
 import type { LegOption, PlannedLeg } from "./compute-trip";
+import { formatDistance } from "@/core/model/distance";
 import type { DayActions } from "./day-actions";
-import { formatDistance } from "./format-distance";
 import { legDisc, MODE_ICON, MODE_WORDS } from "./leg-marks";
 import { Notice } from "@/ui/notice";
 

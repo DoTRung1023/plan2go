@@ -573,17 +573,25 @@ of the map, as moving does.
 The city panel: over the rows, a field of its own for typing a city, the slim pill a
 start or end of the day is searched for in, 36px on `paper` inside a hairline that takes
 the accent while it is typed in, with its glass in the column the pins stand in and its
-words where the names start. Under it, headed "Popular in Vietnam", the cities worth
-visiting in the country the day's city is in, in rows the same as a place's: a pin in
-the accent, the name at the meta step and the province and country under it at the
-micro step, and the same highlight. Once something is typed the heading is "Matching
-cities". Every city the trip already goes to is left out of that list, the day's own
-among them: the pill already says it, and the list is for somewhere the trip has not
-been yet. There is no list of popular cities to be had from
-the places provider, so it is made from the country's best known landmarks, each counted
-to the city its address puts it in, and ranked by how many landmarks each city has; it
-is asked once a day for each country and kept, and it is rough at its tail, where a city
-with one landmark can come up as the district the landmark stands in. Typing a city lists
+words where the names start. Under it, headed "Cities nearby", one list of the towns
+near the day's city and the best known cities in its country, together and nearest
+first, in rows the same as a place's: a pin in the accent, the name at the meta step and
+under it at the micro step how far it is in a straight line and which way, "58 km
+north-east", and the same highlight. The distance and the direction are the line under
+the name because the traveller cannot judge distances in a country they do not know,
+and the province a city is in tells them less than that; a straight line is all it
+claims, and no time is given, since nothing here knows how the road runs. Once
+something is typed the heading is "Matching cities". Every city the trip already goes
+to is left out of that list, the day's own among them: the pill already says it, and
+the list is for somewhere the trip has not been yet, as is anywhere closer than 15 km,
+which is the city's own suburbs. There is no list of either to be had from the places
+provider, so both are made from landmarks, each counted to the town its address puts
+it in and ranked by how many landmarks each town has: the country's best known
+landmarks for its cities, and the places people go to stay on a weekend away from the
+city for the towns near it, since asked for anything near a city the provider answers
+with the city itself. Each is asked once a day, for each country and for each city,
+and kept, and both are rough at their tails, where a town with one landmark can come
+up as the hamlet the landmark stands in. Typing a city lists
 the cities that match, nearest the day's city first, each the trip already goes to with
 its dot in the pin's place and any other with a pin, since a city has no colour until a
 day is in it, and the city the day is in ticked at the end of its row, where a place's

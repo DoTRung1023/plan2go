@@ -1,9 +1,8 @@
+import { metersBetween } from "@/core/model/distance";
 import type { LegResolution, TravelMode, TravelRequest } from "@/core/model/leg";
 import type { LatLng } from "@/core/model/place";
 import type { TravelProvider } from "@/core/ports/travel-provider";
 import { wholeMinutes } from "@/core/time/minutes";
-
-const EARTH_RADIUS_METERS = 6_371_008.8;
 
 export interface HaversineOptions {
   /** Average door to door speed, including the stopping and the waiting. */
@@ -16,22 +15,6 @@ export const DEFAULT_HAVERSINE_OPTIONS: HaversineOptions = {
   speedsKmh: { walk: 4.8, drive: 30, transit: 20 },
   detourFactor: 1.3,
 };
-
-function toRadians(degrees: number): number {
-  return (degrees * Math.PI) / 180;
-}
-
-/** Great circle distance in whole metres. */
-export function haversineMeters(from: LatLng, to: LatLng): number {
-  const latitudeDelta = toRadians(to.lat - from.lat);
-  const longitudeDelta = toRadians(to.lng - from.lng);
-  const a =
-    Math.sin(latitudeDelta / 2) ** 2 +
-    Math.cos(toRadians(from.lat)) *
-      Math.cos(toRadians(to.lat)) *
-      Math.sin(longitudeDelta / 2) ** 2;
-  return Math.round(2 * EARTH_RADIUS_METERS * Math.asin(Math.min(1, Math.sqrt(a))));
-}
 
 function isUsable(point: LatLng): boolean {
   return (
@@ -58,7 +41,7 @@ export function createHaversineTravelProvider(
         return Promise.resolve({ status: "unresolved", reason: "missing-coordinates" });
       }
 
-      const straightLine = haversineMeters(request.from, request.to);
+      const straightLine = metersBetween(request.from, request.to);
       const distanceMeters = Math.round(straightLine * options.detourFactor);
       const speedKmh = options.speedsKmh[request.mode];
       const rawMinutes = (distanceMeters / 1000 / speedKmh) * 60;

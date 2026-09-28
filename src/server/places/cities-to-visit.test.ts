@@ -1,9 +1,16 @@
 import { describe, expect, it } from "vitest";
+import type { LatLng } from "@/core/model/place";
 import type { LandmarkPlace } from "@/core/ports/places-provider";
-import { citiesFromLandmarks, countryOf } from "./popular-cities";
+import { citiesFromLandmarks, countryOf, nearestFirst, townsFromLandmarks } from "./cities-to-visit";
 
 function landmark(locality: string | null, region: string | null): LandmarkPlace {
   return { name: "A landmark", locality, region };
+}
+
+const ADELAIDE: LatLng = { lat: -34.9285, lng: 138.6007 };
+
+function placed(name: string, position: LatLng) {
+  return { city: { providerPlaceId: `id-${name}`, name, address: null }, position };
 }
 
 describe("citiesFromLandmarks", () => {
@@ -49,6 +56,75 @@ describe("citiesFromLandmarks", () => {
   it("stops at the number asked for", () => {
     const landmarks = [landmark("Hue", "Hue"), landmark("Sa Pa", "Lào Cai"), landmark("Phu Quoc", "An Giang")];
     expect(citiesFromLandmarks(landmarks, 2)).toEqual(["Hue", "Sa Pa"]);
+  });
+
+  it("counts a name written as one word and as two as one place", () => {
+    const landmarks = [landmark(null, "Hà Nội"), landmark(null, "Hanoi"), landmark("Hue", "Hue")];
+    expect(citiesFromLandmarks(landmarks, 8)).toEqual(["Hà Nội", "Hue"]);
+  });
+});
+
+describe("townsFromLandmarks", () => {
+  it("ranks the towns near a city by how many landmarks are in them", () => {
+    const landmarks = [
+      landmark("Hahndorf", "South Australia"),
+      landmark("Tanunda", "South Australia"),
+      landmark("Tanunda", "South Australia"),
+    ];
+    expect(townsFromLandmarks(landmarks, "Adelaide", 8)).toEqual(["Tanunda", "Hahndorf"]);
+  });
+
+  it("never takes the province for a town, however many towns it has", () => {
+    const landmarks = [landmark("Hahndorf", "South Australia"), landmark("Victor Harbor", "South Australia")];
+    expect(townsFromLandmarks(landmarks, "Adelaide", 8)).toEqual(["Hahndorf", "Victor Harbor"]);
+  });
+
+  it("leaves out the city itself, however it is spelt", () => {
+    const landmarks = [
+      landmark(null, "Hà Nội"),
+      landmark("Hanoi", "Hanoi"),
+      landmark("Ha Long", "Quảng Ninh"),
+    ];
+    expect(townsFromLandmarks(landmarks, "Hanoi", 8)).toEqual(["Ha Long"]);
+  });
+
+  it("takes the province for a landmark whose address names no town", () => {
+    expect(townsFromLandmarks([landmark(null, "Ninh Bình")], "Hanoi", 8)).toEqual(["Ninh Bình"]);
+  });
+
+  it("stops at the number asked for", () => {
+    const landmarks = [landmark("Hahndorf", null), landmark("Clare", null), landmark("Tanunda", null)];
+    expect(townsFromLandmarks(landmarks, "Adelaide", 2)).toEqual(["Hahndorf", "Clare"]);
+  });
+});
+
+describe("nearestFirst", () => {
+  const MELBOURNE = placed("Melbourne", { lat: -37.8136, lng: 144.9631 });
+  const HAHNDORF = placed("Hahndorf", { lat: -35.0286, lng: 138.8078 });
+  const PERTH = placed("Perth", { lat: -31.9523, lng: 115.8613 });
+
+  it("puts the cities in order of how far they are", () => {
+    const cities = nearestFirst(ADELAIDE, [MELBOURNE, PERTH, HAHNDORF], 8);
+    expect(cities.map((city) => city.name)).toEqual(["Hahndorf", "Melbourne", "Perth"]);
+  });
+
+  it("says how far each is and which way", () => {
+    const [hahndorf] = nearestFirst(ADELAIDE, [HAHNDORF], 8);
+    expect(hahndorf?.direction).toBe("south-east");
+    expect(hahndorf?.distanceMeters).toBeGreaterThan(20_000);
+    expect(hahndorf?.distanceMeters).toBeLessThan(25_000);
+  });
+
+  it("leaves out a place so close it is the city itself", () => {
+    const glenelg = placed("Glenelg", { lat: -34.9803, lng: 138.5083 });
+    expect(nearestFirst(ADELAIDE, [glenelg, HAHNDORF], 8).map((city) => city.name)).toEqual([
+      "Hahndorf",
+    ]);
+  });
+
+  it("keeps the nearest when there are more than asked for", () => {
+    const cities = nearestFirst(ADELAIDE, [PERTH, MELBOURNE, HAHNDORF], 2);
+    expect(cities.map((city) => city.name)).toEqual(["Hahndorf", "Melbourne"]);
   });
 });
 

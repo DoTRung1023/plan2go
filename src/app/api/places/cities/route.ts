@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createGooglePlacesProvider } from "@/adapters/places/google-places";
 import { googleMapsApiKey } from "@/server/places/google-key";
-import { popularCities } from "@/server/places/popular-cities";
+import { citiesToVisit } from "@/server/places/cities-to-visit";
 import { consumeRateLimit } from "@/server/rate-limit/ip-rate-limit";
 import type { RateLimitPolicy } from "@/server/rate-limit/window";
 
@@ -15,18 +15,23 @@ const POLICY: RateLimitPolicy = { windowSeconds: 60, maxRequests: 10 };
 
 const ROUTE = "places-cities";
 
-/** More than the picker has room for would be names nobody scrolls to. */
-const MOST_ASKED = 10;
+/**
+ * The towns near a city and the cities in its country come to twenty at
+ * most, and more than that would be names nobody scrolls to.
+ */
+const MOST_ASKED = 20;
 
 const querySchema = z.object({
   city: z.string().min(1).max(300),
-  limit: z.coerce.number().int().min(1).max(MOST_ASKED).default(8),
+  limit: z.coerce.number().int().min(1).max(MOST_ASKED).default(MOST_ASKED),
 });
 
 /**
- * The cities worth visiting in the country a day's city is in. A read, so no
- * edit token is asked for, and the city is a provider identifier that says
- * nothing about anybody, so there is nothing here to guard beyond the spend.
+ * The cities worth going to from a day's city, the towns near it and the best
+ * known cities in its country, nearest first, each with how far it is and
+ * which way. A read, so no edit token is asked for, and the city is a
+ * provider identifier that says nothing about anybody, so there is nothing
+ * here to guard beyond the spend.
  *
  * Every refusal is a plain one. Nothing here was asked for out loud: the
  * reader opened the city picker, and a sentence explaining why a list they
@@ -55,17 +60,17 @@ export async function GET(request: Request): Promise<NextResponse> {
   }
 
   try {
-    const popular = await popularCities(
+    const cities = await citiesToVisit(
       parsed.data.city,
       parsed.data.limit,
       createGooglePlacesProvider({ apiKey }),
     );
-    if (popular === null) {
+    if (cities === null) {
       return NextResponse.json({ error: "That city could not be found." }, { status: 404 });
     }
-    return NextResponse.json({ country: popular.country, suggestions: popular.cities });
+    return NextResponse.json({ cities });
   } catch (cause) {
-    console.error("Popular cities failed", cause);
+    console.error("Cities to visit failed", cause);
     return NextResponse.json(
       { error: "Could not reach the place search service." },
       { status: 502 },

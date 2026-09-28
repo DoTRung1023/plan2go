@@ -1,15 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { DayPlan } from "@/core/model/day";
+import { metersBetween } from "@/core/model/distance";
 import type { LegResolution } from "@/core/model/leg";
 import type { LatLng, Place } from "@/core/model/place";
 import type { TravelProvider } from "@/core/ports/travel-provider";
 import { computeDay } from "@/core/time/compute-day";
 import { legRequestsFor } from "@/core/time/leg-requests";
-import {
-  DEFAULT_HAVERSINE_OPTIONS,
-  createHaversineTravelProvider,
-  haversineMeters,
-} from "./haversine";
+import { DEFAULT_HAVERSINE_OPTIONS, createHaversineTravelProvider } from "./haversine";
 
 const ADELAIDE_GPO: LatLng = { lat: -34.9285, lng: 138.6007 };
 const BOTANIC_GARDEN: LatLng = { lat: -34.9186, lng: 138.6106 };
@@ -34,22 +31,6 @@ async function resolveLegs(provider: TravelProvider, day: DayPlan): Promise<LegR
   return legs;
 }
 
-describe("haversineMeters", () => {
-  it("is zero for a point and itself", () => {
-    expect(haversineMeters(ADELAIDE_GPO, ADELAIDE_GPO)).toBe(0);
-  });
-
-  it("measures one degree of latitude as about 111 km", () => {
-    const metres = haversineMeters({ lat: 0, lng: 0 }, { lat: 1, lng: 0 });
-    expect(metres).toBeGreaterThan(110_500);
-    expect(metres).toBeLessThan(111_500);
-  });
-
-  it("is symmetric", () => {
-    expect(haversineMeters(ADELAIDE_GPO, GLENELG)).toBe(haversineMeters(GLENELG, ADELAIDE_GPO));
-  });
-});
-
 describe("createHaversineTravelProvider", () => {
   const provider = createHaversineTravelProvider();
 
@@ -71,7 +52,7 @@ describe("createHaversineTravelProvider", () => {
 
   it("applies the detour factor to the straight line", async () => {
     const result = await provider.estimate({ from: ADELAIDE_GPO, to: GLENELG, mode: "drive", departAt: null });
-    const straightLine = haversineMeters(ADELAIDE_GPO, GLENELG);
+    const straightLine = metersBetween(ADELAIDE_GPO, GLENELG);
 
     expect(result.status).toBe("resolved");
     if (result.status !== "resolved") {

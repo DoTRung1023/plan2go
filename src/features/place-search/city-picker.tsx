@@ -2,10 +2,11 @@
 
 import type { KeyboardEvent } from "react";
 import { useEffect, useId, useRef, useState } from "react";
-import { array, nullable, object, optional, safeParse, string } from "zod/mini";
+import { array, nullable, number, object, optional, safeParse, string } from "zod/mini";
 import type { DayCity } from "@/core/model/day";
 import type { CityIdentity } from "@/core/model/day-city";
 import { sameCity } from "@/core/model/day-city";
+import { formatDistance } from "@/core/model/distance";
 import { CheckIcon, ChevronDownIcon, PinIcon, SearchIcon } from "@/ui/icons";
 import { CityDot, cityColor } from "@/ui/city-dot";
 import { Notice } from "@/ui/notice";
@@ -46,11 +47,20 @@ const suggestionSchema = object({
 
 const responseSchema = object({ suggestions: array(suggestionSchema) });
 
-/** The cities worth visiting in a country, and which country, as the route answers. */
-const popularSchema = object({ country: string(), suggestions: array(suggestionSchema) });
+/** The cities worth going to from a city, and how far and which way each is, as the route answers. */
+const toVisitSchema = object({
+  cities: array(
+    object({
+      providerPlaceId: string(),
+      name: string(),
+      distanceMeters: number(),
+      direction: string(),
+    }),
+  ),
+});
 
-/** Popular cities asked for; the trip's own come out of these, so a few more than fit. */
-const POPULAR_ASKED = 10;
+/** Cities asked for; the trip's own come out of these, so as many as the route gives. */
+const TO_VISIT_ASKED = 20;
 
 const refusalSchema = object({ error: string(), action: optional(string()) });
 
@@ -72,31 +82,30 @@ interface Row extends Found {
 }
 
 /**
- * The cities worth visiting in the country a city is in, or nothing. Every
- * refusal is a plain one: nobody asked for this list out loud, so the panel
- * says nothing about one it never got, and typing a city still works.
+ * The cities worth going to from a city, the towns near it and the best known
+ * in its country, nearest first, or nothing. Each says under its name how far
+ * it is and which way, "58 km north-east", which is what someone who cannot
+ * judge distances in a country they do not know needs from the list; the
+ * province a city is in says less than that to them. Every refusal is a plain
+ * one: nobody asked for this list out loud, so the panel says nothing about
+ * one it never got, and typing a city still works.
  */
-async function askForPopular(
-  providerPlaceId: string,
-): Promise<{ readonly country: string; readonly cities: readonly Found[] } | null> {
-  const parameters = new URLSearchParams({ city: providerPlaceId, limit: String(POPULAR_ASKED) });
+async function askForCitiesToVisit(providerPlaceId: string): Promise<readonly Found[] | null> {
+  const parameters = new URLSearchParams({ city: providerPlaceId, limit: String(TO_VISIT_ASKED) });
   try {
     const response = await fetch(`/api/places/cities?${parameters.toString()}`);
     if (!response.ok) {
       return null;
     }
-    const parsed = safeParse(popularSchema, await response.json());
+    const parsed = safeParse(toVisitSchema, await response.json());
     if (!parsed.success) {
       return null;
     }
-    return {
-      country: parsed.data.country,
-      cities: parsed.data.suggestions.map((one) => ({
-        providerPlaceId: one.providerPlaceId,
-        name: one.name,
-        line: one.address,
-      })),
-    };
+    return parsed.data.cities.map((one) => ({
+      providerPlaceId: one.providerPlaceId,
+      name: one.name,
+      line: `${formatDistance(one.distanceMeters)} ${one.direction}`,
+    }));
   } catch {
     return null;
   }
@@ -136,8 +145,8 @@ interface CityPickerProps {
  * asks which city it is searching before it asks for a place in it. The pill
  * says the city with its dot, the one its days carry in the strip; pressed,
  * it turns dark and opens a panel under the bar with a search of its own for
- * cities, and the cities worth visiting in the country listed before anything
- * is typed.
+ * cities, and the towns near the city and the best known cities in its
+ * country listed before anything is typed, nearest first.
  *
  * Choosing a city moves the day and the days straight after it that were in
  * the same city, which is decided on the server from the trip as it stands.
@@ -175,12 +184,11 @@ export function CityPicker({
   /** The day the pill is about, so moving to another day lets go of a move in flight. */
   const [forDay, setForDay] = useState(dayId);
   /**
-   * The cities worth visiting in the day's country, which city's country they
-   * were asked about, and the country's name. Null until an answer lands.
+   * The cities worth going to from the day's city, and which city they were
+   * asked about. Null until an answer lands.
    */
-  const [popular, setPopular] = useState<{
+  const [toVisit, setToVisit] = useState<{
     readonly about: string;
-    readonly country: string | null;
     readonly cities: readonly Found[];
   } | null>(null);
 
@@ -190,9 +198,9 @@ export function CityPicker({
   /** Answers can arrive out of order, so only the newest is allowed to land. */
   const newest = useRef(0);
   /**
-   * Which city's country was last asked about, so each is asked once however
-   * often the panel opens. A ref, because the effect that asks may not set
-   * state on the way in, only in the answer.
+   * Which city was last asked about, so each is asked once however often the
+   * panel opens. A ref, because the effect that asks may not set state on the
+   * way in, only in the answer.
    */
   const askedAbout = useRef<string | null>(null);
   const watchList = useScrollBar("y");
@@ -290,11 +298,11 @@ export function CityPicker({
   useOutsidePress(root, open, close);
 
   /**
-   * Asked when the panel first opens, and not on mounting: the answer costs a
-   * search the first time a country is asked about, and a reader who never
+   * Asked when the panel first opens, and not on mounting: the answer costs
+   * searches the first time a city is asked about, and a reader who never
    * opens the picker should never cause it. Asked about the day's own city,
-   * which is where its country comes from; a city kept from before cities
-   * had identifiers has no country to go on, and gets none.
+   * which is where the distances are from; a city kept from before cities
+   * had identifiers has nothing to go on, and gets none.
    */
   const askAbout = city?.providerPlaceId ?? null;
   useEffect(() => {
@@ -304,26 +312,22 @@ export function CityPicker({
     askedAbout.current = askAbout;
     // An answer that did not come is kept as an empty one, so the panel
     // stops saying it is looking and offers the search instead.
-    void askForPopular(askAbout).then((answer) => {
-      setPopular({
-        about: askAbout,
-        country: answer?.country ?? null,
-        cities: answer?.cities ?? [],
-      });
+    void askForCitiesToVisit(askAbout).then((answer) => {
+      setToVisit({ about: askAbout, cities: answer ?? [] });
     });
   }, [open, searched, askAbout]);
 
   /** The answer about this day's city, and not one left from another day's. */
-  const popularHere = popular !== null && popular.about === askAbout ? popular : null;
+  const toVisitHere = toVisit !== null && toVisit.about === askAbout ? toVisit : null;
 
   /**
-   * Before anything is typed: the cities worth visiting in the country, less
-   * every city the trip already goes to, the day's own among them. The pill
-   * already says the day's city, and a city the trip goes to is a search
-   * away; this list is for somewhere the trip has not been yet, so none of
-   * its rows carries a colour.
+   * Before anything is typed: the cities worth going to, near and far in one
+   * list, less every city the trip already goes to, the day's own among them.
+   * The pill already says the day's city, and a city the trip goes to is a
+   * search away; this list is for somewhere the trip has not been yet, so
+   * none of its rows carries a colour.
    */
-  const toVisit: readonly Row[] = (popularHere?.cities ?? [])
+  const suggested: readonly Row[] = (toVisitHere?.cities ?? [])
     .filter((one) => !cities.some((onTrip) => sameCity(onTrip, one)) && !sameCity(one, shown))
     .map((one) => ({ ...one, current: false, color: null }));
 
@@ -333,7 +337,7 @@ export function CityPicker({
         current: sameCity(one, shown),
         color: cities.find((onTrip) => sameCity(onTrip, one))?.color ?? null,
       }))
-    : toVisit;
+    : suggested;
   const activeIndex = active < rows.length ? active : 0;
 
   const choose = (row: Row): void => {
@@ -411,7 +415,7 @@ export function CityPicker({
       if (rows.length > 0) {
         return null;
       }
-      return askAbout !== null && popularHere === null
+      return askAbout !== null && toVisitHere === null
         ? "Looking for cities to visit."
         : "Type the name of a city.";
     }
@@ -425,7 +429,7 @@ export function CityPicker({
   })();
 
   const listed = rows.length > 0;
-  const heading = searched ? "Matching cities" : `Popular in ${popularHere?.country ?? "this country"}`;
+  const heading = searched ? "Matching cities" : "Cities nearby";
   const moveKey = String(moves);
 
   return (

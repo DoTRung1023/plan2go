@@ -153,14 +153,18 @@ const nearbySchema = z.object({
     .optional(),
 });
 
-/** Likewise for a text search that found nothing. */
+/**
+ * Likewise for a text search that found nothing. A part of an address can come
+ * with no types at all, a fragment of a street such as "Cnr South Terrace &",
+ * and one of those is no reason to lose the other nineteen landmarks.
+ */
 const landmarksSchema = z.object({
   places: z
     .array(
       z.object({
         displayName: z.object({ text: z.string() }).optional(),
         addressComponents: z
-          .array(z.object({ longText: z.string(), types: z.array(z.string()) }))
+          .array(z.object({ longText: z.string(), types: z.array(z.string()).default([]) }))
           .optional(),
       }),
     )

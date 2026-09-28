@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { conflictsAtStop } from "@/core/model/conflict";
+import { formatDistance } from "@/core/model/distance";
 import type { Place } from "@/core/model/place";
 import type { ClockTime } from "@/core/time/compute-day";
 import { formatClock, formatDuration } from "@/core/time/minutes";
@@ -14,7 +15,6 @@ import { endpointName } from "../endpoint-name";
 import type { ExportRequest } from "./export-request";
 import { formatDayDate, formatDayLong } from "../format-day-date";
 import { formatDayTime } from "../format-day-time";
-import { formatDistance } from "../format-distance";
 import { hoursOn } from "../format-opening-hours";
 import { formatStops } from "../format-stops";
 import { Credit } from "@/ui/credit";
