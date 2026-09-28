@@ -370,10 +370,11 @@ alone is never the signal.
 A stop card carries its own controls and, on the last card of the day, one other,
 described below. The two that act on the whole
 stop, moving it and taking it off the day, sit under the two times at the top right,
-because they are about the row rather than about anything inside it. The address under
-the name runs on beneath the times as far as the tools reach, which are narrower than
-the times, rather than stopping at the name's width: a street and a suburb that broke
-early against the times mostly read on one line. The tools are drawn at 55 percent
+because they are about the row rather than about anything inside it. They sit just
+under the times however many lines the name and the address run to, in one column on
+the right with the times, the column the ends of a day keep too; the name and the
+address stand in their own column beside it, so a long name no longer pushes the tools
+down away from the times. The tools are drawn at 55 percent
 until the pointer is over the card and never hidden, since half the people using this
 have no pointer to hover with. How long the stop lasts is a pill with a clock on it
 that opens two columns, hours and minutes, the same columns the day's leaving time

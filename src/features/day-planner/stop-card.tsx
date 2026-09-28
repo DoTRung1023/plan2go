@@ -304,67 +304,66 @@ export function StopCard({
           whatever else goes: it is where the stacked marks of a Vietnamese
           street name land, and nothing here is worth clipping one. */}
       <div className="flex min-w-0 flex-col gap-2">
-        {/* The name beside the times, and under them the address beside the
-            tools. Three columns rather than two, so the address is not held
-            to the name's width: the tools under the times are narrower than
-            the times, and the address runs on under the times as far as the
-            tools reach. A street and a suburb that broke early against the
-            times now mostly fit on one line. */}
-        <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-x-[10px] gap-y-[3px] [grid-template-areas:'name_times_times'_'address_address_tools']">
-          <h3 className="min-w-0 font-display text-place text-ink [grid-area:name]">
-            {stop.placeName}
-          </h3>
-          {address === null ? null : (
-            <p className="min-w-0 text-meta text-ink-faint [grid-area:address]">{address}</p>
-          )}
-
-          {/* Read, never set, but for one: every time on the day follows
-              from when it leaves, worked out through the legs and the stays,
-              so the one clock to change is that one, set where it shows.
-              With no start point that is this card's arrival on the first
-              card, which then comes as the pill that sets it. In the accent,
-              a shade down for text at this size: the time is the loudest
-              thing on the card, and it is warm rather than black beside the
-              disc that shares its colour.
-
-              Both ends of the stay rather than only its beginning. When you
-              get somewhere is half of what a stop is; the other half is when
-              you are done with it, and it was only ever readable by adding
-              the stay underneath to the time above it. The arrow is the same
-              one the starter page puts between the two ends of a trip, and
-              stands as far off the pill as off a plain time.
-
-              A div rather than a paragraph, because the pill hangs its picker
-              from itself and a paragraph may not hold one. */}
-          <div
-            className="flex items-center gap-[5px] self-start justify-self-end font-display text-time whitespace-nowrap text-terracotta-700 tabular-nums [grid-area:times]"
-          >
-            {leaveAt === null && stop.arrival === null ? (
-              "Time not known"
-            ) : (
-              <>
-                {leaveAt ?? (stop.arrival === null ? null : formatDayTime(stop.arrival))}
-                {stop.departure === null ? null : (
-                  <>
-                    <ArrowRightIcon
-                      size={13}
-                      strokeWidth={2.5}
-                      aria-hidden="true"
-                      className="shrink-0 text-terracotta-700/65"
-                    />
-                    <span className="sr-only">to</span>
-                    {formatDayTime(stop.departure)}
-                  </>
-                )}
-              </>
+        {/* The name and the address on the left, and on the right the times
+            with the tools just under them, the column an end of the day keeps
+            too. The tools stay under the times however many lines the name
+            and the address run to, rather than dropping to the address's row
+            when a long name takes two; the address keeps to the name's width
+            beside them. */}
+        <div className="flex items-start gap-[10px]">
+          <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
+            <h3 className="min-w-0 font-display text-place text-ink">{stop.placeName}</h3>
+            {address === null ? null : (
+              <p className="min-w-0 text-meta text-ink-faint">{address}</p>
             )}
           </div>
 
-          <div
-            className={`-mr-1 flex items-center self-start justify-self-end group-hover:opacity-100 focus-within:opacity-100 [grid-area:tools] ${
-              hovered ? "opacity-100" : "opacity-55"
-            }`}
-          >
+          <div className="flex flex-none flex-col items-end gap-[3px]">
+            {/* Read, never set, but for one: every time on the day follows
+                from when it leaves, worked out through the legs and the stays,
+                so the one clock to change is that one, set where it shows.
+                With no start point that is this card's arrival on the first
+                card, which then comes as the pill that sets it. In the accent,
+                a shade down for text at this size: the time is the loudest
+                thing on the card, and it is warm rather than black beside the
+                disc that shares its colour.
+
+                Both ends of the stay rather than only its beginning. When you
+                get somewhere is half of what a stop is; the other half is when
+                you are done with it, and it was only ever readable by adding
+                the stay underneath to the time above it. The arrow is the same
+                one the starter page puts between the two ends of a trip, and
+                stands as far off the pill as off a plain time.
+
+                A div rather than a paragraph, because the pill hangs its picker
+                from itself and a paragraph may not hold one. */}
+            <div className="flex items-center gap-[5px] font-display text-time whitespace-nowrap text-terracotta-700 tabular-nums">
+              {leaveAt === null && stop.arrival === null ? (
+                "Time not known"
+              ) : (
+                <>
+                  {leaveAt ?? (stop.arrival === null ? null : formatDayTime(stop.arrival))}
+                  {stop.departure === null ? null : (
+                    <>
+                      <ArrowRightIcon
+                        size={13}
+                        strokeWidth={2.5}
+                        aria-hidden="true"
+                        className="shrink-0 text-terracotta-700/65"
+                      />
+                      <span className="sr-only">to</span>
+                      {formatDayTime(stop.departure)}
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+
+            <div
+              className={`-mr-1 flex items-center group-hover:opacity-100 focus-within:opacity-100 ${
+                hovered ? "opacity-100" : "opacity-55"
+              }`}
+            >
               {/* For anyone reading, not only whoever can edit: what a place
                   is like is the question the people travelling ask too. */}
               <AboutPlaceButton name={stop.placeName} onOpen={onOpen} />
@@ -386,6 +385,7 @@ export function StopCard({
                       run("remove", () => actions.removeStop({ stopId: stop.stopId }));
                     }}
                     disabled={busy === "remove"}
+                    title="Remove"
                     aria-label={`Remove ${stop.placeName} from this day`}
                     className={TOOL}
                   >
@@ -393,6 +393,7 @@ export function StopCard({
                   </button>
                 </>
               )}
+            </div>
           </div>
         </div>
 
