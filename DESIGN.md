@@ -532,8 +532,15 @@ under it at its width, `paper-raised` inside a hairline at the `panel` radius un
 `shadow-md`, there or not there with no movement, and no taller than 330px, past which
 it scrolls.
 
-The place panel: before anything is typed it lists the city's best known places headed
-"Popular in Hanoi", and once something is typed, "Matching places", each heading at the
+The place panel: before anything is typed, headed "Quick search", a row of chips that
+each type a search into the field: Restaurant, Café, Museum, Art gallery, Aquarium, Ice
+cream. Each is a pill of `paper-raised` inside a hairline, its word at the small step in
+600 `ink`, taking the accent's edge on `terracotta-100` under the pointer. The search
+matches names rather than kinds of place, so a chip is only a word that is part of the
+names of the right places in any city: "Park" finds hotels and car parks, "Market"
+finds marketing firms, and "Temple" and "Street food" hold up in Asia but not in Europe.
+Under the chips, the city's best known places headed "Popular in Hanoi", and once
+something is typed, "Matching places", each heading at the
 label step in `ink-muted`. A row has a pin in the accent at its front, the name at the
 meta step over its address at the micro step, both wrapping rather than cut short, and
 at its end a plus on a 26px round that puts the place on the day without the look, or a sage tick

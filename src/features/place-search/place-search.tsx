@@ -60,6 +60,24 @@ const KINDS = ["for a place", "cafés", "museums", "street food", "viewpoints"] 
 /** How long each of those stays before the next. */
 const KINDS_EVERY_MS = 2600;
 
+/**
+ * The searches one press away before anything is typed: somewhere to eat and
+ * something to see, and the two a family goes out of its way for. Each is
+ * typed into the field as it stands, and the search matches names rather than
+ * kinds of place, so only words that are part of the names of the right
+ * places made it here. "Park" finds hotels and car parks, "Market" finds
+ * marketing firms, and "Temple" and "Street food" hold up in Asia but not in
+ * Europe.
+ */
+const QUICK_SEARCHES = [
+  "Restaurant",
+  "Café",
+  "Museum",
+  "Art gallery",
+  "Aquarium",
+  "Ice cream",
+] as const;
+
 /** How long the sentence at the foot of the map says what just happened. */
 const TOAST_MS = 2400;
 
@@ -698,8 +716,8 @@ export function PlaceSearch({
    * being looked up, what went wrong with the last look, the city being
    * asked about, a refusal, the search being run, or nothing having matched.
    * Null when the list is doing the talking, and null on a field nobody has
-   * typed in whose city had nothing to offer, so a trip with no city has a
-   * bar and nothing more.
+   * typed in whose city had nothing to offer, so a trip with no city has the
+   * quick searches and nothing more.
    */
   const line = ((): string | null => {
     if (lookingUp !== null) {
@@ -723,7 +741,7 @@ export function PlaceSearch({
   })();
 
   const listed = visible.length > 0;
-  const panel = panelOpen && (listed || line !== null);
+  const panel = panelOpen && (!searched || listed || line !== null);
   const busy = (searched && searching) || lookingUp !== null;
 
   return (
@@ -836,6 +854,34 @@ export function PlaceSearch({
         {panel ? (
           <div className={PANEL}>
             <div ref={watchList} className={PANEL_LIST}>
+              {searched ? null : (
+                <>
+                  <p className={PANEL_LABEL}>Quick search</p>
+                  <div className="flex flex-wrap gap-[6px] px-[7px] pb-[12px]">
+                    {QUICK_SEARCHES.map((label) => (
+                      <button
+                        key={label}
+                        type="button"
+                        // The cursor stays in the field, so the search the
+                        // press starts is answered in the panel it is in.
+                        onMouseDown={(event) => {
+                          event.preventDefault();
+                        }}
+                        onClick={() => {
+                          setQuery(label);
+                          setLookError(null);
+                          setOpen(true);
+                          input.current?.focus();
+                        }}
+                        className="rounded-pill border border-rule bg-paper-raised px-[11px] py-[7px] text-small/none font-semibold text-ink hover:border-terracotta hover:bg-terracotta-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
               {line === null ? null : <p className={PANEL_LINE}>{line}</p>}
 
               {listed ? (
