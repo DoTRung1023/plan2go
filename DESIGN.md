@@ -575,13 +575,9 @@ start or end of the day is searched for in, 36px on `paper` inside a hairline th
 the accent while it is typed in, with its glass in the column the pins stand in and its
 words where the names start. Under it, headed "Cities nearby", one list of the towns
 near the day's city and the best known cities in its country, together and nearest
-first, in rows the same as a place's: a pin in the accent, the name at the meta step and
-under it at the micro step how far it is in a straight line and which way, "58 km
-north-east", and the same highlight. The distance and the direction are the line under
-the name because the traveller cannot judge distances in a country they do not know,
-and the province a city is in tells them less than that; a straight line is all it
-claims, and no time is given, since nothing here knows how the road runs. Once
-something is typed the heading is "Matching cities". Every city the trip already goes
+first, in rows the same as a place's but with the name alone: a pin in the accent, the
+name at the meta step and nothing under it, and the same highlight. Once something is
+typed the heading is "Matching cities". Every city the trip already goes
 to is left out of that list, the day's own among them: the pill already says it, and
 the list is for somewhere the trip has not been yet, as is anywhere closer than 15 km,
 which is the city's own suburbs. There is no list of either to be had from the places

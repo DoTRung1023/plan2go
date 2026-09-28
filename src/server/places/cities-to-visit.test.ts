@@ -108,13 +108,6 @@ describe("nearestFirst", () => {
     expect(cities.map((city) => city.name)).toEqual(["Hahndorf", "Melbourne", "Perth"]);
   });
 
-  it("says how far each is and which way", () => {
-    const [hahndorf] = nearestFirst(ADELAIDE, [HAHNDORF], 8);
-    expect(hahndorf?.direction).toBe("south-east");
-    expect(hahndorf?.distanceMeters).toBeGreaterThan(20_000);
-    expect(hahndorf?.distanceMeters).toBeLessThan(25_000);
-  });
-
   it("leaves out a place so close it is the city itself", () => {
     const glenelg = placed("Glenelg", { lat: -34.9803, lng: 138.5083 });
     expect(nearestFirst(ADELAIDE, [glenelg, HAHNDORF], 8).map((city) => city.name)).toEqual([

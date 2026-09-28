@@ -1,10 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { compassPoint, formatDistance, metersBetween } from "./distance";
+import { formatDistance, metersBetween } from "./distance";
 
 const ADELAIDE = { lat: -34.9285, lng: 138.6007 };
 const MELBOURNE = { lat: -37.8136, lng: 144.9631 };
-const PERTH = { lat: -31.9523, lng: 115.8613 };
-const CAIRNS = { lat: -16.9186, lng: 145.7781 };
 
 describe("metersBetween", () => {
   it("is a degree of the equator for a degree of longitude along it", () => {
@@ -29,30 +27,6 @@ describe("metersBetween", () => {
     const meters = metersBetween(ADELAIDE, MELBOURNE);
     expect(meters).toBeGreaterThan(650_000);
     expect(meters).toBeLessThan(660_000);
-  });
-});
-
-describe("compassPoint", () => {
-  it("names the four quarters", () => {
-    expect(compassPoint({ lat: 0, lng: 0 }, { lat: 1, lng: 0 })).toBe("north");
-    expect(compassPoint({ lat: 0, lng: 0 }, { lat: 0, lng: 1 })).toBe("east");
-    expect(compassPoint({ lat: 0, lng: 0 }, { lat: -1, lng: 0 })).toBe("south");
-    expect(compassPoint({ lat: 0, lng: 0 }, { lat: 0, lng: -1 })).toBe("west");
-  });
-
-  it("names the points between them", () => {
-    expect(compassPoint({ lat: 0, lng: 0 }, { lat: 1, lng: 1 })).toBe("north-east");
-    expect(compassPoint({ lat: 0, lng: 0 }, { lat: -1, lng: -1 })).toBe("south-west");
-  });
-
-  it("takes the nearest of the eight for a city that lies between them", () => {
-    expect(compassPoint(ADELAIDE, MELBOURNE)).toBe("south-east");
-    expect(compassPoint(ADELAIDE, PERTH)).toBe("west");
-    expect(compassPoint(ADELAIDE, CAIRNS)).toBe("north");
-  });
-
-  it("goes the short way across the date line", () => {
-    expect(compassPoint({ lat: 0, lng: 179 }, { lat: 0, lng: -179 })).toBe("east");
   });
 });
 

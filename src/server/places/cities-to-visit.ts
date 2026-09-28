@@ -1,5 +1,4 @@
-import type { CompassPoint } from "@/core/model/distance";
-import { compassPoint, metersBetween } from "@/core/model/distance";
+import { metersBetween } from "@/core/model/distance";
 import type { LatLng } from "@/core/model/place";
 import type { LandmarkPlace, PlaceSuggestion, PlacesProvider } from "@/core/ports/places-provider";
 import { placeDetailsFor } from "./place-details";
@@ -176,12 +175,6 @@ async function asCities(
   return found;
 }
 
-/** A city worth going to, and how far and which way it is from the day's city. */
-export interface CityToVisit extends PlaceSuggestion {
-  readonly distanceMeters: number;
-  readonly direction: CompassPoint;
-}
-
 /** A city suggested, and where it is. */
 export interface PlacedCity {
   readonly city: PlaceSuggestion;
@@ -189,22 +182,20 @@ export interface PlacedCity {
 }
 
 /**
- * The cities worth going to from a point, nearest first, each with how far it
- * is and which way, and none so close that it is the city the point is in.
+ * The cities worth going to from a point, nearest first, and none so close
+ * that it is the city the point is in.
  */
 export function nearestFirst(
   from: LatLng,
   placed: readonly PlacedCity[],
   limit: number,
-): readonly CityToVisit[] {
-  const cities: CityToVisit[] = [];
-  for (const { city, position } of placed) {
-    const distanceMeters = metersBetween(from, position);
-    if (distanceMeters >= NEAREST_METERS) {
-      cities.push({ ...city, distanceMeters, direction: compassPoint(from, position) });
-    }
-  }
-  return cities.sort((a, b) => a.distanceMeters - b.distanceMeters).slice(0, limit);
+): readonly PlaceSuggestion[] {
+  return placed
+    .map(({ city, position }) => ({ city, meters: metersBetween(from, position) }))
+    .filter((one) => one.meters >= NEAREST_METERS)
+    .sort((a, b) => a.meters - b.meters)
+    .slice(0, limit)
+    .map((one) => one.city);
 }
 
 /**
@@ -224,7 +215,7 @@ export async function citiesToVisit(
   limit: number,
   provider: PlacesProvider,
   now: Date = new Date(),
-): Promise<readonly CityToVisit[] | null> {
+): Promise<readonly PlaceSuggestion[] | null> {
   const city = await placeDetailsFor(cityPlaceId, provider, null, now);
   const country = countryOf(city?.address ?? null);
   if (city === null || country === null) {

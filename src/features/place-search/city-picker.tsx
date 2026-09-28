@@ -2,11 +2,10 @@
 
 import type { KeyboardEvent } from "react";
 import { useEffect, useId, useRef, useState } from "react";
-import { array, nullable, number, object, optional, safeParse, string } from "zod/mini";
+import { array, nullable, object, optional, safeParse, string } from "zod/mini";
 import type { DayCity } from "@/core/model/day";
 import type { CityIdentity } from "@/core/model/day-city";
 import { sameCity } from "@/core/model/day-city";
-import { formatDistance } from "@/core/model/distance";
 import { CheckIcon, ChevronDownIcon, PinIcon, SearchIcon } from "@/ui/icons";
 import { CityDot, cityColor } from "@/ui/city-dot";
 import { Notice } from "@/ui/notice";
@@ -47,16 +46,9 @@ const suggestionSchema = object({
 
 const responseSchema = object({ suggestions: array(suggestionSchema) });
 
-/** The cities worth going to from a city, and how far and which way each is, as the route answers. */
+/** The cities worth going to from a city, as the route answers. */
 const toVisitSchema = object({
-  cities: array(
-    object({
-      providerPlaceId: string(),
-      name: string(),
-      distanceMeters: number(),
-      direction: string(),
-    }),
-  ),
+  cities: array(object({ providerPlaceId: string(), name: string() })),
 });
 
 /** Cities asked for; the trip's own come out of these, so as many as the route gives. */
@@ -83,12 +75,10 @@ interface Row extends Found {
 
 /**
  * The cities worth going to from a city, the towns near it and the best known
- * in its country, nearest first, or nothing. Each says under its name how far
- * it is and which way, "58 km north-east", which is what someone who cannot
- * judge distances in a country they do not know needs from the list; the
- * province a city is in says less than that to them. Every refusal is a plain
- * one: nobody asked for this list out loud, so the panel says nothing about
- * one it never got, and typing a city still works.
+ * in its country, nearest first, or nothing. Each is its name alone, with no
+ * line under it. Every refusal is a plain one: nobody asked for this list out
+ * loud, so the panel says nothing about one it never got, and typing a city
+ * still works.
  */
 async function askForCitiesToVisit(providerPlaceId: string): Promise<readonly Found[] | null> {
   const parameters = new URLSearchParams({ city: providerPlaceId, limit: String(TO_VISIT_ASKED) });
@@ -104,7 +94,7 @@ async function askForCitiesToVisit(providerPlaceId: string): Promise<readonly Fo
     return parsed.data.cities.map((one) => ({
       providerPlaceId: one.providerPlaceId,
       name: one.name,
-      line: `${formatDistance(one.distanceMeters)} ${one.direction}`,
+      line: null,
     }));
   } catch {
     return null;

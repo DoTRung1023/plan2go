@@ -28,10 +28,9 @@ const querySchema = z.object({
 
 /**
  * The cities worth going to from a day's city, the towns near it and the best
- * known cities in its country, nearest first, each with how far it is and
- * which way. A read, so no edit token is asked for, and the city is a
- * provider identifier that says nothing about anybody, so there is nothing
- * here to guard beyond the spend.
+ * known cities in its country, nearest first. A read, so no edit token is
+ * asked for, and the city is a provider identifier that says nothing about
+ * anybody, so there is nothing here to guard beyond the spend.
  *
  * Every refusal is a plain one. Nothing here was asked for out loud: the
  * reader opened the city picker, and a sentence explaining why a list they
