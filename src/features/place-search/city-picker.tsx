@@ -29,8 +29,11 @@ import {
   ROW_WORDS,
 } from "./panel-styles";
 
-/** Long enough that typing does not spend money on every letter. */
-const DEBOUNCE_MS = 250;
+/**
+ * Long enough that typing does not spend money on every letter, and short
+ * enough that a pause is answered before it feels like waiting.
+ */
+const DEBOUNCE_MS = 150;
 
 const MINIMUM_LETTERS = 2;
 
@@ -191,6 +194,13 @@ export function CityPicker({
     readonly about: string;
     readonly cities: readonly Found[];
   } | null>(null);
+  /**
+   * What each city search typed here came to, by the words and the city they
+   * were asked near, so backspacing to words already searched, or typing them
+   * again, is answered at once rather than asked again. Only answers are kept:
+   * a refusal is asked again, since it may not be one the next time.
+   */
+  const [typedAnswers, setTypedAnswers] = useState<Readonly<Record<string, readonly Found[]>>>({});
 
   const root = useRef<HTMLDivElement | null>(null);
   const pill = useRef<HTMLButtonElement | null>(null);
@@ -225,10 +235,21 @@ export function CityPicker({
 
   const trimmed = query.trim();
   const searched = trimmed.length >= MINIMUM_LETTERS;
-  const searching = searched && answered !== trimmed;
+  /** What a search is remembered by: the words, and the city they were asked near. */
+  const typedKey = `${trimmed}@${biasLat ?? ""},${biasLng ?? ""}`;
+  /** The answer these words had the last time they were typed here, if they have been. */
+  const recalled = searched ? typedAnswers[typedKey] : undefined;
+  const isRecalled = recalled !== undefined;
+  const searching = searched && answered !== trimmed && !isRecalled;
 
   useEffect(() => {
     if (!searched) {
+      return;
+    }
+    if (isRecalled) {
+      // Answered already, and shown from what came back then. An answer still
+      // on its way for other words is no longer the one wanted.
+      newest.current += 1;
       return;
     }
     const timer = setTimeout(() => {
@@ -272,14 +293,14 @@ export function CityPicker({
           return;
         }
         const parsed = safeParse(responseSchema, body);
-        setFound(
-          (parsed.success ? parsed.data.suggestions : []).map((suggestion) => ({
-            providerPlaceId: suggestion.providerPlaceId,
-            name: suggestion.name,
-            line: suggestion.address,
-            distanceMeters: suggestion.distanceMeters ?? null,
-          })),
-        );
+        const answer = (parsed.success ? parsed.data.suggestions : []).map((suggestion) => ({
+          providerPlaceId: suggestion.providerPlaceId,
+          name: suggestion.name,
+          line: suggestion.address,
+          distanceMeters: suggestion.distanceMeters ?? null,
+        }));
+        setFound(answer);
+        setTypedAnswers((known) => ({ ...known, [typedKey]: answer }));
         setMessage(null);
       };
       void run();
@@ -288,7 +309,7 @@ export function CityPicker({
     return () => {
       clearTimeout(timer);
     };
-  }, [trimmed, searched, biasLat, biasLng]);
+  }, [trimmed, searched, biasLat, biasLng, typedKey, isRecalled]);
 
   const close = (): void => {
     onOpenChange(false);
@@ -333,7 +354,7 @@ export function CityPicker({
     .map((one) => ({ ...one, current: false, color: null }));
 
   const rows: readonly Row[] = searched
-    ? found.map((one) => ({
+    ? (recalled ?? found).map((one) => ({
         ...one,
         current: sameCity(one, shown),
         color: cities.find((onTrip) => sameCity(onTrip, one))?.color ?? null,
@@ -420,7 +441,8 @@ export function CityPicker({
         ? "Looking for cities to visit."
         : "Type the name of a city.";
     }
-    if (message !== null) {
+    // A refusal was about other words than these, which are answered already.
+    if (message !== null && !isRecalled) {
       return message;
     }
     if (rows.length > 0) {

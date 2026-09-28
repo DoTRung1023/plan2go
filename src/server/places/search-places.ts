@@ -1,9 +1,6 @@
-import type {
-  PlaceSearchRequest,
-  PlaceSuggestion,
-  PlacesProvider,
-} from "@/core/ports/places-provider";
-import { pointKey, suggestionsFor } from "./suggestion-cache";
+import type { PlaceSearchRequest, PlaceSuggestion } from "@/core/ports/places-provider";
+import type { SuggestionCacheKey } from "./suggestion-cache";
+import { cachedSuggestions, keepSuggestions, pointKey } from "./suggestion-cache";
 
 function biasKeyFor(request: PlaceSearchRequest): string {
   return request.near === null ? "anywhere" : pointKey(request.near);
@@ -19,19 +16,31 @@ function queryKeyFor(request: PlaceSearchRequest): string {
   return `${kind}:${request.query.trim().toLowerCase()}`;
 }
 
-/** A typed search, answered from our own table when we can. */
-export async function searchPlaces(
+function keyFor(request: PlaceSearchRequest): SuggestionCacheKey {
+  return { query: queryKeyFor(request), biasKey: biasKeyFor(request), size: request.limit };
+}
+
+/**
+ * A typed search as our own table answered it recently, or null when it has
+ * not. Reading the table costs nothing, so it is read while the request is
+ * still being counted, and the provider, which is paid, is asked only on a
+ * miss and only once the count says the request may spend.
+ */
+export function cachedSearch(
   request: PlaceSearchRequest,
-  provider: PlacesProvider,
   now: Date = new Date(),
-): Promise<readonly PlaceSuggestion[]> {
-  return suggestionsFor(
-    {
-      query: queryKeyFor(request),
-      biasKey: biasKeyFor(request),
-      size: request.limit,
-    },
-    () => provider.search(request),
-    now,
-  );
+): Promise<readonly PlaceSuggestion[] | null> {
+  return cachedSuggestions(keyFor(request), now);
+}
+
+/**
+ * The provider's answer to a typed search, kept for next time. Done after
+ * the reply has gone, since nobody waiting on the answer needs it written.
+ */
+export function keepSearch(
+  request: PlaceSearchRequest,
+  suggestions: readonly PlaceSuggestion[],
+  now: Date = new Date(),
+): Promise<void> {
+  return keepSuggestions(keyFor(request), suggestions, now);
 }

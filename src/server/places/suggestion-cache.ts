@@ -41,6 +41,25 @@ export function pointKey(point: LatLng): string {
 }
 
 /**
+ * The answer our own table holds for a question asked recently, or null when
+ * it holds none, holds one gone stale, or holds one it can no longer read.
+ */
+export async function cachedSuggestions(
+  key: SuggestionCacheKey,
+  now: Date,
+): Promise<readonly PlaceSuggestion[] | null> {
+  const cached = await db.placeSearchCache.findUnique({
+    where: { query_biasKey_size: key },
+    select: { suggestions: true, expiresAt: true },
+  });
+  if (cached === null || cached.expiresAt <= now) {
+    return null;
+  }
+  const parsed = cachedSuggestionsSchema.safeParse(cached.suggestions);
+  return parsed.success ? parsed.data : null;
+}
+
+/**
  * An answer from our own table when we have asked the same question recently,
  * and otherwise the paid call, kept for next time.
  *
@@ -53,19 +72,21 @@ export async function suggestionsFor(
   ask: () => Promise<readonly PlaceSuggestion[]>,
   now: Date,
 ): Promise<readonly PlaceSuggestion[]> {
-  const cached = await db.placeSearchCache.findUnique({
-    where: { query_biasKey_size: key },
-    select: { suggestions: true, expiresAt: true },
-  });
-
-  if (cached !== null && cached.expiresAt > now) {
-    const parsed = cachedSuggestionsSchema.safeParse(cached.suggestions);
-    if (parsed.success) {
-      return parsed.data;
-    }
+  const cached = await cachedSuggestions(key, now);
+  if (cached !== null) {
+    return cached;
   }
-
   const suggestions = await ask();
+  await keepSuggestions(key, suggestions, now);
+  return suggestions;
+}
+
+/** An answer kept in our own table for the next time the same question is asked. */
+export async function keepSuggestions(
+  key: SuggestionCacheKey,
+  suggestions: readonly PlaceSuggestion[],
+  now: Date,
+): Promise<void> {
   // Copied into plain objects because Prisma's Json input will not take an
   // interface, which has no index signature.
   const stored = suggestions.map((suggestion) => ({
@@ -81,6 +102,4 @@ export async function suggestionsFor(
     create: { ...key, suggestions: stored, expiresAt },
     update: { suggestions: stored, expiresAt, fetchedAt: now },
   });
-
-  return suggestions;
 }

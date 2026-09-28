@@ -31,8 +31,11 @@ import {
 import { QUICK_SEARCHES, QuickSearches } from "./quick-searches";
 import "./place-search.css";
 
-/** Long enough that typing does not spend money on every letter. */
-const DEBOUNCE_MS = 250;
+/**
+ * Long enough that typing does not spend money on every letter, and short
+ * enough that a pause is answered before it feels like waiting.
+ */
+const DEBOUNCE_MS = 150;
 
 const MINIMUM_LETTERS = 2;
 
@@ -337,6 +340,16 @@ export function PlaceSearch({
    * here so that going back to a kind already looked at is instant.
    */
   const [kindAnswers, setKindAnswers] = useState<Readonly<Record<string, KindAnswer>>>({});
+  /**
+   * What each search typed here came to, by the words and where they were
+   * asked near, kept for as long as the bar is here so that backspacing to
+   * words already searched, or typing them again, is answered at once rather
+   * than asked again. Only answers are kept: a refusal is asked again, since
+   * it may not be one the next time.
+   */
+  const [typedAnswers, setTypedAnswers] = useState<Readonly<Record<string, readonly Suggestion[]>>>(
+    {},
+  );
 
   const fieldId = useId();
   const listId = `${fieldId}-list`;
@@ -389,11 +402,25 @@ export function PlaceSearch({
   const typed = showing !== null && trimmed === showing.trim() ? "" : trimmed;
   const holding = typed === "" && trimmed !== "";
   const searched = typed.length >= MINIMUM_LETTERS;
+  /** What a search is remembered by: the words, and the point they were asked near. */
+  const typedKey =
+    near === null
+      ? typed
+      : `${typed}@${near.lat.toFixed(BIAS_DECIMALS)},${near.lng.toFixed(BIAS_DECIMALS)}`;
+  /** The answer these words had the last time they were typed here, if they have been. */
+  const recalled = searched ? typedAnswers[typedKey] : undefined;
+  const isRecalled = recalled !== undefined;
   /** Derived, so nothing has to remember to turn it off. */
-  const searching = searched && answered !== typed;
+  const searching = searched && answered !== typed && !isRecalled;
 
   useEffect(() => {
     if (typed.length < MINIMUM_LETTERS) {
+      return;
+    }
+    if (isRecalled) {
+      // Answered already, and shown from what came back then. An answer still
+      // on its way for other words is no longer the one wanted.
+      newest.current += 1;
       return;
     }
 
@@ -427,7 +454,9 @@ export function PlaceSearch({
           return;
         }
         const parsed = safeParse(searchResponseSchema, body);
-        setSuggestions(parsed.success ? parsed.data.suggestions : []);
+        const answer = parsed.success ? parsed.data.suggestions : [];
+        setSuggestions(answer);
+        setTypedAnswers((known) => ({ ...known, [typedKey]: answer }));
         setActive(0);
         setSearchMessage(null);
       };
@@ -438,7 +467,7 @@ export function PlaceSearch({
     return () => {
       clearTimeout(timer);
     };
-  }, [typed, near]);
+  }, [typed, near, typedKey, isRecalled]);
 
   /**
    * The kind of place the empty field offers, turned over while it is empty.
@@ -723,7 +752,7 @@ export function PlaceSearch({
    */
   const kindAnswer = kindKey === null ? undefined : kindAnswers[kindKey];
   const ofKind = kindAnswer !== undefined && "places" in kindAnswer ? kindAnswer.places : [];
-  const visible = searched ? suggestions : picked !== null ? ofKind : recommended;
+  const visible = searched ? (recalled ?? suggestions) : picked !== null ? ofKind : recommended;
 
   /** The quick search being shown, with its words, while nothing is typed. */
   const shownKind = searched ? null : (QUICK_SEARCHES.find((one) => one.kind === picked) ?? null);
@@ -803,7 +832,8 @@ export function PlaceSearch({
     if (!searched) {
       return askingCity ? `Looking for places in ${cityLabel}.` : null;
     }
-    if (searchMessage !== null) {
+    // A refusal was about other words than these, which are answered already.
+    if (searchMessage !== null && !isRecalled) {
       return searchMessage;
     }
     if (visible.length > 0) {
