@@ -1,4 +1,4 @@
-import type { DayId, IsoDate } from "@/core/model/day";
+import type { DayCity, DayId, IsoDate } from "@/core/model/day";
 import type { TravelMode } from "@/core/model/leg";
 import type { LatLng, Place } from "@/core/model/place";
 import type { Trip } from "@/core/model/trip";
@@ -16,6 +16,8 @@ export interface NewTrip {
   readonly centre: LatLng | null;
   /** What that city is called, for saying rather than pointing. */
   readonly cityName: string | null;
+  /** The provider's identifier for that city, so a day in it can be told apart. */
+  readonly cityPlaceId: string | null;
   readonly editKeyHash: EditKeyHash;
 }
 
@@ -83,6 +85,21 @@ export interface DayStartUpdate {
 }
 
 export type DayStartSet =
+  | { readonly status: "set" }
+  | { readonly status: "refused" };
+
+/**
+ * Days moved to another city. Which days is decided above storage, from the
+ * trip as it was read, so this writes exactly the days it is given.
+ */
+export interface DayCityUpdate {
+  readonly slug: string;
+  readonly editKeyHash: EditKeyHash;
+  readonly dayIds: readonly DayId[];
+  readonly city: DayCity;
+}
+
+export type DayCitySet =
   | { readonly status: "set" }
   | { readonly status: "refused" };
 
@@ -175,7 +192,9 @@ export interface TripRepository {
 
   /**
    * Renames a trip, moves its dates, and adds or removes days from the end.
-   * Removing a day removes the stops on it.
+   * Removing a day removes the stops on it. A day added is in the city the
+   * last day was in, since a trip made longer is most often a stay made
+   * longer.
    */
   updateSettings(update: TripSettingsUpdate): Promise<SettingsUpdated>;
 
@@ -207,6 +226,9 @@ export interface TripRepository {
    * is the one clock the day's own start point can be set to.
    */
   setDayStart(update: DayStartUpdate): Promise<DayStartSet>;
+
+  /** Moves days to another city. Nothing on them moves with them. */
+  setDayCity(update: DayCityUpdate): Promise<DayCitySet>;
 
   /** Changes how one leg of a day is travelled. */
   setLegMode(update: LegModeUpdate): Promise<LegModeSet>;

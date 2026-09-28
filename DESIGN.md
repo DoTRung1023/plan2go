@@ -472,6 +472,24 @@ opened and never before, because it is the dearest question the place provider a
 and it is shown whole once its words and pictures are all here rather than as they
 arrive. Every picture and rating in it is credited to where it came from.
 
+A trip can move between cities, so every day is in one: its own once it has been moved,
+and the city the trip was opened in until then. The search field says which, first
+thing in it: a 32px pill of `terracotta-800`, the dark the chosen day is drawn in since
+this is that day's city, with a pin, the city's name at the small step in `paper` and a
+chevron, 8px in from the field's edge so its curve runs inside the field's. The words
+in the field name the city too, "Search places in Hanoi", and the empty field offers
+what that city is known for. Pressed, the pill opens a panel under the field from its
+left edge, 300px wide, at the `panel` radius under `shadow-md`: a field of its own for
+typing a city, and under it the cities the trip already goes to, each on a row with a
+pin on a disc of `paper-sunken`, the name, and under it the days spent there, "Days 1 to
+3 and 6". The city the day is in comes first, its pin in `terracotta-700` and a tick at
+the end of its row. Typing a city lists the cities that match, nearest the day's city
+first. Choosing one moves the day there, and with it the days straight after it that
+were in the same city, up to the first that was somewhere else; the days before it
+never move, and nothing on a moved day moves with it. A day added to the end of the
+trip is in the city the last day was in. An empty day opens the map on its city, so
+the next city of the trip is where the map goes when its first day is chosen.
+
 ## The map
 
 A line is drawn between each pair of points in travel order, under the markers. The

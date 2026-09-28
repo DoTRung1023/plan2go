@@ -1,5 +1,5 @@
 import type { TravelMode } from "./leg";
-import type { Place } from "./place";
+import type { LatLng, Place } from "./place";
 import type { Stop } from "./stop";
 
 export type DayId = string;
@@ -17,6 +17,21 @@ export interface DayEndpoint {
   readonly label: string | null;
 }
 
+/**
+ * The city a day is spent in. A trip can move, a few days in one city and the
+ * rest in the next, so the map opens on this for an empty day and a search
+ * looks here first, rather than both reading one city off the whole trip.
+ */
+export interface DayCity {
+  /**
+   * The provider's identifier, which is what tells two cities apart. Null for
+   * a trip opened before it was kept, whose city is known only by its name.
+   */
+  readonly providerPlaceId: string | null;
+  readonly name: string;
+  readonly position: LatLng;
+}
+
 export interface DayPlan {
   readonly id: DayId;
   readonly date: IsoDate;
@@ -32,4 +47,9 @@ export interface DayPlan {
   readonly stops: readonly Stop[];
   /** The mode used to travel from the last stop to the end point. */
   readonly endTravelMode: TravelMode;
+  /**
+   * The city the day is in: its own if it was moved to one, otherwise the
+   * city the trip was opened in. Null only on a trip with no city at all.
+   */
+  readonly city: DayCity | null;
 }

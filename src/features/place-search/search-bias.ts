@@ -15,22 +15,23 @@ function pointsOf(day: DayPlan): readonly LatLng[] {
  *
  * "Central Market" is the name of a place in a dozen cities, and a search with
  * nothing to go on comes back with whichever one the provider likes best. The
- * day being planned is the best hint there is, and the rest of the trip is the
- * next best, so a day with nothing on it yet still searches in the right city.
+ * day being planned is the best hint there is, and the city it is in the next
+ * best, so a day with nothing on it yet still searches in the right city: its
+ * own, which on a trip that moves is not the city the days around it are in.
  *
- * With nothing anywhere on the trip it falls back to the city the trip is in,
- * and is null only for a trip opened before anyone was asked for one.
+ * Only a trip with no city at all borrows from the rest of the trip, and it is
+ * null only when there is nothing anywhere to go on.
  */
-export function searchBias(
-  days: readonly DayPlan[],
-  selectedIndex: number,
-  centre: LatLng | null = null,
-): LatLng | null {
+export function searchBias(days: readonly DayPlan[], selectedIndex: number): LatLng | null {
   const chosen = days[selectedIndex];
   const onTheDay = chosen === undefined ? [] : pointsOf(chosen);
   const first = onTheDay[0];
   if (first !== undefined) {
     return first;
+  }
+  const city = chosen?.city ?? null;
+  if (city !== null) {
+    return city.position;
   }
 
   for (const day of days) {
@@ -40,5 +41,5 @@ export function searchBias(
     }
   }
 
-  return centre;
+  return null;
 }

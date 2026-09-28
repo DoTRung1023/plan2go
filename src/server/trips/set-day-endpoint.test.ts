@@ -8,6 +8,7 @@ import type { PlacesProvider } from "@/core/ports/places-provider";
 import type { TravelProvider } from "@/core/ports/travel-provider";
 import type {
   CreatedTrip,
+  DayCitySet,
   DayEndpointSet,
   DayEndpointUpdate,
   DayStartSet,
@@ -52,6 +53,7 @@ function day(id: string, overrides: Partial<DayPlan> = {}): DayPlan {
     startAtMinutes: 9 * 60,
     stops: [],
     endTravelMode: "walk",
+    city: null,
     ...overrides,
   };
 }
@@ -98,6 +100,7 @@ function repositoryFor(
       updateSettings: () => Promise.reject<SettingsUpdated>(new Error(NOT_STUBBED)),
       delete: () => Promise.reject<TripDeleted>(new Error(NOT_STUBBED)),
       addStop: () => Promise.reject<StopAdded>(new Error(NOT_STUBBED)),
+      setDayCity: () => Promise.reject<DayCitySet>(new Error(NOT_STUBBED)),
       setLegMode: (update) => {
         modes.push(update);
         return Promise.resolve<LegModeSet>({ status: "set" });

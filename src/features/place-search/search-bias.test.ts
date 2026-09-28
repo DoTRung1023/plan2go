@@ -44,6 +44,7 @@ function day(overrides: Partial<DayPlan> = {}): DayPlan {
     startAtMinutes: 9 * 60,
     stops: [],
     endTravelMode: "walk",
+    city: null,
     ...overrides,
   };
 }
@@ -59,7 +60,16 @@ describe("searchBias", () => {
     expect(searchBias(days, 0)).toEqual(ADELAIDE);
   });
 
-  it("falls back to the rest of the trip when the chosen day is empty", () => {
+  it("looks in the day's own city when the day is empty", () => {
+    const hobart: LatLng = { lat: -42.8821, lng: 147.3272 };
+    const days = [
+      day({ stops: [stop("Market", MELBOURNE)] }),
+      day({ id: "day-2", city: { providerPlaceId: "g-hobart", name: "Hobart", position: hobart } }),
+    ];
+    expect(searchBias(days, 1)).toEqual(hobart);
+  });
+
+  it("falls back to the rest of the trip when the chosen day is empty and has no city", () => {
     const days = [day({ stops: [stop("Market", MELBOURNE)] }), day({ id: "day-2" })];
     expect(searchBias(days, 1)).toEqual(MELBOURNE);
   });

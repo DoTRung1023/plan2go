@@ -43,6 +43,7 @@ function day(overrides: Partial<DayPlan> = {}): DayPlan {
     startAtMinutes: 9 * 60,
     stops: [],
     endTravelMode: "walk",
+    city: null,
     ...overrides,
   };
 }

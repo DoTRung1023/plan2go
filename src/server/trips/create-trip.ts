@@ -17,6 +17,8 @@ export interface NewTripRequest {
   readonly centre: LatLng | null;
   /** What that city is called, so the product can name it rather than point. */
   readonly cityName: string | null;
+  /** The provider's identifier for that city. */
+  readonly cityPlaceId: string | null;
 }
 
 export interface CreatedTripResult {
@@ -46,6 +48,7 @@ export async function createTrip(
     dayCount: request.dayCount,
     centre: request.centre,
     cityName: request.cityName,
+    cityPlaceId: request.cityPlaceId,
     startAtMinutes: DEFAULT_START_AT_MINUTES,
     editKeyHash: hashEditKey(editKey),
   });

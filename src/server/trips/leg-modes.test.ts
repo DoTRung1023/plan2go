@@ -32,6 +32,7 @@ function day(stops: readonly Stop[], over: Partial<DayPlan> = {}): DayPlan {
     startAtMinutes: 540,
     stops,
     endTravelMode: "walk",
+    city: null,
     ...over,
   };
 }

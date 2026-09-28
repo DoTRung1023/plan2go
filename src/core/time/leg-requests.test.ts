@@ -43,6 +43,7 @@ function day(
     startAtMinutes: 9 * 60,
     stops,
     endTravelMode,
+    city: null,
     ...overrides,
   };
 }

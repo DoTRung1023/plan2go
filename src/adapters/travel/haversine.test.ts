@@ -167,6 +167,7 @@ describe("computeDay driven by the haversine provider", () => {
         },
       ],
       endTravelMode: "transit",
+      city: null,
     };
 
     const legs = await resolveLegs(provider, plan);

@@ -133,7 +133,11 @@ interface TripMapProps {
   readonly stops: readonly Stop[];
   /** The mode used to travel from the last stop out to where the day ends. */
   readonly endTravelMode: TravelMode;
-  /** The city the trip is in. Where an empty day opens. */
+  /**
+   * The city the day being shown is in. Where an empty day opens, so a day
+   * in the next city of the trip opens there rather than where the last day
+   * left the map.
+   */
   readonly centre: LatLng | null;
   /**
    * The shape of each leg, in travel order, from whoever resolved them. A leg
@@ -411,9 +415,10 @@ export function TripMap({
   const overlays = useRef<google.maps.OverlayView[]>([]);
   const lines = useRef<google.maps.Polyline[]>([]);
   /**
-   * Read once, when the map is built. A trip does not move, so this never has
-   * to change, and holding it here keeps rebuilding the map out of the list of
-   * things that can happen when the page re-renders.
+   * Read once, when the map is built, as the view to build it at. The day's
+   * own framing moves it from there, including to another city, so this
+   * never has to change, and holding it here keeps rebuilding the map out of
+   * the list of things that can happen when the page re-renders.
    */
   const openingView = useRef(centre);
   const [state, setState] = useState<MapState>({ status: "loading" });
@@ -685,7 +690,7 @@ export function TripMap({
     const points = dayPoints(start, end, stops);
     const only = points[0];
     if (only === undefined) {
-      // Nothing on this day, so it shows the city the trip is in rather than
+      // Nothing on this day, so it shows the city the day is in rather than
       // whatever the day before it happened to leave on screen.
       if (centre !== null) {
         map.setCenter(centredBeside(centre, seen, CITY_ZOOM));

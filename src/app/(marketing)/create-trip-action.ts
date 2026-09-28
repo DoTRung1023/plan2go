@@ -77,6 +77,7 @@ export async function createTripAction(
       timeZone: zone ?? openingTimeZone(asked),
       centre: city.position,
       cityName: city.name,
+      cityPlaceId: city.providerPlaceId ?? cityPlaceId,
     };
   };
 

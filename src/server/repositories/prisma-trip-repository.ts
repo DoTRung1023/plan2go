@@ -6,7 +6,7 @@ import type {
   TravelMode as DbTravelMode,
 } from "@prisma/client";
 import { Prisma as PrismaNamespace } from "@prisma/client";
-import type { DayEndpoint, DayPlan } from "@/core/model/day";
+import type { DayCity, DayEndpoint, DayPlan } from "@/core/model/day";
 import type { TravelMode } from "@/core/model/leg";
 import type { Place } from "@/core/model/place";
 import type { Stop } from "@/core/model/stop";
@@ -17,6 +17,8 @@ import { openingHoursToJson, parseOpeningHours } from "../places/opening-hours";
 import { createTripSlug } from "../trips/slug";
 import type {
   CreatedTrip,
+  DayCitySet,
+  DayCityUpdate,
   DayEndpointSet,
   DayEndpointUpdate,
   DayStartSet,
@@ -138,8 +140,29 @@ function toEndpoint(place: PlaceRow | null, label: string | null): DayEndpoint |
   return { place: toPlace(place), label };
 }
 
+/**
+ * The city a day has been moved to, or the trip's own when it has not. The
+ * four columns are written together, so a day missing any of them was never
+ * moved rather than half moved.
+ */
+function cityOf(row: DayRow, tripCity: DayCity | null): DayCity | null {
+  if (row.cityName === null || row.cityLat === null || row.cityLng === null) {
+    return tripCity;
+  }
+  return {
+    providerPlaceId: row.cityPlaceId,
+    name: row.cityName,
+    position: { lat: row.cityLat, lng: row.cityLng },
+  };
+}
+
 /** The date is the trip's first day plus this day's position, never a column. */
-function toDay(row: DayRow, timeZone: string, startDate: string): DayPlan {
+function toDay(
+  row: DayRow,
+  timeZone: string,
+  startDate: string,
+  tripCity: DayCity | null,
+): DayPlan {
   return {
     id: row.id,
     date: addDays(startDate, row.position),
@@ -150,10 +173,19 @@ function toDay(row: DayRow, timeZone: string, startDate: string): DayPlan {
     startAtMinutes: row.startAtMinutes,
     stops: row.stops.map(toStop),
     endTravelMode: TRAVEL_MODE_FROM_DB[row.endTravelMode],
+    city: cityOf(row, tripCity),
   };
 }
 
 function toTrip(row: TripRow): Trip {
+  const tripCity: DayCity | null =
+    row.cityName === null || row.centreLat === null || row.centreLng === null
+      ? null
+      : {
+          providerPlaceId: row.cityPlaceId,
+          name: row.cityName,
+          position: { lat: row.centreLat, lng: row.centreLng },
+        };
   return {
     id: row.id,
     slug: row.slug,
@@ -165,7 +197,7 @@ function toTrip(row: TripRow): Trip {
         ? null
         : { lat: row.centreLat, lng: row.centreLng },
     cityName: row.cityName,
-    days: row.days.map((day) => toDay(day, row.timeZone, row.startDate)),
+    days: row.days.map((day) => toDay(day, row.timeZone, row.startDate, tripCity)),
   };
 }
 
@@ -186,6 +218,7 @@ async function insert(trip: NewTrip, slug: string): Promise<CreatedTrip> {
       centreLat: trip.centre?.lat ?? null,
       centreLng: trip.centre?.lng ?? null,
       cityName: trip.cityName,
+      cityPlaceId: trip.cityPlaceId,
       editKeyHash: trip.editKeyHash,
       days: {
         create: Array.from({ length: trip.dayCount }, (_unused, index) => ({
@@ -300,6 +333,25 @@ export const prismaTripRepository: TripRepository = {
       data: { startAtMinutes: update.startAtMinutes },
     });
     return { status: "set" };
+  },
+
+  async setDayCity(update: DayCityUpdate): Promise<DayCitySet> {
+    // Scoped to the tokens the browser holds, so the write is also the check
+    // that this trip may be changed, and a day id from another trip moves
+    // nothing rather than being taken on trust.
+    const moved = await db.day.updateMany({
+      where: {
+        id: { in: [...update.dayIds] },
+        trip: { slug: update.slug, editKeyHash: update.editKeyHash },
+      },
+      data: {
+        cityPlaceId: update.city.providerPlaceId,
+        cityName: update.city.name,
+        cityLat: update.city.position.lat,
+        cityLng: update.city.position.lng,
+      },
+    });
+    return moved.count === 0 ? { status: "refused" } : { status: "set" };
   },
 
   async setLegMode(update: LegModeUpdate): Promise<LegModeSet> {
@@ -455,7 +507,15 @@ export const prismaTripRepository: TripRepository = {
   async updateSettings(update: TripSettingsUpdate): Promise<SettingsUpdated> {
     const trip = await db.trip.findFirst({
       where: { slug: update.slug, editKeyHash: update.editKeyHash },
-      select: { id: true, _count: { select: { days: true } } },
+      select: {
+        id: true,
+        _count: { select: { days: true } },
+        days: {
+          orderBy: { position: "desc" },
+          take: 1,
+          select: { cityPlaceId: true, cityName: true, cityLat: true, cityLng: true },
+        },
+      },
     });
     if (trip === null) {
       return { status: "refused" };
@@ -464,11 +524,20 @@ export const prismaTripRepository: TripRepository = {
     const had = trip._count.days;
     // Every day's date is the trip's start date plus its position, so moving the
     // trip moves all of them by writing one column. Only a change of length
-    // touches the days themselves, and then only the ones at the end.
+    // touches the days themselves, and then only the ones at the end, which
+    // are in whatever city the last day was: nulls, and so the trip's own
+    // city, when the last day was never moved.
+    const lastCity = trip.days[0] ?? {
+      cityPlaceId: null,
+      cityName: null,
+      cityLat: null,
+      cityLng: null,
+    };
     const added = Array.from({ length: Math.max(0, update.dayCount - had) }, (_unused, index) => ({
       tripId: trip.id,
       position: had + index,
       startAtMinutes: update.startAtMinutes,
+      ...lastCity,
     }));
 
     // One transaction, because a trip whose days half moved is not a trip.

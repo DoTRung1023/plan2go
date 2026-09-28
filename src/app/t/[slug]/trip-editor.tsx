@@ -13,6 +13,7 @@ import { PaneHandle } from "./pane-handle";
 import { PrintedTrip } from "@/features/day-planner/printed-trip";
 import { placesOnTheTrip } from "@/features/place-search/places-on-the-trip";
 import { searchBias } from "@/features/place-search/search-bias";
+import { cityOptions } from "@/features/place-search/city-options";
 import { TripMenu } from "@/features/trip-settings/trip-menu";
 import { TripExport } from "@/features/trip-settings/trip-export";
 import { ShareLinks } from "@/features/trip-settings/share-links";
@@ -29,6 +30,7 @@ import {
   setStopNoteAction,
   setStopStayAction,
 } from "./edit-stop-actions";
+import { setDayCityAction } from "./set-day-city-action";
 import { setDayEndpointAction } from "./set-day-endpoint-action";
 import { setDayStartAction } from "./set-day-start-action";
 import { setLegModeAction } from "./set-leg-mode-action";
@@ -420,7 +422,7 @@ export function TripEditor({
               stops={selected.plan.stops}
               endTravelMode={selected.plan.endTravelMode}
               legPaths={legPaths}
-              centre={centre}
+              centre={selected.plan.city?.position ?? centre}
             />
           )}
           {/* The corner of the map, where a map search belongs. The row itself
@@ -448,10 +450,19 @@ export function TripEditor({
                   near={searchBias(
                     days.map((day) => day.plan),
                     selectedIndex,
-                    centre,
                   )}
-                  city={centre}
-                  cityName={cityName}
+                  dayCity={selected.plan.city}
+                  cities={cityOptions(days.map((day) => day.plan))}
+                  onChangeCity={(providerPlaceId) =>
+                    recording(
+                      setDayCityAction({
+                        slug,
+                        editKey,
+                        dayId: selected.plan.id,
+                        providerPlaceId,
+                      }),
+                    )
+                  }
                   onTheTrip={placesOnTheTrip(days.map((day) => day.plan))}
                   showing={openedPlace?.name ?? null}
                   onChoose={(place) => {

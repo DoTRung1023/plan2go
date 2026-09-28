@@ -34,6 +34,7 @@ function day(overrides: Partial<DayPlan> = {}): DayPlan {
       { id: "stop-2", place: place("Gallery", GALLERY), stayMinutes: 60, travelMode: "drive", note: null },
     ],
     endTravelMode: "walk",
+    city: null,
     ...overrides,
   };
 }

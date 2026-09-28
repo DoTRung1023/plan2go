@@ -4,11 +4,14 @@ import type { KeyboardEvent, RefObject } from "react";
 import { useEffect, useId, useRef, useState } from "react";
 import type { infer as Infer } from "zod/mini";
 import { array, nullable, number, object, optional, safeParse, string } from "zod/mini";
+import type { DayCity } from "@/core/model/day";
 import type { LatLng, Place } from "@/core/model/place";
 import { CheckIcon, CloseIcon, PinIcon, PlusIcon, SearchIcon } from "@/ui/icons";
 import { useScrollBar } from "@/ui/use-scroll-bar";
 import { Notice } from "@/ui/notice";
 import { useOutsidePress } from "@/ui/use-outside-press";
+import type { CityOption } from "./city-options";
+import { CityPicker } from "./city-picker";
 
 /** Long enough that typing does not spend money on every letter. */
 const DEBOUNCE_MS = 250;
@@ -74,17 +77,23 @@ interface PlaceSearchProps {
   /** Where to look first, or null when the trip has nothing on it yet. */
   readonly near: LatLng | null;
   /**
-   * The middle of the city the trip is in, which is what the panel offers
-   * before anything is typed. Deliberately not `near`: that one follows the day
-   * being planned, and a day whose stops are all in one suburb would have the
-   * empty field recommending that suburb rather than the city.
+   * The city the open day is in: what the panel offers before anything is
+   * typed is what it is known for, and the pill at the front of the field
+   * names it. Deliberately not `near`: that one follows the stops on the
+   * day, and a day whose stops are all in one suburb would have the empty
+   * field recommending that suburb rather than the city. Null on a trip
+   * opened before anyone was asked, and the panel then says "this city",
+   * which is true and says less.
    */
-  readonly city: LatLng | null;
+  readonly dayCity: DayCity | null;
+  /** Every city the trip goes to, for the pill to offer before a city is typed. */
+  readonly cities: readonly CityOption[];
   /**
-   * What that city is called. Null on a trip opened before anyone was asked,
-   * and the panel then says "this city", which is true and says less.
+   * The open day moved to another city, and the days after it that were in
+   * the same one. Passed in rather than imported, because a feature may not
+   * reach into the route that owns the mutation.
    */
-  readonly cityName: string | null;
+  readonly onChangeCity: (providerPlaceId: string) => Promise<{ readonly error: string | null }>;
   /**
    * Everywhere the trip already goes, by provider identifier. Recommending a
    * place that is on the trip already wastes the only six lines this panel has
@@ -126,9 +135,11 @@ interface PlaceSearchProps {
  * The field floats over the map, so it carries its own surface and an elevation
  * step. A pill, like every other small control in this product, at the 48px a
  * map search is drawn at, so that over the sheet it sits in it the way one does.
+ * Ringed while the words are being typed in it, and not while the city pill
+ * inside it, or the panel that pill opens, has the focus: those have their own.
  */
 const FIELD =
-  "flex h-[48px] items-center gap-[9px] rounded-pill border border-rule bg-paper-raised px-2 shadow-sm focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-terracotta";
+  "flex h-[48px] items-center gap-[9px] rounded-pill border border-rule bg-paper-raised px-2 shadow-sm has-[>input:focus]:outline-2 has-[>input:focus]:outline-offset-2 has-[>input:focus]:outline-terracotta";
 
 /**
  * The glass at the front of the field and the cross at its end: the same small
@@ -195,8 +206,9 @@ export function PlaceSearch({
   dayName,
   field,
   near,
-  city,
-  cityName,
+  dayCity,
+  cities,
+  onChangeCity,
   onTheTrip,
   showing,
   onChoose,
@@ -230,10 +242,13 @@ export function PlaceSearch({
   /** The last place to land, for a reader who cannot see it appear on the day. */
   const [landed, setLanded] = useState<string | null>(null);
   /**
-   * What the city is known for, for the field nobody has typed in yet. Null
-   * until the city has answered.
+   * What a city is known for, for the field nobody has typed in yet, and
+   * which city it is an answer about. Null until a city has answered.
    */
-  const [popular, setPopular] = useState<readonly Suggestion[] | null>(null);
+  const [popular, setPopular] = useState<{
+    readonly about: string;
+    readonly places: readonly Suggestion[];
+  } | null>(null);
 
   const fieldId = useId();
   const listId = `${fieldId}-list`;
@@ -245,11 +260,12 @@ export function PlaceSearch({
   /** Answers can arrive out of order, so only the newest is allowed to land. */
   const newest = useRef(0);
   /**
-   * The city is asked about once, however often the panel is opened. A ref
-   * rather than state, because the effect that asks may not set state on the
-   * way in, only in the answer.
+   * Which city was last asked about, so each is asked about once however often
+   * the panel is opened, and a day in another city is asked about afresh. A
+   * ref rather than state, because the effect that asks may not set state on
+   * the way in, only in the answer.
    */
-  const askedAboutCity = useRef(false);
+  const askedAboutCity = useRef<string | null>(null);
   /**
    * Adds from rows go one at a time, in the order they were pressed. The way
    * to a new stop is measured from the stop before it, so the server has to
@@ -334,16 +350,33 @@ export function PlaceSearch({
   /**
    * Asked when the panel first opens on an empty field, and not on mounting:
    * the call is metered, and a reader who types straight away should never
-   * cause it. The trip's city cannot change under a mounted field, so once is
-   * genuinely once.
+   * cause it. Once for each city, so a day in the next city of the trip is
+   * asked about the first time its field is opened, and a day back in one
+   * already asked about is answered from what came back then.
    */
+  const cityLat = dayCity?.position.lat ?? null;
+  const cityLng = dayCity?.position.lng ?? null;
+  /** The city as the question is asked about it, which is where it is. */
+  const cityKey =
+    cityLat === null || cityLng === null
+      ? null
+      : `${cityLat.toFixed(BIAS_DECIMALS)},${cityLng.toFixed(BIAS_DECIMALS)}`;
   useEffect(() => {
-    if (!open || searched || city === null || askedAboutCity.current) {
+    if (
+      !open ||
+      searched ||
+      cityLat === null ||
+      cityLng === null ||
+      cityKey === null ||
+      askedAboutCity.current === cityKey
+    ) {
       return;
     }
-    askedAboutCity.current = true;
-    void askAboutCity(city).then(setPopular);
-  }, [open, searched, city]);
+    askedAboutCity.current = cityKey;
+    void askAboutCity({ lat: cityLat, lng: cityLng }).then((places) => {
+      setPopular({ about: cityKey, places });
+    });
+  }, [open, searched, cityLat, cityLng, cityKey]);
 
   useOutsidePress(container, open, () => {
     setOpen(false);
@@ -475,7 +508,8 @@ export function PlaceSearch({
    * part of that question. It also means a place recommended a moment ago
    * leaves the list the instant it lands on a day, without asking again.
    */
-  const recommended = (popular ?? [])
+  const aboutThisCity = popular !== null && popular.about === cityKey ? popular.places : null;
+  const recommended = (aboutThisCity ?? [])
     .filter((one) => !onTheTrip.has(one.providerPlaceId))
     .slice(0, RECOMMENDED_SHOWN);
 
@@ -495,7 +529,7 @@ export function PlaceSearch({
    * somewhere the reader has never been it is the line that says what the list
    * underneath actually is.
    */
-  const cityLabel = cityName ?? "this city";
+  const cityLabel = dayCity?.name ?? "this city";
   const popularIn = `Popular in ${cityLabel}`;
 
   /**
@@ -503,7 +537,7 @@ export function PlaceSearch({
    * which is the moment the effect above asks, so unanswered is the same as
    * being asked about. Derived, like `searching`.
    */
-  const askingCity = city !== null && popular === null;
+  const askingCity = cityKey !== null && aboutThisCity === null;
 
   /**
    * Clamped, because the list under the field is swapped for a shorter one the
@@ -594,6 +628,19 @@ export function PlaceSearch({
         <label className="sr-only" htmlFor={fieldId}>
           Search for a place
         </label>
+        {/* Which city the search is in comes first, since a place is
+            looked for in it. Keyed by the day, so a city chosen for one day
+            and still on its way is not shown on the next. */}
+        <CityPicker
+          key={dayId}
+          city={dayCity}
+          cities={cities}
+          dayName={dayName}
+          onOpen={() => {
+            setOpen(false);
+          }}
+          onChoose={onChangeCity}
+        />
         <button type="button" onClick={search} title="Search" aria-label="Search" className={FIELD_BUTTON}>
           <SearchIcon size={18} strokeWidth={2.75} />
         </button>
@@ -603,7 +650,7 @@ export function PlaceSearch({
           type="text"
           role="combobox"
           autoComplete="off"
-          placeholder="Search for a place"
+          placeholder={dayCity === null ? "Search for a place" : `Search places in ${dayCity.name}`}
           aria-expanded={listed}
           aria-controls={listId}
           aria-autocomplete="list"
