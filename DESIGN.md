@@ -35,6 +35,13 @@ colors:
     600: "#82796A"
     700: "#645C50"
     900: "#2E2B25"
+  city:
+    1: "#C67139"
+    2: "#6F7F53"
+    3: "#D9A441"
+    4: "#8C491A"
+    5: "#4D5936"
+    6: "#B5654A"
 typography:
   headline:
     fontFamily: Baloo 2
@@ -188,6 +195,12 @@ paper and ink.
   for the ends of a day, 700 draws the public transport route line.
 - **neutral:** the warm greys behind everything, used for the drive tint and the map's
   own geometry.
+- **city:** six colours, one for each city a trip goes to, handed out in the order the
+  trip reaches them and round again for a seventh: terracotta, sage, ochre, deep clay,
+  deep sage and rose clay. They mark which days share a city and nothing else. A city
+  keeps its colour for as long as any day is in it, so a dot never changes under the
+  reader because another day moved, and a city no day is in gives its colour back for
+  the next new one. Which city holds which is kept on the trip.
 
 Every ramp is generated in OKLCH on one shared lightness scale, so the same step of any
 ramp carries the same visual weight. Only the steps the product spends are declared, so
@@ -204,6 +217,8 @@ No dark theme. The ground is warm paper, and paper does not invert. Do not add a
 
 No status hues. There is no red, no amber, no green. A conflict is carried by the
 terracotta block plus the sentence naming it, with the real numbers in the sentence.
+The city colours are not statuses: ochre on a dot says which city, never that anything
+is wrong.
 
 Contrast floor: `ink` on `paper` is the body pairing. The accent to ground pair is
 tuned to 3:1, which is enough for icons, large type and interface chrome and not enough
@@ -288,6 +303,12 @@ the widest date needs, 82px, so the row reads as days rather than words, and the
 four apart. The chosen day is on a pill of `terracotta-800`, one for the whole strip
 that slides along under the days to whichever is chosen, with its date in `paper` and
 its number at 85 percent of it; the rest are in `ink-muted`, and today in sage as before.
+In front of the number, four off, a 7px dot in the colour of the day's city, so days
+with the same dot are in the same city; the pill in the search is the key to them, and
+the strip names no city. On the chosen day's dark pill the dot keeps its own colour
+inside a 1.5px ring of `paper`, the one rule for a dot on anything dark, since lighter
+tints of sage and deep sage come out the same. A day with no city has no dot and keeps
+no gap for one. The city's name is the tab's title and is read out with its date.
 Under the pointer a day that is not chosen takes `paper-sunken`, the step every control
 on paper takes, with its words in `ink`, and today goes from sage 100 to 200. After the
 last tab, eight off, the button that adds a day: a 32px dashed ring in `rule-strong`
@@ -475,16 +496,18 @@ arrive. Every picture and rating in it is credited to where it came from.
 A trip can move between cities, so every day is in one: its own once it has been moved,
 and the city the trip was opened in until then. The search field says which, first
 thing in it: a 32px pill of `terracotta-800`, the dark the chosen day is drawn in since
-this is that day's city, with a pin, the city's name at the small step in `paper` and a
+this is that day's city, with a 9px dot of the city's colour ringed in `paper` as on the
+chosen day, the city's name at the small step in `paper` and a
 chevron, 8px in from the field's edge so its curve runs inside the field's. The words
 in the field name the city too, "Search places in Hanoi", and the empty field offers
 what that city is known for. Pressed, the pill opens a panel under the field from its
 left edge, 300px wide, at the `panel` radius under `shadow-md`: a field of its own for
 typing a city, and under it the cities the trip already goes to, each on a row with a
-pin on a disc of `paper-sunken`, the name, and under it the days spent there, "Days 1 to
+dot of its colour on a disc of `paper-sunken`, the name, and under it the days spent there, "Days 1 to
 3 and 6". The city the day is in comes first, its pin in `terracotta-700` and a tick at
 the end of its row. Typing a city lists the cities that match, nearest the day's city
-first. Choosing one moves the day there, and with it the days straight after it that
+first, each the trip already goes to with its dot and any other with a plain pin, since
+a city has no colour until a day is in it. Choosing one moves the day there, and with it the days straight after it that
 were in the same city, up to the first that was somewhere else; the days before it
 never move, and nothing on a moved day moves with it. A day added to the end of the
 trip is in the city the last day was in. An empty day opens the map on its city, so
@@ -539,7 +562,9 @@ and it is the product's own.
 ## Motion
 
 Four things animate: reordering a stop, the trip's actions unfolding, a place's sheet
-arriving and leaving, and the chosen day's pill moving along the strip.
+arriving and leaving, and the chosen day's pill moving along the strip. A city's dot
+also turns to the next city's colour over 200ms `ease-out` when what it marks changes
+city, with the name beside it, so the pill in the search does not flash as days change.
 
 Reordering: `transform` over 160ms `ease-out` on the card being moved and on the cards
 displacing around it. Nothing else, no opacity, no scale.
@@ -570,8 +595,8 @@ no other transition on hover. Those changes are instant.
 Focus is a 2px `terracotta` ring at 2px offset, visible immediately, on every
 interactive element.
 
-Under `prefers-reduced-motion: reduce`, reordering, the sheet and the day's pill are
-instant too.
+Under `prefers-reduced-motion: reduce`, reordering, the sheet, the day's pill and a
+city's dot are instant too.
 
 ## Print
 

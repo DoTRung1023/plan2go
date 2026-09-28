@@ -6,6 +6,9 @@ import type {
   TravelMode as DbTravelMode,
 } from "@prisma/client";
 import { Prisma as PrismaNamespace } from "@prisma/client";
+import { z } from "zod";
+import type { CityColors } from "@/core/model/city-colors";
+import { cityKey, settleCityColors } from "@/core/model/city-colors";
 import type { DayCity, DayEndpoint, DayPlan } from "@/core/model/day";
 import type { TravelMode } from "@/core/model/leg";
 import type { Place } from "@/core/model/place";
@@ -140,12 +143,23 @@ function toEndpoint(place: PlaceRow | null, label: string | null): DayEndpoint |
   return { place: toPlace(place), label };
 }
 
+/** A city and where it is, before the trip has said which colour it holds. */
+type LocatedCity = Omit<DayCity, "color">;
+
+/** The colours as stored. Parsed on the way out, never trusted. */
+const storedColorsSchema = z.record(z.string(), z.number().int());
+
+function storedColors(value: unknown): CityColors {
+  const parsed = storedColorsSchema.safeParse(value);
+  return parsed.success ? parsed.data : {};
+}
+
 /**
  * The city a day has been moved to, or the trip's own when it has not. The
  * four columns are written together, so a day missing any of them was never
  * moved rather than half moved.
  */
-function cityOf(row: DayRow, tripCity: DayCity | null): DayCity | null {
+function cityOf(row: DayRow, tripCity: LocatedCity | null): LocatedCity | null {
   if (row.cityName === null || row.cityLat === null || row.cityLng === null) {
     return tripCity;
   }
@@ -157,12 +171,7 @@ function cityOf(row: DayRow, tripCity: DayCity | null): DayCity | null {
 }
 
 /** The date is the trip's first day plus this day's position, never a column. */
-function toDay(
-  row: DayRow,
-  timeZone: string,
-  startDate: string,
-  tripCity: DayCity | null,
-): DayPlan {
+function toDay(row: DayRow, timeZone: string, startDate: string, city: DayCity | null): DayPlan {
   return {
     id: row.id,
     date: addDays(startDate, row.position),
@@ -173,12 +182,26 @@ function toDay(
     startAtMinutes: row.startAtMinutes,
     stops: row.stops.map(toStop),
     endTravelMode: TRAVEL_MODE_FROM_DB[row.endTravelMode],
-    city: cityOf(row, tripCity),
+    city,
   };
 }
 
+/**
+ * Every day's city with the colour it holds. Settled against the cities the
+ * days are in as they are read, so a city nobody is in any more shows no
+ * colour, and a city kept from before colours were shows the one it will be
+ * given the next time the trip's cities are written.
+ */
+function withColors(row: TripRow, tripCity: LocatedCity | null): (DayCity | null)[] {
+  const located = row.days.map((day) => cityOf(day, tripCity));
+  const colors = settleCityColors(storedColors(row.cityColors), located);
+  return located.map((city) =>
+    city === null ? null : { ...city, color: colors[cityKey(city)] ?? 0 },
+  );
+}
+
 function toTrip(row: TripRow): Trip {
-  const tripCity: DayCity | null =
+  const tripCity: LocatedCity | null =
     row.cityName === null || row.centreLat === null || row.centreLng === null
       ? null
       : {
@@ -186,6 +209,7 @@ function toTrip(row: TripRow): Trip {
           name: row.cityName,
           position: { lat: row.centreLat, lng: row.centreLng },
         };
+  const cities = withColors(row, tripCity);
   return {
     id: row.id,
     slug: row.slug,
@@ -197,7 +221,9 @@ function toTrip(row: TripRow): Trip {
         ? null
         : { lat: row.centreLat, lng: row.centreLng },
     cityName: row.cityName,
-    days: row.days.map((day) => toDay(day, row.timeZone, row.startDate, tripCity)),
+    days: row.days.map((day, index) =>
+      toDay(day, row.timeZone, row.startDate, cities[index] ?? null),
+    ),
   };
 }
 
@@ -219,6 +245,11 @@ async function insert(trip: NewTrip, slug: string): Promise<CreatedTrip> {
       centreLng: trip.centre?.lng ?? null,
       cityName: trip.cityName,
       cityPlaceId: trip.cityPlaceId,
+      // The city the trip opens in is its first, so it holds the first colour.
+      cityColors:
+        trip.cityName === null
+          ? PrismaNamespace.DbNull
+          : { [cityKey({ providerPlaceId: trip.cityPlaceId, name: trip.cityName })]: 0 },
       editKeyHash: trip.editKeyHash,
       days: {
         create: Array.from({ length: trip.dayCount }, (_unused, index) => ({
@@ -339,18 +370,21 @@ export const prismaTripRepository: TripRepository = {
     // Scoped to the tokens the browser holds, so the write is also the check
     // that this trip may be changed, and a day id from another trip moves
     // nothing rather than being taken on trust.
-    const moved = await db.day.updateMany({
-      where: {
-        id: { in: [...update.dayIds] },
-        trip: { slug: update.slug, editKeyHash: update.editKeyHash },
-      },
-      data: {
-        cityPlaceId: update.city.providerPlaceId,
-        cityName: update.city.name,
-        cityLat: update.city.position.lat,
-        cityLng: update.city.position.lng,
-      },
-    });
+    // One transaction, because a day in a city that holds no colour, or a
+    // colour held for a city nobody is in, is a trip half written.
+    const trip = { slug: update.slug, editKeyHash: update.editKeyHash };
+    const [moved] = await db.$transaction([
+      db.day.updateMany({
+        where: { id: { in: [...update.dayIds] }, trip },
+        data: {
+          cityPlaceId: update.city.providerPlaceId,
+          cityName: update.city.name,
+          cityLat: update.city.position.lat,
+          cityLng: update.city.position.lng,
+        },
+      }),
+      db.trip.updateMany({ where: trip, data: { cityColors: { ...update.colors } } }),
+    ]);
     return moved.count === 0 ? { status: "refused" } : { status: "set" };
   },
 

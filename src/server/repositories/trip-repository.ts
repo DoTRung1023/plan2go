@@ -1,3 +1,4 @@
+import type { CityColors } from "@/core/model/city-colors";
 import type { DayCity, DayId, IsoDate } from "@/core/model/day";
 import type { TravelMode } from "@/core/model/leg";
 import type { LatLng, Place } from "@/core/model/place";
@@ -96,7 +97,10 @@ export interface DayCityUpdate {
   readonly slug: string;
   readonly editKeyHash: EditKeyHash;
   readonly dayIds: readonly DayId[];
-  readonly city: DayCity;
+  /** Where the city is. Its colour is in `colors`, with every other city's. */
+  readonly city: Omit<DayCity, "color">;
+  /** The colours as they stand once the days have moved, written with them. */
+  readonly colors: CityColors;
 }
 
 export type DayCitySet =

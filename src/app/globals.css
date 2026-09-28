@@ -47,6 +47,20 @@
   --color-sage-900: #272e1b;
 
   /*
+   * The cities of a trip, in the order the trip reaches them: the dot on
+   * each day in the strip and on the city pill in the search, so days with
+   * the same dot are in the same city. Six, from the same earth as the rest
+   * of the palette, and gone round again for a seventh city. Which city holds
+   * which is kept on the trip; see src/core/model/city-colors.ts.
+   */
+  --color-city-1: #c67139;
+  --color-city-2: #6f7f53;
+  --color-city-3: #d9a441;
+  --color-city-4: #8c491a;
+  --color-city-5: #4d5936;
+  --color-city-6: #b5654a;
+
+  /*
    * The map has no hues of its own any more.
    *
    * It kept three, spread as far apart on the wheel as three colours could be,

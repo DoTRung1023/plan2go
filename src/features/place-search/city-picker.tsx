@@ -13,6 +13,7 @@ import {
   PinIcon,
   SearchIcon,
 } from "@/ui/icons";
+import { CityDot } from "@/ui/city-dot";
 import { Notice } from "@/ui/notice";
 import { useOutsidePress } from "@/ui/use-outside-press";
 import { useScrollBar } from "@/ui/use-scroll-bar";
@@ -46,9 +47,14 @@ interface Found {
   readonly line: string | null;
 }
 
-/** One row of the list, and whether it is the city the day is in. */
+/**
+ * One row of the list, whether it is the city the day is in, and the colour
+ * it holds when the trip already goes there: null for a city new to the trip,
+ * which has no colour until a day is in it.
+ */
 interface Row extends Found {
   readonly current: boolean;
+  readonly color: number | null;
 }
 
 interface CityPickerProps {
@@ -58,6 +64,11 @@ interface CityPickerProps {
   readonly cities: readonly CityOption[];
   /** What the day is called in the tabs, so the sentence says which day moves. */
   readonly dayName: string;
+  /**
+   * The colour a city will have once the day is moved to it, so the pill can
+   * show it the moment the city is chosen rather than when the page catches up.
+   */
+  readonly colorFor: (city: CityIdentity) => number;
   /** The panel is about to open, so whatever else hangs under the field closes. */
   readonly onOpen: () => void;
   /** A city chosen: the day moves there, and so does the run of days after it. */
@@ -84,7 +95,7 @@ interface CityPickerProps {
  * is a flex item of the field and the panel hangs from the field's container,
  * the same as the search's own panel does.
  */
-export function CityPicker({ city, cities, dayName, onOpen, onChoose }: CityPickerProps) {
+export function CityPicker({ city, cities, dayName, colorFor, onOpen, onChoose }: CityPickerProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [found, setFound] = useState<readonly Found[]>([]);
@@ -96,7 +107,7 @@ export function CityPicker({ city, cities, dayName, onOpen, onChoose }: CityPick
   const [saving, setSaving] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   /** A city chosen and written, held on the pill until the day comes back in it. */
-  const [moved, setMoved] = useState<CityIdentity | null>(null);
+  const [moved, setMoved] = useState<(CityIdentity & { readonly color: number }) | null>(null);
 
   const root = useRef<HTMLDivElement | null>(null);
   const pill = useRef<HTMLButtonElement | null>(null);
@@ -113,7 +124,7 @@ export function CityPicker({ city, cities, dayName, onOpen, onChoose }: CityPick
   if (moved !== null && sameCity(city, moved)) {
     setMoved(null);
   }
-  const shown: CityIdentity | null = moved ?? city;
+  const shown: (CityIdentity & { readonly color: number }) | null = moved ?? city;
   /** Rounded, and plain numbers, so a trip redrawn with the same city asks nothing again. */
   const biasLat = city === null ? null : city.position.lat.toFixed(BIAS_DECIMALS);
   const biasLng = city === null ? null : city.position.lng.toFixed(BIAS_DECIMALS);
@@ -207,11 +218,23 @@ export function CityPicker({ city, cities, dayName, onOpen, onChoose }: CityPick
       if (id === null && !current) {
         return [];
       }
-      return [{ providerPlaceId: id ?? "", name: option.city.name, line: option.days, current }];
+      return [
+        {
+          providerPlaceId: id ?? "",
+          name: option.city.name,
+          line: option.days,
+          current,
+          color: option.city.color,
+        },
+      ];
     });
 
   const rows: readonly Row[] = searched
-    ? found.map((one) => ({ ...one, current: sameCity(one, shown) }))
+    ? found.map((one) => ({
+        ...one,
+        current: sameCity(one, shown),
+        color: cities.find((option) => sameCity(option.city, one))?.city.color ?? null,
+      }))
     : onTheTrip;
   const activeIndex = active < rows.length ? active : 0;
 
@@ -229,7 +252,11 @@ export function CityPicker({ city, cities, dayName, onOpen, onChoose }: CityPick
         setError(outcome.error);
         return;
       }
-      setMoved({ providerPlaceId: row.providerPlaceId, name: row.name });
+      setMoved({
+        providerPlaceId: row.providerPlaceId,
+        name: row.name,
+        color: colorFor({ providerPlaceId: row.providerPlaceId, name: row.name }),
+      });
       close();
       pill.current?.focus();
     });
@@ -311,7 +338,13 @@ export function CityPicker({ city, cities, dayName, onOpen, onChoose }: CityPick
         }
         className="flex h-[32px] max-w-[150px] shrink-0 items-center gap-[6px] rounded-pill bg-terracotta-800 pr-[10px] pl-[11px] text-small/none font-semibold text-paper hover:bg-terracotta-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
       >
-        <PinIcon size={14} strokeWidth={2.75} className="shrink-0" />
+        {/* The city's own dot, the one its days carry in the strip, which
+            makes the pill the key to them. Ringed, since the pill is dark. */}
+        {shown === null ? (
+          <PinIcon size={14} strokeWidth={2.75} className="shrink-0" />
+        ) : (
+          <CityDot slot={shown.color} size={9} onDark />
+        )}
         <span className="min-w-0 truncate">{shown?.name ?? "City"}</span>
         {open ? (
           <ChevronUpIcon size={14} strokeWidth={2.75} className="shrink-0 text-paper/85" />
@@ -396,12 +429,15 @@ export function CityPicker({ city, cities, dayName, onOpen, onChoose }: CityPick
                           index === activeIndex ? "bg-terracotta-100" : ""
                         }`}
                       >
-                        <span
-                          className={`grid h-[30px] w-[30px] shrink-0 place-items-center rounded-pill bg-paper-sunken ${
-                            row.current ? "text-terracotta-700" : "text-ink-muted"
-                          }`}
-                        >
-                          <PinIcon size={14} strokeWidth={2.75} />
+                        {/* A city the trip goes to shows the dot its days
+                            carry; one it does not go to yet has no colour,
+                            and keeps the plain pin. */}
+                        <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-pill bg-paper-sunken text-ink-muted">
+                          {row.color === null ? (
+                            <PinIcon size={14} strokeWidth={2.75} />
+                          ) : (
+                            <CityDot slot={row.color} size={10} onDark={false} />
+                          )}
                         </span>
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-small/[1.3] font-semibold text-ink">

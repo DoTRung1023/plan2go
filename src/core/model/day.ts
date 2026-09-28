@@ -30,6 +30,11 @@ export interface DayCity {
   readonly providerPlaceId: string | null;
   readonly name: string;
   readonly position: LatLng;
+  /**
+   * Which of the city colours the trip gave this city, as a slot. Every day
+   * in the city has the same one, so days with the same dot share a city.
+   */
+  readonly color: number;
 }
 
 export interface DayPlan {

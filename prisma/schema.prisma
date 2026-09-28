@@ -58,6 +58,11 @@ model Trip {
   /// told apart from a day moved to another city of the same name. Null on
   /// trips opened before it was kept.
   cityPlaceId String?
+  /// Which colour each city on the trip holds, as { "<city key>": slot }, so
+  /// a city keeps its dot whatever else on the trip changes. Parsed with zod
+  /// on the way out, and settled against the cities the days are in on every
+  /// read, so an entry left for a city nobody is in any more is never shown.
+  cityColors  Json?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

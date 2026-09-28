@@ -64,7 +64,7 @@ describe("searchBias", () => {
     const hobart: LatLng = { lat: -42.8821, lng: 147.3272 };
     const days = [
       day({ stops: [stop("Market", MELBOURNE)] }),
-      day({ id: "day-2", city: { providerPlaceId: "g-hobart", name: "Hobart", position: hobart } }),
+      day({ id: "day-2", city: { providerPlaceId: "g-hobart", name: "Hobart", position: hobart, color: 0 } }),
     ];
     expect(searchBias(days, 1)).toEqual(hobart);
   });

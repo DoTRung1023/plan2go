@@ -3,7 +3,7 @@ import type { DayCity, DayPlan } from "./day";
 import { citiesOf, cityRun, sameCity } from "./day-city";
 
 function city(name: string, providerPlaceId: string | null = `g-${name}`): DayCity {
-  return { providerPlaceId, name, position: { lat: 21.03, lng: 105.85 } };
+  return { providerPlaceId, name, position: { lat: 21.03, lng: 105.85 }, color: 0 };
 }
 
 const HANOI = city("Hanoi");

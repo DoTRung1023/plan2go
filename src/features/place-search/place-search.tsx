@@ -5,6 +5,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import type { infer as Infer } from "zod/mini";
 import { array, nullable, number, object, optional, safeParse, string } from "zod/mini";
 import type { DayCity } from "@/core/model/day";
+import type { CityIdentity } from "@/core/model/day-city";
 import type { LatLng, Place } from "@/core/model/place";
 import { CheckIcon, CloseIcon, PinIcon, PlusIcon, SearchIcon } from "@/ui/icons";
 import { useScrollBar } from "@/ui/use-scroll-bar";
@@ -88,6 +89,8 @@ interface PlaceSearchProps {
   readonly dayCity: DayCity | null;
   /** Every city the trip goes to, for the pill to offer before a city is typed. */
   readonly cities: readonly CityOption[];
+  /** The colour a city will have once the open day is moved to it. */
+  readonly cityColorFor: (city: CityIdentity) => number;
   /**
    * The open day moved to another city, and the days after it that were in
    * the same one. Passed in rather than imported, because a feature may not
@@ -208,6 +211,7 @@ export function PlaceSearch({
   near,
   dayCity,
   cities,
+  cityColorFor,
   onChangeCity,
   onTheTrip,
   showing,
@@ -636,6 +640,7 @@ export function PlaceSearch({
           city={dayCity}
           cities={cities}
           dayName={dayName}
+          colorFor={cityColorFor}
           onOpen={() => {
             setOpen(false);
           }}

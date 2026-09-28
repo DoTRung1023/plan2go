@@ -4,6 +4,7 @@ import type { KeyboardEvent } from "react";
 import { useLayoutEffect, useRef, useState, useTransition } from "react";
 import { useScrollBar } from "@/ui/use-scroll-bar";
 import type { DayPlan } from "@/core/model/day";
+import { CityDot } from "@/ui/city-dot";
 import { PlusIcon } from "@/ui/icons";
 import type { EditOutcome } from "./day-actions";
 import { formatDayDate, formatDayTab } from "./format-day-date";
@@ -214,6 +215,7 @@ export function DayTabs({ days, selectedIndex, onSelect, onAddDay }: DayTabsProp
                 aria-selected={selected}
                 aria-controls={`day-panel-${day.id}`}
                 tabIndex={selected ? 0 : -1}
+                title={day.city?.name}
                 onClick={() => {
                   onSelect(index);
                 }}
@@ -236,17 +238,24 @@ export function DayTabs({ days, selectedIndex, onSelect, onAddDay }: DayTabsProp
                     reader who cannot see the strip hears the date in full and
                     what is on the day here instead. */}
                 <span className="sr-only">
-                  {`Day ${String(index + 1)}, ${formatDayDate(day.date)}, ${stopLine(day)}.${
-                    isToday ? " Today." : ""
-                  }`}
+                  {`Day ${String(index + 1)}, ${formatDayDate(day.date)}, ${
+                    day.city === null ? "" : `${day.city.name}, `
+                  }${stopLine(day)}.${isToday ? " Today." : ""}`}
                 </span>
                 {/* On the chosen day the number steps back from the date by a
                     sixth, the paper over the dark pill otherwise reading as
-                    two lines of equal weight. */}
+                    two lines of equal weight. The city's dot leads it, so
+                    days with the same dot are in the same city and the pill
+                    in the search, which carries the dot and the name, is
+                    the key to them; a day with no city has no dot and no
+                    gap kept for one. */}
                 <span
                   aria-hidden="true"
-                  className={`${TAB_NUMBER} tabular-nums ${selected ? "text-paper/85" : ""}`}
+                  className={`flex items-center gap-1 ${TAB_NUMBER} tabular-nums ${selected ? "text-paper/85" : ""}`}
                 >
+                  {day.city === null ? null : (
+                    <CityDot slot={day.city.color} size={7} onDark={selected} />
+                  )}
                   {`Day ${String(index + 1)}`}
                 </span>
                 <span aria-hidden="true" className={TAB_DATE}>

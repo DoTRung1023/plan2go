@@ -1,3 +1,4 @@
+import { colorsAfterMove } from "@/core/model/city-colors";
 import type { DayId } from "@/core/model/day";
 import { cityRun } from "@/core/model/day-city";
 import type { PlacesProvider } from "@/core/ports/places-provider";
@@ -47,15 +48,13 @@ export async function setDayCity(
     return { status: "no-such-city" };
   }
 
+  const providerPlaceId = city.providerPlaceId ?? request.providerPlaceId;
   const written = await repository.setDayCity({
     slug: request.slug,
     editKeyHash: request.editKeyHash,
     dayIds: moving,
-    city: {
-      providerPlaceId: city.providerPlaceId ?? request.providerPlaceId,
-      name: city.name,
-      position: city.position,
-    },
+    city: { providerPlaceId, name: city.name, position: city.position },
+    colors: colorsAfterMove(trip?.days ?? [], request.dayId, { providerPlaceId, name: city.name }),
   });
 
   return written.status === "set"
