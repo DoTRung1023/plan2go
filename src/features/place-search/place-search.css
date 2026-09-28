@@ -32,7 +32,6 @@
   --search-ink-16: color-mix(in srgb, var(--color-ink) 16%, transparent);
   --search-ink-60: color-mix(in srgb, var(--color-ink) 60%, transparent);
   --search-ink-62: color-mix(in srgb, var(--color-ink) 62%, transparent);
-  --search-ink-66: color-mix(in srgb, var(--color-ink) 66%, transparent);
   --search-ink-68: color-mix(in srgb, var(--color-ink) 68%, transparent);
   --search-ink-70: color-mix(in srgb, var(--color-ink) 70%, transparent);
   --search-ink-72: color-mix(in srgb, var(--color-ink) 72%, transparent);
@@ -338,22 +337,6 @@
 .search-clear:hover {
   background: var(--search-disc);
   color: var(--color-ink);
-}
-
-.search-kbd {
-  display: grid;
-  flex: none;
-  place-items: center;
-  min-width: 24px;
-  height: 24px;
-  margin-right: 6px;
-  border: 1px solid var(--search-ink-16);
-  border-radius: 8px;
-  background: var(--search-well);
-  color: var(--search-ink-66);
-  font-size: var(--text-meta);
-  font-weight: 700;
-  line-height: 1;
 }
 
 /* The panels under the bar. Mounted all the time, so they can leave as they

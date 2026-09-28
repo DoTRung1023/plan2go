@@ -263,7 +263,7 @@ export function PlaceSearch({
   /** The panel of places, which the city panel takes the place of while it is open. */
   const [open, setOpen] = useState(false);
   const [cityOpen, setCityOpen] = useState(false);
-  /** The cursor is in the field, which is what the "/" at its end is shown for the want of. */
+  /** The cursor is in the field, which lights the bar. */
   const [focused, setFocused] = useState(false);
   /** Which kind of place the empty field is offering now. */
   const [kind, setKind] = useState(0);
@@ -839,11 +839,6 @@ export function PlaceSearch({
             <CloseIcon size={14} strokeWidth={2.75} />
           </button>
         )}
-        {!focused && query === "" ? (
-          <span aria-hidden="true" className="search-kbd">
-            /
-          </span>
-        ) : null}
       </div>
 
       <div inert={!panelOpen} data-open={panelOpen ? "" : undefined} className="search-panel">
