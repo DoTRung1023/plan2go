@@ -340,3 +340,71 @@ export function TrainIcon(props: IconProps) {
     </Glyph>
   );
 }
+
+/** A fork and a knife side by side. */
+export function UtensilsIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" />
+      <path d="M7 2v20" />
+      <path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" />
+    </Glyph>
+  );
+}
+
+/** A cup with a handle, steam rising off it. */
+export function CupIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="M6 2v2M10 2v2M14 2v2" />
+      <path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1" />
+    </Glyph>
+  );
+}
+
+/** Columns under a pediment: a grand public building. */
+export function LandmarkIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="M3 22h18" />
+      <path d="M6 18v-7M10 18v-7M14 18v-7M18 18v-7" />
+      <path d="M12 2l8 5H4Z" />
+    </Glyph>
+  );
+}
+
+/** A framed picture, a sun and a hill in it. */
+export function PictureIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <rect width="18" height="18" x="3" y="3" rx="2" />
+      <circle cx="9" cy="9" r="2" />
+      <path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21" />
+    </Glyph>
+  );
+}
+
+/** A fish, side on. */
+export function FishIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="M6.5 12c.94-3.46 4.94-6 8.5-6 3.56 0 6.06 2.54 7 6-.94 3.47-3.44 6-7 6s-7.56-2.53-8.5-6Z" />
+      <path d="M18 12v.5" />
+      <path d="M16 17.93a9.77 9.77 0 0 1 0-11.86" />
+      <path d="M7 10.67C7 8 5.58 5.97 2.73 5.5c-1 1.5-1 5 .23 6.5-1.24 1.5-1.24 5-.23 6.5C5.58 18.03 7 16 7 13.33" />
+      <path d="M10.46 7.26C10.2 5.88 9.17 4.24 8 3h5.8a2 2 0 0 1 1.98 1.67l.23 1.4" />
+      <path d="m16.01 17.93-.23 1.4A2 2 0 0 1 13.8 21H9.5a5.96 5.96 0 0 0 1.49-3.98" />
+    </Glyph>
+  );
+}
+
+/** A scoop of ice cream on a cone. */
+export function IceCreamIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="m7 11 4.08 10.35a1 1 0 0 0 1.84 0L17 11" />
+      <path d="M17 7A5 5 0 0 0 7 7" />
+      <path d="M17 7a2 2 0 0 1 0 4H7a2 2 0 0 1 0-4" />
+    </Glyph>
+  );
+}

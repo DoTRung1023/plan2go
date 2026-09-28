@@ -536,13 +536,17 @@ under it at its width, `paper-raised` inside a hairline at the `panel` radius un
 `shadow-md`, there or not there with no movement, and no taller than 330px, past which
 it scrolls.
 
-The place panel: before anything is typed, headed "Quick search", chips that each type
-a search into the field: Restaurant, Café, Museum, Art gallery, Aquarium, Ice cream. They
-stand in even columns, as many as fit, so the six are two full rows of three, or three
-of two on a narrow screen. Each is a pill of `paper-raised` inside a hairline, its word
-centred at the meta step in 600 `ink`, the same as a place's name so the chips weigh no
-more than the list under them, taking the accent's edge on `terracotta-100` under the
-pointer. The search
+The place panel: before anything is typed, at its top and with no heading, chips that
+each type a search into the field: Restaurant, Café, Museum, Art gallery, Aquarium, Ice
+cream. They stand in one row that scrolls sideways rather than wrapping, with no
+scrollbar. Each is a pill of `paper-raised` inside a hairline, a 15px icon of what it
+finds before its word at the meta step in 600 `ink`, the same as a place's name so the
+chips weigh no more than the list under them, taking the accent's edge on
+`terracotta-100` under the pointer. Where there is more of the row beyond an end, the
+chips fade out over the last 40px towards it and a 28px round arrow of `paper-raised`
+inside a hairline, under `shadow-sm`, stands over that end and moves the row on by
+seven tenths of its width. The arrows never take the cursor from the field; a keyboard
+goes from chip to chip instead, each scrolled into view as it takes the focus. The search
 matches names rather than kinds of place, so a chip is only a word that is part of the
 names of the right places in any city: "Park" finds hotels and car parks, "Market"
 finds marketing firms, and "Temple" and "Street food" hold up in Asia but not in Europe.
@@ -631,7 +635,8 @@ and it is the product's own.
 Five things animate: reordering a stop, the trip's actions unfolding, a place's sheet
 arriving and leaving, the chosen day's pill moving along the strip, and the search on the
 map, whose movement is its design file's and is written out under Components and in
-`place-search.css`: its glow on and off, the pill's colours and chevron turning, its
+`place-search.css`: its glow on and off, the quick searches gliding along when an
+arrow moves them, the pill's colours and chevron turning, its
 dot popping and name sliding in on a move, the empty field's words turning over, a
 spinner while it waits, and a sentence rising at the foot of the map when something is
 done. A city's dot

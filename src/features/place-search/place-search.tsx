@@ -27,6 +27,7 @@ import {
   ROW_PIN,
   ROW_WORDS,
 } from "./panel-styles";
+import { QuickSearches } from "./quick-searches";
 import "./place-search.css";
 
 /** Long enough that typing does not spend money on every letter. */
@@ -69,24 +70,6 @@ const KINDS = [
 
 /** How long each of those stays before the next. */
 const KINDS_EVERY_MS = 2600;
-
-/**
- * The searches one press away before anything is typed: somewhere to eat and
- * something to see, and the two a family goes out of its way for. Each is
- * typed into the field as it stands, and the search matches names rather than
- * kinds of place, so only words that are part of the names of the right
- * places made it here. "Park" finds hotels and car parks, "Market" finds
- * marketing firms, and "Temple" and "Street food" hold up in Asia but not in
- * Europe.
- */
-const QUICK_SEARCHES = [
-  "Restaurant",
-  "Café",
-  "Museum",
-  "Art gallery",
-  "Aquarium",
-  "Ice cream",
-] as const;
 
 /** How long the sentence at the foot of the map says what just happened. */
 const TOAST_MS = 2400;
@@ -866,34 +849,14 @@ export function PlaceSearch({
           <div className={PANEL}>
             <div ref={watchList} className={PANEL_LIST}>
               {searched ? null : (
-                <>
-                  <p className={PANEL_LABEL}>Quick search</p>
-                  {/* Even columns, as many as fit, so the six come out as two
-                      full rows of three, or three of two on a narrow screen,
-                      rather than a ragged last row. */}
-                  <div className="grid grid-cols-[repeat(auto-fill,minmax(104px,1fr))] gap-[6px] px-[7px] pb-[12px]">
-                    {QUICK_SEARCHES.map((label) => (
-                      <button
-                        key={label}
-                        type="button"
-                        // The cursor stays in the field, so the search the
-                        // press starts is answered in the panel it is in.
-                        onMouseDown={(event) => {
-                          event.preventDefault();
-                        }}
-                        onClick={() => {
-                          setQuery(label);
-                          setLookError(null);
-                          setOpen(true);
-                          input.current?.focus();
-                        }}
-                        className="truncate rounded-pill border border-rule bg-paper-raised px-[11px] py-[7px] text-center text-meta/none font-semibold text-ink hover:border-terracotta hover:bg-terracotta-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                </>
+                <QuickSearches
+                  onPick={(search) => {
+                    setQuery(search);
+                    setLookError(null);
+                    setOpen(true);
+                    input.current?.focus();
+                  }}
+                />
               )}
 
               {line === null ? null : <p className={PANEL_LINE}>{line}</p>}

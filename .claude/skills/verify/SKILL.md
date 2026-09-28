@@ -54,7 +54,10 @@ from the classes in `panel-styles.ts`, and are mounted only while open, with no
 transition, so wait for them to exist. The place list is the element the field's
 `aria-controls` names, a `[role="listbox"]` labelled "Popular in <city>" or "Places that
 match"; the city panel is `[role="dialog"][aria-label^="The city"]`, opened by
-`.search-pill`, with its own field inside it. A
+`.search-pill`, with its own field inside it. Before anything is typed the place panel
+opens on a sideways row of quick search chips (`button` by their text, "Aquarium"),
+with round arrows labelled "Scroll back through the quick searches" and "Scroll on
+through the quick searches" present only while there is more of the row that way. A
 `MutationObserver` on `.place-search`, installed before the click, gives a
 timestamped transcript of everything the panels say, which is the evidence for
 anything about loading states. `.search-toast` is the sentence at the foot of the
