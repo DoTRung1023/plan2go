@@ -1,4 +1,5 @@
 import type { LatLng, Place, PlaceCard } from "../model/place";
+import type { PlaceKind } from "../model/place-kind";
 
 export interface PlaceSearchRequest {
   readonly query: string;
@@ -28,6 +29,21 @@ export interface PlaceSearchRequest {
 export interface NearbyPlacesRequest {
   readonly centre: LatLng;
   /** How far out from the centre to look, in metres. */
+  readonly radiusMeters: number;
+  readonly limit: number;
+}
+
+/**
+ * The places of one kind in a city, "parks in Hanoi", asked with a press
+ * rather than typed. Answered by what the places are rather than by what they
+ * are called: a park named nothing like "park" is still a park, and a hotel
+ * called Park Hyatt is not one.
+ */
+export interface PlacesOfKindRequest {
+  readonly kind: PlaceKind;
+  /** The middle of the city, as for the places it is known for. */
+  readonly centre: LatLng;
+  /** How far out from the centre to look, in metres, and no further. */
   readonly radiusMeters: number;
   readonly limit: number;
 }
@@ -83,6 +99,8 @@ export interface PlacesProvider {
    * than by how close they sit to the point given. Answers the empty field.
    */
   nearby(request: NearbyPlacesRequest): Promise<readonly PlaceSuggestion[]>;
+  /** The best known places of one kind in a city. Answers a quick search. */
+  ofKind(request: PlacesOfKindRequest): Promise<readonly PlaceSuggestion[]>;
   /** The places a question in words is answered with, and where each one is. */
   landmarks(request: LandmarkRequest): Promise<readonly LandmarkPlace[]>;
   details(providerPlaceId: string, session: string | null): Promise<PlaceDetails | null>;

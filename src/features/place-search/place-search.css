@@ -240,7 +240,7 @@
   color: var(--color-terracotta-700);
 }
 
-/* Never narrower than its longest words, "Search for ice cream": on a
+/* Never narrower than its longest words, "Search for a place": on a
    narrow screen or in a city with a long name, the pill gives up its name
    first. */
 .search-typing {
@@ -248,7 +248,7 @@
   display: flex;
   flex: 1 0 0;
   align-items: center;
-  min-width: 10.5em;
+  min-width: 9.5em;
   height: 36px;
   margin-left: 6px;
 }

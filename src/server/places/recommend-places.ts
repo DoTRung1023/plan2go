@@ -1,4 +1,5 @@
 import type { LatLng } from "@/core/model/place";
+import type { PlaceKind } from "@/core/model/place-kind";
 import type { PlaceSuggestion, PlacesProvider } from "@/core/ports/places-provider";
 import { pointKey, suggestionsFor } from "./suggestion-cache";
 
@@ -30,6 +31,26 @@ export async function recommendPlaces(
   return suggestionsFor(
     { query: QUERY_KEY, biasKey: pointKey(centre), size: limit },
     () => provider.nearby({ centre, radiusMeters: CITY_RADIUS_METERS, limit }),
+    now,
+  );
+}
+
+/**
+ * The best known places of one kind in the city a trip is in, for a quick
+ * search. Filed by the kind and the city, so every trip to a city shares one
+ * answer for each kind, and a reader flicking between them costs the provider
+ * nothing after the first press of each.
+ */
+export async function placesOfKind(
+  kind: PlaceKind,
+  centre: LatLng,
+  limit: number,
+  provider: PlacesProvider,
+  now: Date = new Date(),
+): Promise<readonly PlaceSuggestion[]> {
+  return suggestionsFor(
+    { query: `kind:${kind}`, biasKey: pointKey(centre), size: limit },
+    () => provider.ofKind({ kind, centre, radiusMeters: CITY_RADIUS_METERS, limit }),
     now,
   );
 }

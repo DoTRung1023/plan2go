@@ -512,10 +512,10 @@ the accent at 60 percent and a 5px glow of the accent at 12 percent rings a deep
 shadow. In it, in order: the city pill; a 22px hairline; the glass, which takes
 `terracotta-700` while the field has the cursor; the field, whose empty words say
 "Search for a place" and turn the kind of place over every few seconds, through the
-quick searches: restaurants, cafés, museums, art galleries, aquariums, ice cream. The
+quick searches whose word also finds them when typed: cafés, museums, hotels. The
 words leave the city to the pill beside them, which already says it, so they fit
 whatever the city is called; the field is never narrower than its longest words,
-"Search for ice cream", and on a narrow screen or in a city with a long name the pill
+"Search for a place", and on a narrow screen or in a city with a long name the pill
 cuts its name short first. Then a spinner of the accent while a search or a look is
 running, and the cross once anything is typed. "/" from anywhere that is not a field
 brings the cursor to the search, with nothing in the bar to say so. While the bar is in
@@ -536,9 +536,15 @@ under it at its width, `paper-raised` inside a hairline at the `panel` radius un
 `shadow-md`, there or not there with no movement, and no taller than 330px, past which
 it scrolls.
 
-The place panel: before anything is typed, at its top and with no heading, chips that
-each type a search into the field: Restaurant, Café, Museum, Art gallery, Aquarium, Ice
-cream. They stand in one row that scrolls sideways rather than wrapping, with no
+The place panel: before anything is typed, at its top and with no heading, a chip for
+each kind of place: Café, Street food, Museum, Temple, Market, Viewpoint, Park,
+Nightlife, Hotel, Shopping. A press lists the best known places of that kind in the
+day's city under "Parks in Hanoi", in place of the city's best known, and holds the chip
+down, its edge in the accent on `terracotta-100` with its words in `terracotta-900`;
+pressing it again lets go and the city's best known come back. The kind is found by
+what the places are, not by what they are called, which is why it is a chip and not a
+word typed: typed, "Park" finds the Park Hyatt and car parks. While the kind is being
+asked about the panel says "Looking for parks in Hanoi." They stand in one row that scrolls sideways rather than wrapping, with no
 scrollbar. Each is a pill of `paper-raised` inside a hairline, a 15px icon of what it
 finds before its word at the meta step in 600 `ink`, the same as a place's name so the
 chips weigh no more than the list under them, taking the accent's edge on
@@ -546,11 +552,8 @@ chips weigh no more than the list under them, taking the accent's edge on
 chips fade out over the last 40px towards it and a 28px round arrow of `paper-raised`
 inside a hairline, under `shadow-sm`, stands over that end and moves the row on by
 seven tenths of its width. The arrows never take the cursor from the field; a keyboard
-goes from chip to chip instead, each scrolled into view as it takes the focus. The search
-matches names rather than kinds of place, so a chip is only a word that is part of the
-names of the right places in any city: "Park" finds hotels and car parks, "Market"
-finds marketing firms, and "Temple" and "Street food" hold up in Asia but not in Europe.
-Under the chips, the city's best known places headed "Popular in Hanoi", and once
+goes from chip to chip instead, each scrolled into view as it takes the focus. Under
+the chips, the city's best known places headed "Popular in Hanoi", and once
 something is typed, "Matching places", each heading at the
 label step in `ink-muted`. A row has a pin in the accent at its front, the name at the
 meta step over its address at the micro step, both wrapping rather than cut short, and

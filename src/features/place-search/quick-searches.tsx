@@ -1,34 +1,46 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { PlaceKind } from "@/core/model/place-kind";
 import {
+  BagIcon,
+  BasketIcon,
+  BedIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   CupIcon,
-  FishIcon,
-  IceCreamIcon,
   LandmarkIcon,
-  PictureIcon,
+  MoonIcon,
+  MountainIcon,
+  TempleIcon,
+  TreesIcon,
   UtensilsIcon,
 } from "@/ui/icons";
 
 /**
- * The searches one press away before anything is typed: somewhere to eat and
- * something to see, and the two a family goes out of its way for. Each is
- * typed into the field as it stands, and the search matches names rather than
- * kinds of place, so only words that are part of the names of the right
- * places made it here. "Park" finds hotels and car parks, "Market" finds
- * marketing firms, and "Temple" and "Street food" hold up in Asia but not in
- * Europe.
+ * The kinds of place one press away before anything is typed, in the order
+ * they are offered. A press lists the best known of that kind in the city,
+ * found by what the places are rather than by what they are called, so "Park"
+ * lists parks and not the Park Hyatt. `many` is the kind said of more than
+ * one, for the heading over the list: "Parks in Hanoi".
  */
-const QUICK_SEARCHES = [
-  { search: "Restaurant", Icon: UtensilsIcon },
-  { search: "Café", Icon: CupIcon },
-  { search: "Museum", Icon: LandmarkIcon },
-  { search: "Art gallery", Icon: PictureIcon },
-  { search: "Aquarium", Icon: FishIcon },
-  { search: "Ice cream", Icon: IceCreamIcon },
-] as const;
+export const QUICK_SEARCHES: readonly {
+  readonly kind: PlaceKind;
+  readonly label: string;
+  readonly many: string;
+  readonly Icon: typeof CupIcon;
+}[] = [
+  { kind: "cafe", label: "Café", many: "Cafés", Icon: CupIcon },
+  { kind: "street-food", label: "Street food", many: "Street food", Icon: UtensilsIcon },
+  { kind: "museum", label: "Museum", many: "Museums", Icon: LandmarkIcon },
+  { kind: "temple", label: "Temple", many: "Temples", Icon: TempleIcon },
+  { kind: "market", label: "Market", many: "Markets", Icon: BasketIcon },
+  { kind: "viewpoint", label: "Viewpoint", many: "Viewpoints", Icon: MountainIcon },
+  { kind: "park", label: "Park", many: "Parks", Icon: TreesIcon },
+  { kind: "nightlife", label: "Nightlife", many: "Nightlife", Icon: MoonIcon },
+  { kind: "hotel", label: "Hotel", many: "Hotels", Icon: BedIcon },
+  { kind: "shopping", label: "Shopping", many: "Shopping", Icon: BagIcon },
+];
 
 /** How much of the row's width one press of an arrow moves it on by. */
 const PAGE = 0.7;
@@ -41,8 +53,10 @@ const ARROW =
   "absolute top-1/2 grid h-[28px] w-[28px] -translate-y-1/2 place-items-center rounded-pill border border-rule bg-paper-raised text-ink shadow-sm hover:bg-terracotta-100";
 
 interface QuickSearchesProps {
-  /** A chip pressed, with the words it searches for. */
-  readonly onPick: (search: string) => void;
+  /** The kind the list under the row is showing, whose chip is held down. */
+  readonly chosen: PlaceKind | null;
+  /** A chip pressed: its kind, or null when it was the one already chosen. */
+  readonly onChoose: (kind: PlaceKind | null) => void;
 }
 
 /**
@@ -54,7 +68,7 @@ interface QuickSearchesProps {
  * the cursor stays in the field, and a keyboard moves from chip to chip,
  * which scrolls each into view on its own.
  */
-export function QuickSearches({ onPick }: QuickSearchesProps) {
+export function QuickSearches({ chosen, onChoose }: QuickSearchesProps) {
   const row = useRef<HTMLDivElement | null>(null);
   /** Whether there is more of the row beyond each end. */
   const [more, setMore] = useState({ before: false, after: false });
@@ -102,22 +116,23 @@ export function QuickSearches({ onPick }: QuickSearchesProps) {
           className="flex gap-[6px] overflow-x-auto px-[7px] py-[3px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           style={{ maskImage: fade, WebkitMaskImage: fade }}
         >
-          {QUICK_SEARCHES.map(({ search, Icon }) => (
+          {QUICK_SEARCHES.map(({ kind, label, Icon }) => (
             <button
-              key={search}
+              key={kind}
               type="button"
-              // The cursor stays in the field, so the search the press
-              // starts is answered in the panel it is in.
+              aria-pressed={chosen === kind}
+              // The cursor stays in the field, so typing still searches while
+              // a kind is being shown.
               onMouseDown={(event) => {
                 event.preventDefault();
               }}
               onClick={() => {
-                onPick(search);
+                onChoose(chosen === kind ? null : kind);
               }}
-              className="flex shrink-0 items-center gap-[6px] rounded-pill border border-rule bg-paper-raised py-[7px] pr-[12px] pl-[10px] text-meta/none font-semibold whitespace-nowrap text-ink hover:border-terracotta hover:bg-terracotta-100 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta"
+              className="flex shrink-0 items-center gap-[6px] rounded-pill border border-rule bg-paper-raised py-[7px] pr-[12px] pl-[10px] text-meta/none font-semibold whitespace-nowrap text-ink hover:border-terracotta hover:bg-terracotta-100 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta aria-pressed:border-terracotta aria-pressed:bg-terracotta-100 aria-pressed:text-terracotta-900"
             >
               <Icon size={15} strokeWidth={2.25} />
-              {search}
+              {label}
             </button>
           ))}
         </div>

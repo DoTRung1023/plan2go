@@ -55,9 +55,13 @@ transition, so wait for them to exist. The place list is the element the field's
 `aria-controls` names, a `[role="listbox"]` labelled "Popular in <city>" or "Places that
 match"; the city panel is `[role="dialog"][aria-label^="The city"]`, opened by
 `.search-pill`, with its own field inside it. Before anything is typed the place panel
-opens on a sideways row of quick search chips (`button` by their text, "Aquarium"),
-with round arrows labelled "Scroll back through the quick searches" and "Scroll on
-through the quick searches" present only while there is more of the row that way. A
+opens on a sideways row of quick search chips, one per kind of place; take one with
+`getByRole("button", { name: "Park", exact: true })`, since rows named for a park match
+a looser selector. A chip is a toggle (`aria-pressed`): pressed, the list's
+`aria-label` becomes "Parks in <city>" once `/api/places/kind` answers, and pressed
+again it is "Popular in <city>". Round arrows labelled "Scroll back through the quick
+searches" and "Scroll on through the quick searches" are there only while there is
+more of the row that way. A
 `MutationObserver` on `.place-search`, installed before the click, gives a
 timestamped transcript of everything the panels say, which is the evidence for
 anything about loading states. `.search-toast` is the sentence at the foot of the

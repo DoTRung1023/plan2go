@@ -6,6 +6,7 @@ import type { infer as Infer } from "zod/mini";
 import { array, nullable, number, object, optional, safeParse, string } from "zod/mini";
 import type { DayCity } from "@/core/model/day";
 import type { CityIdentity } from "@/core/model/day-city";
+import type { PlaceKind } from "@/core/model/place-kind";
 import type { LatLng, Place } from "@/core/model/place";
 import { CheckIcon, CloseIcon, PinIcon, PlusIcon, SearchIcon } from "@/ui/icons";
 import { useScrollBar } from "@/ui/use-scroll-bar";
@@ -27,7 +28,7 @@ import {
   ROW_PIN,
   ROW_WORDS,
 } from "./panel-styles";
-import { QuickSearches } from "./quick-searches";
+import { QUICK_SEARCHES, QuickSearches } from "./quick-searches";
 import "./place-search.css";
 
 /** Long enough that typing does not spend money on every letter. */
@@ -55,18 +56,11 @@ const RECOMMENDED_ASKED = 20;
 /**
  * What the empty field offers to look for, turned over one after another, so
  * a reader who has not decided what they want is reminded what they can ask.
- * The same kinds of place as the quick searches in the panel under it, so the
- * field never suggests a search those searches were chosen to leave out.
+ * Only the quick searches whose word also finds them when typed: the field
+ * matches names, so "parks" typed finds the Park Hyatt, and a park is found
+ * with the chip.
  */
-const KINDS = [
-  "for a place",
-  "restaurants",
-  "cafés",
-  "museums",
-  "art galleries",
-  "aquariums",
-  "for ice cream",
-] as const;
+const KINDS = ["for a place", "cafés", "museums", "hotels"] as const;
 
 /** How long each of those stays before the next. */
 const KINDS_EVERY_MS = 2600;
@@ -218,6 +212,39 @@ async function askAboutCity(city: LatLng): Promise<readonly Suggestion[]> {
   }
 }
 
+/** What asking for one kind of place in a city came to: the places, or why not. */
+type KindAnswer = { readonly places: readonly Suggestion[] } | { readonly error: string };
+
+const UNREACHABLE = "Could not reach the place search service. Your trip is saved, try again in a moment.";
+
+/**
+ * The best known places of one kind in the city. Asked for out loud, with a
+ * press, so a refusal comes back as the sentence the panel shows instead.
+ */
+async function askAboutKind(kind: PlaceKind, city: LatLng): Promise<KindAnswer> {
+  const parameters = new URLSearchParams({
+    kind,
+    lat: city.lat.toFixed(BIAS_DECIMALS),
+    lng: city.lng.toFixed(BIAS_DECIMALS),
+  });
+  try {
+    const response = await fetch(`/api/places/kind?${parameters.toString()}`);
+    const body: unknown = await response.json().catch(() => null);
+    if (!response.ok) {
+      const refusal = safeParse(refusalSchema, body);
+      return {
+        error: refusal.success
+          ? [refusal.data.error, refusal.data.action].filter(Boolean).join(" ")
+          : UNREACHABLE,
+      };
+    }
+    const parsed = safeParse(searchResponseSchema, body);
+    return parsed.success ? { places: parsed.data.suggestions } : { error: UNREACHABLE };
+  } catch {
+    return { error: UNREACHABLE };
+  }
+}
+
 /**
  * Search for a place, and open it to look at before it goes on the day.
  *
@@ -303,6 +330,13 @@ export function PlaceSearch({
     readonly about: string;
     readonly places: readonly Suggestion[];
   } | null>(null);
+  /** The quick search the list is showing in place of the city's best known, or null. */
+  const [picked, setPicked] = useState<PlaceKind | null>(null);
+  /**
+   * What each kind came to, by kind and city, kept for as long as the bar is
+   * here so that going back to a kind already looked at is instant.
+   */
+  const [kindAnswers, setKindAnswers] = useState<Readonly<Record<string, KindAnswer>>>({});
 
   const fieldId = useId();
   const listId = `${fieldId}-list`;
@@ -320,6 +354,8 @@ export function PlaceSearch({
    * the way in, only in the answer.
    */
   const askedAboutCity = useRef<string | null>(null);
+  /** The kinds asked about in each city, by the same key as their answers, for the same reason. */
+  const askedAboutKinds = useRef(new Set<string>());
   /**
    * Adds from rows go one at a time, in the order they were pressed. The way
    * to a new stop is measured from the stop before it, so the server has to
@@ -483,6 +519,33 @@ export function PlaceSearch({
       setPopular({ about: cityKey, places });
     });
   }, [open, searched, cityLat, cityLng, cityKey]);
+
+  /**
+   * A kind is asked about in the city the first time it is chosen there, and
+   * answered from what came back after that. A refusal is not kept as asked,
+   * so choosing the kind again asks again.
+   */
+  const kindKey = picked === null || cityKey === null ? null : `${picked}@${cityKey}`;
+  useEffect(() => {
+    if (
+      !open ||
+      searched ||
+      picked === null ||
+      kindKey === null ||
+      cityLat === null ||
+      cityLng === null ||
+      askedAboutKinds.current.has(kindKey)
+    ) {
+      return;
+    }
+    askedAboutKinds.current.add(kindKey);
+    void askAboutKind(picked, { lat: cityLat, lng: cityLng }).then((answer) => {
+      if ("error" in answer) {
+        askedAboutKinds.current.delete(kindKey);
+      }
+      setKindAnswers((now) => ({ ...now, [kindKey]: answer }));
+    });
+  }, [open, searched, picked, kindKey, cityLat, cityLng]);
 
   useOutsidePress(container, open, () => {
     setOpen(false);
@@ -658,10 +721,12 @@ export function PlaceSearch({
    * to the city, which is what a field nobody has typed in has to offer.
    * Derived rather than stored, so typing cannot cascade renders.
    */
-  const visible = searched ? suggestions : recommended;
+  const kindAnswer = kindKey === null ? undefined : kindAnswers[kindKey];
+  const ofKind = kindAnswer !== undefined && "places" in kindAnswer ? kindAnswer.places : [];
+  const visible = searched ? suggestions : picked !== null ? ofKind : recommended;
 
-  /** True while the panel is offering the city rather than what was typed. */
-  const recommending = !searched;
+  /** The quick search being shown, with its words, while nothing is typed. */
+  const shownKind = searched ? null : (QUICK_SEARCHES.find((one) => one.kind === picked) ?? null);
 
   /**
    * Named where the trip knows the name. It reads better, and on a trip to
@@ -669,7 +734,11 @@ export function PlaceSearch({
    * underneath actually is.
    */
   const cityLabel = dayCity?.name ?? "this city";
-  const popularIn = `Popular in ${cityLabel}`;
+  const heading = searched
+    ? "Matching places"
+    : shownKind !== null
+      ? `${shownKind.many} in ${cityLabel}`
+      : `Popular in ${cityLabel}`;
 
   /**
    * True until the city has answered. Only read once the empty field is open,
@@ -718,6 +787,18 @@ export function PlaceSearch({
     }
     if (lookError !== null) {
       return lookError;
+    }
+    if (shownKind !== null) {
+      const many = shownKind.many.toLowerCase();
+      if (kindAnswer === undefined) {
+        return `Looking for ${many} in ${cityLabel}.`;
+      }
+      if ("error" in kindAnswer) {
+        return kindAnswer.error;
+      }
+      return kindAnswer.places.length > 0
+        ? null
+        : `No ${many} turned up in ${cityLabel}. Try typing the name of one instead.`;
     }
     if (!searched) {
       return askingCity ? `Looking for places in ${cityLabel}.` : null;
@@ -848,13 +929,14 @@ export function PlaceSearch({
         {panel ? (
           <div className={PANEL}>
             <div ref={watchList} className={PANEL_LIST}>
-              {searched ? null : (
+              {/* Only where there is a city to find them in. */}
+              {searched || cityKey === null ? null : (
                 <QuickSearches
-                  onPick={(search) => {
-                    setQuery(search);
+                  chosen={picked}
+                  onChoose={(next) => {
+                    setPicked(next);
+                    setActive(0);
                     setLookError(null);
-                    setOpen(true);
-                    input.current?.focus();
                   }}
                 />
               )}
@@ -863,11 +945,11 @@ export function PlaceSearch({
 
               {listed ? (
                 <>
-                  <p className={PANEL_LABEL}>{recommending ? popularIn : "Matching places"}</p>
+                  <p className={PANEL_LABEL}>{heading}</p>
                   <ul
                     id={listId}
                     role="listbox"
-                    aria-label={recommending ? popularIn : "Places that match"}
+                    aria-label={searched ? "Places that match" : heading}
                   >
                     {visible.map((suggestion, index) => {
                       const onItsWay = adding.has(suggestion.providerPlaceId);

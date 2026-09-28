@@ -373,38 +373,84 @@ export function LandmarkIcon(props: IconProps) {
   );
 }
 
-/** A framed picture, a sun and a hill in it. */
-export function PictureIcon(props: IconProps) {
+/** A small temple: a finial on a sweeping roof, a hall under it, and its posts. */
+export function TempleIcon(props: IconProps) {
   return (
     <Glyph {...props}>
-      <rect width="18" height="18" x="3" y="3" rx="2" />
-      <circle cx="9" cy="9" r="2" />
-      <path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21" />
+      <path d="M12 2v2" />
+      <path d="M4 8c3 0 5.5-1.3 8-4 2.5 2.7 5 4 8 4" />
+      <path d="M6 8v4h12V8" />
+      <path d="M3 12h18" />
+      <path d="M6 12v9M18 12v9M3 21h18" />
+      <path d="M10 21v-5h4v5" />
     </Glyph>
   );
 }
 
-/** A fish, side on. */
-export function FishIcon(props: IconProps) {
+/** A basket with two handles, slatted. */
+export function BasketIcon(props: IconProps) {
   return (
     <Glyph {...props}>
-      <path d="M6.5 12c.94-3.46 4.94-6 8.5-6 3.56 0 6.06 2.54 7 6-.94 3.47-3.44 6-7 6s-7.56-2.53-8.5-6Z" />
-      <path d="M18 12v.5" />
-      <path d="M16 17.93a9.77 9.77 0 0 1 0-11.86" />
-      <path d="M7 10.67C7 8 5.58 5.97 2.73 5.5c-1 1.5-1 5 .23 6.5-1.24 1.5-1.24 5-.23 6.5C5.58 18.03 7 16 7 13.33" />
-      <path d="M10.46 7.26C10.2 5.88 9.17 4.24 8 3h5.8a2 2 0 0 1 1.98 1.67l.23 1.4" />
-      <path d="m16.01 17.93-.23 1.4A2 2 0 0 1 13.8 21H9.5a5.96 5.96 0 0 0 1.49-3.98" />
+      <path d="m15 11-1 9" />
+      <path d="m19 11-4-7" />
+      <path d="M2 11h20" />
+      <path d="m3.5 11 1.6 7.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6l1.7-7.4" />
+      <path d="M4.5 15.5h15" />
+      <path d="m5 11 4-7" />
+      <path d="m9 11 1 9" />
     </Glyph>
   );
 }
 
-/** A scoop of ice cream on a cone. */
-export function IceCreamIcon(props: IconProps) {
+/** Two peaks, the nearer one taller. */
+export function MountainIcon(props: IconProps) {
   return (
     <Glyph {...props}>
-      <path d="m7 11 4.08 10.35a1 1 0 0 0 1.84 0L17 11" />
-      <path d="M17 7A5 5 0 0 0 7 7" />
-      <path d="M17 7a2 2 0 0 1 0 4H7a2 2 0 0 1 0-4" />
+      <path d="m8 3 4 8 5-5 5 15H2L8 3z" />
+    </Glyph>
+  );
+}
+
+/** A round tree and a pointed one beside it. */
+export function TreesIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z" />
+      <path d="M7 16v6" />
+      <path d="M13 19v3" />
+      <path d="M12 19h8.3a1 1 0 0 0 .7-1.7L18 14h.3a1 1 0 0 0 .7-1.7L16 9h.2a1 1 0 0 0 .8-1.7L13 3l-1.4 1.5" />
+    </Glyph>
+  );
+}
+
+/** A crescent moon. */
+export function MoonIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+    </Glyph>
+  );
+}
+
+/** A bed, side on, with its pillow end raised. */
+export function BedIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="M2 4v16" />
+      <path d="M2 8h18a2 2 0 0 1 2 2v10" />
+      <path d="M2 17h20" />
+      <path d="M6 8v9" />
+    </Glyph>
+  );
+}
+
+/** A shopping bag with its handle. */
+export function BagIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
+      <path d="M3 6h18" />
+      <path d="M16 10a4 4 0 0 1-8 0" />
     </Glyph>
   );
 }
