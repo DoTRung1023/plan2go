@@ -19,8 +19,6 @@
   --search-pill-open-hover: #5c2e0f;
   --search-pill-open-ink: #f9f1e2;
   --search-row-active: #f8ebdd;
-  --search-tile: #f3e0cd;
-  --search-tile-active: #f3d6bd;
   --search-disc: #f1e7d3;
   --search-disc-trip: #f5ecdb;
   --search-toast-tick: #e3b38d;
@@ -28,7 +26,6 @@
   --search-ink-6: color-mix(in srgb, var(--color-ink) 6%, transparent);
   --search-ink-10: color-mix(in srgb, var(--color-ink) 10%, transparent);
   --search-ink-12: color-mix(in srgb, var(--color-ink) 12%, transparent);
-  --search-ink-14: color-mix(in srgb, var(--color-ink) 14%, transparent);
   --search-ink-16: color-mix(in srgb, var(--color-ink) 16%, transparent);
   --search-ink-60: color-mix(in srgb, var(--color-ink) 60%, transparent);
   --search-ink-62: color-mix(in srgb, var(--color-ink) 62%, transparent);
@@ -190,10 +187,7 @@
 }
 
 .search-pill:focus-visible,
-.search-clear:focus-visible,
-.search-chip:focus-visible,
-.search-add:focus-visible,
-.search-elsewhere:focus-visible {
+.search-clear:focus-visible {
   outline: 2px solid var(--color-terracotta);
   outline-offset: 2px;
 }
@@ -339,7 +333,7 @@
   color: var(--color-ink);
 }
 
-/* The panels under the bar. Mounted all the time, so they can leave as they
+/* The city panel under the bar. Mounted all the time, so it can leave as it
    came: fading, and settling up and in towards the bar. */
 .search-panel {
   position: absolute;
@@ -383,79 +377,7 @@
   overflow-y: auto;
 }
 
-.search-heading {
-  color: var(--search-ink-70);
-  font-size: var(--text-label);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  line-height: 1;
-  text-transform: uppercase;
-}
-
-.search-quick {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 8px 10px 12px;
-}
-
-.search-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.search-chip {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 11px;
-  border: 1px solid var(--search-ink-14);
-  border-radius: var(--radius-pill);
-  background: var(--search-surface);
-  color: var(--color-ink);
-  font-size: var(--text-small);
-  font-weight: 600;
-  line-height: 1;
-  cursor: pointer;
-  transition:
-    background 0.15s,
-    border-color 0.15s,
-    transform 0.12s;
-}
-
-.search-chip {
-  animation: search-item-in 0.24s both;
-}
-
-.search-chip:hover {
-  background: var(--search-row-active);
-  border-color: var(--color-terracotta);
-}
-
-.search-chip:active {
-  transform: scale(0.95);
-}
-
-.search-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-}
-
-.search-header > .search-heading {
-  flex: 1;
-}
-
-.search-hint {
-  color: var(--search-ink-62);
-  font-size: var(--text-micro);
-  font-weight: 500;
-  line-height: 1;
-}
-
-/* A row, in either panel. Each arrives a moment after the one above it. */
+/* A row in the city panel. Each arrives a moment after the one above it. */
 .search-row {
   display: flex;
   align-items: center;
@@ -505,23 +427,6 @@
   margin-right: 0;
 }
 
-/* A place's pin on a rounded square of the accent's lightest tint. */
-.search-tile {
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 12px;
-  background: var(--search-tile);
-  color: var(--color-terracotta-700);
-  transition: background 0.15s;
-}
-
-.search-row[data-active] .search-tile {
-  background: var(--search-tile-active);
-}
-
 /* A city's mark: its dot on a round of warm paper for a city the trip goes
    to, and a plain pin for one it does not go to yet. */
 .search-disc {
@@ -545,31 +450,6 @@
   flex-direction: column;
   gap: 4px;
   min-width: 0;
-}
-
-.search-place-name {
-  overflow: hidden;
-  color: var(--color-ink);
-  font-size: var(--text-small);
-  font-weight: 500;
-  line-height: 1.15;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.search-place-name > strong {
-  color: var(--color-terracotta-700);
-  font-weight: 800;
-}
-
-.search-place-line {
-  overflow: hidden;
-  color: var(--search-ink-68);
-  font-size: var(--text-meta);
-  font-weight: 400;
-  line-height: 1.2;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .search-panel[data-city] .search-words-of {
@@ -596,48 +476,6 @@
   color: var(--color-terracotta-700);
 }
 
-.search-tick[data-on-day] {
-  color: var(--color-sage-700);
-}
-
-/* The way to put a place on the day, shown on the row that is picked out. */
-.search-add {
-  display: flex;
-  flex: none;
-  align-items: center;
-  gap: 5px;
-  margin-right: 10px;
-  padding: 7px 11px;
-  border: 0;
-  border-radius: var(--radius-pill);
-  background: var(--color-terracotta);
-  color: var(--search-surface);
-  font-size: var(--text-meta);
-  font-weight: 700;
-  line-height: 1;
-  white-space: nowrap;
-  cursor: pointer;
-  opacity: 0;
-  transform: translateX(6px);
-  transition:
-    opacity 0.15s,
-    transform 0.2s var(--search-ease);
-}
-
-.search-row[data-active] .search-add,
-.search-add:focus-visible {
-  opacity: 1;
-  transform: none;
-}
-
-.search-add:disabled {
-  cursor: default;
-}
-
-.search-row[data-active] .search-add:disabled {
-  opacity: 0.45;
-}
-
 .search-line {
   padding: 12px 10px 14px;
   color: var(--search-ink-72);
@@ -650,34 +488,6 @@
   padding: 14px 10px;
   color: var(--search-ink-70);
   line-height: 1.4;
-}
-
-.search-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 12px 10px 14px;
-}
-
-.search-empty > .search-line {
-  padding: 0;
-}
-
-.search-elsewhere {
-  padding: 8px 13px;
-  border: 0;
-  border-radius: var(--radius-pill);
-  background: var(--search-pill);
-  color: var(--search-pill-ink);
-  font-size: var(--text-small);
-  font-weight: 700;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.search-elsewhere:hover {
-  background: var(--search-pill-hover);
 }
 
 /* The city panel's own field: a well of warm paper that lifts to the bar's
@@ -753,15 +563,11 @@
   .search-glass,
   .search-panel,
   .search-row,
-  .search-tile,
-  .search-add,
-  .search-chip,
   .search-clear {
     transition: none;
   }
 
   .search-word,
-  .search-chip,
   .search-dot[data-moved] > :first-child,
   .search-ripple,
   .search-name[data-moved],

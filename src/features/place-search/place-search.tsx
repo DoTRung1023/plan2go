@@ -45,12 +45,6 @@ const KINDS = ["for a place", "cafés", "museums", "street food", "viewpoints"] 
 /** How long each of those stays before the next. */
 const KINDS_EVERY_MS = 2600;
 
-/** The searches one press away before anything is typed. */
-const QUICK_SEARCHES = ["Café", "Museum", "Street food", "Temple", "Market"] as const;
-
-/** How far apart the rows and chips arrive, one after another, in seconds. */
-const ROW_STAGGER_S = 0.03;
-
 /** How long the sentence at the foot of the map says what just happened. */
 const TOAST_MS = 2400;
 
@@ -174,21 +168,6 @@ function typingIn(target: EventTarget | null): boolean {
   );
 }
 
-/** A place's name with what was typed picked out in it, where it appears. */
-function Matched({ name, typed }: { readonly name: string; readonly typed: string }) {
-  const at = typed === "" ? -1 : name.toLowerCase().indexOf(typed.toLowerCase());
-  if (at === -1) {
-    return name;
-  }
-  return (
-    <>
-      {name.slice(0, at)}
-      <strong>{name.slice(at, at + typed.length)}</strong>
-      {name.slice(at + typed.length)}
-    </>
-  );
-}
-
 /**
  * What the city is known for, or nothing. Every refusal is a plain one: nobody
  * asked for this out loud, so the field says nothing about a list it never
@@ -219,14 +198,18 @@ async function askAboutCity(city: LatLng): Promise<readonly Suggestion[]> {
  * The bar sits in the top left corner of the map, where a map search belongs,
  * and the day it searches for is the one chosen in the tabs beside it. It is
  * drawn to the design file for it in everything but size; the look and the
- * movement are in place-search.css.
+ * movement are in place-search.css. The panel of places under it is the
+ * exception, and keeps the product's own list, drawn here.
  *
  * Choosing a place does not put it on the day: it is looked up, pinned on the
  * map and opened in the sheet, where what it is like can be read and the day
  * it would join is one button away. A search that added on the spot was a
  * search that put the wrong Central Market on the day and left the reader to
- * find out. A place the reader already knows has a shorter way: the row
- * picked out carries a button that puts it on the day without the look.
+ * find out.
+ *
+ * A place the reader already knows has a shorter way: the plus at the end of
+ * its row puts it on the day without the look. The row itself still opens
+ * the place, so the shorter way is never the one a stray click takes.
  *
  * While a place is open beside the map the field holds its name, whether it
  * was found here or opened from the day, and the cross in the bar is what
@@ -286,9 +269,6 @@ export function PlaceSearch({
   /** What went wrong with the last add from a row, under the list. */
   const [addError, setAddError] = useState<string | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
-  /** How many times the panel has opened, so its rows arrive afresh each time. */
-  const [openings, setOpenings] = useState(0);
-  const [wasOpen, setWasOpen] = useState(false);
   /**
    * What a city is known for, for the field nobody has typed in yet, and
    * which city it is an answer about. Null until a city has answered.
@@ -330,19 +310,12 @@ export function PlaceSearch({
   // the one it had, unless something else has been typed over it since.
   // Adjusted during the render that carries the change rather than in an
   // effect, so the field is never painted with the name it has just lost.
-  // The panel opening is counted the same way, so its rows arrive afresh.
   if (held !== showing) {
     setHeld(showing);
     if (showing !== null) {
       setQuery(showing);
     } else if (query === held) {
       setQuery("");
-    }
-  }
-  if (wasOpen !== panelOpen) {
-    setWasOpen(panelOpen);
-    if (panelOpen) {
-      setOpenings((count) => count + 1);
     }
   }
 
@@ -670,7 +643,7 @@ export function PlaceSearch({
    * underneath actually is.
    */
   const cityLabel = dayCity?.name ?? "this city";
-  const heading = recommending ? `Popular in ${cityLabel}` : `Results in ${cityLabel}`;
+  const popularIn = `Popular in ${cityLabel}`;
 
   /**
    * True until the city has answered. Only read once the empty field is open,
@@ -708,9 +681,10 @@ export function PlaceSearch({
   /**
    * The one sentence the panel has when it is not showing a list: the place
    * being looked up, what went wrong with the last look, the city being
-   * asked about, a refusal, or the search being run. Null when the list is
-   * doing the talking, and when nothing matched, which the panel says with
-   * a way to look somewhere else instead.
+   * asked about, a refusal, the search being run, or nothing having matched.
+   * Null when the list is doing the talking, and null on a field nobody has
+   * typed in whose city had nothing to offer, so a trip with no city has a
+   * bar and nothing more.
    */
   const line = ((): string | null => {
     if (lookingUp !== null) {
@@ -728,11 +702,13 @@ export function PlaceSearch({
     if (visible.length > 0) {
       return null;
     }
-    return searching ? "Looking for places." : null;
+    return searching
+      ? "Looking for places."
+      : "Nothing matched. Try the name of the place, or the street it is on.";
   })();
 
   const listed = visible.length > 0;
-  const nothing = searched && !searching && line === null && !listed;
+  const panel = panelOpen && (listed || line !== null);
   const busy = (searched && searching) || lookingUp !== null;
 
   return (
@@ -841,146 +817,121 @@ export function PlaceSearch({
         )}
       </div>
 
-      <div inert={!panelOpen} data-open={panelOpen ? "" : undefined} className="search-panel">
-        <div ref={watchList} key={openings} className="search-scroll scroll-line">
-          {searched ? null : (
-            <div className="search-quick">
-              <span className="search-heading">Quick search</span>
-              <div className="search-chips">
-                {QUICK_SEARCHES.map((label, index) => (
-                  <button
-                    key={label}
-                    type="button"
-                    className="search-chip"
-                    style={{ animationDelay: `${(index * ROW_STAGGER_S).toFixed(2)}s` }}
-                    onMouseDown={(event) => {
-                      event.preventDefault();
-                    }}
-                    onClick={() => {
-                      setQuery(label);
-                      setLookError(null);
-                      setOpen(true);
-                      input.current?.focus();
-                    }}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+      {panel ? (
+        <div className="absolute top-full right-0 left-0 z-30 mt-2 flex max-h-[330px] flex-col overflow-hidden rounded-panel border border-rule bg-paper-raised shadow-md">
+          <div
+            ref={watchList}
+            className="scroll-line min-h-0 overflow-x-hidden overflow-y-auto py-[7px] pr-[2px] pl-[3px]"
+          >
+            {line === null ? null : (
+              <p className="px-[7px] py-[10px] text-meta text-ink-muted">{line}</p>
+            )}
 
-          {line === null ? null : <p className="search-line">{line}</p>}
-
-          {listed ? (
-            <>
-              <div className="search-header">
-                <span className="search-heading">{heading}</span>
-                <span className="search-hint">↑↓ to move · Enter to open</span>
-              </div>
-              <ul id={listId} role="listbox" aria-label={heading} className="flex flex-col gap-px">
-                {visible.map((suggestion, index) => {
-                  const onItsWay = adding.has(suggestion.providerPlaceId);
-                  const onTheDay =
-                    added.has(suggestion.providerPlaceId) ||
-                    onTheTrip.has(suggestion.providerPlaceId);
-                  return (
-                    /* The row opens the place; the button at its end adds it
-                       without the look. Two controls in one option, with the
-                       highlight on the option so it is one row under the
-                       pointer whichever half the pointer is on. */
-                    <li
-                      key={suggestion.providerPlaceId}
-                      id={`${listId}-option-${String(index)}`}
-                      role="option"
-                      aria-selected={index === activeIndex}
-                      onMouseEnter={() => {
-                        setActive(index);
-                      }}
-                      data-active={index === activeIndex ? "" : undefined}
-                      className="search-row"
-                      style={{ animationDelay: `${(index * ROW_STAGGER_S).toFixed(2)}s` }}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => {
-                          choose(suggestion);
+            {listed ? (
+              <>
+                <p className="px-[7px] pt-1 pb-[9px] text-label font-semibold text-ink-muted">
+                  {recommending ? popularIn : "Matching places"}
+                </p>
+                <ul id={listId} role="listbox" aria-label={recommending ? popularIn : "Places that match"}>
+                  {visible.map((suggestion, index) => {
+                    const onItsWay = adding.has(suggestion.providerPlaceId);
+                    const onTheDay =
+                      added.has(suggestion.providerPlaceId) ||
+                      onTheTrip.has(suggestion.providerPlaceId);
+                    return (
+                      /* The row opens the place; the plus at its end adds it
+                         without the look. Two controls in one option, with the
+                         highlight on the option so it is one row under the
+                         pointer whichever half the pointer is on. */
+                      <li
+                        key={suggestion.providerPlaceId}
+                        id={`${listId}-option-${String(index)}`}
+                        role="option"
+                        aria-selected={index === activeIndex}
+                        onMouseEnter={() => {
+                          setActive(index);
                         }}
-                        className="search-row-button"
+                        // The same room on the far side of the plus as the
+                        // words leave on its near side, so its hover disc sits
+                        // clear of the panel's edge rather than against it.
+                        className={`flex items-center rounded-chip pr-[6px] ${
+                          index === activeIndex ? "bg-terracotta-100" : ""
+                        }`}
                       >
-                        <span className="search-tile">
-                          <PinIcon size={17} strokeWidth={2.5} />
-                        </span>
-                        <span className="search-words-of">
-                          <span className="search-place-name">
-                            <Matched name={suggestion.name} typed={searched ? typed : ""} />
-                          </span>
-                          {suggestion.address === null ? null : (
-                            <span className="search-place-line">{suggestion.address}</span>
-                          )}
-                        </span>
-                      </button>
-                      {/* A tick once it is on the day, so a search answer that
-                          still lists the place says so instead of offering it
-                          again. */}
-                      {onTheDay ? (
-                        <span
-                          className="search-tick"
-                          data-on-day=""
-                          title={`On ${dayName}`}
-                          role="img"
-                          aria-label={`${suggestion.name} is on ${dayName}`}
-                        >
-                          <CheckIcon size={15} strokeWidth={3} />
-                        </span>
-                      ) : (
                         <button
                           type="button"
-                          disabled={onItsWay}
+                          onClick={() => {
+                            choose(suggestion);
+                          }}
+                          // Close on its right, so the words run up to the
+                          // plus rather than wrapping a word early to leave
+                          // room the plus does not need. The pin is centred
+                          // on the row, as the plus is, so the two marks at
+                          // either end sit on one line however many lines
+                          // the name and address take between them.
+                          className="flex min-w-0 flex-1 items-center gap-[7px] rounded-chip py-2 pr-[6px] pl-[7px] text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta"
+                        >
+                          <span className="grid h-[15px] w-[15px] shrink-0 place-items-center text-terracotta">
+                            <PinIcon size={15} strokeWidth={2.75} />
+                          </span>
+                          {/* Wrapped greedily rather than prettily: the page
+                              keeps a last line from being one word, which in a
+                              row this narrow moved a word down that fitted and
+                              left the line short beside the plus. */}
+                          <span className="min-w-0 text-wrap">
+                            <span className="block text-meta font-semibold text-ink">
+                              {suggestion.name}
+                            </span>
+                            {suggestion.address === null ? null : (
+                              <span className="block text-micro text-ink-muted">
+                                {suggestion.address}
+                              </span>
+                            )}
+                          </span>
+                        </button>
+                        {/* A tick once it is on the day, so a search answer
+                            that still lists the place says so instead of
+                            offering it again. */}
+                        <button
+                          type="button"
+                          disabled={onItsWay || onTheDay}
                           aria-busy={onItsWay}
-                          aria-label={`Add ${suggestion.name} to ${dayName}`}
+                          aria-label={
+                            onTheDay
+                              ? `${suggestion.name} is on ${dayName}`
+                              : `Add ${suggestion.name} to ${dayName}`
+                          }
+                          title={onTheDay ? `On ${dayName}` : `Add to ${dayName}`}
                           onClick={() => {
                             addNow(suggestion);
                           }}
-                          className="search-add"
+                          className={`grid h-[26px] w-[26px] shrink-0 place-items-center rounded-pill focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
+                            onTheDay
+                              ? "text-sage-700"
+                              : "text-terracotta-700 hover:bg-terracotta-200 hover:text-terracotta-900 disabled:opacity-45"
+                          }`}
                         >
-                          <PlusIcon size={11} strokeWidth={3} />
-                          {`Add to ${dayName}`}
+                          {onTheDay ? (
+                            <CheckIcon size={14} strokeWidth={3} />
+                          ) : (
+                            <PlusIcon size={14} strokeWidth={3} />
+                          )}
                         </button>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            </>
-          ) : null}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </>
+            ) : null}
 
-          {nothing ? (
-            <div className="search-empty">
-              <p className="search-line">{`Nothing in ${cityLabel} matches "${typed}".`}</p>
-              <button
-                type="button"
-                className="search-elsewhere"
-                onMouseDown={(event) => {
-                  event.preventDefault();
-                }}
-                onClick={() => {
-                  setOpen(false);
-                  setCityOpen(true);
-                }}
-              >
-                Search in another city
-              </button>
-            </div>
-          ) : null}
-
-          {addError === null ? null : (
-            <Notice role="alert" size="meta" className="mx-[4px] mt-1">
-              {addError}
-            </Notice>
-          )}
+            {addError === null ? null : (
+              <Notice role="alert" size="meta" className="mx-[4px] mt-1">
+                {addError}
+              </Notice>
+            )}
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {toast === null ? null : (
         <div
