@@ -124,6 +124,8 @@ const predictionSchema = z.object({
   placePrediction: z
     .object({
       placeId: z.string(),
+      /** From the origin the search was given, when it was given one. */
+      distanceMeters: z.number().int().optional(),
       text: z.object({ text: z.string() }).optional(),
       structuredFormat: z
         .object({
@@ -346,6 +348,7 @@ function suggestionsOf(
       providerPlaceId: place.id,
       name,
       address: place.formattedAddress ?? null,
+      distanceMeters: null,
     });
   }
   return suggestions.slice(0, limit);
@@ -377,12 +380,11 @@ export function createGooglePlacesProvider(options: GooglePlacesOptions): Places
         body.sessionToken = request.session;
       }
       if (request.near !== null) {
-        body.locationBias = {
-          circle: {
-            center: { latitude: request.near.lat, longitude: request.near.lng },
-            radius: BIAS_RADIUS_METERS,
-          },
-        };
+        const center = { latitude: request.near.lat, longitude: request.near.lng };
+        body.locationBias = { circle: { center, radius: BIAS_RADIUS_METERS } };
+        // The same point as where each answer is measured from, which the
+        // provider does at no charge, so a city in the list says how far it is.
+        body.origin = center;
       }
 
       const response = await fetch(AUTOCOMPLETE_URL, {
@@ -407,6 +409,7 @@ export function createGooglePlacesProvider(options: GooglePlacesOptions): Places
           providerPlaceId: prediction.placeId,
           name,
           address: prediction.structuredFormat?.secondaryText?.text ?? null,
+          distanceMeters: prediction.distanceMeters ?? null,
         });
       }
       return suggestions.slice(0, request.limit);

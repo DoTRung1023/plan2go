@@ -182,8 +182,8 @@ export interface PlacedCity {
 }
 
 /**
- * The cities worth going to from a point, nearest first, and none so close
- * that it is the city the point is in.
+ * The cities worth going to from a point, nearest first, each with how far it
+ * is from the point, and none so close that it is the city the point is in.
  */
 export function nearestFirst(
   from: LatLng,
@@ -191,11 +191,10 @@ export function nearestFirst(
   limit: number,
 ): readonly PlaceSuggestion[] {
   return placed
-    .map(({ city, position }) => ({ city, meters: metersBetween(from, position) }))
-    .filter((one) => one.meters >= NEAREST_METERS)
-    .sort((a, b) => a.meters - b.meters)
-    .slice(0, limit)
-    .map((one) => one.city);
+    .map(({ city, position }) => ({ ...city, distanceMeters: metersBetween(from, position) }))
+    .filter((city) => city.distanceMeters >= NEAREST_METERS)
+    .sort((a, b) => a.distanceMeters - b.distanceMeters)
+    .slice(0, limit);
 }
 
 /**

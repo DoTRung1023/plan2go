@@ -79,6 +79,12 @@ export interface PlaceSuggestion {
   readonly name: string;
   /** The line beneath it, "44 Gouger Street, Adelaide". */
   readonly address: string | null;
+  /**
+   * How far it is in a straight line from the point the search was asked
+   * near, in whole metres, which the provider says for nothing. Null when the
+   * search was asked near nowhere, or the provider did not say.
+   */
+  readonly distanceMeters: number | null;
 }
 
 /**

@@ -10,7 +10,7 @@ function landmark(locality: string | null, region: string | null): LandmarkPlace
 const ADELAIDE: LatLng = { lat: -34.9285, lng: 138.6007 };
 
 function placed(name: string, position: LatLng) {
-  return { city: { providerPlaceId: `id-${name}`, name, address: null }, position };
+  return { city: { providerPlaceId: `id-${name}`, name, address: null, distanceMeters: null }, position };
 }
 
 describe("citiesFromLandmarks", () => {
@@ -106,6 +106,12 @@ describe("nearestFirst", () => {
   it("puts the cities in order of how far they are", () => {
     const cities = nearestFirst(ADELAIDE, [MELBOURNE, PERTH, HAHNDORF], 8);
     expect(cities.map((city) => city.name)).toEqual(["Hahndorf", "Melbourne", "Perth"]);
+  });
+
+  it("says how far each is from the point", () => {
+    const [hahndorf] = nearestFirst(ADELAIDE, [HAHNDORF], 8);
+    expect(hahndorf?.distanceMeters).toBeGreaterThan(20_000);
+    expect(hahndorf?.distanceMeters).toBeLessThan(25_000);
   });
 
   it("leaves out a place so close it is the city itself", () => {

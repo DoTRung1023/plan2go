@@ -66,5 +66,13 @@ export const ROW_NAME = "block text-small font-semibold text-ink";
 
 export const ROW_LINE = "block text-micro text-ink-muted";
 
+/**
+ * How far a city is from the day's, at the far end of its row, in the second
+ * line's size and ink so it reads as said about the name rather than beside
+ * it, and in even figures so a column of them lines up.
+ */
+export const ROW_DISTANCE =
+  "ml-auto shrink-0 pl-[10px] text-micro whitespace-nowrap text-ink-muted tabular-nums";
+
 /** What sits at the end of a row, on the same 26px either way. */
 export const ROW_END = "grid h-[26px] w-[26px] shrink-0 place-items-center rounded-pill";

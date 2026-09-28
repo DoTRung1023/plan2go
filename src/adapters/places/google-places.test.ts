@@ -126,6 +126,75 @@ describe("photo", () => {
   });
 });
 
+describe("search", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  const answer = {
+    suggestions: [
+      {
+        placePrediction: {
+          placeId: "p-victor",
+          distanceMeters: 62_418,
+          structuredFormat: {
+            mainText: { text: "Victor Harbor" },
+            secondaryText: { text: "South Australia, Australia" },
+          },
+        },
+      },
+    ],
+  };
+
+  it("measures each answer from the point it was asked near", async () => {
+    const fetched = vi.fn(async () => Response.json(answer));
+    vi.stubGlobal("fetch", fetched);
+
+    const found = await createGooglePlacesProvider({ apiKey: "k" }).search({
+      query: "Victor",
+      near: { lat: -34.93, lng: 138.6 },
+      limit: 8,
+      citiesOnly: true,
+      session: null,
+    });
+
+    const [, init] = fetched.mock.calls[0] as unknown as [string, RequestInit];
+    expect(JSON.parse(String(init.body))).toMatchObject({
+      origin: { latitude: -34.93, longitude: 138.6 },
+    });
+    expect(found).toEqual([
+      {
+        providerPlaceId: "p-victor",
+        name: "Victor Harbor",
+        address: "South Australia, Australia",
+        distanceMeters: 62_418,
+      },
+    ]);
+  });
+
+  it("says no distance for a search asked near nowhere", async () => {
+    const unmeasured = {
+      suggestions: [
+        { placePrediction: { placeId: "p-victor", structuredFormat: { mainText: { text: "Victor Harbor" } } } },
+      ],
+    };
+    const fetched = vi.fn(async () => Response.json(unmeasured));
+    vi.stubGlobal("fetch", fetched);
+
+    const [found] = await createGooglePlacesProvider({ apiKey: "k" }).search({
+      query: "Victor",
+      near: null,
+      limit: 8,
+      citiesOnly: true,
+      session: null,
+    });
+
+    const [, init] = fetched.mock.calls[0] as unknown as [string, RequestInit];
+    expect(JSON.parse(String(init.body))).not.toHaveProperty("origin");
+    expect(found?.distanceMeters).toBeNull();
+  });
+});
+
 describe("landmarks", () => {
   afterEach(() => {
     vi.unstubAllGlobals();

@@ -583,8 +583,11 @@ the accent while it is typed in, its words at the small step like the names unde
 with its glass in the column the pins stand in and its words where the names start. Under it, headed "Cities nearby", one list of the towns
 near the day's city and the best known cities in its country, together and nearest
 first, in rows the same as a place's but with the name alone: a pin in the accent, the
-name at the small step and nothing under it, and the same highlight. Once something is
-typed the heading is "Matching cities". Every city the trip already goes
+name at the small step and nothing under it, and the same highlight. At the far end of
+the row, how far the city is from the day's city in a straight line, "58 km", at the
+micro step in `ink-muted` with even figures, so a column of them lines up; a straight
+line is all it claims, and no time is given, since nothing here knows how the road
+runs. Once something is typed the heading is "Matching cities". Every city the trip already goes
 to is left out of that list, the day's own among them: the pill already says it, and
 the list is for somewhere the trip has not been yet, as is anywhere closer than 15 km,
 which is the city's own suburbs. There is no list of either to be had from the places
@@ -597,8 +600,9 @@ and kept, and both are rough at their tails, where a town with one landmark can 
 up as the hamlet the landmark stands in. Typing a city lists
 the cities that match, nearest the day's city first, each the trip already goes to with
 its dot in the pin's place and any other with a pin, since a city has no colour until a
-day is in it, and the city the day is in ticked at the end of its row, where a place's
-plus stands. Choosing
+day is in it, each with its distance at the end of its row as above, which the provider
+measures from the day's city at no charge, and the city the day is in ticked there
+instead, where a place's plus stands. Choosing
 one moves the day there, and with it the days straight after it that were in the same
 city, up to the first that was somewhere else; the days before it never move, and
 nothing on a moved day moves with it. A day added to the end of the trip is in the city

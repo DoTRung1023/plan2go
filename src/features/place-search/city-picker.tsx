@@ -2,10 +2,11 @@
 
 import type { KeyboardEvent } from "react";
 import { useEffect, useId, useRef, useState } from "react";
-import { array, nullable, object, optional, safeParse, string } from "zod/mini";
+import { array, nullable, number, object, optional, safeParse, string } from "zod/mini";
 import type { DayCity } from "@/core/model/day";
 import type { CityIdentity } from "@/core/model/day-city";
 import { sameCity } from "@/core/model/day-city";
+import { formatDistance } from "@/core/model/distance";
 import { CheckIcon, ChevronDownIcon, PinIcon, SearchIcon } from "@/ui/icons";
 import { CityDot, cityColor } from "@/ui/city-dot";
 import { Notice } from "@/ui/notice";
@@ -19,6 +20,7 @@ import {
   ROW,
   ROW_ACTIVE,
   ROW_BUTTON,
+  ROW_DISTANCE,
   ROW_END,
   ROW_LINE,
   ROW_MARK,
@@ -42,13 +44,15 @@ const suggestionSchema = object({
   providerPlaceId: string(),
   name: string(),
   address: nullable(string()),
+  /** From the day's city, which the search was asked near. */
+  distanceMeters: optional(nullable(number())),
 });
 
 const responseSchema = object({ suggestions: array(suggestionSchema) });
 
-/** The cities worth going to from a city, as the route answers. */
+/** The cities worth going to from a city, and how far each is, as the route answers. */
 const toVisitSchema = object({
-  cities: array(object({ providerPlaceId: string(), name: string() })),
+  cities: array(object({ providerPlaceId: string(), name: string(), distanceMeters: number() })),
 });
 
 /** Cities asked for; the trip's own come out of these, so as many as the route gives. */
@@ -56,11 +60,16 @@ const TO_VISIT_ASKED = 20;
 
 const refusalSchema = object({ error: string(), action: optional(string()) });
 
-/** A city found by the search, or one worth visiting, and the line under its name. */
+/**
+ * A city found by the search, or one worth visiting, the line under its name,
+ * and how far it is from the day's city in a straight line, or null when that
+ * is not known.
+ */
 interface Found {
   readonly providerPlaceId: string;
   readonly name: string;
   readonly line: string | null;
+  readonly distanceMeters: number | null;
 }
 
 /**
@@ -75,10 +84,10 @@ interface Row extends Found {
 
 /**
  * The cities worth going to from a city, the towns near it and the best known
- * in its country, nearest first, or nothing. Each is its name alone, with no
- * line under it. Every refusal is a plain one: nobody asked for this list out
- * loud, so the panel says nothing about one it never got, and typing a city
- * still works.
+ * in its country, nearest first, or nothing. Each is its name, with no line
+ * under it, and how far it is at the end of its row. Every refusal is a plain
+ * one: nobody asked for this list out loud, so the panel says nothing about
+ * one it never got, and typing a city still works.
  */
 async function askForCitiesToVisit(providerPlaceId: string): Promise<readonly Found[] | null> {
   const parameters = new URLSearchParams({ city: providerPlaceId, limit: String(TO_VISIT_ASKED) });
@@ -95,6 +104,7 @@ async function askForCitiesToVisit(providerPlaceId: string): Promise<readonly Fo
       providerPlaceId: one.providerPlaceId,
       name: one.name,
       line: null,
+      distanceMeters: one.distanceMeters,
     }));
   } catch {
     return null;
@@ -267,6 +277,7 @@ export function CityPicker({
             providerPlaceId: suggestion.providerPlaceId,
             name: suggestion.name,
             line: suggestion.address,
+            distanceMeters: suggestion.distanceMeters ?? null,
           })),
         );
         setMessage(null);
@@ -548,6 +559,13 @@ export function CityPicker({
                           <span className={ROW_NAME}>{row.name}</span>
                           {row.line === null ? null : <span className={ROW_LINE}>{row.line}</span>}
                         </span>
+                        {/* How far it is from the day's city, at the far end
+                            and inside the row's button, so it is chosen with
+                            the rest of the row. The day's own city has its
+                            tick there instead, and is no distance away. */}
+                        {row.current || row.distanceMeters === null ? null : (
+                          <span className={ROW_DISTANCE}>{formatDistance(row.distanceMeters)}</span>
+                        )}
                       </button>
                       {/* The tick stands where a place's plus does, so the
                           city the day is in is marked at the same edge. */}

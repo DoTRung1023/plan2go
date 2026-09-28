@@ -13,11 +13,13 @@ const CACHE_HOURS = 24;
 /** Coarse on purpose. A key the caller can vary freely is not a cache key. */
 const BIAS_DECIMALS = 2;
 
+/** A row kept before suggestions carried a distance has none, and reads as not knowing it. */
 const cachedSuggestionsSchema = z.array(
   z.object({
     providerPlaceId: z.string(),
     name: z.string(),
     address: z.string().nullable(),
+    distanceMeters: z.number().int().nullable().default(null),
   }),
 );
 
@@ -70,6 +72,7 @@ export async function suggestionsFor(
     providerPlaceId: suggestion.providerPlaceId,
     name: suggestion.name,
     address: suggestion.address,
+    distanceMeters: suggestion.distanceMeters,
   }));
   const expiresAt = new Date(now.getTime() + CACHE_HOURS * MILLIS_PER_HOUR);
 
