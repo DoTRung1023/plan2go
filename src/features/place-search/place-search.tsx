@@ -12,6 +12,21 @@ import { useScrollBar } from "@/ui/use-scroll-bar";
 import { Notice } from "@/ui/notice";
 import { useOutsidePress } from "@/ui/use-outside-press";
 import { CityPicker } from "./city-picker";
+import {
+  PANEL,
+  PANEL_LABEL,
+  PANEL_LINE,
+  PANEL_LIST,
+  ROW,
+  ROW_ACTIVE,
+  ROW_BUTTON,
+  ROW_END,
+  ROW_LINE,
+  ROW_MARK,
+  ROW_NAME,
+  ROW_PIN,
+  ROW_WORDS,
+} from "./panel-styles";
 
 /** Long enough that typing does not spend money on every letter. */
 const DEBOUNCE_MS = 250;
@@ -150,7 +165,6 @@ const FIELD =
 const FIELD_BUTTON =
   "grid h-[32px] w-[32px] shrink-0 place-items-center rounded-pill text-ink-muted hover:bg-neutral-200 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
-const PANEL_LINE = "px-[7px] py-[10px] text-meta text-ink-muted";
 
 /**
  * What the city is known for, or nothing. Every refusal is a plain one: nobody
@@ -700,21 +714,13 @@ export function PlaceSearch({
       </div>
 
       {panel ? (
-        <div
-          className="absolute top-full right-0 left-0 z-30 mt-2 flex max-h-[330px] flex-col overflow-hidden rounded-panel border border-rule bg-paper-raised shadow-md"
-        >
-          {/* Only the bar's own width on the right: the room a row leaves
-              beside its plus is the row's, below, so it can match what the
-              plus has on its other side. */}
-          <div
-            ref={watchList}
-            className="scroll-line min-h-0 overflow-x-hidden overflow-y-auto py-[7px] pr-[2px] pl-[3px]"
-          >
+        <div className={PANEL}>
+          <div ref={watchList} className={PANEL_LIST}>
             {line === null ? null : <p className={PANEL_LINE}>{line}</p>}
 
             {listed ? (
               <>
-                <p className="px-[7px] pt-1 pb-[9px] text-label font-semibold text-ink-muted">
+                <p className={PANEL_LABEL}>
                   {recommending ? popularIn : "Matching places"}
                 </p>
                 <ul
@@ -745,9 +751,7 @@ export function PlaceSearch({
                         // The same room on the far side of the plus as the
                         // words leave on its near side, so its hover disc sits
                         // clear of the bar rather than against it.
-                        className={`flex items-center rounded-chip pr-[6px] ${
-                          index === activeIndex ? "bg-terracotta-100" : ""
-                        }`}
+                        className={`${ROW} ${index === activeIndex ? ROW_ACTIVE : ""}`}
                       >
                         <button
                           type="button"
@@ -760,21 +764,15 @@ export function PlaceSearch({
                           // on the row, as the plus is, so the two marks at
                           // either end sit on one line however many lines
                           // the name and address take between them.
-                          className="flex min-w-0 flex-1 items-center gap-[7px] rounded-chip py-2 pr-[6px] pl-[7px] text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta"
+                          className={ROW_BUTTON}
                         >
-                          <PinIcon size={15} strokeWidth={2.75} className="shrink-0 text-terracotta" />
-                          {/* Wrapped greedily rather than prettily: the page
-                              keeps a last line from being one word, which in
-                              a row this narrow moved a word down that fitted
-                              and left the line short beside the plus. */}
-                          <span className="min-w-0 text-wrap">
-                            <span className="block text-meta font-semibold text-ink">
-                              {suggestion.name}
-                            </span>
+                          <span className={`${ROW_MARK} ${ROW_PIN}`}>
+                            <PinIcon size={15} strokeWidth={2.75} />
+                          </span>
+                          <span className={ROW_WORDS}>
+                            <span className={ROW_NAME}>{suggestion.name}</span>
                             {suggestion.address === null ? null : (
-                              <span className="block text-micro text-ink-muted">
-                                {suggestion.address}
-                              </span>
+                              <span className={ROW_LINE}>{suggestion.address}</span>
                             )}
                           </span>
                         </button>
@@ -794,7 +792,7 @@ export function PlaceSearch({
                           onClick={() => {
                             addNow(suggestion);
                           }}
-                          className={`grid h-[26px] w-[26px] shrink-0 place-items-center rounded-pill focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
+                          className={`${ROW_END} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
                             onTheDay
                               ? "text-sage-700"
                               : "text-terracotta-700 hover:bg-terracotta-200 hover:text-terracotta-900 disabled:opacity-45"

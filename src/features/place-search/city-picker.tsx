@@ -17,6 +17,21 @@ import { CityDot } from "@/ui/city-dot";
 import { Notice } from "@/ui/notice";
 import { useOutsidePress } from "@/ui/use-outside-press";
 import { useScrollBar } from "@/ui/use-scroll-bar";
+import {
+  PANEL,
+  PANEL_LABEL,
+  PANEL_LINE,
+  PANEL_LIST,
+  ROW,
+  ROW_ACTIVE,
+  ROW_BUTTON,
+  ROW_END,
+  ROW_LINE,
+  ROW_MARK,
+  ROW_NAME,
+  ROW_PIN,
+  ROW_WORDS,
+} from "./panel-styles";
 
 /** Long enough that typing does not spend money on every letter. */
 const DEBOUNCE_MS = 250;
@@ -393,6 +408,7 @@ export function CityPicker({ city, cities, dayName, colorFor, onOpen, onChoose }
   })();
 
   const listed = rows.length > 0;
+  const heading = searched ? "Matching cities" : `Popular in ${popularHere?.country ?? "this country"}`;
 
   return (
     <div ref={root} className="contents">
@@ -425,15 +441,16 @@ export function CityPicker({ city, cities, dayName, colorFor, onOpen, onChoose }
       </button>
 
       {open ? (
-        <div
-          id={panelId}
-          role="dialog"
-          aria-label={`The city ${dayName} is in`}
-          className="absolute top-full left-0 z-30 mt-2 flex max-h-[380px] w-[300px] max-w-full flex-col overflow-hidden rounded-panel border border-rule bg-paper-raised shadow-md"
-        >
-          <div className="p-[7px] pb-[3px]">
-            <div className="flex h-[40px] items-center gap-2 rounded-pill border border-rule bg-paper px-3 focus-within:border-terracotta">
-              <SearchIcon size={16} strokeWidth={2.75} className="shrink-0 text-ink-faint" />
+        <div id={panelId} role="dialog" aria-label={`The city ${dayName} is in`} className={PANEL}>
+          {/* The field a city is typed in, the same slim pill a start or
+              end of the day is searched for in. Its left and right edges
+              stand where the rows' do, so the glass sits in the column the
+              pins do and the words start where the names do. */}
+          <div className="pt-[7px] pr-[2px] pl-[3px]">
+            <div className="flex h-9 items-center gap-[7px] rounded-pill border border-rule bg-paper pr-[13px] pl-[6px] focus-within:border-terracotta">
+              <span className={`${ROW_MARK} text-ink-muted`}>
+                <SearchIcon size={15} strokeWidth={2.75} />
+              </span>
               <label className="sr-only" htmlFor={`${panelId}-field`}>
                 Search for a city
               </label>
@@ -457,30 +474,21 @@ export function CityPicker({ city, cities, dayName, colorFor, onOpen, onChoose }
                   setError(null);
                 }}
                 onKeyDown={onKeyDown}
-                className="min-w-0 flex-1 self-stretch bg-transparent text-small text-ink caret-terracotta outline-none placeholder:text-ink-faint"
+                className="min-w-0 flex-1 self-stretch bg-transparent text-meta text-ink caret-terracotta outline-none placeholder:text-ink-faint"
               />
             </div>
           </div>
 
-          <div
-            ref={watchList}
-            className="scroll-line min-h-0 overflow-x-hidden overflow-y-auto px-[7px] pt-[4px] pb-[7px]"
-          >
-            {line === null ? null : <p className="px-[7px] py-[10px] text-meta text-ink-muted">{line}</p>}
+          <div ref={watchList} className={PANEL_LIST}>
+            {line === null ? null : <p className={PANEL_LINE}>{line}</p>}
 
             {listed ? (
               <>
-                <p className="px-[7px] pt-1 pb-[7px] text-label font-semibold text-ink-muted">
-                  {searched ? "Matching cities" : `Popular in ${popularHere?.country ?? "this country"}`}
-                </p>
+                <p className={PANEL_LABEL}>{heading}</p>
                 <ul
                   id={listId}
                   role="listbox"
-                  aria-label={
-                    searched
-                      ? "Cities that match"
-                      : `Popular in ${popularHere?.country ?? "this country"}`
-                  }
+                  aria-label={searched ? "Cities that match" : heading}
                   aria-busy={saving !== null}
                 >
                   {rows.map((row, index) => (
@@ -492,6 +500,7 @@ export function CityPicker({ city, cities, dayName, colorFor, onOpen, onChoose }
                       onMouseEnter={() => {
                         setActive(index);
                       }}
+                      className={`${ROW} ${index === activeIndex ? ROW_ACTIVE : ""}`}
                     >
                       <button
                         type="button"
@@ -500,38 +509,31 @@ export function CityPicker({ city, cities, dayName, colorFor, onOpen, onChoose }
                         onClick={() => {
                           choose(row);
                         }}
-                        className={`flex w-full items-center gap-[10px] rounded-chip px-[7px] py-[7px] text-left disabled:opacity-60 ${
-                          index === activeIndex ? "bg-terracotta-100" : ""
-                        }`}
+                        className={`${ROW_BUTTON} disabled:opacity-60`}
                       >
                         {/* A city the trip goes to shows the dot its days
-                            carry; one it does not go to yet has no colour,
-                            and keeps the plain pin. */}
-                        <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-pill bg-paper-sunken text-ink-muted">
+                            carry, in the pin's place; one it does not go
+                            to yet has no colour, and keeps the pin every
+                            place in the search has. */}
+                        <span className={`${ROW_MARK} ${ROW_PIN}`}>
                           {row.color === null ? (
-                            <PinIcon size={14} strokeWidth={2.75} />
+                            <PinIcon size={15} strokeWidth={2.75} />
                           ) : (
-                            <CityDot slot={row.color} size={10} onDark={false} />
+                            <CityDot slot={row.color} size={9} onDark={false} />
                           )}
                         </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-small/[1.3] font-semibold text-ink">
-                            {row.name}
-                          </span>
-                          {row.line === null ? null : (
-                            <span className="block truncate text-micro text-ink-muted">
-                              {row.line}
-                            </span>
-                          )}
+                        <span className={ROW_WORDS}>
+                          <span className={ROW_NAME}>{row.name}</span>
+                          {row.line === null ? null : <span className={ROW_LINE}>{row.line}</span>}
                         </span>
-                        {row.current ? (
-                          <CheckIcon
-                            size={15}
-                            strokeWidth={3}
-                            className="mr-[3px] shrink-0 text-terracotta-700"
-                          />
-                        ) : null}
                       </button>
+                      {/* The tick stands where a place's plus does, so the
+                          city the day is in is marked at the same edge. */}
+                      {row.current ? (
+                        <span className={`${ROW_END} text-terracotta-700`}>
+                          <CheckIcon size={14} strokeWidth={3} />
+                        </span>
+                      ) : null}
                     </li>
                   ))}
                 </ul>

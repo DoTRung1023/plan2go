@@ -1,5 +1,5 @@
 import type { DrawnLeg } from "@/adapters/maps/google-static-map";
-import type { PlannedDay } from "./compute-trip";
+import type { PlannedDay } from "../compute-trip";
 
 /**
  * Where the picture of each day's map is, by day. The sheets take it as an

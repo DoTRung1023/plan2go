@@ -4,12 +4,12 @@ import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useSta
 import { object, optional, safeParse, string } from "zod/mini";
 import { CheckIcon, CloseIcon } from "@/ui/icons";
 import { Notice } from "@/ui/notice";
-import type { PlannedDay } from "./compute-trip";
+import type { PlannedDay } from "../compute-trip";
 import { dayMapSources } from "./day-map-source";
 import { exportRequestQuery } from "./export-query";
 import type { ExportRequest } from "./export-request";
 import { DEFAULT_EXPORT, exportRequestKey } from "./export-request";
-import { formatDayTab } from "./format-day-date";
+import { formatDayTab } from "../format-day-date";
 import { exportFileName } from "./export-name";
 import type { Ink, MapSize, Orientation, PaperSize, TextSize } from "./paper";
 import { sheetGeometry } from "./paper";

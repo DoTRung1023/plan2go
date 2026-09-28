@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import type { PlannedDay } from "@/features/day-planner/compute-trip";
-import type { DayMapSources } from "@/features/day-planner/day-map-source";
-import type { ExportRequest } from "@/features/day-planner/export-request";
-import { PrintedTrip } from "@/features/day-planner/printed-trip";
+import type { DayMapSources } from "@/features/day-planner/export/day-map-source";
+import type { ExportRequest } from "@/features/day-planner/export/export-request";
+import { PrintedTrip } from "@/features/day-planner/export/printed-trip";
 
 interface PrintSheetsProps {
   readonly title: string;

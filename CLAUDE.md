@@ -81,6 +81,11 @@ Kebab-case filenames everywhere. Tests colocated beside their source as
 `thing.test.ts`, never in a mirrored tree. No barrel `index.ts` files. Do not create a
 new top-level folder without asking.
 
+A feature folder stays flat until it holds about 20 source files, not counting tests
+and CSS, or until `app` starts importing one group of its files on their own. Then
+that group moves into a subfolder of the feature, as `day-planner/export/` did, and
+not into a sibling feature, because features do not import from each other.
+
 ## State of the repo
 
 Postgres is hosted on Neon and there is no local database. Development, the tests and

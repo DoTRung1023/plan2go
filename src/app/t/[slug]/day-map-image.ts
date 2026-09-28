@@ -1,5 +1,5 @@
 import type { PlannedDay } from "@/features/day-planner/compute-trip";
-import { drawnLegs } from "@/features/day-planner/day-map-source";
+import { drawnLegs } from "@/features/day-planner/export/day-map-source";
 import { googleStaticMapUrl } from "@/adapters/maps/google-static-map";
 import type { MapImage } from "@/server/maps/static-map-cache";
 import { staticMapImageFor, staticMapKey } from "@/server/maps/static-map-cache";

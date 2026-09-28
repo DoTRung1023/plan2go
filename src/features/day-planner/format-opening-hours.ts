@@ -1,5 +1,7 @@
-import type { OpeningWindow } from "@/core/model/place";
+import type { DayPlan } from "@/core/model/day";
+import type { OpeningWindow, Place } from "@/core/model/place";
 import { formatClock } from "@/core/time/minutes";
+import { weekdayOf } from "@/core/time/zoned";
 
 /**
  * When a place is open on the day being read.
@@ -25,4 +27,12 @@ export function formatOpeningHours(
     (window) => `${formatClock(window.opensAt)}–${formatClock(window.closesAt)}`,
   );
   return `Open ${spans.join(", ")}`;
+}
+
+/** What the place says about itself on the day being read. */
+export function hoursOn(place: Place, day: DayPlan): string | null {
+  if (place.openingHours === null) {
+    return null;
+  }
+  return formatOpeningHours(place.openingHours[weekdayOf(day.date)]);
 }

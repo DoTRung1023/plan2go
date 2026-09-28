@@ -500,11 +500,17 @@ this is that day's city, with a 9px dot of the city's colour ringed in `paper` a
 chosen day, the city's name at the small step in `paper` and a
 chevron, 8px in from the field's edge so its curve runs inside the field's. The words
 in the field name the city too, "Search places in Hanoi", and the empty field offers
-what that city is known for. Pressed, the pill opens a panel under the field from its
-left edge, 300px wide, at the `panel` radius under `shadow-md`: a field of its own for
-typing a city, and under it, headed "Popular in Vietnam", the cities worth visiting in
-the country the day's city is in, each on a row with a plain pin on a disc of
-`paper-sunken`, the name, and under it the province and country. Every city the trip
+what that city is known for. Pressed, the pill opens the same panel a search for places
+does, the field's width at the `panel` radius under `shadow-md`, drawn from one set of
+classes so the two lists cannot drift apart: rows of the same size and padding, a pin
+in the accent at the front of each, the name at the meta step over its line at the
+micro step, the same highlight, and whatever marks a row at the same end, a place's
+plus or a city's tick. Over the rows, a field of its own for typing a city: the slim
+pill a start or end of the day is searched for in, 36px on `paper` inside a hairline
+that takes the accent while it is typed in, with its glass in the column the pins
+stand in and its words where the names start. Under it, headed "Popular in Vietnam",
+the cities worth visiting in the country the day's city is in, each with the province
+and country under its name. Every city the trip
 already goes to is left out of that list, the day's own among them: the pill already
 says it, and the list is for somewhere the trip has not been yet. There is no list of
 popular cities to be had from the places provider, so it is made from the country's

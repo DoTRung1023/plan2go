@@ -3,17 +3,17 @@
 import { Fragment, useEffect, useOptimistic, useRef, useState, useTransition } from "react";
 import { conflictsAtStop } from "@/core/model/conflict";
 import type { DayEndpoint, DayId, DayPlan } from "@/core/model/day";
-import type { LatLng, Place, PlaceId } from "@/core/model/place";
+import type { LatLng, PlaceId } from "@/core/model/place";
 import type { ComputedDay, ComputedStop } from "@/core/time/compute-day";
 import { formatClock } from "@/core/time/minutes";
-import { weekdayOf } from "@/core/time/zoned";
 import { ClockIcon, CloseIcon, FlagIcon, HomeIcon, PencilIcon, PlusIcon } from "@/ui/icons";
 import type { PlannedDay } from "./compute-trip";
 import type { DayActions } from "./day-actions";
 import { EmptyDay } from "./empty-day";
+import { endpointName } from "./endpoint-name";
 import { EndpointPicker } from "./endpoint-picker";
 import { formatDayDate } from "./format-day-date";
-import { formatOpeningHours } from "./format-opening-hours";
+import { hoursOn } from "./format-opening-hours";
 import { LeaveAt } from "./leave-at";
 import { LegRow } from "./leg-row";
 import { AboutPlaceButton, StopCard, TOOL, TOOL_GLYPH } from "./stop-card";
@@ -68,22 +68,6 @@ function movedWithin<T>(list: readonly T[], from: number, to: number): readonly 
   }
   moved.splice(to, 0, taken);
   return moved;
-}
-
-/** What the place says about itself on the day being read. */
-export function hoursOn(place: Place, day: DayPlan): string | null {
-  if (place.openingHours === null) {
-    return null;
-  }
-  return formatOpeningHours(place.openingHours[weekdayOf(day.date)]);
-}
-
-/** The traveller's own label first, then the place it stands for. */
-export function endpointName(endpoint: DayEndpoint): string {
-  if (endpoint.label === null) {
-    return endpoint.place.name;
-  }
-  return `${endpoint.label}, ${endpoint.place.name}`;
 }
 
 /**

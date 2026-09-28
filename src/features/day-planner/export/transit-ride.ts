@@ -1,6 +1,6 @@
 import type { TransitRide, TransitVehicle } from "@/core/model/leg";
 import { formatDuration } from "@/core/time/minutes";
-import { formatStops } from "./format-stops";
+import { formatStops } from "../format-stops";
 
 /** The vehicle in the words a traveller would use at the stop. */
 const VEHICLE_WORDS: Readonly<Record<TransitVehicle, string>> = {

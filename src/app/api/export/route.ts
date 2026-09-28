@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { exportRequestQuery, parseExportRequest } from "@/features/day-planner/export-query";
-import { PAGE_MARGIN_MM } from "@/features/day-planner/paper";
+import { exportRequestQuery, parseExportRequest } from "@/features/day-planner/export/export-query";
+import { PAGE_MARGIN_MM } from "@/features/day-planner/export/paper";
 import { attachmentDisposition } from "@/server/pdf/attachment";
 import { printPageToPdf } from "@/server/pdf/print-page";
 import { consumeRateLimit } from "@/server/rate-limit/ip-rate-limit";

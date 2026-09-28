@@ -8,15 +8,15 @@ import type { EndpointRef } from "@/features/day-planner/day-itinerary";
 import { DayPlanner } from "@/features/day-planner/day-planner";
 import { PlaceSearch } from "@/features/place-search/place-search";
 import { DayTabs } from "@/features/day-planner/day-tabs";
-import { DEFAULT_EXPORT } from "@/features/day-planner/export-request";
+import { DEFAULT_EXPORT } from "@/features/day-planner/export/export-request";
 import { PaneHandle } from "./pane-handle";
-import { PrintedTrip } from "@/features/day-planner/printed-trip";
+import { PrintedTrip } from "@/features/day-planner/export/printed-trip";
 import { placesOnTheTrip } from "@/features/place-search/places-on-the-trip";
 import { searchBias } from "@/features/place-search/search-bias";
 import { colorAfterMove } from "@/core/model/city-colors";
 import { citiesOf } from "@/core/model/day-city";
 import { TripMenu } from "@/features/trip-settings/trip-menu";
-import { TripExport } from "@/features/trip-settings/trip-export";
+import { TripExport } from "@/features/day-planner/export/trip-export";
 import { ShareLinks } from "@/features/trip-settings/share-links";
 import { PlaceSheet, SHEET_REACH } from "@/features/place-details/place-sheet";
 import { SavedNote } from "@/features/trip-settings/saved-note";
@@ -46,7 +46,7 @@ import { updateTripAction } from "./update-trip-action";
  */
 const ExportDialog = dynamic(
   async () => {
-    const loaded = await import("@/features/day-planner/export-dialog");
+    const loaded = await import("@/features/day-planner/export/export-dialog");
     return loaded.ExportDialog;
   },
   {
