@@ -576,6 +576,14 @@ front of the days, the trip's name and dates and every day at a glance, and a ru
 sheet after each day for writing on. A footer on every sheet says it was made with
 plan2go and which sheet it is of how many, counting every sheet.
 
+The map on paper is a picture of the ground and the routes with nothing on them, asked
+for at a centre and a zoom worked out from the day rather than left to the provider, and
+the live map's own markers are laid over it where those numbers put each place: the
+numbered discs for the stops and the sage squares for the ends, the house where the day
+starts and the flag where it finishes. The provider's pins were its own, and drew both
+ends of the day as the same green pin. In ink alone the markers are ink, as every mark
+in the accent is.
+
 The export is chosen in a window over the whole page, the deepest shadow's one use:
 the choices down a column on the left, the days as chips, every day with something on it
 chosen to begin with, and a word that takes all of them or none, then what goes on the page as boxes with a line under

@@ -1,3 +1,5 @@
+import type { DayEndpoint } from "@/core/model/day";
+
 /**
  * A marker that is our own DOM rather than Google's.
  *
@@ -122,9 +124,10 @@ export type EndpointKind = "start" | "end" | "both";
 /**
  * The same glyphs the panel draws, so a place is one shape wherever it is: a
  * house where the day sets out from, a flag where it finishes. One place that
- * is both gets the house, because there and back is what a house says.
+ * is both gets the house, because there and back is what a house says. Drawn
+ * the same on the live map and on the printed one.
  */
-const ENDPOINT_MARKS: Readonly<
+export const ENDPOINT_MARKS: Readonly<
   Record<EndpointKind, { readonly word: string; readonly paths: readonly string[] }>
 > = {
   start: {
@@ -141,6 +144,27 @@ const ENDPOINT_MARKS: Readonly<
   },
 };
 
+/** How an end's glyph is drawn in its marker, wherever the marker is. */
+export const ENDPOINT_GLYPH = { size: 15, strokeWidth: 2.75 } as const;
+
+/**
+ * The markers the ends of a day are drawn as, in the order they are drawn: one
+ * for a day that starts and ends in the same place rather than two on top of
+ * each other, and it answers as the start, since it is the same place.
+ */
+export function endpointMarks(
+  start: DayEndpoint | null,
+  end: DayEndpoint | null,
+): readonly { readonly endpoint: DayEndpoint; readonly kind: EndpointKind }[] {
+  if (start !== null && end !== null && start.place.id === end.place.id) {
+    return [{ endpoint: start, kind: "both" }];
+  }
+  return [
+    ...(start === null ? [] : [{ endpoint: start, kind: "start" as const }]),
+    ...(end === null ? [] : [{ endpoint: end, kind: "end" as const }]),
+  ];
+}
+
 /** An end of the day. Which end decides the glyph and what is read out. */
 export function endpointMarkerElement(kind: EndpointKind, name: string): HTMLElement {
   const mark = ENDPOINT_MARKS[kind];
@@ -150,11 +174,11 @@ export function endpointMarkerElement(kind: EndpointKind, name: string): HTMLEle
   const glyph = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   glyph.setAttribute("aria-hidden", "true");
   glyph.setAttribute("viewBox", "0 0 24 24");
-  glyph.setAttribute("width", "15");
-  glyph.setAttribute("height", "15");
+  glyph.setAttribute("width", String(ENDPOINT_GLYPH.size));
+  glyph.setAttribute("height", String(ENDPOINT_GLYPH.size));
   glyph.setAttribute("fill", "none");
   glyph.setAttribute("stroke", "currentColor");
-  glyph.setAttribute("stroke-width", "2.75");
+  glyph.setAttribute("stroke-width", String(ENDPOINT_GLYPH.strokeWidth));
   glyph.setAttribute("stroke-linecap", "round");
   glyph.setAttribute("stroke-linejoin", "round");
   for (const d of mark.paths) {

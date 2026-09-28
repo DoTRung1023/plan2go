@@ -1,3 +1,4 @@
+import type { DrawnLeg } from "@/adapters/maps/google-static-map";
 import type { PlannedDay } from "./compute-trip";
 
 /**
@@ -21,4 +22,28 @@ export function dayMapSources(slug: string, days: readonly PlannedDay[]): DayMap
       .filter((day) => day.plan.stops.length > 0)
       .map((day) => [day.plan.id, staticMapUrl(slug, day.plan.id)]),
   );
+}
+
+/**
+ * Each leg of the day as it is travelled: its two ends and, where the chosen
+ * way of covering it came with a shape, that shape. What the picture of the
+ * day is drawn and framed from, on the server that asks for it and on the
+ * sheet that lays the markers over it, so the two frame the same day.
+ */
+export function drawnLegs(day: PlannedDay): readonly DrawnLeg[] {
+  const points = [
+    ...(day.plan.start === null ? [] : [day.plan.start.place.position]),
+    ...day.plan.stops.map((stop) => stop.place.position),
+    ...(day.plan.end === null ? [] : [day.plan.end.place.position]),
+  ];
+  return day.computed.legs.flatMap((leg) => {
+    const from = points[leg.index];
+    const to = points[leg.index + 1];
+    const planned = day.legs[leg.index];
+    if (from === undefined || to === undefined || planned === undefined) {
+      return [];
+    }
+    const chosen = planned.options.find((option) => option.mode === planned.chosen);
+    return [{ from, to, mode: leg.mode, path: chosen?.path ?? null }];
+  });
 }

@@ -2,6 +2,8 @@ import { encodePolyline } from "../travel/polyline";
 import type { DayPlan } from "@/core/model/day";
 import type { TravelMode } from "@/core/model/leg";
 import type { LatLng } from "@/core/model/place";
+import type { StaticMapFrame } from "./static-map-frame";
+import { frameAround, STATIC_MAP_SIZE } from "./static-map-frame";
 
 /**
  * A leg as the static map needs it: its two ends, the mode it is travelled by,
@@ -21,7 +23,7 @@ const ENDPOINT = "https://maps.googleapis.com/maps/api/staticmap";
  * little under seven inches, and two to one is the shape the design file gives
  * the map at the top of the page.
  */
-const SIZE = "640x320";
+const SIZE = `${String(STATIC_MAP_SIZE.width)}x${String(STATIC_MAP_SIZE.height)}`;
 const SCALE = 2;
 
 /**
@@ -40,8 +42,6 @@ const RULE_STRONG = "0xc0b6a5";
 const INK = "0x201e1d";
 const INK_MUTED = "0x645c50";
 const INK_FAINT = "0x82796a";
-const TERRACOTTA = "0xc67139";
-const SAGE_600 = "0x728157";
 
 /**
  * The inks the live map draws a day's legs in, one after another and round
@@ -107,21 +107,20 @@ function thinned(points: readonly LatLng[], keepEvery: number): readonly LatLng[
 }
 
 /**
- * Each stop as a numbered marker in the accent, and each end of the day as a
- * smaller one in sage, so the picture is the day as the list beside it names
- * it. The provider labels a marker with one character, so the first nine stops
- * carry their number and the rest are the plain disc, which the list beside
- * the map still counts for them.
+ * Where the picture of a day looks: at every place on it and every route
+ * between them, as close as they all fit. The places are marked on it by
+ * whoever draws the picture, with the markers the live map draws, not by the
+ * provider, whose pins are its own and could not tell the start of the day
+ * from its end; these are the numbers that put them where the provider put
+ * the places.
  */
-function markerParams(day: DayPlan): readonly string[] {
-  const stops = day.stops.map((stop, index) => {
-    const label = index < 9 ? `|label:${String(index + 1)}` : "";
-    return `size:mid|color:${TERRACOTTA}${label}|${point(stop.place.position)}`;
-  });
-  const ends = [day.start, day.end]
-    .filter((end) => end !== null)
-    .map((end) => `size:small|color:${SAGE_600}|${point(end.place.position)}`);
-  return [...stops, ...ends];
+export function staticMapFrame(day: DayPlan, legs: readonly DrawnLeg[]): StaticMapFrame {
+  const ends = [day.start, day.end].flatMap((end) => (end === null ? [] : [end.place.position]));
+  return frameAround([
+    ...ends,
+    ...day.stops.map((stop) => stop.place.position),
+    ...legs.flatMap((leg) => [leg.from, leg.to, ...(leg.path ?? [])]),
+  ]);
 }
 
 function pathParam(leg: DrawnLeg, index: number, keepEvery: number): string {
@@ -140,21 +139,22 @@ function pathParam(leg: DrawnLeg, index: number, keepEvery: number): string {
  * caller that holds it, so what is hashed for the cache and what is logged on
  * a failure never carry it.
  *
- * No centre and no zoom: the provider fits the map to what is on it, which
- * is the framing the live map gives a day too.
+ * The ground and the routes, with no markers: the centre and the zoom are
+ * the day's frame, said outright, so the markers laid over the picture land
+ * on the places it shows.
  */
 export function googleStaticMapUrl(day: DayPlan, legs: readonly DrawnLeg[]): string {
+  const { center, zoom } = staticMapFrame(day, legs);
   for (let keepEvery = 1; ; keepEvery *= 2) {
     const params = new URLSearchParams();
+    params.set("center", `${center.lat.toFixed(6)},${center.lng.toFixed(6)}`);
+    params.set("zoom", String(zoom));
     params.set("size", SIZE);
     params.set("scale", String(SCALE));
     params.set("maptype", "roadmap");
     params.set("format", "png");
     for (const style of STYLES) {
       params.append("style", style);
-    }
-    for (const marker of markerParams(day)) {
-      params.append("markers", marker);
     }
     legs.forEach((leg, index) => {
       params.append("path", pathParam(leg, index, keepEvery));

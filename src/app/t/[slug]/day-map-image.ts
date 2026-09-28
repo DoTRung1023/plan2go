@@ -1,31 +1,9 @@
 import type { PlannedDay } from "@/features/day-planner/compute-trip";
-import type { DrawnLeg } from "@/adapters/maps/google-static-map";
+import { drawnLegs } from "@/features/day-planner/day-map-source";
 import { googleStaticMapUrl } from "@/adapters/maps/google-static-map";
 import type { MapImage } from "@/server/maps/static-map-cache";
 import { staticMapImageFor, staticMapKey } from "@/server/maps/static-map-cache";
 import { googleMapsApiKey } from "@/server/places/google-key";
-
-/**
- * Each leg of the day as it is travelled: its two ends and, where the chosen
- * way of covering it came with a shape, that shape.
- */
-function drawnLegs(day: PlannedDay): readonly DrawnLeg[] {
-  const points = [
-    ...(day.plan.start === null ? [] : [day.plan.start.place.position]),
-    ...day.plan.stops.map((stop) => stop.place.position),
-    ...(day.plan.end === null ? [] : [day.plan.end.place.position]),
-  ];
-  return day.computed.legs.flatMap((leg) => {
-    const from = points[leg.index];
-    const to = points[leg.index + 1];
-    const planned = day.legs[leg.index];
-    if (from === undefined || to === undefined || planned === undefined) {
-      return [];
-    }
-    const chosen = planned.options.find((option) => option.mode === planned.chosen);
-    return [{ from, to, mode: leg.mode, path: chosen?.path ?? null }];
-  });
-}
 
 /**
  * The map of one day, drawn for the printed page: from our own table when

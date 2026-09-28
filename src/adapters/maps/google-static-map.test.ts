@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import type { DayPlan } from "@/core/model/day";
 import type { LatLng, Place } from "@/core/model/place";
 import type { DrawnLeg } from "./google-static-map";
-import { googleStaticMapUrl } from "./google-static-map";
+import { googleStaticMapUrl, staticMapFrame } from "./google-static-map";
+import { placeInFrame, STATIC_MAP_SIZE } from "./static-map-frame";
 
 function place(name: string, position: LatLng): Place {
   return {
@@ -42,29 +43,26 @@ function params(url: string): URLSearchParams {
 }
 
 describe("googleStaticMapUrl", () => {
-  it("numbers the stops in the accent and marks the ends in sage", () => {
-    const markers = params(googleStaticMapUrl(day(), [])).getAll("markers");
-
-    expect(markers).toEqual([
-      "size:mid|color:0xc67139|label:1|-34.92350,138.59850",
-      "size:mid|color:0xc67139|label:2|-34.92090,138.60390",
-      "size:small|color:0x728157|-34.92850,138.60070",
-    ]);
+  it("draws no markers of its own: the sheet lays the live map's over the picture", () => {
+    expect(params(googleStaticMapUrl(day(), [])).has("markers")).toBe(false);
   });
 
-  it("leaves the tenth stop and after without a label, which the provider cannot draw", () => {
-    const stops = Array.from({ length: 11 }, (_unused, index) => ({
-      id: `stop-${String(index)}`,
-      place: place(`Stop ${String(index)}`, { lat: -34.9 - index / 1000, lng: 138.6 }),
-      stayMinutes: 30,
-      travelMode: "walk" as const,
-      note: null,
-    }));
-    const markers = params(googleStaticMapUrl(day({ start: null, stops }), [])).getAll("markers");
+  it("frames every place and every route, so each marker lands on the picture", () => {
+    const detour: DrawnLeg = {
+      from: MARKET,
+      to: GALLERY,
+      mode: "drive",
+      path: [MARKET, { lat: -34.9, lng: 138.62 }, GALLERY],
+    };
+    const frame = staticMapFrame(day(), [detour]);
 
-    expect(markers[8]).toContain("label:9");
-    expect(markers[9]).not.toContain("label:");
-    expect(markers[10]).not.toContain("label:");
+    for (const point of [HOTEL, MARKET, GALLERY, { lat: -34.9, lng: 138.62 }]) {
+      const at = placeInFrame(frame, point);
+      expect(at.x).toBeGreaterThan(0);
+      expect(at.x).toBeLessThan(STATIC_MAP_SIZE.width);
+      expect(at.y).toBeGreaterThan(0);
+      expect(at.y).toBeLessThan(STATIC_MAP_SIZE.height);
+    }
   });
 
   it("draws a leg with a shape as an encoded route, in the first leg's ink", () => {
@@ -104,12 +102,13 @@ describe("googleStaticMapUrl", () => {
     ]);
   });
 
-  it("carries no key and no centre, and fits the map to what is on it", () => {
+  it("carries no key, and says the day's frame outright", () => {
     const url = googleStaticMapUrl(day(), []);
+    const { center, zoom } = staticMapFrame(day(), []);
 
     expect(params(url).has("key")).toBe(false);
-    expect(params(url).has("center")).toBe(false);
-    expect(params(url).has("zoom")).toBe(false);
+    expect(params(url).get("center")).toBe(`${center.lat.toFixed(6)},${center.lng.toFixed(6)}`);
+    expect(params(url).get("zoom")).toBe(String(zoom));
     expect(params(url).get("size")).toBe("640x320");
     expect(params(url).get("scale")).toBe("2");
   });

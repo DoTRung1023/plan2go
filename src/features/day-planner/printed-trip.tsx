@@ -9,6 +9,7 @@ import { formatClock, formatDuration } from "@/core/time/minutes";
 import type { PlannedDay } from "./compute-trip";
 import { conflictSentence } from "./conflict-sentence";
 import type { DayMapSources } from "./day-map-source";
+import { drawnLegs } from "./day-map-source";
 import { endpointName, hoursOn } from "./day-itinerary";
 import type { ExportRequest } from "./export-request";
 import { formatDayDate, formatDayLong } from "./format-day-date";
@@ -20,6 +21,8 @@ import { ClockIcon } from "@/ui/icons";
 import { placeUrl } from "./directions-url";
 import { legDisc, MODE_ICON, MODE_WORDS } from "./leg-row";
 import { legInk } from "@/features/trip-map/route-style";
+import { PictureMarkers } from "@/features/trip-map/picture-markers";
+import { staticMapFrame } from "@/adapters/maps/google-static-map";
 import { paginate } from "./paginate-sheets";
 import { mapSize, sheetGeometry } from "./paper";
 import type { SheetGeometry } from "./paper";
@@ -465,6 +468,10 @@ function DayStats({ day, request }: DayContext) {
  * has arrived, for measuring, the frame alone. As wide as the rows unless
  * the paper is short or a smaller map was asked for, and then in the middle
  * of them, so the day's own margin is the same on either side of it.
+ *
+ * The picture is the ground and the routes and nothing on them; the places
+ * are the live map's own markers, laid over it where the frame the picture
+ * was drawn in puts them.
  */
 function DayMap({
   day,
@@ -485,7 +492,7 @@ function DayMap({
   return (
     <figure
       style={{ width: size.width, height: size.height }}
-      className={`mx-auto mt-4 shrink-0 overflow-hidden rounded-[5px] border ${RULE}`}
+      className={`relative mx-auto mt-4 shrink-0 overflow-hidden rounded-[5px] border ${RULE}`}
     >
       {onSettled === undefined ? null : (
         /* Plain img rather than the framework's: the picture is ours, drawn
@@ -505,6 +512,13 @@ function DayMap({
             onSettled();
           }}
           className="block h-full w-full object-cover"
+        />
+      )}
+      {onSettled === undefined ? null : (
+        <PictureMarkers
+          plan={day.plan}
+          frame={staticMapFrame(day.plan, drawnLegs(day))}
+          width={size.width}
         />
       )}
     </figure>

@@ -9,6 +9,7 @@ import type { EndpointKind } from "./dom-marker";
 import {
   candidateMarkerElement,
   endpointMarkerElement,
+  endpointMarks,
   placeDomMarker,
   stopMarkerElement,
 } from "./dom-marker";
@@ -606,17 +607,8 @@ export function TripMap({
       overlays.current.push(placeDomMarker(maps, map, point, element));
     };
 
-    // A day that starts and ends in the same place gets one marker, not two on
-    // top of each other.
-    if (start !== null && end !== null && start.place.id === end.place.id) {
-      drawEndpoint(start, "both");
-    } else {
-      if (start !== null) {
-        drawEndpoint(start, "start");
-      }
-      if (end !== null) {
-        drawEndpoint(end, "end");
-      }
+    for (const { endpoint, kind } of endpointMarks(start, end)) {
+      drawEndpoint(endpoint, kind);
     }
 
     markers.current.clear();
