@@ -14,7 +14,6 @@ import {
   SearchIcon,
 } from "@/ui/icons";
 import { CityDot } from "@/ui/city-dot";
-import { RAISED } from "@/ui/raised";
 import { Notice } from "@/ui/notice";
 import { useOutsidePress } from "@/ui/use-outside-press";
 import { useScrollBar } from "@/ui/use-scroll-bar";
@@ -424,7 +423,7 @@ export function CityPicker({ city, cities, dayName, colorFor, onOpen, onChoose }
             ? `Choose the city ${dayName} is in`
             : `${dayName} is in ${shown.name}. Change the city`
         }
-        className={`flex h-[32px] max-w-[150px] shrink-0 items-center gap-[6px] rounded-pill ${RAISED} pr-[10px] pl-[11px] text-small/none font-semibold text-ink-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta`}
+        className="flex h-[32px] max-w-[150px] shrink-0 items-center gap-[6px] rounded-pill bg-paper-sunken pr-[10px] pl-[11px] text-small/none font-semibold text-terracotta-800 hover:text-terracotta-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
       >
         {/* The city's own dot, the one its days carry in the strip, which
             makes the pill the key to them. */}

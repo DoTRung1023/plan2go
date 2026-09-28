@@ -5,7 +5,6 @@ import { useLayoutEffect, useRef, useState, useTransition } from "react";
 import { useScrollBar } from "@/ui/use-scroll-bar";
 import type { DayPlan } from "@/core/model/day";
 import { CityDot } from "@/ui/city-dot";
-import { RAISED } from "@/ui/raised";
 import { PlusIcon } from "@/ui/icons";
 import type { EditOutcome } from "./day-actions";
 import { formatDayDate, formatDayTab } from "./format-day-date";
@@ -73,6 +72,15 @@ const TAB =
 const TAB_NUMBER = "text-micro/none font-semibold uppercase";
 
 const TAB_DATE = "text-small/none font-semibold tabular-nums";
+
+/**
+ * What the chosen day stands on: raised paper under a floating control's
+ * shadow, edged in a hairline, the way the trip's own row above the strip is
+ * drawn. A ring rather than a border, so it takes no room and the pill is the
+ * same size as the tab it stands under. Drawn by the strip's sliding pill,
+ * and by the chosen tab itself until that pill has been laid.
+ */
+const RAISED = "bg-paper-raised shadow-sm ring-1 ring-rule";
 
 export function DayTabs({ days, selectedIndex, onSelect, onAddDay }: DayTabsProps) {
   const tabs = useRef<(HTMLButtonElement | null)[]>([]);

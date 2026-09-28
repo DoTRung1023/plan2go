@@ -190,7 +190,8 @@ paper and ink.
 - **ink, ink-muted, ink-faint:** primary text, secondary text, and placeholders.
 - **terracotta:** the accent. 100 and 200 are tinted fills, 200 being the conflict block
   and the error block, the base is the accent itself, 600 is hover, 700 is pressed and is
-  the step to use for accent coloured text, 800 is a chosen chip or menu row.
+  the step to use for accent coloured text, 800 is a chosen chip or menu row and the
+  words on the city pill in the search.
 - **sage:** the second accent. 100 and 200 mark today in the day strip, 600 is the marker
   for the ends of a day, 700 draws the public transport route line.
 - **neutral:** the warm greys behind everything, used for the drive tint and the map's
@@ -495,11 +496,11 @@ arrive. Every picture and rating in it is credited to where it came from.
 
 A trip can move between cities, so every day is in one: its own once it has been moved,
 and the city the trip was opened in until then. The search field says which, first
-thing in it: a 32px pill drawn the way the chosen day is, raised paper edged in `rule`
-under a floating control's shadow, so the city looks like the day that is in it, with a
-9px dot of the city's colour, the city's name at the small step and a chevron, both in
-`ink-muted` as a day's words are and `ink` under the pointer, 8px in from the field's
-edge so its curve runs inside the field's. The words
+thing in it: a 32px pill of `paper-sunken`, flat, with no edge and no shadow, sunk
+into the field rather than floating on it, with a 9px dot of the city's colour, the
+city's name at the small step and a chevron, both in `terracotta-800` and
+`terracotta-900` under the pointer, 8px in from the field's edge so its curve runs
+inside the field's. The words
 in the field name the city too, "Search places in Hanoi", and the empty field offers
 what that city is known for. Pressed, the pill opens the same panel a search for places
 does, the field's width at the `panel` radius under `shadow-md`, drawn from one set of
