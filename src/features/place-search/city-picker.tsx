@@ -11,6 +11,21 @@ import { CityDot, cityColor } from "@/ui/city-dot";
 import { Notice } from "@/ui/notice";
 import { useOutsidePress } from "@/ui/use-outside-press";
 import { useScrollBar } from "@/ui/use-scroll-bar";
+import {
+  PANEL,
+  PANEL_LABEL,
+  PANEL_LINE,
+  PANEL_LIST,
+  ROW,
+  ROW_ACTIVE,
+  ROW_BUTTON,
+  ROW_END,
+  ROW_LINE,
+  ROW_MARK,
+  ROW_NAME,
+  ROW_PIN,
+  ROW_WORDS,
+} from "./panel-styles";
 
 /** Long enough that typing does not spend money on every letter. */
 const DEBOUNCE_MS = 250;
@@ -22,9 +37,6 @@ const BIAS_DECIMALS = 2;
 
 /** As many cities as the panel shows for one search. */
 const CITIES_ASKED = 8;
-
-/** How far apart the rows arrive, one after another, in seconds. */
-const ROW_STAGGER_S = 0.025;
 
 const suggestionSchema = object({
   providerPlaceId: string(),
@@ -162,9 +174,6 @@ export function CityPicker({
   const [moves, setMoves] = useState(0);
   /** The day the pill is about, so moving to another day lets go of a move in flight. */
   const [forDay, setForDay] = useState(dayId);
-  /** How many times the panel has opened, so its rows arrive afresh each time. */
-  const [openings, setOpenings] = useState(0);
-  const [wasOpen, setWasOpen] = useState(open);
   /**
    * The cities worth visiting in the day's country, which city's country they
    * were asked about, and the country's name. Null until an answer lands.
@@ -193,20 +202,13 @@ export function CityPicker({
   // Adjusted during the render that carries the change rather than in an
   // effect, so nothing is ever painted in the state it has just left: a new
   // day lets go of a move made on the last one, the day come back in the
-  // city it was moved to lets the pill say what the day says again, and the
-  // panel opening counts as another opening.
+  // city it was moved to lets the pill say what the day says again.
   if (forDay !== dayId) {
     setForDay(dayId);
     setMoved(null);
   }
   if (moved !== null && sameCity(city, moved)) {
     setMoved(null);
-  }
-  if (wasOpen !== open) {
-    setWasOpen(open);
-    if (open) {
-      setOpenings((count) => count + 1);
-    }
   }
   const shown: (CityIdentity & { readonly color: number }) | null = moved ?? city;
   /** Rounded, and plain numbers, so a trip redrawn with the same city asks nothing again. */
@@ -423,6 +425,7 @@ export function CityPicker({
   })();
 
   const listed = rows.length > 0;
+  const heading = searched ? "Matching cities" : `Popular in ${popularHere?.country ?? "this country"}`;
   const moveKey = String(moves);
 
   return (
@@ -465,110 +468,114 @@ export function CityPicker({
         </span>
       </button>
 
-      <div
-        id={panelId}
-        role="dialog"
-        aria-label={`The city ${dayName} is in`}
-        inert={!open}
-        data-open={open ? "" : undefined}
-        data-city=""
-        className="search-panel"
-      >
-        <div className="search-city-field">
-          <SearchIcon size={14} strokeWidth={2.75} className="shrink-0" />
-          <label className="sr-only" htmlFor={`${panelId}-field`}>
-            Search for a city
-          </label>
-          <input
-            ref={field}
-            id={`${panelId}-field`}
-            type="text"
-            role="combobox"
-            autoComplete="off"
-            placeholder="Search for a city"
-            aria-expanded={listed}
-            aria-controls={listId}
-            aria-autocomplete="list"
-            aria-activedescendant={listed ? `${listId}-option-${String(activeIndex)}` : undefined}
-            value={query}
-            disabled={saving !== null}
-            onChange={(event) => {
-              setQuery(event.target.value);
-              setError(null);
-            }}
-            onKeyDown={onKeyDown}
-          />
-        </div>
+      {open ? (
+        <div id={panelId} role="dialog" aria-label={`The city ${dayName} is in`} className={PANEL}>
+          {/* The field a city is typed in, the same slim pill a start or end
+              of the day is searched for in. Its left and right edges stand
+              where the rows' do, so the glass sits in the column the pins do
+              and the words start where the names do. */}
+          <div className="pt-[7px] pr-[2px] pl-[3px]">
+            <div className="flex h-9 items-center gap-[7px] rounded-pill border border-rule bg-paper pr-[13px] pl-[6px] focus-within:border-terracotta">
+              <span className={`${ROW_MARK} text-ink-muted`}>
+                <SearchIcon size={15} strokeWidth={2.75} />
+              </span>
+              <label className="sr-only" htmlFor={`${panelId}-field`}>
+                Search for a city
+              </label>
+              <input
+                ref={field}
+                id={`${panelId}-field`}
+                type="text"
+                role="combobox"
+                autoComplete="off"
+                placeholder="Search for a city"
+                aria-expanded={listed}
+                aria-controls={listId}
+                aria-autocomplete="list"
+                aria-activedescendant={
+                  listed ? `${listId}-option-${String(activeIndex)}` : undefined
+                }
+                value={query}
+                disabled={saving !== null}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setError(null);
+                }}
+                onKeyDown={onKeyDown}
+                className="min-w-0 flex-1 self-stretch bg-transparent text-meta text-ink caret-terracotta outline-none placeholder:text-ink-faint"
+              />
+            </div>
+          </div>
 
-        <div ref={watchList} className="search-scroll scroll-line">
-          {line === null ? null : <p className="search-line">{line}</p>}
+          <div ref={watchList} className={PANEL_LIST}>
+            {line === null ? null : <p className={PANEL_LINE}>{line}</p>}
 
-          {listed ? (
-            <ul
-              key={openings}
-              id={listId}
-              role="listbox"
-              aria-label={
-                searched
-                  ? "Cities that match"
-                  : `Popular in ${popularHere?.country ?? "this country"}`
-              }
-              aria-busy={saving !== null}
-              className="flex flex-col gap-px"
-            >
-              {rows.map((row, index) => (
-                <li
-                  key={`${row.providerPlaceId}-${row.name}`}
-                  id={`${listId}-option-${String(index)}`}
-                  role="option"
-                  aria-selected={row.current}
-                  onMouseEnter={() => {
-                    setActive(index);
-                  }}
-                  data-active={index === activeIndex ? "" : undefined}
-                  className="search-row"
-                  style={{ animationDelay: `${(index * ROW_STAGGER_S).toFixed(3)}s` }}
+            {listed ? (
+              <>
+                <p className={PANEL_LABEL}>{heading}</p>
+                <ul
+                  id={listId}
+                  role="listbox"
+                  aria-label={searched ? "Cities that match" : heading}
+                  aria-busy={saving !== null}
                 >
-                  <button
-                    type="button"
-                    tabIndex={-1}
-                    disabled={saving !== null}
-                    onClick={() => {
-                      choose(row);
-                    }}
-                    className="search-row-button"
-                  >
-                    {/* A city the trip goes to shows the dot its days carry;
-                        one it does not go to yet has no colour, and a pin. */}
-                    <span className="search-disc" data-trip={row.color === null ? undefined : ""}>
-                      {row.color === null ? (
-                        <PinIcon size={12} strokeWidth={2.75} />
-                      ) : (
-                        <CityDot slot={row.color} size={10} />
-                      )}
-                    </span>
-                    <span className="search-words-of">
-                      <span className="search-city-name">{row.name}</span>
-                      {row.line === null ? null : <span className="search-city-line">{row.line}</span>}
-                    </span>
-                    {row.current ? (
-                      <span className="search-tick">
-                        <CheckIcon size={15} strokeWidth={3} />
-                      </span>
-                    ) : null}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : null}
+                  {rows.map((row, index) => (
+                    <li
+                      key={`${row.providerPlaceId}-${row.name}`}
+                      id={`${listId}-option-${String(index)}`}
+                      role="option"
+                      aria-selected={row.current}
+                      onMouseEnter={() => {
+                        setActive(index);
+                      }}
+                      className={`${ROW} ${index === activeIndex ? ROW_ACTIVE : ""}`}
+                    >
+                      <button
+                        type="button"
+                        tabIndex={-1}
+                        disabled={saving !== null}
+                        onClick={() => {
+                          choose(row);
+                        }}
+                        className={`${ROW_BUTTON} disabled:opacity-60`}
+                      >
+                        {/* A city the trip goes to shows the dot its days
+                            carry, in the pin's place; one it does not go
+                            to yet has no colour, and keeps the pin every
+                            place in the search has. */}
+                        <span className={`${ROW_MARK} ${ROW_PIN}`}>
+                          {row.color === null ? (
+                            <PinIcon size={15} strokeWidth={2.75} />
+                          ) : (
+                            <CityDot slot={row.color} size={9} />
+                          )}
+                        </span>
+                        <span className={ROW_WORDS}>
+                          <span className={ROW_NAME}>{row.name}</span>
+                          {row.line === null ? null : <span className={ROW_LINE}>{row.line}</span>}
+                        </span>
+                      </button>
+                      {/* The tick stands where a place's plus does, so the
+                          city the day is in is marked at the same edge. */}
+                      {row.current ? (
+                        <span className={`${ROW_END} text-terracotta-700`}>
+                          <CheckIcon size={14} strokeWidth={3} />
+                        </span>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : null}
 
-          {error === null ? null : (
-            <Notice role="alert" size="meta" className="mx-[4px] mt-1">
-              {error}
-            </Notice>
-          )}
+            {error === null ? null : (
+              <Notice role="alert" size="meta" className="mx-[4px] mt-1">
+                {error}
+              </Notice>
+            )}
+          </div>
         </div>
-      </div>
+      ) : null}
     </div>
   );
 }

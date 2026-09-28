@@ -49,11 +49,12 @@ Every trip opened this way is a row in the shared database. Delete them when don
 The bar is `.place-search .search-bar`; its field is `input[aria-keyshortcuts="/"]`,
 which has no placeholder attribute (the empty field's words are an overlay,
 `.search-words`). The bar carries `data-active` while it is in use, and
-`.search-scrim` covers the page then. Both panels are always mounted and animate:
-the open one has `data-open`, the closed one is `inert` at opacity 0, so wait for
-`[data-open]` (and about 300 ms for the transition) rather than for the panel to
-exist. The place panel is the `.search-panel` without `data-city`; the city panel is
-`.search-panel[data-city]`, also `[role="dialog"]`, opened by `.search-pill`. A
+`.search-scrim` covers the page then. Both panels hang inside `.search-bar`, are drawn
+from the classes in `panel-styles.ts`, and are mounted only while open, with no
+transition, so wait for them to exist. The place list is the element the field's
+`aria-controls` names, a `[role="listbox"]` labelled "Popular in <city>" or "Places that
+match"; the city panel is `[role="dialog"][aria-label^="The city"]`, opened by
+`.search-pill`, with its own field inside it. A
 `MutationObserver` on `.place-search`, installed before the click, gives a
 timestamped transcript of everything the panels say, which is the evidence for
 anything about loading states. `.search-toast` is the sentence at the foot of the
@@ -70,11 +71,10 @@ for a screenshot.
 Choosing from the search list does not add. It looks the place up (`/api/places/preview`),
 pins it on the map as `.trip-map-candidate`, pans there, and opens the sheet
 `section[role="dialog"][aria-label="<place name>"]` with `button:has-text("Add to Day N")`
-at the top. Pressing that adds the stop and the sheet slides away. The row under the pointer or
-the arrow keys shows `button.search-add` ("Add to Day N", aria-label "Add <name> to
-Day N"), which adds straight away without the look; it is on every row but only
-visible on the active one, so hover the row first. Once the place is on the day the
-button becomes a tick, `.search-tick[data-on-day]` titled `On Day N`. An empty day offers
+at the top. Pressing that adds the stop and the sheet slides away. Every row ends in a
+plus, `button[aria-label="Add <name> to Day N"]` titled `Add to Day N`, which adds
+straight away without the look. Once the place is on the day it is a disabled tick,
+labelled `<name> is on Day N` and titled `On Day N`. An empty day offers
 `button:has-text("Find a place")`, which focuses the search field; a reader without the
 edit key gets no such button.
 

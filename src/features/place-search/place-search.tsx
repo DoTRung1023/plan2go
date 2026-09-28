@@ -12,6 +12,21 @@ import { useScrollBar } from "@/ui/use-scroll-bar";
 import { Notice } from "@/ui/notice";
 import { useOutsidePress } from "@/ui/use-outside-press";
 import { CityPicker } from "./city-picker";
+import {
+  PANEL,
+  PANEL_LABEL,
+  PANEL_LINE,
+  PANEL_LIST,
+  ROW,
+  ROW_ACTIVE,
+  ROW_BUTTON,
+  ROW_END,
+  ROW_LINE,
+  ROW_MARK,
+  ROW_NAME,
+  ROW_PIN,
+  ROW_WORDS,
+} from "./panel-styles";
 import "./place-search.css";
 
 /** Long enough that typing does not spend money on every letter. */
@@ -743,7 +758,7 @@ export function PlaceSearch({
         <SearchIcon size={17} strokeWidth={2.75} className="search-glass" />
 
         <div className="search-typing">
-          {/* Search, not add: choosing a place opens it, and the button on
+          {/* Search, not add: choosing a place opens it, and the plus on
               its row is what puts it on the day. The label says only what
               the field does, and the day is named where the adding is. */}
           <label className="sr-only" htmlFor={fieldId}>
@@ -815,123 +830,112 @@ export function PlaceSearch({
             <CloseIcon size={14} strokeWidth={2.75} />
           </button>
         )}
-      </div>
 
-      {panel ? (
-        <div className="absolute top-full right-0 left-0 z-30 mt-2 flex max-h-[330px] flex-col overflow-hidden rounded-panel border border-rule bg-paper-raised shadow-md">
-          <div
-            ref={watchList}
-            className="scroll-line min-h-0 overflow-x-hidden overflow-y-auto py-[7px] pr-[2px] pl-[3px]"
-          >
-            {line === null ? null : (
-              <p className="px-[7px] py-[10px] text-meta text-ink-muted">{line}</p>
-            )}
+        {/* Hung from the bar itself, as the city panel is, so the two are
+            the same width and the same distance under it. */}
+        {panel ? (
+          <div className={PANEL}>
+            <div ref={watchList} className={PANEL_LIST}>
+              {line === null ? null : <p className={PANEL_LINE}>{line}</p>}
 
-            {listed ? (
-              <>
-                <p className="px-[7px] pt-1 pb-[9px] text-label font-semibold text-ink-muted">
-                  {recommending ? popularIn : "Matching places"}
-                </p>
-                <ul id={listId} role="listbox" aria-label={recommending ? popularIn : "Places that match"}>
-                  {visible.map((suggestion, index) => {
-                    const onItsWay = adding.has(suggestion.providerPlaceId);
-                    const onTheDay =
-                      added.has(suggestion.providerPlaceId) ||
-                      onTheTrip.has(suggestion.providerPlaceId);
-                    return (
-                      /* The row opens the place; the plus at its end adds it
-                         without the look. Two controls in one option, with the
-                         highlight on the option so it is one row under the
-                         pointer whichever half the pointer is on. */
-                      <li
-                        key={suggestion.providerPlaceId}
-                        id={`${listId}-option-${String(index)}`}
-                        role="option"
-                        aria-selected={index === activeIndex}
-                        onMouseEnter={() => {
-                          setActive(index);
-                        }}
-                        // The same room on the far side of the plus as the
-                        // words leave on its near side, so its hover disc sits
-                        // clear of the panel's edge rather than against it.
-                        className={`flex items-center rounded-chip pr-[6px] ${
-                          index === activeIndex ? "bg-terracotta-100" : ""
-                        }`}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => {
-                            choose(suggestion);
+              {listed ? (
+                <>
+                  <p className={PANEL_LABEL}>{recommending ? popularIn : "Matching places"}</p>
+                  <ul
+                    id={listId}
+                    role="listbox"
+                    aria-label={recommending ? popularIn : "Places that match"}
+                  >
+                    {visible.map((suggestion, index) => {
+                      const onItsWay = adding.has(suggestion.providerPlaceId);
+                      const onTheDay =
+                        added.has(suggestion.providerPlaceId) ||
+                        onTheTrip.has(suggestion.providerPlaceId);
+                      return (
+                        /* The row opens the place; the plus at its end adds it
+                           without the look. Two controls in one option, with
+                           the highlight on the option so it is one row under
+                           the pointer whichever half the pointer is on. */
+                        <li
+                          key={suggestion.providerPlaceId}
+                          id={`${listId}-option-${String(index)}`}
+                          role="option"
+                          aria-selected={index === activeIndex}
+                          onMouseEnter={() => {
+                            setActive(index);
                           }}
-                          // Close on its right, so the words run up to the
-                          // plus rather than wrapping a word early to leave
-                          // room the plus does not need. The pin is centred
-                          // on the row, as the plus is, so the two marks at
-                          // either end sit on one line however many lines
-                          // the name and address take between them.
-                          className="flex min-w-0 flex-1 items-center gap-[7px] rounded-chip py-2 pr-[6px] pl-[7px] text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta"
+                          // The same room on the far side of the plus as the
+                          // words leave on its near side, so its hover disc
+                          // sits clear of the panel's edge rather than against it.
+                          className={`${ROW} ${index === activeIndex ? ROW_ACTIVE : ""}`}
                         >
-                          <span className="grid h-[15px] w-[15px] shrink-0 place-items-center text-terracotta">
-                            <PinIcon size={15} strokeWidth={2.75} />
-                          </span>
-                          {/* Wrapped greedily rather than prettily: the page
-                              keeps a last line from being one word, which in a
-                              row this narrow moved a word down that fitted and
-                              left the line short beside the plus. */}
-                          <span className="min-w-0 text-wrap">
-                            <span className="block text-meta font-semibold text-ink">
-                              {suggestion.name}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              choose(suggestion);
+                            }}
+                            // Close on its right, so the words run up to the
+                            // plus rather than wrapping a word early to leave
+                            // room the plus does not need. The pin is centred
+                            // on the row, as the plus is, so the two marks at
+                            // either end sit on one line however many lines
+                            // the name and address take between them.
+                            className={ROW_BUTTON}
+                          >
+                            <span className={`${ROW_MARK} ${ROW_PIN}`}>
+                              <PinIcon size={15} strokeWidth={2.75} />
                             </span>
-                            {suggestion.address === null ? null : (
-                              <span className="block text-micro text-ink-muted">
-                                {suggestion.address}
-                              </span>
+                            <span className={ROW_WORDS}>
+                              <span className={ROW_NAME}>{suggestion.name}</span>
+                              {suggestion.address === null ? null : (
+                                <span className={ROW_LINE}>{suggestion.address}</span>
+                              )}
+                            </span>
+                          </button>
+                          {/* A tick once it is on the day, so a search answer
+                              that still lists the place says so instead of
+                              offering it again. */}
+                          <button
+                            type="button"
+                            disabled={onItsWay || onTheDay}
+                            aria-busy={onItsWay}
+                            aria-label={
+                              onTheDay
+                                ? `${suggestion.name} is on ${dayName}`
+                                : `Add ${suggestion.name} to ${dayName}`
+                            }
+                            title={onTheDay ? `On ${dayName}` : `Add to ${dayName}`}
+                            onClick={() => {
+                              addNow(suggestion);
+                            }}
+                            className={`${ROW_END} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
+                              onTheDay
+                                ? "text-sage-700"
+                                : "text-terracotta-700 hover:bg-terracotta-200 hover:text-terracotta-900 disabled:opacity-45"
+                            }`}
+                          >
+                            {onTheDay ? (
+                              <CheckIcon size={14} strokeWidth={3} />
+                            ) : (
+                              <PlusIcon size={14} strokeWidth={3} />
                             )}
-                          </span>
-                        </button>
-                        {/* A tick once it is on the day, so a search answer
-                            that still lists the place says so instead of
-                            offering it again. */}
-                        <button
-                          type="button"
-                          disabled={onItsWay || onTheDay}
-                          aria-busy={onItsWay}
-                          aria-label={
-                            onTheDay
-                              ? `${suggestion.name} is on ${dayName}`
-                              : `Add ${suggestion.name} to ${dayName}`
-                          }
-                          title={onTheDay ? `On ${dayName}` : `Add to ${dayName}`}
-                          onClick={() => {
-                            addNow(suggestion);
-                          }}
-                          className={`grid h-[26px] w-[26px] shrink-0 place-items-center rounded-pill focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
-                            onTheDay
-                              ? "text-sage-700"
-                              : "text-terracotta-700 hover:bg-terracotta-200 hover:text-terracotta-900 disabled:opacity-45"
-                          }`}
-                        >
-                          {onTheDay ? (
-                            <CheckIcon size={14} strokeWidth={3} />
-                          ) : (
-                            <PlusIcon size={14} strokeWidth={3} />
-                          )}
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </>
-            ) : null}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </>
+              ) : null}
 
-            {addError === null ? null : (
-              <Notice role="alert" size="meta" className="mx-[4px] mt-1">
-                {addError}
-              </Notice>
-            )}
+              {addError === null ? null : (
+                <Notice role="alert" size="meta" className="mx-[4px] mt-1">
+                  {addError}
+                </Notice>
+              )}
+            </div>
           </div>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
 
       {toast === null ? null : (
         <div
