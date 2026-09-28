@@ -2,15 +2,14 @@
  * The panel that hangs under the search bar, shared by everything that opens
  * one there: the places that match, and the cities the city pill offers. One
  * set of classes, so the two read as the same list and a change to one is a
- * change to both. The product's own list, not the bar's design file, which
- * is why these are here and not in place-search.css.
+ * change to both. The rows are the product's own list, which is why they are
+ * here and not in place-search.css.
  *
- * Both hang from the bar itself, so they are the same width and the same
- * distance under it: as wide as the bar, 8px under it, at the `panel` radius
- * under a panel's shadow, and no taller than 330px, past which it scrolls.
+ * The panel itself is the bar's: its surface, its height off the map, its
+ * width and 8px under it, at the `panel` radius, and no taller than 330px,
+ * past which it scrolls. So it is drawn with the bar, in place-search.css.
  */
-export const PANEL =
-  "absolute top-full right-0 left-0 z-30 mt-2 flex max-h-[330px] flex-col overflow-hidden rounded-panel border border-rule bg-paper-raised shadow-md";
+export const PANEL = "search-panel";
 
 /**
  * Where the rows scroll. Only the bar's own width on the right: the room a
@@ -29,8 +28,11 @@ export const PANEL_LINE = "px-[7px] py-[10px] text-meta text-ink-muted";
 /** A row, with whatever sits at its end: a plus, a tick, or nothing. */
 export const ROW = "flex items-center rounded-chip pr-[6px]";
 
-/** The row under the pointer or the arrow keys. */
-export const ROW_ACTIVE = "bg-terracotta-100";
+/**
+ * The row under the pointer or the arrow keys, in the search's own warm tint,
+ * the one its arrows take under the pointer too.
+ */
+export const ROW_ACTIVE = "bg-(--search-hover)";
 
 /**
  * The row's own button, its mark and then its words. Close on its right, so
@@ -56,7 +58,11 @@ export const ROW_PIN = "text-terracotta";
  */
 export const ROW_WORDS = "min-w-0 text-wrap";
 
-export const ROW_NAME = "block text-meta font-semibold text-ink";
+/**
+ * A row's two lines, the same as a start or end of the day in the planner
+ * beside the map: the name at the small step over its line at the micro step.
+ */
+export const ROW_NAME = "block text-small font-semibold text-ink";
 
 export const ROW_LINE = "block text-micro text-ink-muted";
 

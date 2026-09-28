@@ -496,7 +496,7 @@ export function CityPicker({
                   setError(null);
                 }}
                 onKeyDown={onKeyDown}
-                className="min-w-0 flex-1 self-stretch bg-transparent text-meta text-ink caret-terracotta outline-none placeholder:text-ink-faint"
+                className="min-w-0 flex-1 self-stretch bg-transparent text-small text-ink caret-terracotta outline-none placeholder:text-ink-faint"
               />
             </div>
           </div>

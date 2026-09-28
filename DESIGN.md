@@ -500,16 +500,20 @@ and the city the trip was opened in until then.
 The search on the map is drawn to the design file for it, "PlanToGo search bar", in
 everything but size: the colours, edges, shadows and movement are the file's, and the
 sizes are this product's, so the bar keeps its 48px and the width that sits it over
-the place sheet, and every word stays on the type scale. The two panels under it are the
-exception, and keep the product's own list, described below. Its palette is its own and
-lives in `place-search.css` and nowhere else: a surface a step warmer than
-`paper-raised`, tints of the accent for the pill, and the ink and the accent mixed to
-the strengths the file gives them.
+the place sheet, and every word stays on the type scale. What is in the two panels under
+it is the exception, and keeps the product's own list, described below; the panels
+themselves are the bar's. Its palette is its own and lives in `place-search.css` and
+nowhere else: a surface a step warmer than `paper-raised`, which the bar, both panels,
+the chips and the arrows share; a tint of the accent for the pill and anything held
+down; a warmer tint still, `#f8ebdd`, for the row or arrow under the pointer; and the
+ink and the accent mixed to the strengths the file gives them.
 
-The bar: the surface inside a 1.5px edge of ink at 6 percent under a soft shadow,
-padded 5px, and while it is in use, typed in or with either panel open, the edge takes
-the accent at 60 percent and a 5px glow of the accent at 12 percent rings a deeper
-shadow. In it, in order: the city pill; a 22px hairline; the glass, which takes
+The bar: the surface inside a 1.5px edge of ink at 6 percent under a soft shadow, and
+while it is in use, typed in or with either panel open, the edge takes the accent at 60
+percent and a 5px glow of the accent at 12 percent rings the search's lift, `0 10px
+30px` of ink at 16 percent. The edge is drawn inside the bar rather than as a border,
+so it takes no room and the panels hang from the bar's own outer edge; the bar is
+padded 6px, and the pill stands 6px in from its edge. In it, in order: the city pill; a 22px hairline; the glass, which takes
 `terracotta-700` while the field has the cursor; the field, whose empty words say
 "Search for a place" and turn the kind of place over every few seconds, through the
 quick searches whose word also finds them when typed: cafés, museums, hotels. The
@@ -529,12 +533,13 @@ its chevron turns over. Choosing a city pops the dot with a ring of its colour s
 from it and slides the new name in, and a dark pill at the foot of the map says "Day 2
 is now in Hue".
 
-The panels, the places the field finds and the cities the pill offers, are the
-product's own list rather than the file's, and are drawn from one set of classes,
-`panel-styles.ts`, so the two cannot drift apart. Each hangs from the bar itself, 8px
-under it at its width, `paper-raised` inside a hairline at the `panel` radius under
-`shadow-md`, there or not there with no movement, and no taller than 330px, past which
-it scrolls.
+The panels, the places the field finds and the cities the pill offers, hold the
+product's own list rather than the file's, drawn from one set of classes,
+`panel-styles.ts`, so the two cannot drift apart. The panels themselves are the bar's,
+so the bar and what it opens read as one thing: each hangs from the bar, exactly its
+width and 8px under it, on the bar's surface inside an edge of ink at 10 percent at the
+`panel` radius, at the same lift as the bar in use, there or not there with no
+movement, and no taller than 330px, past which it scrolls.
 
 The place panel: before anything is typed, at its top and with no heading, a chip for
 each kind of place: Café, Street food, Museum, Temple, Market, Viewpoint, Park,
@@ -543,14 +548,14 @@ day's city under "Parks in Hanoi", in place of the city's best known, and holds 
 down; pressing it again lets go and the city's best known come back. The kind is found by
 what the places are, not by what they are called, which is why it is a chip and not a
 word typed: typed, "Park" finds the Park Hyatt and car parks. While the kind is being
-asked about the panel says "Looking for parks in Hanoi." They stand in one row that scrolls sideways rather than wrapping, with no
-scrollbar, 8px under the panel's top and 10px over the heading beneath.
+asked about the panel says "Looking for parks in Hanoi." They stand in one row that
+scrolls sideways rather than wrapping, with no scrollbar, 8px under the panel's top and 10px over the heading beneath.
 
 The row is drawn to design 10c of "PlanToGo quick search options", in the search's own
 palette in `place-search.css`, since it is the search's and not the list's. Each chip
 is a pill of the bar's surface inside an edge of ink at 14 percent, a 14px icon of what
-it finds before its word at the meta step in 600 `ink`, the same as a place's name so
-the chips weigh no more than the list under them. Under the pointer its edge takes the
+it finds before its word at the meta step in 600 `ink`, a step under a place's name so
+the chips weigh less than the list under them. Under the pointer its edge takes the
 accent; pressed, it sinks to 95 percent over 0.12s and comes back as it is let go, as
 the city pill does; held down, it takes the city pill's colours, its
 tint with the pill's brown words, inside the accent's edge. Colours and edges change
@@ -563,20 +568,22 @@ goes from chip to chip instead, each scrolled into view as it takes the focus. U
 the chips, the city's best known places headed "Popular in Hanoi", and once
 something is typed, "Matching places", each heading at the
 label step in `ink-muted`. A row has a pin in the accent at its front, the name at the
-meta step over its address at the micro step, both wrapping rather than cut short, and
-at its end a plus on a 26px round that puts the place on the day without the look, or a sage tick
-once the place is on the day. The row under the pointer or the arrow keys is on
-`terracotta-100`, and the row itself opens the place. Nothing matching says "Nothing
+small step in 600 over its address at the micro step, the same as a start or end of
+the day in the planner beside the map, both wrapping rather than cut short, and at its
+end a plus on a 26px round, taking the pill's tint under the pointer, that puts the
+place on the day without the look, or a sage tick once the place is on the day. The row
+under the pointer or the arrow keys takes the search's warm tint, and the row itself
+opens the place. Nothing matching says "Nothing
 matched. Try the name of the place, or the street it is on." Adding says so at the foot
 of the map, as moving does.
 
 The city panel: over the rows, a field of its own for typing a city, the slim pill a
 start or end of the day is searched for in, 36px on `paper` inside a hairline that takes
-the accent while it is typed in, with its glass in the column the pins stand in and its
-words where the names start. Under it, headed "Cities nearby", one list of the towns
+the accent while it is typed in, its words at the small step like the names under it,
+with its glass in the column the pins stand in and its words where the names start. Under it, headed "Cities nearby", one list of the towns
 near the day's city and the best known cities in its country, together and nearest
 first, in rows the same as a place's but with the name alone: a pin in the accent, the
-name at the meta step and nothing under it, and the same highlight. Once something is
+name at the small step and nothing under it, and the same highlight. Once something is
 typed the heading is "Matching cities". Every city the trip already goes
 to is left out of that list, the day's own among them: the pill already says it, and
 the list is for somewhere the trip has not been yet, as is anywhere closer than 15 km,

@@ -32,6 +32,9 @@
   --search-ink-62: color-mix(in srgb, var(--color-ink) 62%, transparent);
 
   --search-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* How far the bar in use, and the panels hanging from it, stand off the map. */
+  --search-lift: 0 10px 30px var(--search-ink-16);
 }
 
 @keyframes search-words-in {
@@ -109,7 +112,9 @@
 }
 
 /* The bar: a faint edge and a soft shadow at rest, the accent's edge and a
-   glow round it while it is in use. */
+   glow round it while it is in use. The edge is drawn inside the bar rather
+   than as a border, so it takes no room: the panels hang from the bar's own
+   outer edge, exactly its width, and nothing inside it moves. */
 .search-bar {
   position: relative;
   z-index: 1;
@@ -117,20 +122,19 @@
   align-items: center;
   gap: 4px;
   height: 48px;
-  padding: 5px 6px 5px 5px;
-  border: 1.5px solid var(--search-ink-6);
+  padding: 6px 7px 6px 6px;
   border-radius: var(--radius-pill);
   background: var(--search-surface);
-  box-shadow: 0 4px 14px var(--search-ink-10);
-  transition:
-    border-color 0.2s,
-    box-shadow 0.3s;
+  box-shadow:
+    inset 0 0 0 1.5px var(--search-ink-6),
+    0 4px 14px var(--search-ink-10);
+  transition: box-shadow 0.3s;
 }
 
 .search-bar[data-active] {
-  border-color: color-mix(in srgb, var(--color-terracotta) 60%, transparent);
   box-shadow:
-    0 10px 30px var(--search-ink-16),
+    inset 0 0 0 1.5px color-mix(in srgb, var(--color-terracotta) 60%, transparent),
+    var(--search-lift),
     0 0 0 5px color-mix(in srgb, var(--color-terracotta) 12%, transparent);
 }
 
@@ -323,6 +327,26 @@
 .search-clear:hover {
   background: var(--search-disc);
   color: var(--color-ink);
+}
+
+/* The panels under the bar, the places and the cities: on the bar's own
+   surface and at its height off the map, exactly its width and 8px under it,
+   so the bar and what it opens read as one thing. What is in them is the
+   product's own list, in panel-styles.ts. */
+.search-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  left: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  max-height: 330px;
+  overflow: hidden;
+  border: 1px solid var(--search-ink-10);
+  border-radius: var(--radius-panel);
+  background: var(--search-surface);
+  box-shadow: var(--search-lift);
 }
 
 /* The quick searches at the top of the place panel, drawn to design 10c of

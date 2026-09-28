@@ -1016,7 +1016,7 @@ export function PlaceSearch({
                             className={`${ROW_END} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
                               onTheDay
                                 ? "text-sage-700"
-                                : "text-terracotta-700 hover:bg-terracotta-200 hover:text-terracotta-900 disabled:opacity-45"
+                                : "text-terracotta-700 hover:bg-(--search-pill) hover:text-terracotta-900 disabled:opacity-45"
                             }`}
                           >
                             {onTheDay ? (
