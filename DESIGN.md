@@ -571,7 +571,8 @@ goes from chip to chip instead, each scrolled into view as it takes the focus.
 
 The place panel: under the chips, the city's best known places headed "Popular in
 Hanoi", and once something is typed and the chips have gone, "Matching places", each
-heading at the label step in `ink-muted`. A row has a pin in the accent at its front, the name at the
+heading at the label step in `ink-muted`, and staying at the top of the panel while the
+rows scroll under it, as "Cities nearby" does in the city panel. A row has a pin in the accent at its front, the name at the
 small step in 600 over its address at the micro step, the same as a start or end of
 the day in the planner beside the map, both wrapping rather than cut short, and at its
 end a plus on a 26px round, taking the pill's tint under the pointer, that puts the

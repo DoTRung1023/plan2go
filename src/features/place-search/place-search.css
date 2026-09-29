@@ -369,9 +369,19 @@
   overflow-y: auto;
 }
 
-/* The small heading over the rows: "Popular in Hanoi", "Matching places". */
+/* The small heading over the rows: "Popular in Hanoi", "Matching places",
+   "Cities nearby". It stays at the top of the panel while the rows scroll,
+   on the panel's own surface so they go out of sight under it. It stays
+   where it stands at rest, under the list's own 7px at the top, and a
+   shadow of the surface fills those 7px above it, which the rows would
+   otherwise show through as they go. */
 .search-heading {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   padding: 4px 7px 9px;
+  background: var(--search-surface);
+  box-shadow: 0 -7px 0 var(--search-surface);
   color: var(--color-ink-muted);
   font-size: var(--text-label);
   font-weight: 600;
