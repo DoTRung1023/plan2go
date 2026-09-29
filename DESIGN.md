@@ -761,13 +761,11 @@ ends at the last it reaches, and never runs past either.
 
 The cities on paper wear the dots they wear on the tabs, in their own colours, which
 mark which days share a city and nothing else, and in ink on a sheet in ink alone,
-where the name beside each dot says which city it is. A trip that moves has its
-journey on the cover, under its dates: every stay in order, a stay being days one
-after another in one city, so a city come back to is a second stay. Each is its dot,
-its name in the display face and how many days it lasts, joined to the next by the
-dashed thread a day hangs on. A trip in one city has no journey, since the list says
-it. In the cover's list the city has a column of its own between the date and the
-places: named on the first day of a stay, with a dashed thread in the city's colour
+where the name beside each dot says which city it is. The cover names the cities in
+its list alone, with no line of them under its dates: a trip through a dozen cities
+has no room for them in one line. In the cover's list the city has a column of its
+own between the date and the places, a stay being days one after another in one
+city, so a city come back to is a second stay: named on the first day of a stay, with a dashed thread in the city's colour
 running down from its dot through the days after it to a smaller dot on the last, so
 a stay is read as one run without the name said on every line. A trip kept before
 days had cities has no column for one. The dot is sized by the words beside it, so it

@@ -373,46 +373,6 @@ function Sheet({
 }
 
 /**
- * The cities a trip stays in, in order, along a dashed thread like the one
- * each day hangs on: every stay a dot in its city's colour, the city's name
- * in the display face, and how many days are spent there. The thread runs
- * from one city to the next, so the route is read in one line before the
- * days are. Drawn only for a trip that moves; a trip in one city says so in
- * the list under it.
- */
-function Journey({ stays }: { readonly stays: readonly (CityStay & { readonly city: DayCity })[] }) {
-  return (
-    <ol aria-label="The cities in order" className="mt-7 flex items-start">
-      {stays.map((stay, at) => {
-        const last = at === stays.length - 1;
-        return (
-          /* Set in the name's size throughout, so the dot and the thread
-             find the middle of the name's first line from the same measure. */
-          <li
-            key={String(stay.first)}
-            className={`flex min-w-0 items-start gap-x-2 font-display text-place text-ink ${last ? "" : "flex-1"}`}
-          >
-            <PaperCityDot slot={stay.city.color} />
-            <div className="min-w-0">
-              <p className="break-words">{stay.city.name}</p>
-              <p className={`mt-0.5 font-body text-meta font-normal ${MUTED}`}>
-                {daysLong(stay.last - stay.first + 1)}
-              </p>
-            </div>
-            {last ? null : (
-              <span
-                aria-hidden="true"
-                className={`mt-[calc(0.5lh-0.75px)] mr-2 min-w-4 flex-1 border-t-[1.5px] border-dashed ${RULE}`}
-              />
-            )}
-          </li>
-        );
-      })}
-    </ol>
-  );
-}
-
-/**
  * Where a day falls in its stay, in the cover's list: the city named on the
  * first day of a stay, and a dashed thread in the city's colour running down
  * from its dot through the days after it, to a smaller dot on the last. The
@@ -468,8 +428,8 @@ const COVER_COLUMNS = {
 } as const;
 
 /**
- * The sheet in front of the days: the trip's name, its dates, the cities it
- * stays in, and every day at a glance, one line each, so the whole trip is
+ * The sheet in front of the days: the trip's name, its dates, and every day
+ * at a glance, one line each with the city it is in, so the whole trip is
  * read before any day of it. Every day of the trip, not only the days
  * printed, because the glance is at the trip. A trip kept before days had
  * cities has no column for one.
@@ -486,8 +446,7 @@ function CoverSheet({
   readonly sheet: SheetNumber;
 }) {
   const stays = cityStays(days.map((day) => day.plan));
-  const named = stays.flatMap((stay) => (stay.city === null ? [] : [{ ...stay, city: stay.city }]));
-  const anyCity = named.length > 0;
+  const anyCity = stays.some((stay) => stay.city !== null);
   return (
     <Sheet sheet={sheet}>
       <div className="flex flex-1 flex-col">
@@ -498,7 +457,6 @@ function CoverSheet({
           <p className={`mt-2 text-body ${MUTED}`}>
             {range} · {daysLong(days.length)}
           </p>
-          {named.length > 1 && named.length === stays.length ? <Journey stays={named} /> : null}
         </div>
         <ul className={`@container ${HEAD_RULE}`}>
           {days.map((day, index) => {
