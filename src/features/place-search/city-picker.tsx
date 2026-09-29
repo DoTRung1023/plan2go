@@ -402,6 +402,9 @@ export function CityPicker({
             ? `Choose the city ${dayName} is in`
             : `${dayName} is in ${shown.name}. Change the city`
         }
+        // The whole name under the pointer, since the pill cuts a long one
+        // short, as a day's tab names its city.
+        title={shown?.name}
         className="search-pill"
       >
         {/* Its own dot, the one its days carry in the strip, which makes the

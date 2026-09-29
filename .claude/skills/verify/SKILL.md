@@ -49,23 +49,26 @@ Every trip opened this way is a row in the shared database. Delete them when don
 The bar is `.place-search .search-bar`; its field is `input[aria-keyshortcuts="/"]`,
 which has no placeholder attribute (the empty field's words are an overlay,
 `.search-words`). The bar carries `data-active` while it is in use, and
-`.search-scrim` covers the page then. Both panels are `.search-panel`, hang inside
-`.search-bar`, and are mounted only while open, with no transition, so wait for them
-to exist; a row is `.search-row`, with `data-active` on the one picked out. The place list is the element the field's
-`aria-controls` names, a `[role="listbox"]` labelled "Popular in <city>" or "Places that
-match"; the city panel is `[role="dialog"][aria-label^="The city"]`, opened by
-`.search-pill`, with its own field inside it. Before anything is typed the place panel
-opens on a sideways row of quick search chips, one per kind of place; take one with
-`getByRole("button", { name: "Park", exact: true })`, since rows named for a park match
-a looser selector. A chip is a toggle (`aria-pressed`): pressed, the list's
-`aria-label` becomes "Parks in <city>" once `/api/places/nearby?kind=park` answers, and pressed
-again it is "Popular in <city>". Round arrows labelled "Scroll back through the quick
-searches" and "Scroll on through the quick searches" are there only while there is
-more of the row that way. A
+`.search-scrim` covers the page then. Both panels are `.search-panel` inside
+`.search-bar`, mounted only while open, with no transition, so wait for them to exist;
+a row is `.search-row`, with `data-active` on the one picked out. The place panel sits
+in `.search-under` under the quick search row, and is mounted only while it has a
+list, a sentence or an error to show, so the chips can be there without it. The place
+list is the element the field's `aria-controls` names, a `[role="listbox"]` labelled
+"Popular in <city>" or "Places that match"; the city panel is
+`[role="dialog"][aria-label^="The city"]`, opened by `.search-pill`, with its own
+field inside it, and hangs straight under the bar. Before anything is typed a sideways
+row of quick search chips, one per kind of place, stands between the bar and the place
+panel, outside the panel, as `.search-under .search-kinds`, and it goes once two
+letters are typed; take one with `getByRole("button", { name: "Park", exact: true })`,
+since rows named for a park match a looser selector. A chip is a toggle
+(`aria-pressed`): pressed, the list's `aria-label` becomes "Parks in <city>" once
+`/api/places/nearby?kind=park` answers, and pressed again it is "Popular in <city>".
+Round arrows labelled "Scroll back through the quick searches" and "Scroll on through
+the quick searches" are there only while there is more of the row that way. A
 `MutationObserver` on `.place-search`, installed before the click, gives a
 timestamped transcript of everything the panels say, which is the evidence for
-anything about loading states. `.search-toast` is the sentence at the foot of the
-map after a move or an add, gone after 2.4 s.
+anything about loading states.
 
 Routes worth intercepting with `page.route`: `**/api/places/nearby**` (the city's
 best known, asked once per city, and with `kind=` the best known of a kind, asked once
