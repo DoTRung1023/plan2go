@@ -194,6 +194,94 @@ describe("search", () => {
     expect(found?.distanceMeters).toBeNull();
   });
 
+  it("asks for towns, districts, wards and provinces when cities are asked for", async () => {
+    const fetched = vi.fn(async () => Response.json({}));
+    vi.stubGlobal("fetch", fetched);
+
+    await createGooglePlacesProvider({ apiKey: "k" }).search({
+      query: "Tây Ninh",
+      near: null,
+      limit: 5,
+      only: "cities",
+      session: null,
+    });
+
+    const [, init] = fetched.mock.calls[0] as unknown as [string, RequestInit];
+    const types: unknown = JSON.parse(String(init.body)).includedPrimaryTypes;
+    expect(types).toContain("administrative_area_level_2");
+    expect(types).toContain("administrative_area_level_1");
+    expect(types).not.toContain("(cities)");
+  });
+
+  describe("a town filed twice", () => {
+    const prediction = (
+      placeId: string,
+      main: string,
+      secondary: string,
+      types: string[],
+      distanceMeters?: number,
+    ) => ({
+      placePrediction: {
+        placeId,
+        types,
+        distanceMeters,
+        structuredFormat: { mainText: { text: main }, secondaryText: { text: secondary } },
+      },
+    });
+    const searchFor = async (answer: unknown, only: "cities" | null) => {
+      vi.stubGlobal("fetch", vi.fn(async () => Response.json(answer)));
+      const found = await createGooglePlacesProvider({ apiKey: "k" }).search({
+        query: "Hu",
+        near: null,
+        limit: 8,
+        only,
+        session: null,
+      });
+      return found.map((one) => one.providerPlaceId);
+    };
+
+    it("is listed once, as the city rather than the province", async () => {
+      const answer = {
+        suggestions: [
+          prediction("p-hue-province", "Hue City", "Vietnam", ["administrative_area_level_1"]),
+          prediction("p-hue", "Hue", "Vietnam", ["locality", "political"]),
+        ],
+      };
+      expect(await searchFor(answer, "cities")).toEqual(["p-hue"]);
+    });
+
+    it("is listed once when a district and a ward are as far from the origin", async () => {
+      const answer = {
+        suggestions: [
+          prediction("p-ward", "Hội An", "Hoi An, Da Nang, Vietnam", ["sublocality_level_1"], 591_000),
+          prediction("p-other", "Hội An", "An Giang, Vietnam", ["locality"], 134_000),
+          prediction("p-district", "Hội An", "Da Nang, Vietnam", ["administrative_area_level_2"], 591_400),
+        ],
+      };
+      expect(await searchFor(answer, "cities")).toEqual(["p-ward", "p-other"]);
+    });
+
+    it("is not a town of the same name in another country", async () => {
+      const answer = {
+        suggestions: [
+          prediction("p-china", "Tây Ninh", "Qinghai, China", ["locality"]),
+          prediction("p-tay-ninh", "Tây Ninh", "Vietnam", ["administrative_area_level_1"]),
+        ],
+      };
+      expect(await searchFor(answer, "cities")).toEqual(["p-china", "p-tay-ninh"]);
+    });
+
+    it("is never looked for among places, where two of one name are two places", async () => {
+      const answer = {
+        suggestions: [
+          prediction("p-one", "Highlands Coffee", "Hồ Chí Minh, Vietnam", ["cafe"], 2_000),
+          prediction("p-two", "Highlands Coffee", "Hồ Chí Minh, Vietnam", ["cafe"], 3_000),
+        ],
+      };
+      expect(await searchFor(answer, null)).toEqual(["p-one", "p-two"]);
+    });
+  });
+
   it("asks for any named area, and never a province, when areas are asked for", async () => {
     const fetched = vi.fn(async () => Response.json({}));
     vi.stubGlobal("fetch", fetched);

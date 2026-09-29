@@ -8,12 +8,17 @@ export interface PlaceSearchRequest {
   readonly near: LatLng | null;
   readonly limit: number;
   /**
-   * What kind of place to answer with, or null for any. Whole cities, which
-   * is what someone choosing where a trip is means by a search; or any named
-   * part of a country, a city, a district or a ward, for a town found by
-   * where its landmarks are. Some well known towns are filed as a district or
-   * a ward and not as a city: in Vietnam since its wards were redrawn,
-   * Vũng Tàu and Hội An are districts, and Đà Lạt is its wards.
+   * What kind of place to answer with, or null for any.
+   *
+   * Cities are what someone choosing where a trip or a day is means by a
+   * search: a city, and a district, a ward or a province too, since some well
+   * known towns are filed as one of those and not as a city. In Vietnam since
+   * its wards were redrawn, Vũng Tàu and Hội An are districts, Tây Ninh and
+   * Cà Mau are provinces and nothing else, and Đà Lạt is its wards.
+   *
+   * Areas are the same less provinces, for a town found by where its
+   * landmarks are: a province's point is the middle of it, which can be close
+   * to landmarks that are in some other town.
    */
   readonly only: "cities" | "areas" | null;
   /**

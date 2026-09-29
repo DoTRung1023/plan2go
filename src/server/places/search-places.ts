@@ -9,9 +9,12 @@ function biasKeyFor(request: PlaceSearchRequest): string {
 /**
  * Asking for cities is a different question from asking for places, so the
  * narrowing is part of the key rather than something a cached answer to the
- * wider question could be handed back for.
+ * wider question could be handed back for. Cities are filed as "town" and
+ * not the "city" they were filed as when a city was only what Google files
+ * as one, so an answer kept from then, which could not find Hội An, is never
+ * handed back as this one.
  */
-const KIND_KEYS = { cities: "city", areas: "area" } as const;
+const KIND_KEYS = { cities: "town", areas: "area" } as const;
 
 function queryKeyFor(request: PlaceSearchRequest): string {
   const kind = request.only === null ? "place" : KIND_KEYS[request.only];

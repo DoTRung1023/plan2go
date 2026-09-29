@@ -1,6 +1,7 @@
 import type { Box } from "@/core/model/distance";
 import { boxAround, metersBetween } from "@/core/model/distance";
 import type { LatLng } from "@/core/model/place";
+import { foldedName, plainName } from "@/core/model/place-name";
 import type { LandmarkPlace, PlaceSuggestion, PlacesProvider } from "@/core/ports/places-provider";
 import { placeDetailsFor } from "./place-details";
 import { suggestionsFor } from "./suggestion-cache";
@@ -75,25 +76,6 @@ const WARD_QUARTERS = new Set(["bắc", "nam", "đông", "tây"]);
 /** The same words in a name written without any accents at all, "Bac Nha Trang", which says no more. */
 const WARD_QUARTERS_PLAIN = new Set(["bac", "nam", "dong", "tay"]);
 
-/** Without its accents, with the Vietnamese đ as the d it is written as without them, in lower case. */
-function plain(name: string): string {
-  return name.normalize("NFD").replace(/\p{M}/gu, "").replace(/đ/gi, "d").toLowerCase();
-}
-
-/**
- * A name as it is compared: plain, without the word for what kind of place
- * it is that the provider writes on some names and not others, and without
- * its spaces, so "Huế" and "Thành phố Huế", "Quang Binh Province" and
- * "Quảng Bình", and "Hà Nội" and "Hanoi" are one place.
- */
-export function folded(name: string): string {
-  return plain(name)
-    .trim()
-    .replace(/^(thanh pho|tinh|huyen|thi xa) /, "")
-    .replace(/ (province|district|city)$/, "")
-    .replace(/\s+/g, "");
-}
-
 /**
  * The town a ward is named for, when it is named for one: "Đà Lạt" from
  * "Xuân Hương - Đà Lạt", and "Nha Trang" from "Bắc Nha Trang". Null for a
@@ -109,7 +91,7 @@ export function townOf(name: string): string | null {
   if (first === undefined || rest.length === 0) {
     return null;
   }
-  const quarters = plain(name) === name.toLowerCase() ? WARD_QUARTERS_PLAIN : WARD_QUARTERS;
+  const quarters = plainName(name) === name.toLowerCase() ? WARD_QUARTERS_PLAIN : WARD_QUARTERS;
   return quarters.has(first.toLowerCase()) ? rest.join(" ") : null;
 }
 
@@ -121,7 +103,7 @@ interface Vote {
 
 /** One more landmark for a name, which is the first it came up at if it is new. */
 function vote(votes: Map<string, Vote>, name: string, at: number): void {
-  const key = folded(name);
+  const key = foldedName(name);
   const counted = votes.get(key);
   votes.set(key, counted === undefined ? { name, count: 1, first: at } : { ...counted, count: counted.count + 1 });
 }
@@ -214,7 +196,7 @@ export function namesFor(group: readonly LandmarkPlace[]): readonly GroupName[] 
 
   const names: GroupName[] = [];
   for (const one of inOrder) {
-    if (!names.some((kept) => folded(kept.name) === folded(one.name))) {
+    if (!names.some((kept) => foldedName(kept.name) === foldedName(one.name))) {
       names.push(one);
     }
   }
@@ -223,14 +205,14 @@ export function namesFor(group: readonly LandmarkPlace[]): readonly GroupName[] 
 
 /**
  * The town a group of landmarks is in, as the provider names it: the first of
- * the group's names that the provider has a place for, called that, near
- * where the landmarks are. Null when none of them is.
+ * the group's names that the provider has an area for, a town, a district or
+ * a ward, called that, near where the landmarks are. Null when none of them
+ * is.
  *
- * A province is taken only as a city of its name and only as close as the
- * city itself reaches, so that it is the city the landmarks are in and not
- * the one down the road: Sa Pa's landmarks are in Lào Cai province, and Lào
- * Cai, the town, is 20 km from them. Anything else is taken as any named
- * area, a district or a ward, since that is how some towns are filed.
+ * A province's name is taken only as close as the city itself reaches, so
+ * that it is the city the landmarks are in and not the one down the road:
+ * Sa Pa's landmarks are in Lào Cai province, and Lào Cai, the town, is 20 km
+ * from them.
  */
 export async function townFor(
   group: readonly LandmarkPlace[],
@@ -245,13 +227,13 @@ export async function townFor(
       query: name,
       near: first.position,
       limit: MATCHES_READ,
-      only: province ? "cities" : "areas",
+      only: "areas",
       session: null,
     });
     const within = province ? NEAREST_METERS : MATCH_METERS;
     const match = found.find(
       (one) =>
-        folded(one.name) === folded(name) &&
+        foldedName(one.name) === foldedName(name) &&
         one.distanceMeters !== null &&
         one.distanceMeters <= within,
     );
@@ -274,7 +256,7 @@ async function townsAt(
   limit: number,
   provider: PlacesProvider,
 ): Promise<readonly PlaceSuggestion[]> {
-  const inCountry = landmarks.filter((landmark) => folded(landmark.country ?? "") === folded(country));
+  const inCountry = landmarks.filter((landmark) => foldedName(landmark.country ?? "") === foldedName(country));
   const towns = await Promise.all(
     groupedByPlace(inCountry)
       .slice(0, GROUPS_TRIED)

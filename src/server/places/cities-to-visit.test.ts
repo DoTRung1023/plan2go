@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { metersBetween } from "@/core/model/distance";
+import { foldedName } from "@/core/model/place-name";
 import type { LatLng } from "@/core/model/place";
 import type { LandmarkPlace, PlaceSearchRequest, PlaceSuggestion, PlacesProvider } from "@/core/ports/places-provider";
 import {
   boxesAround,
   countryOf,
-  folded,
   groupedByPlace,
   inTurn,
   namesFor,
@@ -47,7 +47,7 @@ function knowing(towns: readonly { readonly name: string; readonly at: LatLng }[
       const near = request.near;
       return Promise.resolve(
         towns
-          .filter((town) => folded(town.name).startsWith(folded(request.query)))
+          .filter((town) => foldedName(town.name).startsWith(foldedName(request.query)))
           .map((town) => ({
             providerPlaceId: `id-${town.name}-${String(town.at.lat)}`,
             name: town.name,
@@ -64,16 +64,6 @@ function knowing(towns: readonly { readonly name: string; readonly at: LatLng }[
   };
   return { provider, asked };
 }
-
-describe("folded", () => {
-  it("is one name with and without its accents, its spaces and the word for its kind", () => {
-    expect(folded("Thành phố Huế")).toBe(folded("Hue"));
-    expect(folded("Quang Binh Province")).toBe(folded("Quảng Bình"));
-    expect(folded("Hà Nội")).toBe(folded("Hanoi"));
-    expect(folded("Ho Chi Minh City")).toBe(folded("Hồ Chí Minh"));
-    expect(folded("Đà Lạt")).toBe(folded("Da Lat"));
-  });
-});
 
 describe("townOf", () => {
   it("is the town a ward is named for", () => {

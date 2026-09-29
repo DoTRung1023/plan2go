@@ -6,6 +6,7 @@ import type {
   WeeklyOpeningHours,
 } from "@/core/model/place";
 import { boxAround } from "@/core/model/distance";
+import { foldedName } from "@/core/model/place-name";
 import type { PlaceKind } from "@/core/model/place-kind";
 import type {
   LandmarkPlace,
@@ -63,13 +64,20 @@ const PRICE_LEVELS = [
 
 /**
  * The place types a search is held to, for each kind of place it can be held
- * to. Google's own "(cities)" is its towns and the areas a level under a
- * district; an area is those, the districts themselves, and the wards of a
- * city, which is five, as many as one search takes. Never a province: its
- * point is the middle of it, which can be a long way from any town in it.
+ * to, five at most, as many as one search takes. Both are Google's towns, the
+ * areas a level under a district, the districts, and the wards of a city.
+ * Google's own "(cities)" is only the first two, and misses every town it
+ * files as anything else. A city can also be a province; an area is never
+ * one, and has the towns Britain files by post in its place.
  */
 const PRIMARY_TYPES: Readonly<Record<"cities" | "areas", readonly string[]>> = {
-  cities: ["(cities)"],
+  cities: [
+    "locality",
+    "administrative_area_level_3",
+    "administrative_area_level_2",
+    "sublocality_level_1",
+    "administrative_area_level_1",
+  ],
   areas: [
     "locality",
     "administrative_area_level_3",
@@ -78,6 +86,68 @@ const PRIMARY_TYPES: Readonly<Record<"cities" | "areas", readonly string[]>> = {
     "postal_town",
   ],
 };
+
+/** Google's type for a province, a state or a prefecture. */
+const PROVINCE = "administrative_area_level_1";
+
+/**
+ * How much further from the origin one answer can be than another of the same
+ * name and still be the same place, filed twice: Huế as a city and as a
+ * province, whose points are 14 km apart.
+ */
+const SAME_PLACE_METERS = 20_000;
+
+/** An answer to a search, and whether Google files it as a province. */
+interface Found {
+  readonly suggestion: PlaceSuggestion;
+  readonly province: boolean;
+}
+
+/** The country a line under a name ends in, "Vietnam" from "Da Nang, Vietnam". */
+function countryIn(address: string | null): string | null {
+  return address?.split(",").at(-1)?.trim() ?? null;
+}
+
+/**
+ * Whether two answers are one place filed twice, as a city and a province, or
+ * a district and a ward: Hà Nội, Huế, Hội An and Vũng Tàu each come back so.
+ * The same name in the same country, and as far from the origin as each
+ * other, or, with no origin to measure from, one of them a province, since a
+ * province and a city of its name are all but always the one place. Tây Ninh
+ * the province and Tây Ninh in Qinghai are not.
+ */
+function samePlace(a: Found, b: Found): boolean {
+  if (
+    foldedName(a.suggestion.name) !== foldedName(b.suggestion.name) ||
+    countryIn(a.suggestion.address) !== countryIn(b.suggestion.address)
+  ) {
+    return false;
+  }
+  const from = a.suggestion.distanceMeters;
+  const to = b.suggestion.distanceMeters;
+  return from !== null && to !== null
+    ? Math.abs(from - to) <= SAME_PLACE_METERS
+    : a.province !== b.province;
+}
+
+/**
+ * Each place once, in Google's order, and as the city rather than the
+ * province where it is both, since the city's point is the city's and the
+ * province's is the middle of it.
+ */
+function eachPlaceOnce(found: readonly Found[]): readonly PlaceSuggestion[] {
+  const kept: Found[] = [];
+  for (const one of found) {
+    const at = kept.findIndex((other) => samePlace(other, one));
+    const other = kept[at];
+    if (other === undefined) {
+      kept.push(one);
+    } else if (other.province && !one.province) {
+      kept[at] = one;
+    }
+  }
+  return kept.map(({ suggestion }) => suggestion);
+}
 
 /** How wide a bias circle is drawn around the point we were given, in metres. */
 const BIAS_RADIUS_METERS = 20_000;
@@ -138,6 +208,7 @@ const predictionSchema = z.object({
       placeId: z.string(),
       /** From the origin the search was given, when it was given one. */
       distanceMeters: z.number().int().optional(),
+      types: z.array(z.string()).optional(),
       text: z.object({ text: z.string() }).optional(),
       structuredFormat: z
         .object({
@@ -437,7 +508,7 @@ export function createGooglePlacesProvider(options: GooglePlacesOptions): Places
       });
       const parsed = autocompleteSchema.parse(await readJson(response, "a search"));
 
-      const suggestions: PlaceSuggestion[] = [];
+      const found: Found[] = [];
       for (const entry of parsed.suggestions ?? []) {
         const prediction = entry.placePrediction;
         if (prediction === undefined) {
@@ -448,14 +519,20 @@ export function createGooglePlacesProvider(options: GooglePlacesOptions): Places
         if (name === null) {
           continue;
         }
-        suggestions.push({
-          providerPlaceId: prediction.placeId,
-          name,
-          address: prediction.structuredFormat?.secondaryText?.text ?? null,
-          distanceMeters: prediction.distanceMeters ?? null,
+        found.push({
+          suggestion: {
+            providerPlaceId: prediction.placeId,
+            name,
+            address: prediction.structuredFormat?.secondaryText?.text ?? null,
+            distanceMeters: prediction.distanceMeters ?? null,
+          },
+          province: prediction.types?.includes(PROVINCE) ?? false,
         });
       }
-      return suggestions.slice(0, request.limit);
+      // Only for towns: two cafés of one chain a street apart are two places.
+      const answers =
+        request.only === null ? found.map(({ suggestion }) => suggestion) : eachPlaceOnce(found);
+      return answers.slice(0, request.limit);
     },
 
     async nearby(request: NearbyPlacesRequest): Promise<readonly PlaceSuggestion[]> {
