@@ -21,7 +21,8 @@ export type SetDayCityResult =
 
 /**
  * Move a day to another city, and with it the days after it that were in the
- * same city as it, up to the first that was somewhere else.
+ * same city as it and have nothing planned on them yet, up to the first that
+ * was somewhere else or has a stop on it.
  *
  * The city is looked up rather than trusted from the page, so the map opens
  * where it actually is, and from our own table when it was looked up lately,

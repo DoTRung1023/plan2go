@@ -21,12 +21,16 @@ export function sameCity(a: CityIdentity | null, b: CityIdentity | null): boolea
 
 /**
  * The days that move when one day is moved to another city: that day, and
- * every day straight after it that was in the same city, up to the first
- * that was somewhere else.
+ * every day straight after it that was in the same city and has nothing
+ * planned on it yet, up to the first that was somewhere else or has a stop.
  *
  * A trip is planned as runs of days in one city, so moving the first day of
  * a run is moving the run, and the traveller should not have to move each
- * day of it by hand. Days before the one moved stay where they are: nobody
+ * day of it by hand. But a later day with a stop on it has been planned in
+ * its city, and moving it would leave its stops in a city the day is no
+ * longer in, so it stays, and so does every day after it: those follow it
+ * rather than the day moved. The day chosen moves whatever is on it, since
+ * it is the one asked about. Days before it stay where they are: nobody
  * changing Thursday means Monday too. Empty when the day is not on the trip.
  */
 export function cityRun(days: readonly DayPlan[], dayId: DayId): readonly DayId[] {
@@ -36,9 +40,9 @@ export function cityRun(days: readonly DayPlan[], dayId: DayId): readonly DayId[
     return [];
   }
 
-  const run: DayId[] = [];
-  for (const day of days.slice(from)) {
-    if (!sameCity(day.city, first.city)) {
+  const run: DayId[] = [first.id];
+  for (const day of days.slice(from + 1)) {
+    if (!sameCity(day.city, first.city) || day.stops.length > 0) {
       break;
     }
     run.push(day.id);

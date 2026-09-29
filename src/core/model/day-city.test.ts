@@ -25,6 +25,29 @@ function day(id: string, at: DayCity | null): DayPlan {
   };
 }
 
+/** A day with a stop on it: planned, in its city. */
+function planned(id: string, at: DayCity | null): DayPlan {
+  return {
+    ...day(id, at),
+    stops: [
+      {
+        id: `${id}-stop`,
+        place: {
+          id: `${id}-place`,
+          providerPlaceId: null,
+          name: "Temple of Literature",
+          address: null,
+          position: { lat: 21.03, lng: 105.84 },
+          openingHours: null,
+        },
+        stayMinutes: 60,
+        travelMode: "walk",
+        note: null,
+      },
+    ],
+  };
+}
+
 describe("sameCity", () => {
   it("tells cities apart by the provider's identifier", () => {
     expect(sameCity(HANOI, city("Hanoi"))).toBe(true);
@@ -65,6 +88,21 @@ describe("cityRun", () => {
 
   it("moves nothing for a day that is not on the trip", () => {
     expect(cityRun([day("d1", HANOI)], "d9")).toEqual([]);
+  });
+
+  it("leaves a later day with a stop on it where it is", () => {
+    const days = [planned("d1", HANOI), day("d2", HANOI), planned("d3", HANOI)];
+    expect(cityRun(days, "d2")).toEqual(["d2"]);
+  });
+
+  it("moves the empty days after it, up to the first with a stop", () => {
+    const days = [day("d1", HANOI), day("d2", HANOI), day("d3", HANOI), planned("d4", HANOI), day("d5", HANOI)];
+    expect(cityRun(days, "d1")).toEqual(["d1", "d2", "d3"]);
+  });
+
+  it("moves the day chosen even when it has stops of its own", () => {
+    const days = [planned("d1", HANOI), day("d2", HANOI)];
+    expect(cityRun(days, "d1")).toEqual(["d1", "d2"]);
   });
 });
 

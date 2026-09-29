@@ -20,7 +20,7 @@ const citySchema = z.object({
 });
 
 /**
- * The city a day is in, and the days after it in the same city.
+ * The city a day is in, and the empty days after it in the same city.
  *
  * The key out of the edit link is hashed here and checked inside the query
  * that writes, so nothing moves without one. A day that is not there and a

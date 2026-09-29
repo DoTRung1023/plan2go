@@ -107,4 +107,28 @@ describe("colorAfterMove", () => {
   it("is the first colour nobody holds when every city keeps a day", () => {
     expect(colorAfterMove(days, "d3", city("Hue"))).toBe(4);
   });
+
+  it("lets a city keep its colour when a planned day after the one moved stays in it", () => {
+    const plannedAfter = days.map((one) =>
+      one.id === "d3" ? { ...one, stops: [stopIn("Temple of Literature")] } : one,
+    );
+    expect(colorAfterMove(plannedAfter, "d2", city("Hue"))).toBe(4);
+  });
 });
+
+function stopIn(name: string): DayPlan["stops"][number] {
+  return {
+    id: `stop-${name}`,
+    place: {
+      id: `place-${name}`,
+      providerPlaceId: null,
+      name,
+      address: null,
+      position: { lat: 21.03, lng: 105.84 },
+      openingHours: null,
+    },
+    stayMinutes: 60,
+    travelMode: "walk",
+    note: null,
+  };
+}

@@ -100,7 +100,7 @@ interface CityPickerProps {
   /** Whether the panel is open. Held by the bar, which glows and dims the page while it is. */
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
-  /** A city chosen: the day moves there, and so does the run of days after it. */
+  /** A city chosen: the day moves there, and so do the empty days after it in the same city. */
   readonly onChoose: (providerPlaceId: string) => Promise<{ readonly error: string | null }>;
   /** The day is in the city now, for the bar to say so and turn back to places. */
   readonly onMoved: (cityName: string) => void;
@@ -118,7 +118,8 @@ interface CityPickerProps {
  * country listed before anything is typed, nearest first.
  *
  * Choosing a city moves the day and the days straight after it that were in
- * the same city, which is decided on the server from the trip as it stands.
+ * the same city with nothing planned on them yet, which is decided on the
+ * server from the trip as it stands.
  * The pill says the new city from the moment the choice is made: its name
  * slides in, and its dot pops with a ring of its colour spreading from it,
  * so it does not blink back to the old one while the page catches up.

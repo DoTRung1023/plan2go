@@ -102,9 +102,9 @@ interface PlaceSearchProps {
   /** The colour a city will have once the open day is moved to it. */
   readonly cityColorFor: (city: CityIdentity) => number;
   /**
-   * The open day moved to another city, and the days after it that were in
-   * the same one. Passed in rather than imported, because a feature may not
-   * reach into the route that owns the mutation.
+   * The open day moved to another city, and the empty days after it that
+   * were in the same one. Passed in rather than imported, because a feature
+   * may not reach into the route that owns the mutation.
    */
   readonly onChangeCity: (providerPlaceId: string) => Promise<{ readonly error: string | null }>;
   /**

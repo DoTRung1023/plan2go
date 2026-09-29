@@ -604,7 +604,9 @@ day is in it, each with its distance at the end of its row as above, which the p
 measures from the day's city at no charge, and the city the day is in ticked there
 instead, where a place's plus stands. Choosing
 one moves the day there, and with it the days straight after it that were in the same
-city, up to the first that was somewhere else; the days before it never move, and
+city and have nothing planned on them yet, up to the first that was somewhere else or
+has a stop on it. A later day with a stop has been planned in its city, so it stays,
+and the days after it stay with it; the days before the one moved never move, and
 nothing on a moved day moves with it. A day added to the end of the trip is in the city
 the last day was in. An empty day opens the map on its city, so the next city of the
 trip is where the map goes when its first day is chosen.
