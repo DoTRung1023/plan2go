@@ -25,6 +25,9 @@ import "./place-search.css";
 /** The city's best known shown, once whatever is already on the trip is out of them. */
 const RECOMMENDED_SHOWN = 6;
 
+/** The best known of a kind shown, once whatever is already on the trip is out of them. */
+const KIND_SHOWN = 10;
+
 /**
  * What the empty field offers to look for, turned over one after another, so
  * a reader who has not decided what they want is reminded what they can ask.
@@ -199,10 +202,10 @@ export function PlaceSearch({
   /** Places on their way to the day from their rows, by provider identifier. */
   const [adding, setAdding] = useState<ReadonlySet<string>>(new Set());
   /**
-   * Places put on the day from their rows since the panel opened, so a row in
-   * a search answer says so rather than offering to add the place twice. A
-   * recommended row leaves the list instead, since the trip is taken out of
-   * the recommendations.
+   * Places put on the day from their rows while the list now showing has
+   * been up, so each row stays where it was with a tick rather than leaving
+   * the list or offering to add the place twice. Let go of when the list
+   * changes, so the next one is drawn without them.
    */
   const [added, setAdded] = useState<ReadonlySet<string>>(new Set());
   /** What went wrong with the last add from a row, under the list. */
@@ -211,8 +214,8 @@ export function PlaceSearch({
   const [announced, setAnnounced] = useState("");
   /** The quick search the list is showing in place of the city's best known, or null. */
   const [picked, setPicked] = useState<PlaceKind | null>(null);
-  /** Whether the places panel was open, so the render that closes it can be told apart. */
-  const [wasOpen, setWasOpen] = useState(false);
+  /** Which list the panel was showing, so the render that changes it can be told apart. */
+  const [listWas, setListWas] = useState<string | null>(null);
 
   const fieldId = useId();
   const listId = `${fieldId}-list`;
@@ -263,19 +266,6 @@ export function PlaceSearch({
   const holding = words === "" && trimmed !== "";
   const placesOpen = panel === "places";
 
-  // A quick search is for the one opening of the panel it was pressed in.
-  // Closed, however it was closed, the panel lets go of it, so it opens again
-  // on the city's best known with no chip held down. Adjusted during the
-  // render that closes it, as the held name is, so nothing is asked about the
-  // kind on the way out.
-  if (wasOpen !== placesOpen) {
-    setWasOpen(placesOpen);
-    if (!placesOpen) {
-      setPicked(null);
-      setActive(0);
-    }
-  }
-
   const typed = useTypedSearch(
     words,
     near === null ? "" : `${near.lat.toFixed(POINT_DECIMALS)},${near.lng.toFixed(POINT_DECIMALS)}`,
@@ -296,6 +286,33 @@ export function PlaceSearch({
   );
 
   const cityList = useCityList(picked, dayCity?.position ?? null, placesOpen && !typed.searched);
+
+  /**
+   * Which list the panel is showing: what was typed, or the city's best known
+   * of a kind or of any. Null while the panel is shut.
+   */
+  const list = ((): string | null => {
+    if (!placesOpen) {
+      return null;
+    }
+    return typed.searched ? "typed" : (picked ?? "popular");
+  })();
+
+  // Every list is drawn afresh, with what the trip already goes to left out
+  // of it: when the panel opens, and when it turns from the city's best known
+  // to a kind, from one kind to another, or to what was typed and back. So
+  // what was added from the last list is let go of, and closing the panel,
+  // however it was closed, lets go of the quick search too. Adjusted during
+  // the render that changes the list, as the held name is, so no list is
+  // ever painted with what belonged to the last one.
+  if (listWas !== list) {
+    setListWas(list);
+    setAdded(new Set());
+    if (list === null) {
+      setPicked(null);
+      setActive(0);
+    }
+  }
 
   /**
    * The kind of place the empty field offers, turned over while it is empty.
@@ -469,20 +486,21 @@ export function PlaceSearch({
   };
 
   /**
-   * What the list about the city offers. Of the city's best known, the
-   * handful the panel has room for, less everywhere the trip already goes; of
-   * a kind, all of them, with the ones on the trip ticked.
+   * What the list about the city offers, its best known or the best known of
+   * a kind: as many as the panel has room for, less everywhere the trip
+   * already goes. A place put on the day from its row while the list is up
+   * stays where it is, ticked, and so does one on its way there, so its row
+   * never leaves the list under the pointer that pressed it. The next list
+   * is drawn without it, and the next in line takes its place.
    *
    * Filtered here rather than asked for filtered, because the answer is cached
    * for every trip to this city at once and one traveller's itinerary is no
-   * part of that question. It also means a place recommended a moment ago
-   * leaves the list the instant it lands on a day, without asking again.
+   * part of that question.
    */
   const inCity = cityList !== undefined && "found" in cityList ? cityList.found : [];
-  const offered =
-    picked === null
-      ? inCity.filter((one) => !onTheTrip.has(one.providerPlaceId)).slice(0, RECOMMENDED_SHOWN)
-      : inCity;
+  const offered = inCity
+    .filter(({ providerPlaceId: id }) => !onTheTrip.has(id) || adding.has(id) || added.has(id))
+    .slice(0, picked === null ? RECOMMENDED_SHOWN : KIND_SHOWN);
   /** Below two letters the panel falls back to the city, which is what a field nobody has typed in has to offer. */
   const visible = typed.searched ? typed.found : offered;
 

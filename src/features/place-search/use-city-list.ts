@@ -7,18 +7,16 @@ import type { Answer, Suggestion } from "./search-api";
 import { askForPlaces, POINT_DECIMALS } from "./search-api";
 
 /**
- * The city's best known asked for, which is more than are shown. What the
- * trip already holds comes out of this list, and the next in line takes its
- * place, so the list stays the same length for as long as there is anything
- * left to fill it from. This is every place the provider will name for one
- * question and it costs no more than asking for six, so the whole of it is
- * asked for at once: a traveller who has taken fourteen of a city's best
- * known places has been offered the lot, and there is no page after this one.
+ * The city's best known asked for, of one kind or of any, which is more than
+ * are shown. What the trip already holds comes out of the list each time it
+ * is drawn, and the next in line takes its place, so the list stays the same
+ * length for as long as there is anything left to fill it from. This is
+ * every place the provider will name for one question and it costs no more
+ * than asking for six, so the whole of it is asked for at once: a traveller
+ * who has taken fourteen of a city's best known places has been offered the
+ * lot, and there is no page after this one.
  */
-const POPULAR_ASKED = 20;
-
-/** The best known of a kind asked for, all of which are shown. */
-const KIND_ASKED = 10;
+const ASKED = 20;
 
 /**
  * The best known places in the city, of one kind or, with none, of any. A
@@ -31,7 +29,7 @@ async function askAboutCity(kind: PlaceKind | null, city: LatLng): Promise<Answe
   const parameters = new URLSearchParams({
     lat: city.lat.toFixed(POINT_DECIMALS),
     lng: city.lng.toFixed(POINT_DECIMALS),
-    limit: String(kind === null ? POPULAR_ASKED : KIND_ASKED),
+    limit: String(ASKED),
   });
   if (kind !== null) {
     parameters.set("kind", kind);
