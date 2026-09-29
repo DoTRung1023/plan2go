@@ -1,3 +1,4 @@
+import type { Box } from "../model/distance";
 import type { LatLng, Place, PlaceCard } from "../model/place";
 import type { PlaceKind } from "../model/place-kind";
 
@@ -7,10 +8,14 @@ export interface PlaceSearchRequest {
   readonly near: LatLng | null;
   readonly limit: number;
   /**
-   * Answer with whole cities rather than places inside them, which is what
-   * someone choosing where a trip is means by a search.
+   * What kind of place to answer with, or null for any. Whole cities, which
+   * is what someone choosing where a trip is means by a search; or any named
+   * part of a country, a city, a district or a ward, for a town found by
+   * where its landmarks are. Some well known towns are filed as a district or
+   * a ward and not as a city: in Vietnam since its wards were redrawn,
+   * Vũng Tàu and Hội An are districts, and Đà Lạt is its wards.
    */
-  readonly citiesOnly: boolean;
+  readonly only: "cities" | "areas" | null;
   /**
    * An opaque token grouping one person's typing with the detail lookup that
    * follows it, so a provider that bills by session can charge once. Null when
@@ -40,23 +45,35 @@ export interface NearbyPlacesRequest {
 }
 
 /**
- * What a country is worth visiting for, asked in words, "best cities to visit
- * in Vietnam". The answer is places rather than cities, since that is what a
- * search that good at places knows how to rank, and where each one is in its
- * country is how the cities are found.
+ * What a country or the country around a city is worth visiting for, asked
+ * in words, "best cities to visit in Vietnam", or "tourist attractions" held
+ * to a box. The answer is places rather than cities, since that is what a
+ * search that good at places knows how to rank, and where each one is on the
+ * map is how the cities are found.
  */
 export interface LandmarkRequest {
   readonly query: string;
+  /** The box every place in the answer is in, or null for anywhere. */
+  readonly within: Box | null;
   readonly limit: number;
 }
 
-/** A well known place, and what its address says about where it is. */
+/** A well known place, where it is, and what its address says about it. */
 export interface LandmarkPlace {
   readonly name: string;
-  /** The town or city its address names, or null when it names none. */
+  readonly position: LatLng;
+  /**
+   * The town or city its address names, or null when it names none. Often a
+   * ward or a commune rather than the town: in Vietnam since its wards were
+   * redrawn, Po Nagar is in "Bắc Nha Trang", the north ward of Nha Trang.
+   */
   readonly locality: string | null;
+  /** The district or county under the province, or null when it names none. */
+  readonly district: string | null;
   /** The province, state or prefecture it is in, or null when it names none. */
   readonly region: string | null;
+  /** The country it is in, or null when its address names none. */
+  readonly country: string | null;
 }
 
 /**

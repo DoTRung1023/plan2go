@@ -1,100 +1,233 @@
 import { describe, expect, it } from "vitest";
+import { metersBetween } from "@/core/model/distance";
 import type { LatLng } from "@/core/model/place";
-import type { LandmarkPlace } from "@/core/ports/places-provider";
-import { citiesFromLandmarks, countryOf, nearestFirst, townsFromLandmarks } from "./cities-to-visit";
-
-function landmark(locality: string | null, region: string | null): LandmarkPlace {
-  return { name: "A landmark", locality, region };
-}
+import type { LandmarkPlace, PlaceSearchRequest, PlaceSuggestion, PlacesProvider } from "@/core/ports/places-provider";
+import {
+  boxesAround,
+  countryOf,
+  folded,
+  groupedByPlace,
+  inTurn,
+  namesFor,
+  nearestFirst,
+  townFor,
+  townOf,
+} from "./cities-to-visit";
 
 const ADELAIDE: LatLng = { lat: -34.9285, lng: 138.6007 };
+const PO_NAGAR: LatLng = { lat: 12.265, lng: 109.195 };
+const SON_DOONG: LatLng = { lat: 17.465, lng: 106.287 };
+const PHONG_NHA: LatLng = { lat: 17.478, lng: 106.134 };
+
+function landmark(
+  position: LatLng,
+  locality: string | null,
+  region: string | null,
+  district: string | null = null,
+): LandmarkPlace {
+  return { name: "A landmark", position, locality, district, region, country: "Vietnam" };
+}
 
 function placed(name: string, position: LatLng) {
   return { city: { providerPlaceId: `id-${name}`, name, address: null, distanceMeters: null }, position };
 }
 
-describe("citiesFromLandmarks", () => {
-  it("ranks cities by how many landmarks are in them", () => {
-    const landmarks = [
-      landmark("Hue", "Hue"),
-      landmark(null, "Đà Nẵng"),
-      landmark(null, "Đà Nẵng"),
-      landmark("Sa Pa", "Lào Cai"),
-    ];
-    expect(citiesFromLandmarks(landmarks, 8)).toEqual(["Đà Nẵng", "Hue", "Sa Pa"]);
-  });
+/**
+ * A provider that knows some towns and where they are, and answers a search
+ * for towns with every one whose name starts with what was typed, measured
+ * from where it was asked near, as the provider does. Counts what was asked.
+ */
+function knowing(towns: readonly { readonly name: string; readonly at: LatLng }[]) {
+  const asked: string[] = [];
+  const unstubbed = (): Promise<never> => Promise.reject(new Error("Not stubbed"));
+  const provider: PlacesProvider = {
+    name: "stub",
+    search: (request: PlaceSearchRequest): Promise<readonly PlaceSuggestion[]> => {
+      asked.push(request.query);
+      const near = request.near;
+      return Promise.resolve(
+        towns
+          .filter((town) => folded(town.name).startsWith(folded(request.query)))
+          .map((town) => ({
+            providerPlaceId: `id-${town.name}-${String(town.at.lat)}`,
+            name: town.name,
+            address: null,
+            distanceMeters: near === null ? null : metersBetween(near, town.at),
+          })),
+      );
+    },
+    nearby: unstubbed,
+    landmarks: unstubbed,
+    details: unstubbed,
+    card: unstubbed,
+    photo: unstubbed,
+  };
+  return { provider, asked };
+}
 
-  it("takes the province for a landmark whose address names no town", () => {
-    expect(citiesFromLandmarks([landmark(null, "Hà Nội")], 8)).toEqual(["Hà Nội"]);
-  });
-
-  it("takes the province as the city when its landmarks name several towns", () => {
-    const landmarks = [
-      landmark("Taito City", "Tokyo"),
-      landmark("Minato City", "Tokyo"),
-      landmark("Shibuya", "Tokyo"),
-      landmark("Kyoto", "Kyoto"),
-      landmark("Kyoto", "Kyoto"),
-    ];
-    expect(citiesFromLandmarks(landmarks, 8)).toEqual(["Tokyo", "Kyoto"]);
-  });
-
-  it("counts one province spelt with and without its accents as one", () => {
-    const landmarks = [landmark("Tay Hoa Lu", "Ninh Binh"), landmark("Hoa Lư", "Ninh Bình")];
-    expect(citiesFromLandmarks(landmarks, 8)).toEqual(["Ninh Binh"]);
-  });
-
-  it("keeps the provider's order between cities with as many landmarks", () => {
-    const landmarks = [landmark("Hue", "Hue"), landmark("Sa Pa", "Lào Cai")];
-    expect(citiesFromLandmarks(landmarks, 8)).toEqual(["Hue", "Sa Pa"]);
-  });
-
-  it("leaves out a landmark whose address says nothing about where it is", () => {
-    expect(citiesFromLandmarks([landmark(null, null), landmark("Hue", "Hue")], 8)).toEqual(["Hue"]);
-  });
-
-  it("stops at the number asked for", () => {
-    const landmarks = [landmark("Hue", "Hue"), landmark("Sa Pa", "Lào Cai"), landmark("Phu Quoc", "An Giang")];
-    expect(citiesFromLandmarks(landmarks, 2)).toEqual(["Hue", "Sa Pa"]);
-  });
-
-  it("counts a name written as one word and as two as one place", () => {
-    const landmarks = [landmark(null, "Hà Nội"), landmark(null, "Hanoi"), landmark("Hue", "Hue")];
-    expect(citiesFromLandmarks(landmarks, 8)).toEqual(["Hà Nội", "Hue"]);
+describe("folded", () => {
+  it("is one name with and without its accents, its spaces and the word for its kind", () => {
+    expect(folded("Thành phố Huế")).toBe(folded("Hue"));
+    expect(folded("Quang Binh Province")).toBe(folded("Quảng Bình"));
+    expect(folded("Hà Nội")).toBe(folded("Hanoi"));
+    expect(folded("Ho Chi Minh City")).toBe(folded("Hồ Chí Minh"));
+    expect(folded("Đà Lạt")).toBe(folded("Da Lat"));
   });
 });
 
-describe("townsFromLandmarks", () => {
-  it("ranks the towns near a city by how many landmarks are in them", () => {
-    const landmarks = [
-      landmark("Hahndorf", "South Australia"),
-      landmark("Tanunda", "South Australia"),
-      landmark("Tanunda", "South Australia"),
+describe("townOf", () => {
+  it("is the town a ward is named for", () => {
+    expect(townOf("Bắc Nha Trang")).toBe("Nha Trang");
+    expect(townOf("Bac NHA Trang")).toBe("NHA Trang");
+    expect(townOf("Tay Hoa Lu")).toBe("Hoa Lu");
+    expect(townOf("Xuân Hương - Đà Lạt")).toBe("Đà Lạt");
+  });
+
+  it("is nothing for a name that is not a ward's", () => {
+    expect(townOf("Đồng Nai")).toBeNull();
+    expect(townOf("Bạc Liêu")).toBeNull();
+    expect(townOf("Sa Pa")).toBeNull();
+    expect(townOf("Hahndorf")).toBeNull();
+    expect(townOf("Nam")).toBeNull();
+    expect(townOf("West Palm Beach")).toBeNull();
+  });
+});
+
+describe("groupedByPlace", () => {
+  it("puts landmarks close together in one group, the biggest group first", () => {
+    const hue = landmark({ lat: 16.47, lng: 107.58 }, "Hue", "Hue");
+    const groups = groupedByPlace([
+      hue,
+      landmark(SON_DOONG, "Thượng Trạch", "Quảng Bình"),
+      landmark(PHONG_NHA, null, "Quang Binh Province"),
+    ]);
+    expect(groups.map((group) => group.length)).toEqual([2, 1]);
+    expect(groups[1]).toEqual([hue]);
+  });
+
+  it("keeps the provider's order between groups with as many landmarks", () => {
+    const hue = landmark({ lat: 16.47, lng: 107.58 }, "Hue", "Hue");
+    const sapa = landmark({ lat: 22.31, lng: 103.88 }, "Sa Pa", "Lào Cai");
+    expect(groupedByPlace([hue, sapa]).map(([first]) => first?.locality)).toEqual(["Hue", "Sa Pa"]);
+  });
+});
+
+describe("namesFor", () => {
+  const names = (group: readonly LandmarkPlace[]) => namesFor(group).map(({ name }) => name);
+
+  it("tries the province, then a ward as the town it is named for, then the ward", () => {
+    expect(namesFor([landmark(PO_NAGAR, "Bắc Nha Trang", "Khánh Hòa")])).toEqual([
+      { name: "Khánh Hòa", province: true },
+      { name: "Nha Trang", province: false },
+      { name: "Bắc Nha Trang", province: false },
+    ]);
+  });
+
+  it("tries the most named town before the district", () => {
+    const group = [
+      landmark(SON_DOONG, "Thượng Trạch", "Quảng Bình", "Bố Trạch"),
+      landmark(PHONG_NHA, null, "Quang Binh Province"),
     ];
-    expect(townsFromLandmarks(landmarks, "Adelaide", 8)).toEqual(["Tanunda", "Hahndorf"]);
+    expect(names(group)).toEqual(["Quảng Bình", "Thượng Trạch", "Bố Trạch"]);
   });
 
-  it("never takes the province for a town, however many towns it has", () => {
-    const landmarks = [landmark("Hahndorf", "South Australia"), landmark("Victor Harbor", "South Australia")];
-    expect(townsFromLandmarks(landmarks, "Adelaide", 8)).toEqual(["Hahndorf", "Victor Harbor"]);
-  });
-
-  it("leaves out the city itself, however it is spelt", () => {
-    const landmarks = [
-      landmark(null, "Hà Nội"),
-      landmark("Hanoi", "Hanoi"),
-      landmark("Ha Long", "Quảng Ninh"),
+  it("tries only the province most of them are in first, and the others last", () => {
+    const group = [
+      landmark({ lat: 10.93, lng: 108.28 }, "Mũi Né", "Lâm Đồng"),
+      landmark({ lat: 10.93, lng: 108.1 }, "Phan Thiết", "Bình Thuận"),
+      landmark({ lat: 10.94, lng: 108.2 }, "Phan Thiết", "Lâm Đồng"),
     ];
-    expect(townsFromLandmarks(landmarks, "Hanoi", 8)).toEqual(["Ha Long"]);
+    expect(names(group)).toEqual(["Lâm Đồng", "Phan Thiết", "Mũi Né", "Bình Thuận"]);
   });
 
-  it("takes the province for a landmark whose address names no town", () => {
-    expect(townsFromLandmarks([landmark(null, "Ninh Bình")], "Hanoi", 8)).toEqual(["Ninh Bình"]);
+  it("tries the wards of one town as that town once", () => {
+    const group = [
+      landmark({ lat: 11.94, lng: 108.44 }, "Xuân Hương - Đà Lạt", "Lâm Đồng"),
+      landmark({ lat: 11.95, lng: 108.43 }, "Lam Vien - Da Lat", "Lam Dong"),
+    ];
+    expect(names(group)).toEqual(["Lâm Đồng", "Đà Lạt", "Xuân Hương - Đà Lạt", "Lam Vien - Da Lat"]);
+  });
+});
+
+describe("townFor", () => {
+  it("takes a town of the name near the landmarks, not one of the same name far away", async () => {
+    const { provider, asked } = knowing([
+      { name: "Quảng Bình", at: { lat: 19.673, lng: 105.811 } },
+      { name: "Phong Nha", at: { lat: 17.59, lng: 106.28 } },
+    ]);
+    const group = [
+      landmark(PHONG_NHA, "Phong Nha", "Quang Binh Province"),
+      landmark(SON_DOONG, "Thượng Trạch", "Quảng Bình"),
+    ];
+    expect((await townFor(group, provider))?.name).toBe("Phong Nha");
+    expect(asked).toEqual(["Quang Binh Province", "Phong Nha"]);
   });
 
-  it("stops at the number asked for", () => {
-    const landmarks = [landmark("Hahndorf", null), landmark("Clare", null), landmark("Tanunda", null)];
-    expect(townsFromLandmarks(landmarks, "Adelaide", 2)).toEqual(["Hahndorf", "Clare"]);
+  it("takes the town a ward is named for", async () => {
+    const { provider } = knowing([
+      { name: "Bắc Nha Trang", at: { lat: 12.324, lng: 109.176 } },
+      { name: "Nha Trang", at: { lat: 12.241, lng: 109.196 } },
+    ]);
+    expect((await townFor([landmark(PO_NAGAR, "Bắc Nha Trang", "Khánh Hòa")], provider))?.name).toBe("Nha Trang");
+  });
+
+  it("takes only a town called what was asked, not one that starts the same", async () => {
+    const { provider } = knowing([
+      { name: "Ninh Hòa", at: { lat: 11.32, lng: 106.1 } },
+      { name: "Tây Ninh", at: { lat: 11.31, lng: 106.1 } },
+    ]);
+    const group = [landmark({ lat: 11.3, lng: 106.1 }, "Tây Ninh", null)];
+    expect((await townFor(group, provider))?.name).toBe("Tây Ninh");
+  });
+
+  it("takes the province when it is the city the landmarks are in", async () => {
+    const { provider } = knowing([
+      { name: "Cần Thơ", at: { lat: 10.03, lng: 105.78 } },
+      { name: "Bình Thủy", at: { lat: 10.07, lng: 105.75 } },
+    ]);
+    const group = [landmark({ lat: 10.07, lng: 105.75 }, "Bình Thủy", "Cần Thơ")];
+    expect((await townFor(group, provider))?.name).toBe("Cần Thơ");
+  });
+
+  it("takes the town before a city of the province's name down the road", async () => {
+    const { provider } = knowing([
+      { name: "Lào Cai", at: { lat: 22.485, lng: 103.97 } },
+      { name: "Sa Pa", at: { lat: 22.34, lng: 103.856 } },
+    ]);
+    const group = [landmark({ lat: 22.314, lng: 103.877 }, "Sa Pa", "Lào Cai")];
+    expect((await townFor(group, provider))?.name).toBe("Sa Pa");
+  });
+
+  it("gives up after a few names rather than searching for every one", async () => {
+    const { provider, asked } = knowing([]);
+    const group = [
+      landmark(PO_NAGAR, "Bắc Nha Trang", "Khánh Hòa", "Diên Khánh"),
+      landmark(PO_NAGAR, "Vĩnh Hải", "Khánh Hòa"),
+    ];
+    expect(await townFor(group, provider)).toBeNull();
+    expect(asked).toHaveLength(4);
+  });
+});
+
+describe("boxesAround", () => {
+  it("covers the country around a point and leaves the point itself out", () => {
+    const boxes = boxesAround(ADELAIDE);
+    const inside = (point: LatLng) =>
+      boxes.some(
+        ({ low, high }) =>
+          point.lat >= low.lat && point.lat <= high.lat && point.lng >= low.lng && point.lng <= high.lng,
+      );
+    expect(inside(ADELAIDE)).toBe(false);
+    expect(inside({ lat: -35.0286, lng: 138.8078 })).toBe(true);
+    expect(inside({ lat: -34.5, lng: 138.6 })).toBe(true);
+    expect(inside({ lat: -34.93, lng: 140 })).toBe(true);
+    expect(inside({ lat: -37.8136, lng: 144.9631 })).toBe(false);
+  });
+});
+
+describe("inTurn", () => {
+  it("takes the first of each list, then the second of each", () => {
+    expect(inTurn([["n1", "n2", "n3"], ["s1"], [], ["w1", "w2"]])).toEqual(["n1", "s1", "w1", "n2", "w2", "n3"]);
   });
 });
 

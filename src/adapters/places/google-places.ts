@@ -61,6 +61,24 @@ const PRICE_LEVELS = [
   "PRICE_LEVEL_VERY_EXPENSIVE",
 ];
 
+/**
+ * The place types a search is held to, for each kind of place it can be held
+ * to. Google's own "(cities)" is its towns and the areas a level under a
+ * district; an area is those, the districts themselves, and the wards of a
+ * city, which is five, as many as one search takes. Never a province: its
+ * point is the middle of it, which can be a long way from any town in it.
+ */
+const PRIMARY_TYPES: Readonly<Record<"cities" | "areas", readonly string[]>> = {
+  cities: ["(cities)"],
+  areas: [
+    "locality",
+    "administrative_area_level_3",
+    "administrative_area_level_2",
+    "sublocality_level_1",
+    "postal_town",
+  ],
+};
+
 /** How wide a bias circle is drawn around the point we were given, in metres. */
 const BIAS_RADIUS_METERS = 20_000;
 
@@ -83,10 +101,12 @@ const NEARBY_TYPES = ["tourist_attraction", "museum", "park"];
 const NEARBY_MAX_RESULTS = 20;
 
 /**
- * A landmark's name and the parts of its address, and nothing dearer. Where it
- * is on the map is no part of the question, which is only which city it is in.
+ * A landmark's name, where it is and the parts of its address, and nothing
+ * dearer: where it is is billed at the same tier as its address. Which town a
+ * landmark is in is told by where it is, since its address often names only
+ * the ward.
  */
-const LANDMARK_FIELDS = "places.displayName,places.addressComponents";
+const LANDMARK_FIELDS = "places.displayName,places.location,places.addressComponents";
 
 /** Nor more than this from one text search. */
 const TEXT_SEARCH_MAX_RESULTS = 20;
@@ -157,6 +177,7 @@ const landmarksSchema = z.object({
     .array(
       z.object({
         displayName: z.object({ text: z.string() }).optional(),
+        location: z.object({ latitude: z.number(), longitude: z.number() }).optional(),
         addressComponents: z
           .array(z.object({ longText: z.string(), types: z.array(z.string()).default([]) }))
           .optional(),
@@ -395,8 +416,8 @@ export function createGooglePlacesProvider(options: GooglePlacesOptions): Places
         input: request.query,
         languageCode: PLACE_LANGUAGE,
       };
-      if (request.citiesOnly) {
-        body.includedPrimaryTypes = ["(cities)"];
+      if (request.only !== null) {
+        body.includedPrimaryTypes = PRIMARY_TYPES[request.only];
       }
       if (request.session !== null) {
         body.sessionToken = request.session;
@@ -465,21 +486,31 @@ export function createGooglePlacesProvider(options: GooglePlacesOptions): Places
     },
 
     async landmarks(request: LandmarkRequest): Promise<readonly LandmarkPlace[]> {
+      const body: Record<string, unknown> = {
+        textQuery: request.query,
+        languageCode: PLACE_LANGUAGE,
+        pageSize: Math.min(request.limit, TEXT_SEARCH_MAX_RESULTS),
+      };
+      if (request.within !== null) {
+        const { low, high } = request.within;
+        body.locationRestriction = {
+          rectangle: {
+            low: { latitude: low.lat, longitude: low.lng },
+            high: { latitude: high.lat, longitude: high.lng },
+          },
+        };
+      }
       const response = await fetch(TEXT_SEARCH_URL, {
         method: "POST",
         headers: { ...headers, "X-Goog-FieldMask": LANDMARK_FIELDS },
-        body: JSON.stringify({
-          textQuery: request.query,
-          languageCode: PLACE_LANGUAGE,
-          pageSize: Math.min(request.limit, TEXT_SEARCH_MAX_RESULTS),
-        }),
+        body: JSON.stringify(body),
       });
       const parsed = landmarksSchema.parse(await readJson(response, "landmarks"));
 
       const landmarks: LandmarkPlace[] = [];
       for (const place of parsed.places ?? []) {
         const name = place.displayName?.text ?? null;
-        if (name === null) {
+        if (name === null || place.location === undefined) {
           continue;
         }
         const part = (type: string): string | null =>
@@ -487,8 +518,11 @@ export function createGooglePlacesProvider(options: GooglePlacesOptions): Places
             ?.longText ?? null;
         landmarks.push({
           name,
+          position: { lat: place.location.latitude, lng: place.location.longitude },
           locality: part("locality"),
+          district: part("administrative_area_level_2"),
           region: part("administrative_area_level_1"),
+          country: part("country"),
         });
       }
       return landmarks.slice(0, request.limit);

@@ -11,8 +11,10 @@ function biasKeyFor(request: PlaceSearchRequest): string {
  * narrowing is part of the key rather than something a cached answer to the
  * wider question could be handed back for.
  */
+const KIND_KEYS = { cities: "city", areas: "area" } as const;
+
 function queryKeyFor(request: PlaceSearchRequest): string {
-  const kind = request.citiesOnly ? "city" : "place";
+  const kind = request.only === null ? "place" : KIND_KEYS[request.only];
   return `${kind}:${request.query.trim().toLowerCase()}`;
 }
 

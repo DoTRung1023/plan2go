@@ -154,7 +154,7 @@ describe("search", () => {
       query: "Victor",
       near: { lat: -34.93, lng: 138.6 },
       limit: 8,
-      citiesOnly: true,
+      only: "cities",
       session: null,
     });
 
@@ -185,13 +185,31 @@ describe("search", () => {
       query: "Victor",
       near: null,
       limit: 8,
-      citiesOnly: true,
+      only: "cities",
       session: null,
     });
 
     const [, init] = fetched.mock.calls[0] as unknown as [string, RequestInit];
     expect(JSON.parse(String(init.body))).not.toHaveProperty("origin");
     expect(found?.distanceMeters).toBeNull();
+  });
+
+  it("asks for any named area, and never a province, when areas are asked for", async () => {
+    const fetched = vi.fn(async () => Response.json({}));
+    vi.stubGlobal("fetch", fetched);
+
+    await createGooglePlacesProvider({ apiKey: "k" }).search({
+      query: "Hội An",
+      near: { lat: 15.88, lng: 108.33 },
+      limit: 5,
+      only: "areas",
+      session: null,
+    });
+
+    const [, init] = fetched.mock.calls[0] as unknown as [string, RequestInit];
+    const types: unknown = JSON.parse(String(init.body)).includedPrimaryTypes;
+    expect(types).toContain("administrative_area_level_2");
+    expect(types).not.toContain("administrative_area_level_1");
   });
 });
 
@@ -205,10 +223,12 @@ describe("landmarks", () => {
       places: [
         {
           displayName: { text: "Adelaide Himeji Garden" },
+          location: { latitude: -34.9365, longitude: 138.6033 },
           addressComponents: [
             { longText: "Cnr South Terrace &" },
             { longText: "Adelaide", types: ["locality", "political"] },
             { longText: "South Australia", types: ["administrative_area_level_1", "political"] },
+            { longText: "Australia", types: ["country", "political"] },
           ],
         },
       ],
@@ -216,12 +236,43 @@ describe("landmarks", () => {
     vi.stubGlobal("fetch", vi.fn(async () => Response.json(answer)));
 
     const landmarks = await createGooglePlacesProvider({ apiKey: "k" }).landmarks({
-      query: "weekend getaways from Adelaide, Australia",
+      query: "best cities to visit in Australia",
+      within: null,
       limit: 20,
     });
 
     expect(landmarks).toEqual([
-      { name: "Adelaide Himeji Garden", locality: "Adelaide", region: "South Australia" },
+      {
+        name: "Adelaide Himeji Garden",
+        position: { lat: -34.9365, lng: 138.6033 },
+        locality: "Adelaide",
+        district: null,
+        region: "South Australia",
+        country: "Australia",
+      },
     ]);
+  });
+
+  it("holds the search to the box it is given, and leaves out a landmark with no position", async () => {
+    const answer = {
+      places: [
+        { displayName: { text: "Somewhere" } },
+        { displayName: { text: "Hahndorf Main Street" }, location: { latitude: -35.03, longitude: 138.81 } },
+      ],
+    };
+    const fetched = vi.fn(async () => Response.json(answer));
+    vi.stubGlobal("fetch", fetched);
+
+    const landmarks = await createGooglePlacesProvider({ apiKey: "k" }).landmarks({
+      query: "tourist attractions",
+      within: { low: { lat: -36, lng: 138.7 }, high: { lat: -34, lng: 141 } },
+      limit: 20,
+    });
+
+    const [, init] = fetched.mock.calls[0] as unknown as [string, RequestInit];
+    expect(JSON.parse(String(init.body)).locationRestriction).toEqual({
+      rectangle: { low: { latitude: -36, longitude: 138.7 }, high: { latitude: -34, longitude: 141 } },
+    });
+    expect(landmarks.map((landmark) => landmark.name)).toEqual(["Hahndorf Main Street"]);
   });
 });

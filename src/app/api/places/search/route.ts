@@ -38,7 +38,7 @@ export const GET = placesRead({
       near: lat === undefined || lng === undefined ? null : { lat, lng },
       limit,
       session: session ?? null,
-      citiesOnly: kind === "city",
+      only: kind === "city" ? "cities" : null,
     };
 
     const cached = await cachedSearch(search);
