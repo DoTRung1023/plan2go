@@ -216,6 +216,13 @@ export function TripEditor({
    * and its view, and a tab at the window's edge brings the sheet back.
    */
   const [aside, setAside] = useState(false);
+  /**
+   * The last thing done to the trip from the search bar or the sheet, for a
+   * reader who cannot see the page change. Held here, where both are, so a
+   * place added from its row in the search and one added from its sheet are
+   * said the same way, in the one region.
+   */
+  const [announced, setAnnounced] = useState("");
   const open = (what: Opened): void => {
     setOpened(what);
     // Wanted, whatever it was doing: on its way out it stays, and put aside
@@ -500,6 +507,7 @@ export function TripEditor({
                   }}
                   onClear={dismiss}
                   onAdd={(input) => recording(addStopAction({ ...input, editKey }))}
+                  onAnnounce={setAnnounced}
                 />
               </div>
             ) : null}
@@ -702,7 +710,16 @@ export function TripEditor({
                           // which is where the add reads it from.
                           session: null,
                         }),
-                      ),
+                      ).then((outcome) => {
+                        // Said as the plus on a search row says it, since
+                        // the sheet goes once it is done and says nothing.
+                        if (outcome.error === null) {
+                          setAnnounced(
+                            `Added ${outcome.added ?? opened.place.name} to Day ${String(selectedIndex + 1)}`,
+                          );
+                        }
+                        return outcome;
+                      }),
                   }
                 : opened.kind === "stop" && openedStopDay !== -1
                   ? {
@@ -728,6 +745,11 @@ export function TripEditor({
           }}
         />
       )}
+
+      {/* In a region that is always there, so each new sentence is read out. */}
+      <p aria-live="polite" className="sr-only">
+        {announced}
+      </p>
     </main>
   );
 }

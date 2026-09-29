@@ -127,6 +127,12 @@ interface PlaceSearchProps {
     providerPlaceId: string;
     session: string | null;
   }) => Promise<AddPlaceOutcome>;
+  /**
+   * Say what just happened, for a reader who cannot see the page change. Said
+   * by whoever holds the bar, where the sheet's add is said too, so the two
+   * ways of adding a place are heard the same.
+   */
+  readonly onAnnounce: (message: string) => void;
 }
 
 /**
@@ -185,6 +191,7 @@ export function PlaceSearch({
   onChoose,
   onClear,
   onAdd,
+  onAnnounce,
 }: PlaceSearchProps) {
   const [query, setQuery] = useState(showing ?? "");
   /** The name the field was last given to hold, so a new one is told from a re-render. */
@@ -210,8 +217,6 @@ export function PlaceSearch({
   const [added, setAdded] = useState<ReadonlySet<string>>(new Set());
   /** What went wrong with the last add from a row, under the list. */
   const [addError, setAddError] = useState<string | null>(null);
-  /** The last thing done from the bar, for a reader who cannot see the page change. */
-  const [announced, setAnnounced] = useState("");
   /** The quick search the list is showing in place of the city's best known, or null. */
   const [picked, setPicked] = useState<PlaceKind | null>(null);
   /** Which list the panel was showing, so the render that changes it can be told apart. */
@@ -301,16 +306,19 @@ export function PlaceSearch({
   // Every list is drawn afresh, with what the trip already goes to left out
   // of it: when the panel opens, and when it turns from the city's best known
   // to a kind, from one kind to another, or to what was typed and back. So
-  // what was added from the last list is let go of, and closing the panel,
-  // however it was closed, lets go of the quick search too. Adjusted during
-  // the render that changes the list, as the held name is, so no list is
-  // ever painted with what belonged to the last one.
+  // what was added from the last list is let go of, with the last add that
+  // was refused and the row that was picked out, and closing the panel,
+  // however it was closed, lets go of the quick search and of a look that
+  // failed too. Adjusted during the render that changes the list, as the
+  // held name is, so no list is ever painted with what belonged to the last.
   if (listWas !== list) {
     setListWas(list);
     setAdded(new Set());
+    setAddError(null);
+    setActive(0);
     if (list === null) {
       setPicked(null);
-      setActive(0);
+      setLookError(null);
     }
   }
 
@@ -361,15 +369,6 @@ export function PlaceSearch({
   const closeAll = (): void => {
     setPanel(null);
     field.current?.blur();
-  };
-
-  /**
-   * Say what just happened to a reader who cannot see it. Nothing is shown
-   * for it: the day's list takes the place added, and the city pill slides
-   * the new city in, so the page already says it.
-   */
-  const say = (message: string): void => {
-    setAnnounced(message);
   };
 
   /** Let go of a look still on its way, so it neither lands nor goes on saying it is looking. */
@@ -477,7 +476,7 @@ export function PlaceSearch({
         return;
       }
       setAdded((soFar) => new Set(soFar).add(providerPlaceId));
-      say(`Added ${outcome.added ?? name} to ${dayName}`);
+      onAnnounce(`Added ${outcome.added ?? name} to ${dayName}`);
     };
     // Behind whatever is already going, and behind it whether that one
     // landed or was refused: a refusal is this trip answering, not a reason
@@ -542,10 +541,10 @@ export function PlaceSearch({
   /**
    * The one sentence the panel has when it is not showing a list: the place
    * being looked up, what went wrong with the last look, the list about the
-   * city being asked about, refused or empty, a refusal of what was typed,
-   * the search being run, or nothing having matched. Null when the list is
-   * doing the talking, and on a trip with no city, which has nothing to offer
-   * before anything is typed.
+   * city being asked about, refused, empty or all on the trip already, a
+   * refusal of what was typed, the search being run, or nothing having
+   * matched. Null when the list is doing the talking, and on a trip with no
+   * city, which has nothing to offer before anything is typed.
    */
   const line = ((): string | null => {
     if (lookingUp !== null) {
@@ -564,7 +563,10 @@ export function PlaceSearch({
       if ("error" in cityList) {
         return cityList.error;
       }
-      return offered.length > 0 ? null : cityWords.empty;
+      if (offered.length > 0) {
+        return null;
+      }
+      return inCity.length > 0 ? cityWords.taken : cityWords.empty;
     }
     if (typed.refusal !== null) {
       return typed.refusal;
@@ -608,7 +610,7 @@ export function PlaceSearch({
           }}
           onChoose={onChangeCity}
           onMoved={(name) => {
-            say(`${dayName} is now in ${name}`);
+            onAnnounce(`${dayName} is now in ${name}`);
             field.current?.focus();
           }}
         />
@@ -738,10 +740,6 @@ export function PlaceSearch({
         ) : null}
       </div>
 
-      {/* In a region that is always there, so each new sentence is read out. */}
-      <p aria-live="polite" className="sr-only">
-        {announced}
-      </p>
     </div>
   );
 }

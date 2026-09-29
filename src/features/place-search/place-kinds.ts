@@ -34,12 +34,17 @@ export const KIND_WORDS = {
   { readonly label: string; readonly many: string; readonly Icon: typeof CupIcon }
 >;
 
-/** What the list about a city says, over it, while it is asked about, and when it is empty. */
+/**
+ * What the list about a city says, over it, while it is asked about, when
+ * nothing turned up, and when everything that turned up is on the trip.
+ */
 interface CityListWords {
   readonly heading: string;
   readonly waiting: string;
   /** Null when an empty list says nothing, and the panel is left to the chips. */
   readonly empty: string | null;
+  /** As `empty`, for a list whose every place is on the trip already. */
+  readonly taken: string | null;
 }
 
 /**
@@ -49,7 +54,12 @@ interface CityListWords {
  */
 export function cityListWords(kind: PlaceKind | null, city: string): CityListWords {
   if (kind === null) {
-    return { heading: `Popular in ${city}`, waiting: `Looking for places in ${city}.`, empty: null };
+    return {
+      heading: `Popular in ${city}`,
+      waiting: `Looking for places in ${city}.`,
+      empty: null,
+      taken: null,
+    };
   }
   const { many } = KIND_WORDS[kind];
   const few = many.toLowerCase();
@@ -57,5 +67,6 @@ export function cityListWords(kind: PlaceKind | null, city: string): CityListWor
     heading: `${many} in ${city}`,
     waiting: `Looking for ${few} in ${city}.`,
     empty: `No ${few} turned up in ${city}. Try typing the name of one instead.`,
+    taken: `Everything that turned up for ${few} in ${city} is on the trip already. Try typing the name of another one.`,
   };
 }
