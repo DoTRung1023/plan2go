@@ -22,7 +22,7 @@ import { hoursOn } from "../format-opening-hours";
 import { formatStops } from "../format-stops";
 import { cityColor } from "@/ui/city-dot";
 import { Credit } from "@/ui/credit";
-import { ClockIcon } from "@/ui/icons";
+import { ClockIcon, WarningIcon } from "@/ui/icons";
 import { placeUrl } from "../directions-url";
 import { legDisc, MODE_ICON, MODE_WORDS } from "../leg-marks";
 import { legInk } from "@/features/trip-map/route-style";
@@ -42,10 +42,17 @@ import lockup from "../../../../logo/logo-text.png";
  * on one line, and it grows with the words when they are printed larger.
  */
 const ROW =
-  "grid grid-cols-[calc(72px*var(--sheet-text,1))_20px_minmax(0,1fr)] items-start gap-x-[10px]";
+  "grid grid-cols-[calc(72px*var(--sheet-text,1))_20px_minmax(0,1fr)] items-start gap-x-2.5";
 
 /** A rule on paper: a hair of the neutral ramp, never the cream ground. */
 const RULE = "border-neutral-400";
+
+/**
+ * The rule of ink under every sheet's head, over whatever the sheet holds:
+ * the cover's days, a day's numbers or its rows, the lines to write on. One
+ * weight for the one job, so every sheet opens the same way.
+ */
+const HEAD_RULE = "border-t-[1.5px] border-t-ink";
 
 const MUTED = "text-ink-muted";
 
@@ -62,28 +69,53 @@ function daysLong(count: number): string {
 
 /**
  * A city's dot on paper, in the city's own colour, the one the planner's tab
- * wears, or in ink on a sheet in ink alone. Centred on the first line of the
- * words beside it, whatever size they are printed at, so a name that wraps
- * keeps its dot at its start.
+ * wears, or in ink on a sheet in ink alone. Sized by the words beside it, so
+ * it grows with them when they are printed larger, and centred on their first
+ * line, so a name that wraps keeps its dot at its start.
  */
-function PaperCityDot({ slot, size }: { readonly slot: number; readonly size: number }) {
+function PaperCityDot({ slot }: { readonly slot: number }) {
   return (
     <span aria-hidden="true" className="flex h-[1lh] shrink-0 items-center self-start">
       <span
-        className="block rounded-pill"
-        style={{ width: size, height: size, backgroundColor: cityColor(slot) }}
+        className="block size-[0.6em] rounded-pill"
+        style={{ backgroundColor: cityColor(slot) }}
       />
     </span>
   );
 }
 
 /** A city named in a line of text: its dot, then its name in semibold ink. */
-function CityName({ city, dot }: { readonly city: DayCity; readonly dot: number }) {
+function CityName({ city }: { readonly city: DayCity }) {
   return (
-    <span className="relative z-[1] inline-flex items-baseline gap-x-[6px]">
-      <PaperCityDot slot={city.color} size={dot} />
+    <span className="relative z-[1] inline-flex items-baseline gap-x-1.5">
+      <PaperCityDot slot={city.color} />
       <span className="font-semibold text-ink">{city.name}</span>
     </span>
+  );
+}
+
+/**
+ * A line under a stop led by a glyph, the way the card draws it: when the
+ * place is open behind a clock, a conflict behind the warning triangle. The
+ * glyph is centred on the first line, so a sentence that wraps keeps it at
+ * its start.
+ */
+function GlyphLine({
+  glyph,
+  className,
+  children,
+}: {
+  readonly glyph: React.ReactNode;
+  readonly className: string;
+  readonly children: React.ReactNode;
+}) {
+  return (
+    <p className={`flex items-start gap-1.5 ${className}`}>
+      <span aria-hidden="true" className="flex h-[1lh] shrink-0 items-center">
+        {glyph}
+      </span>
+      <span>{children}</span>
+    </p>
   );
 }
 
@@ -113,20 +145,23 @@ function MarkColumn({
   thread,
   children,
 }: {
-  readonly thread: "from-centre" | "through" | "to-centre";
+  readonly thread: "from-centre" | "through" | "to-centre" | "none";
   readonly children?: React.ReactNode;
 }) {
   const extent = {
     "from-centre": "top-[10px] bottom-0",
     through: "top-0 bottom-0",
     "to-centre": "top-0 h-[10px]",
+    none: null,
   }[thread];
   return (
     <div className="relative flex w-[20px] justify-center self-stretch">
-      <span
-        aria-hidden="true"
-        className={`absolute left-1/2 w-0 -translate-x-1/2 border-l-[1.5px] border-dashed ${RULE} ${extent}`}
-      />
+      {extent === null ? null : (
+        <span
+          aria-hidden="true"
+          className={`absolute left-1/2 w-0 -translate-x-1/2 border-l-[1.5px] border-dashed ${RULE} ${extent}`}
+        />
+      )}
       {children === undefined ? null : <span className="relative z-[1]">{children}</span>}
     </div>
   );
@@ -230,7 +265,7 @@ function LegLine({ day, legIndex }: { readonly day: PlannedDay; readonly legInde
           <Icon size={11} strokeWidth={2.6} />
         </span>
       </MarkColumn>
-      <div className={`pt-[5px] pb-[9px] text-meta ${MUTED}`}>
+      <div className={`pt-[5px] pb-2.5 text-meta ${MUTED}`}>
         {leg.durationMinutes === null ? (
           <p>No {MODE_WORDS[leg.mode].toLowerCase()} at this time.</p>
         ) : (
@@ -269,7 +304,7 @@ function Stat({ label, value }: { readonly label: string; readonly value: string
   return (
     <div>
       <p className={`text-label font-semibold ${MUTED}`}>{label}</p>
-      <p className="mt-[5px] font-display text-time text-ink tabular-nums">{value}</p>
+      <p className="mt-1 font-display text-time text-ink tabular-nums">{value}</p>
     </div>
   );
 }
@@ -300,7 +335,7 @@ type SheetHeight = "at-least-a-page" | "one-page";
 function SheetFooter({ sheet }: { readonly sheet: SheetNumber }) {
   return (
     <footer
-      className={`mt-5 flex shrink-0 items-center gap-5 border-t pt-[10px] text-meta ${MUTED} ${RULE}`}
+      className={`mt-5 flex shrink-0 items-center gap-5 border-t pt-2.5 text-meta ${MUTED} ${RULE}`}
     >
       <p className="min-w-0 flex-1">
         <Credit />
@@ -351,20 +386,25 @@ function Journey({ stays }: { readonly stays: readonly (CityStay & { readonly ci
       {stays.map((stay, at) => {
         const last = at === stays.length - 1;
         return (
-          <li key={String(stay.first)} className={`min-w-0 ${last ? "" : "flex-1"}`}>
-            <div className="flex items-start gap-x-[8px] font-display text-place text-ink">
-              <PaperCityDot slot={stay.city.color} size={11} />
-              <p className="min-w-0 break-words">{stay.city.name}</p>
-              {last ? null : (
-                <span
-                  aria-hidden="true"
-                  className={`mt-[calc(0.5lh-0.75px)] mr-[8px] min-w-[16px] flex-1 border-t-[1.5px] border-dashed ${RULE}`}
-                />
-              )}
+          /* Set in the name's size throughout, so the dot and the thread
+             find the middle of the name's first line from the same measure. */
+          <li
+            key={String(stay.first)}
+            className={`flex min-w-0 items-start gap-x-2 font-display text-place text-ink ${last ? "" : "flex-1"}`}
+          >
+            <PaperCityDot slot={stay.city.color} />
+            <div className="min-w-0">
+              <p className="break-words">{stay.city.name}</p>
+              <p className={`mt-0.5 font-body text-meta font-normal ${MUTED}`}>
+                {daysLong(stay.last - stay.first + 1)}
+              </p>
             </div>
-            <p className={`mt-[2px] pl-[19px] text-meta ${MUTED}`}>
-              {daysLong(stay.last - stay.first + 1)}
-            </p>
+            {last ? null : (
+              <span
+                aria-hidden="true"
+                className={`mt-[calc(0.5lh-0.75px)] mr-2 min-w-4 flex-1 border-t-[1.5px] border-dashed ${RULE}`}
+              />
+            )}
           </li>
         );
       })}
@@ -377,8 +417,9 @@ function Journey({ stays }: { readonly stays: readonly (CityStay & { readonly ci
  * first day of a stay, and a dashed thread in the city's colour running down
  * from its dot through the days after it, to a smaller dot on the last. The
  * days spent in one city read as one run, without the name said on every
- * line. The thread crosses the rows' padding and rules, 9px over a row and
- * 10px under it with the rule, so the lengths meet.
+ * line. The thread crosses the rows' padding and rules, 10px over a row and
+ * 11px under it with the rule, so the lengths meet, and it runs down the
+ * middle of the dot, which is sized by the words.
  */
 function StayMark({ stay, index }: { readonly stay: CityStay | undefined; readonly index: number }) {
   if (stay === undefined || stay.city === null) {
@@ -390,28 +431,41 @@ function StayMark({ stay, index }: { readonly stay: CityStay | undefined; readon
   const extent = first
     ? last
       ? null
-      : "top-[0.5lh] -bottom-[10px]"
+      : "top-[0.5lh] -bottom-[11px]"
     : last
-      ? "-top-[9px] h-[calc(9px+0.5lh)]"
-      : "-top-[9px] -bottom-[10px]";
+      ? "-top-2.5 h-[calc(10px+0.5lh)]"
+      : "-top-2.5 -bottom-[11px]";
   return (
-    <div className="relative text-small">
+    <div className="relative">
       {extent === null ? null : (
         <span
           aria-hidden="true"
           style={{ borderColor: color }}
-          className={`absolute left-[3.5px] w-0 -translate-x-1/2 border-l-[1.5px] border-dashed ${extent}`}
+          className={`absolute left-[0.3em] w-0 -translate-x-1/2 border-l-[1.5px] border-dashed ${extent}`}
         />
       )}
-      {first ? <CityName city={stay.city} dot={7} /> : null}
+      {first ? <CityName city={stay.city} /> : null}
       {last && !first ? (
-        <span aria-hidden="true" className="relative z-[1] flex h-[1lh] w-[7px] items-center justify-center">
-          <span className="block h-[4px] w-[4px] rounded-pill" style={{ backgroundColor: color }} />
+        <span aria-hidden="true" className="relative z-[1] flex h-[1lh] w-[0.6em] items-center justify-center">
+          <span className="block size-[0.3em] rounded-pill" style={{ backgroundColor: color }} />
         </span>
       ) : null}
     </div>
   );
 }
+
+/**
+ * The cover's columns, measured in the words' own size so they widen with
+ * them. On paper narrower than a sheet of A4 is wide the day and its date
+ * share a column, one over the other, so the places keep the room to be
+ * read as a line rather than a column of single words.
+ */
+const COVER_COLUMNS = {
+  withCity:
+    "grid-cols-[6.5em_9em_minmax(0,1fr)] @min-[560px]:grid-cols-[4.5em_7.5em_9.5em_minmax(0,1fr)]",
+  withoutCity:
+    "grid-cols-[6.5em_minmax(0,1fr)] @min-[560px]:grid-cols-[4.5em_11em_minmax(0,1fr)]",
+} as const;
 
 /**
  * The sheet in front of the days: the trip's name, its dates, the cities it
@@ -434,9 +488,6 @@ function CoverSheet({
   const stays = cityStays(days.map((day) => day.plan));
   const named = stays.flatMap((stay) => (stay.city === null ? [] : [{ ...stay, city: stay.city }]));
   const anyCity = named.length > 0;
-  const columns = anyCity
-    ? "grid-cols-[56px_96px_128px_minmax(0,1fr)]"
-    : "grid-cols-[64px_150px_minmax(0,1fr)]";
   return (
     <Sheet sheet={sheet}>
       <div className="flex flex-1 flex-col">
@@ -449,16 +500,23 @@ function CoverSheet({
           </p>
           {named.length > 1 && named.length === stays.length ? <Journey stays={named} /> : null}
         </div>
-        <ul className="border-t-[1.5px] border-ink">
+        <ul className={`@container ${HEAD_RULE}`}>
           {days.map((day, index) => {
             const names = day.plan.stops.map((stop) => stop.place.name);
             const stay = stays.find((one) => index >= one.first && index <= one.last);
             return (
-              <li key={day.plan.id} className={`grid ${columns} gap-x-3 border-b py-[9px] ${RULE}`}>
-                <p className="text-small font-semibold text-ink">Day {index + 1}</p>
-                <p className={`text-small ${MUTED}`}>{formatDayDate(day.plan.date)}</p>
+              <li
+                key={day.plan.id}
+                className={`grid ${anyCity ? COVER_COLUMNS.withCity : COVER_COLUMNS.withoutCity} gap-x-3 border-b py-2.5 text-small ${RULE}`}
+              >
+                {/* One cell on narrow paper, the day over its date; two on
+                    wide, where this box gives its children to the grid. */}
+                <div className="@min-[560px]:contents">
+                  <p className="font-semibold text-ink">Day {index + 1}</p>
+                  <p className={MUTED}>{formatDayDate(day.plan.date)}</p>
+                </div>
                 {anyCity ? <StayMark stay={stay} index={index} /> : null}
-                <p className={`text-small ${names.length === 0 ? MUTED : "text-ink"}`}>
+                <p className={names.length === 0 ? MUTED : "text-ink"}>
                   {names.length === 0 ? "Nothing planned yet" : names.join(", ")}
                 </p>
               </li>
@@ -471,46 +529,93 @@ function CoverSheet({
 }
 
 /**
- * A sheet to write on, after a day: ruled to the foot, and named for the day
- * it follows, its city with it, so it is filed with it.
+ * The head of every sheet but the cover: the trip and its dates on a line
+ * over what the sheet is, the day's number or "Notes", with the words that
+ * say which day beside it, and the lockup the front door wears in the
+ * corner. One head for a day's sheets and the sheet to write on after it,
+ * so a sheet on its own is placed in the trip the same way whichever it is.
+ */
+function SheetHead({
+  title,
+  range,
+  heading,
+  children,
+}: {
+  readonly title: string;
+  readonly range: string;
+  readonly heading: string;
+  readonly children: React.ReactNode;
+}) {
+  return (
+    <header className="flex shrink-0 items-start gap-6">
+      <div className="min-w-0 flex-1">
+        <p className={`text-meta font-semibold ${MUTED}`}>
+          {title} · {range}
+        </p>
+        <div className="mt-2 flex flex-wrap items-baseline gap-x-2.5">
+          <h1 className={SHEET_HEADING}>{heading}</h1>
+          <p className={`text-body ${MUTED}`}>{children}</p>
+        </div>
+      </div>
+      <Lockup className="shrink-0" />
+    </header>
+  );
+}
+
+/**
+ * Which day, in words: the city it is spent in, its dot and its name in ink
+ * ahead of the date, since the city is what tells the days of a trip that
+ * moves apart, as the tab does on screen, and the dot is the one the cover's
+ * journey and list give it. A day with no city says none.
+ */
+function DayWords({ day }: { readonly day: PlannedDay }) {
+  const city = day.plan.city;
+  return (
+    <>
+      {city === null ? null : (
+        <>
+          <CityName city={city} />
+          {" · "}
+        </>
+      )}
+      {formatDayLong(day.plan.date)}
+    </>
+  );
+}
+
+/**
+ * A sheet to write on, after a day: headed as the day's own sheets are and
+ * named for the day it follows, so it is filed with it, and ruled to the foot.
  */
 function RuledSheet({
   day,
   number,
+  title,
+  range,
   sheet,
 }: {
   readonly day: PlannedDay;
   readonly number: number;
+  readonly title: string;
+  readonly range: string;
   readonly sheet: SheetNumber;
 }) {
   return (
     /* Exactly a page: the rows below are more than a page holds, and it is
        the sheet's foot that ends them rather than a page of their own. */
     <Sheet sheet={sheet} height="one-page">
-      <div className="flex min-h-0 flex-1 flex-col">
-        <div className="flex flex-wrap items-baseline gap-x-[10px]">
-          <h1 className={SHEET_HEADING}>Notes</h1>
-          <p className={`text-small ${MUTED}`}>
-            Day {number} ·{" "}
-            {day.plan.city === null ? null : (
-              <>
-                <CityName city={day.plan.city} dot={7} />
-                {" · "}
-              </>
-            )}
-            {formatDayLong(day.plan.date)}
-          </p>
-        </div>
-        {/* The lines are a rule under each of a column of empty rows, more
-            rows than the sheet has room for and the rest clipped at its
-            foot, rather than one gradient repeated down the box: a printer
-            can be told to keep a background and still leave a gradient
-            off the page, where a border is ink and always printed. */}
-        <div aria-hidden="true" className="mt-[10px] min-h-[240px] flex-1 overflow-hidden">
-          {RULED_ROWS.map((row) => (
-            <span key={row} className={`block h-[28px] border-b ${RULE}`} />
-          ))}
-        </div>
+      <SheetHead title={title} range={range} heading="Notes">
+        Day {number} · <DayWords day={day} />
+      </SheetHead>
+      {/* The lines are a rule under each of a column of empty rows, more
+          rows than the sheet has room for and the rest clipped at its
+          foot, rather than one gradient repeated down the box: a printer
+          can be told to keep a background and still leave a gradient
+          off the page, where a border is ink and always printed. */}
+      <div aria-hidden="true" className={`mt-4 min-h-[240px] flex-1 overflow-hidden ${HEAD_RULE}`}>
+        {RULED_ROWS.map((row) => (
+          <span key={row} className={`block h-7 border-b ${RULE}`} />
+        ))}
       </div>
     </Sheet>
   );
@@ -530,15 +635,10 @@ interface DayContext {
 }
 
 /**
- * The top of every sheet of a day: the trip and the day named, and the
- * lockup the front door wears, as tall as the two lines beside it. Any sheet
- * after the first says it carries on, since a sheet on its own with a day's
- * name over it reads as the whole day.
- *
- * The city the day is spent in goes beside the day's name, its dot and its
- * name in ink ahead of the date, since it is what tells the days of a trip
- * that moves apart, as the tab does on screen, and the dot is the one the
- * cover's journey and list give the city. A day with no city says none.
+ * The head of every sheet of a day. Any sheet after the first says it carries
+ * on, since a sheet on its own with a day's name over it reads as the whole
+ * day, and the rule under the head that opens the day's numbers on the first
+ * opens its rows on the rest.
  */
 function DayHead({
   day,
@@ -547,30 +647,17 @@ function DayHead({
   range,
   continued,
 }: DayContext & { readonly continued: boolean }) {
-  const city = day.plan.city;
   return (
-    <header className="flex shrink-0 items-start gap-6">
-      <div className="min-w-0 flex-1">
-        <p className={`text-meta font-semibold ${MUTED}`}>
-          {title} · {range}
-        </p>
-        <div className="mt-[9px] flex flex-wrap items-baseline gap-x-[10px]">
-          <h1 className={SHEET_HEADING}>Day {number}</h1>
-          <p className={`text-body ${MUTED}`}>
-            {city === null ? null : (
-              <>
-                <CityName city={city} dot={8} />
-                {" · "}
-              </>
-            )}
-            {formatDayLong(day.plan.date)}
-            {continued ? " · continued" : ""}
-          </p>
-        </div>
-      </div>
-      <Lockup className="shrink-0" />
-    </header>
+    <SheetHead title={title} range={range} heading={`Day ${String(number)}`}>
+      <DayWords day={day} />
+      {continued ? " · continued" : ""}
+    </SheetHead>
   );
+}
+
+/** What opens a day's rows on a sheet after its first, where there are no numbers to. */
+function ContinuedRule() {
+  return <div className={`mt-4 shrink-0 ${HEAD_RULE}`} />;
 }
 
 /**
@@ -582,17 +669,21 @@ function DayStats({ day, request }: DayContext) {
   const lastStop = computed.stops[computed.stops.length - 1];
   /** When the day is over: back where it ends, or done at the last stop. */
   const doneBy = computed.ends ?? lastStop?.departure ?? null;
+  /** In the words of the row it points at: "Back at the hotel", "Finish at the station". */
+  const doneLabel =
+    plan.end === null
+      ? "Done by"
+      : plan.start !== null && plan.start.place.id === plan.end.place.id
+        ? "Back by"
+        : "Finish by";
   const onFoot = request.legs ? metresOnFoot(day) : null;
   const travel = computed.totals.travelMinutes;
   return (
     <div
-      className={`mt-4 flex shrink-0 flex-wrap gap-x-[22px] gap-y-[10px] border-t-[1.5px] border-b border-t-ink py-[11px] ${RULE}`}
+      className={`mt-4 flex shrink-0 flex-wrap gap-x-6 gap-y-3 border-b py-3 ${HEAD_RULE} ${RULE}`}
     >
       <Stat label="Leave" value={formatClock(plan.startAtMinutes)} />
-      <Stat
-        label={plan.end === null ? "Done by" : "Back by"}
-        value={doneBy === null ? "Not known" : formatDayTime(doneBy)}
-      />
+      <Stat label={doneLabel} value={doneBy === null ? "Not known" : formatDayTime(doneBy)} />
       <Stat label="Stops" value={String(plan.stops.length)} />
       {travel === null ? null : <Stat label="Travelling" value={formatDuration(travel)} />}
       {onFoot === null ? null : <Stat label="On foot" value={formatDistance(onFoot)} />}
@@ -696,12 +787,12 @@ function dayUnits({ day, request }: DayContext): readonly Unit[] {
           <MarkColumn thread="from-centre">
             <span className="mt-[1px] block h-[19px] w-[19px] rounded-pill border-[1.5px] border-sage-600 bg-(--sheet)" />
           </MarkColumn>
-          <div className="pb-[10px]">
+          <div className="pb-2.5">
             <p className="font-display text-place text-ink">
               Leave <PlaceLink place={plan.start.place} tone="end" name={endpointName(plan.start)} />
             </p>
             {request.addresses && plan.start.place.address !== null ? (
-              <p className={`mt-[3px] text-small ${MUTED}`}>{plan.start.place.address}</p>
+              <p className={`mt-1 text-small ${MUTED}`}>{plan.start.place.address}</p>
             ) : null}
           </div>
         </div>
@@ -714,7 +805,10 @@ function dayUnits({ day, request }: DayContext): readonly Unit[] {
     const place = places.get(stop.stopId);
     const hours = place === undefined ? null : hoursOn(place, plan);
     const note = notes.get(stop.stopId) ?? null;
+    /** The day's thread starts at the first stop when nothing is left from, and ends at the last when nothing is reached. */
+    const first = index === 0 && plan.start === null;
     const last = index === computed.stops.length - 1 && plan.end === null;
+    const thread = first ? (last ? "none" : "from-centre") : last ? "to-centre" : "through";
     units.push({
       key: stop.stopId,
       node: (
@@ -722,14 +816,14 @@ function dayUnits({ day, request }: DayContext): readonly Unit[] {
           {legIndex < 0 || !request.legs ? null : <LegLine day={day} legIndex={legIndex} />}
           <div className={ROW}>
             <TimeCell time={stop.arrival} />
-            <MarkColumn thread={last ? "to-centre" : "through"}>
+            <MarkColumn thread={thread}>
               <span className="mt-[1px] grid h-[19px] w-[19px] place-items-center rounded-pill bg-terracotta text-label font-semibold text-paper tabular-nums">
                 <span aria-hidden="true">{index + 1}</span>
                 <span className="sr-only">Stop {index + 1}</span>
               </span>
             </MarkColumn>
-            <div className={`min-w-0 ${last ? "" : "pb-[10px]"}`}>
-              <div className="flex flex-wrap items-baseline gap-x-[10px]">
+            <div className={`min-w-0 ${last ? "" : "pb-2.5"}`}>
+              <div className="flex flex-wrap items-baseline gap-x-2.5">
                 <h2 className="min-w-0 font-display text-place text-ink">
                   {place === undefined ? (
                     stop.placeName
@@ -742,27 +836,36 @@ function dayUnits({ day, request }: DayContext): readonly Unit[] {
                   {stop.departure === null ? "" : ` · until ${formatDayTime(stop.departure)}`}
                 </p>
               </div>
+              {/* What the place is, a step apart: where it is, then a step
+                  smaller and behind a clock, as the card draws it, when it
+                  is open, so the two lines are told apart at a glance. */}
               {request.addresses && place?.address ? (
-                <p className={`mt-[3px] text-small ${MUTED}`}>{place.address}</p>
+                <p className={`mt-1 text-small ${MUTED}`}>{place.address}</p>
               ) : null}
-              {/* A step smaller than the address and behind a clock, as the
-                  card draws it, so the two lines under a name are told apart
-                  at a glance: where it is, then when it is open. */}
               {request.hours && hours !== null ? (
-                <p className={`mt-[4px] flex items-center gap-[5px] text-meta ${MUTED} tabular-nums`}>
-                  <ClockIcon size={12} strokeWidth={2.4} className="shrink-0" />
-                  <span>{hours}</span>
-                </p>
+                <GlyphLine
+                  glyph={<ClockIcon size={12} strokeWidth={2.4} />}
+                  className={`mt-1 text-meta ${MUTED} tabular-nums`}
+                >
+                  {hours}
+                </GlyphLine>
               ) : null}
+              {/* What is said about the place, two steps apart and in ink:
+                  the traveller's note on its rule, and a conflict behind the
+                  warning triangle it wears on the card. */}
               {request.notes && note !== null ? (
-                <p className={`mt-[7px] max-w-[60ch] border-l-2 pl-[9px] text-small text-ink ${RULE}`}>
+                <p className={`mt-2 max-w-[60ch] border-l-2 pl-2 text-small text-ink ${RULE}`}>
                   {note}
                 </p>
               ) : null}
               {conflictsAtStop(computed.conflicts, stop.stopId).map((conflict, at) => (
-                <p key={`${conflict.kind}-${String(at)}`} className="mt-[6px] text-small text-ink">
+                <GlyphLine
+                  key={`${conflict.kind}-${String(at)}`}
+                  glyph={<WarningIcon size={13} className="text-terracotta-700" />}
+                  className="mt-2 text-small text-ink tabular-nums"
+                >
                   {conflictSentence(conflict)}
-                </p>
+                </GlyphLine>
               ))}
             </div>
           </div>
@@ -789,7 +892,7 @@ function dayUnits({ day, request }: DayContext): readonly Unit[] {
                 <PlaceLink place={end.place} tone="end" name={endpointName(end)} />
               </p>
               {request.addresses && !sameEnds && end.place.address !== null ? (
-                <p className={`mt-[3px] text-small ${MUTED}`}>{end.place.address}</p>
+                <p className={`mt-1 text-small ${MUTED}`}>{end.place.address}</p>
               ) : null}
             </div>
           </div>
@@ -885,11 +988,12 @@ function DayMeasurer({
         <DayHead {...context} continued={false} />
         <DayStats {...context} />
         {request.map ? <DayMap {...context} /> : null}
-        <div className="mt-[18px]" />
+        <div className="mt-5" />
       </div>
       <div data-part="later" className="flex flex-col">
         <DayHead {...context} continued={true} />
-        <div className="mt-[18px]" />
+        <ContinuedRule />
+        <div className="mt-5" />
       </div>
       <div data-part="foot" className="flex flex-col">
         <SheetFooter sheet={{ at: 1, of: 1 }} />
@@ -1026,9 +1130,9 @@ export function PrintedTrip({
           sheet: (sheet) => (
             <Sheet sheet={sheet}>
               <DayHead {...context} continued={part > 0} />
-              {part === 0 ? <DayStats {...context} /> : null}
+              {part === 0 ? <DayStats {...context} /> : <ContinuedRule />}
               {part === 0 && request.map ? <DayMap {...context} onSettled={settle} /> : null}
-              <section className="mt-[18px] flex-1">
+              <section className="mt-5 flex-1">
                 {indices.map((index) => {
                   const unit = units[index];
                   return unit === undefined ? null : (
@@ -1046,7 +1150,15 @@ export function PrintedTrip({
         pages.push({
           key: `${context.day.plan.id}-notes`,
           label: `${dayLabel} · notes`,
-          sheet: (sheet) => <RuledSheet day={context.day} number={context.number} sheet={sheet} />,
+          sheet: (sheet) => (
+            <RuledSheet
+              day={context.day}
+              number={context.number}
+              title={title}
+              range={range}
+              sheet={sheet}
+            />
+          ),
         });
       }
     });

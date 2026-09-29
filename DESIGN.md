@@ -734,6 +734,24 @@ and dates and every day at a glance, and a ruled sheet after each day for writin
 A footer on every sheet says it was made with plan2go and which sheet it is of how
 many, counting every sheet.
 
+Every sheet but the cover wears one head: the trip and its dates over what the sheet
+is, the day's number or "Notes", with the day in words beside it and the lockup in the
+corner, so a sheet on its own is placed the same way whichever it is. Under every head,
+the cover's included, a rule of ink 1.5px heavy opens what the sheet holds: the day's
+numbers, its rows on a sheet that carries on, the lines to write on, the cover's days.
+Every other line is a hairline. The strip says when the day is over in the words of
+the row it points at: back by when it ends where it began, finish by when it ends
+somewhere else, done by when it ends at its last stop.
+
+Under a stop, what the place is comes a step apart and what is said about it two: the
+address, then its hours behind a clock, a step smaller; then the traveller's note on a
+hairline rule, and a conflict behind the warning triangle it wears on the card, the
+triangle in the accent, the sentence in ink. A glyph sits on the first line of what it
+leads. The spacing on a sheet is taken from one ladder of four pixel steps, except
+where a line of type is set against a marker, where the offset is whatever puts the
+two on one line. The day's thread starts at the first place the day leaves from and
+ends at the last it reaches, and never runs past either.
+
 The cities on paper wear the dots they wear on the tabs, in their own colours, which
 mark which days share a city and nothing else, and in ink on a sheet in ink alone,
 where the name beside each dot says which city it is. A trip that moves has its
@@ -745,7 +763,11 @@ it. In the cover's list the city has a column of its own between the date and th
 places: named on the first day of a stay, with a dashed thread in the city's colour
 running down from its dot through the days after it to a smaller dot on the last, so
 a stay is read as one run without the name said on every line. A trip kept before
-days had cities has no column for one.
+days had cities has no column for one. The dot is sized by the words beside it, so it
+grows with them when they are printed larger, and the list's columns are measured in
+the words' own size for the same reason. On paper narrower than a sheet of A4 is wide
+the day and its date share a column, one over the other, so the places keep the room
+to be read as a line.
 
 The map on paper is a picture of the ground and the routes with nothing on them, asked
 for at a centre and a zoom worked out from the day rather than left to the provider, and
