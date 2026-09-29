@@ -6,11 +6,16 @@ import { createGooglePlacesProvider } from "@/adapters/places/google-places";
 import { EDIT_KEY_PATTERN, hashEditKey } from "@/server/ownership/edit-key";
 import { googleMapsApiKey } from "@/server/places/google-key";
 import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
+import type { CitySet } from "@/server/trips/set-day-city";
 import { setDayCity } from "@/server/trips/set-day-city";
 
-export interface DayCityState {
-  readonly error: string | null;
-}
+/**
+ * Why the day did not move, or the city it is in now, so the pill can say it
+ * and search near it before the page catches up.
+ */
+export type DayCityState =
+  | { readonly error: string }
+  | { readonly error: null; readonly city: CitySet };
 
 const citySchema = z.object({
   slug: z.string().min(1).max(80),
@@ -56,5 +61,5 @@ export async function setDayCityAction(input: unknown): Promise<DayCityState> {
   }
 
   revalidatePath(`/t/${parsed.data.slug}`, "layout");
-  return { error: null };
+  return { error: null, city: result.city };
 }

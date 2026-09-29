@@ -80,6 +80,14 @@ async function askForCitiesToVisit(providerPlaceId: string): Promise<readonly Fo
   }
 }
 
+/**
+ * What moving the day came to: why it did not move, or the city it is in now
+ * as the server wrote it, with where it is.
+ */
+export type CityMove =
+  | { readonly error: string }
+  | { readonly error: null; readonly city: Omit<DayCity, "color"> };
+
 interface CityPickerProps {
   /** The day open in the tabs, so a city still on its way to one is not shown on the next. */
   readonly dayId: string;
@@ -101,7 +109,7 @@ interface CityPickerProps {
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
   /** A city chosen: the day moves there, and so do the empty days after it in the same city. */
-  readonly onChoose: (providerPlaceId: string) => Promise<{ readonly error: string | null }>;
+  readonly onChoose: (providerPlaceId: string) => Promise<CityMove>;
   /** The day is in the city now, for the bar to say so and turn back to places. */
   readonly onMoved: (cityName: string) => void;
 }
@@ -143,8 +151,12 @@ export function CityPicker({
   /** The city being written to the day, by name, while it is. */
   const [saving, setSaving] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  /** A city chosen and written, held on the pill until the day comes back in it. */
-  const [moved, setMoved] = useState<(CityIdentity & { readonly color: number }) | null>(null);
+  /**
+   * A city chosen and written, held on the pill until the day comes back in
+   * it, with where it is, so the search for a city is asked near it from the
+   * moment it is chosen.
+   */
+  const [moved, setMoved] = useState<DayCity | null>(null);
   /** How many times the day has been moved from here, which is what replays the pill's pop. */
   const [moves, setMoves] = useState(0);
   /** The day the pill is about, so moving to another day lets go of a move in flight. */
@@ -183,10 +195,13 @@ export function CityPicker({
   if (moved !== null && sameCity(city, moved)) {
     setMoved(null);
   }
-  const shown: (CityIdentity & { readonly color: number }) | null = moved ?? city;
-  /** Rounded, and plain numbers, so a trip redrawn with the same city asks nothing again. */
-  const biasLat = city === null ? null : city.position.lat.toFixed(BIAS_DECIMALS);
-  const biasLng = city === null ? null : city.position.lng.toFixed(BIAS_DECIMALS);
+  const shown: DayCity | null = moved ?? city;
+  /**
+   * Where the pill's city is, rounded, and plain numbers, so a trip redrawn
+   * with the same city asks nothing again.
+   */
+  const biasLat = shown === null ? null : shown.position.lat.toFixed(BIAS_DECIMALS);
+  const biasLng = shown === null ? null : shown.position.lng.toFixed(BIAS_DECIMALS);
 
   const trimmed = query.trim();
   const typed = useTypedSearch<Found>(
@@ -198,7 +213,7 @@ export function CityPicker({
         kind: "city",
         limit: String(CITIES_ASKED),
       });
-      // Near the city the day is in, so "Ha" is Ha Long before Havana.
+      // Near the city the pill says, so "Ha" is Ha Long before Havana.
       if (biasLat !== null && biasLng !== null) {
         parameters.set("lat", biasLat);
         parameters.set("lng", biasLng);
@@ -298,14 +313,11 @@ export function CityPicker({
         setError(outcome.error);
         return;
       }
-      setMoved({
-        providerPlaceId: row.providerPlaceId,
-        name: row.name,
-        color: colorFor({ providerPlaceId: row.providerPlaceId, name: row.name }),
-      });
+      const movedTo = outcome.city;
+      setMoved({ ...movedTo, color: colorFor(movedTo) });
       setMoves((count) => count + 1);
       close();
-      onMoved(row.name);
+      onMoved(movedTo.name);
     });
   };
 

@@ -11,6 +11,7 @@ import { CloseIcon, SearchIcon } from "@/ui/icons";
 import { useScrollBar } from "@/ui/use-scroll-bar";
 import { Notice } from "@/ui/notice";
 import { useOutsidePress } from "@/ui/use-outside-press";
+import type { CityMove } from "./city-picker";
 import { CityPicker } from "./city-picker";
 import { cityListWords } from "./place-kinds";
 import { PlaceRows } from "./place-rows";
@@ -87,7 +88,7 @@ interface PlaceSearchProps {
    * were in the same one. Passed in rather than imported, because a feature
    * may not reach into the route that owns the mutation.
    */
-  readonly onChangeCity: (providerPlaceId: string) => Promise<{ readonly error: string | null }>;
+  readonly onChangeCity: (providerPlaceId: string) => Promise<CityMove>;
   /**
    * Everywhere the trip already goes, by provider identifier. Recommending a
    * place that is on the trip already wastes the only six lines this panel has
@@ -210,6 +211,8 @@ export function PlaceSearch({
   const [announced, setAnnounced] = useState("");
   /** The quick search the list is showing in place of the city's best known, or null. */
   const [picked, setPicked] = useState<PlaceKind | null>(null);
+  /** Whether the places panel was open, so the render that closes it can be told apart. */
+  const [wasOpen, setWasOpen] = useState(false);
 
   const fieldId = useId();
   const listId = `${fieldId}-list`;
@@ -259,6 +262,19 @@ export function PlaceSearch({
   const words = showing !== null && trimmed === showing.trim() ? "" : trimmed;
   const holding = words === "" && trimmed !== "";
   const placesOpen = panel === "places";
+
+  // A quick search is for the one opening of the panel it was pressed in.
+  // Closed, however it was closed, the panel lets go of it, so it opens again
+  // on the city's best known with no chip held down. Adjusted during the
+  // render that closes it, as the held name is, so nothing is asked about the
+  // kind on the way out.
+  if (wasOpen !== placesOpen) {
+    setWasOpen(placesOpen);
+    if (!placesOpen) {
+      setPicked(null);
+      setActive(0);
+    }
+  }
 
   const typed = useTypedSearch(
     words,

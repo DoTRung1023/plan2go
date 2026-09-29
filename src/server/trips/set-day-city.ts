@@ -1,5 +1,6 @@
 import { colorsAfterMove } from "@/core/model/city-colors";
 import type { DayId } from "@/core/model/day";
+import type { LatLng } from "@/core/model/place";
 import { cityRun } from "@/core/model/day-city";
 import type { PlacesProvider } from "@/core/ports/places-provider";
 import { placeDetailsFor } from "../places/place-details";
@@ -14,8 +15,15 @@ export interface SetDayCityRequest {
   readonly providerPlaceId: string;
 }
 
+/** The city the days are in now, as it was written to them. */
+export interface CitySet {
+  readonly providerPlaceId: string;
+  readonly name: string;
+  readonly position: LatLng;
+}
+
 export type SetDayCityResult =
-  | { readonly status: "set"; readonly cityName: string; readonly days: number }
+  | { readonly status: "set"; readonly city: CitySet; readonly days: number }
   | { readonly status: "refused" }
   | { readonly status: "no-such-city" };
 
@@ -50,15 +58,16 @@ export async function setDayCity(
   }
 
   const providerPlaceId = city.providerPlaceId ?? request.providerPlaceId;
+  const set: CitySet = { providerPlaceId, name: city.name, position: city.position };
   const written = await repository.setDayCity({
     slug: request.slug,
     editKeyHash: request.editKeyHash,
     dayIds: moving,
-    city: { providerPlaceId, name: city.name, position: city.position },
+    city: set,
     colors: colorsAfterMove(trip?.days ?? [], request.dayId, { providerPlaceId, name: city.name }),
   });
 
   return written.status === "set"
-    ? { status: "set", cityName: city.name, days: moving.length }
+    ? { status: "set", city: set, days: moving.length }
     : { status: "refused" };
 }
