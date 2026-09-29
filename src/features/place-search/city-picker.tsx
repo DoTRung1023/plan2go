@@ -162,9 +162,10 @@ export function CityPicker({
   const pill = useRef<HTMLButtonElement | null>(null);
   const field = useRef<HTMLInputElement | null>(null);
   /**
-   * Which city was last asked about, so each is asked once however often the
-   * panel opens. A ref, because the effect that asks may not set state on the
-   * way in, only in the answer.
+   * Which city has been asked about since the panel opened, so each opening
+   * asks once however often its field is typed in and cleared, and let go of
+   * when the panel closes. A ref, because the effect that asks may not set
+   * state on the way in, only in the answer.
    */
   const askedAbout = useRef<string | null>(null);
   const watchList = useScrollBar("y");
@@ -229,22 +230,34 @@ export function CityPicker({
   useOutsidePress(root, open, close);
 
   /**
-   * Asked when the panel first opens, and not on mounting: the answer costs
+   * Asked each time the panel opens, and not on mounting: the answer costs
    * searches the first time a city is asked about, and a reader who never
-   * opens the picker should never cause it. Asked about the day's own city,
-   * which is where the distances are from; a city kept from before cities
-   * had identifiers has nothing to go on, and gets none.
+   * opens the picker should never cause it. The list from the last opening
+   * stays up until the new one lands, so reopening never empties the panel.
+   * Asked about the city the pill says, which is where the distances are
+   * from: the one just chosen while the page catches up to the move, so the
+   * list is never measured from the city the day has left. A city kept from
+   * before cities had identifiers has nothing to go on, and gets none.
    */
-  const askAbout = city?.providerPlaceId ?? null;
+  const askAbout = shown?.providerPlaceId ?? null;
   useEffect(() => {
-    if (!open || searched || askAbout === null || askedAbout.current === askAbout) {
+    if (!open) {
+      askedAbout.current = null;
+      return;
+    }
+    if (searched || askAbout === null || askedAbout.current === askAbout) {
       return;
     }
     askedAbout.current = askAbout;
-    // An answer that did not come is kept as an empty one, so the panel
-    // stops saying it is looking and offers the search instead.
+    // An answer that did not come keeps the list already there for the
+    // city, and with none there is kept as an empty one, so the panel stops
+    // saying it is looking and offers the search instead.
     void askForCitiesToVisit(askAbout).then((answer) => {
-      setToVisit({ about: askAbout, cities: answer ?? [] });
+      setToVisit((now) =>
+        answer === null && now?.about === askAbout
+          ? now
+          : { about: askAbout, cities: answer ?? [] },
+      );
     });
   }, [open, searched, askAbout]);
 

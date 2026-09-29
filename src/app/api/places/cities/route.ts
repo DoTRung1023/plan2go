@@ -5,9 +5,10 @@ import type { RateLimitPolicy } from "@/server/rate-limit/window";
 import { placesRead, refuse } from "../places-read";
 
 /**
- * As tight as the typed search is loose: this is asked once when the city
+ * As tight as the typed search is loose: this is asked each time the city
  * picker opens, not once per few letters, so a person reaches it a handful of
- * times in a sitting.
+ * times in a minute at most. A refusal leaves the list from the last opening
+ * on the panel.
  */
 const POLICY: RateLimitPolicy = { windowSeconds: 60, maxRequests: 10 };
 
