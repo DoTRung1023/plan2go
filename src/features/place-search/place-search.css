@@ -21,7 +21,6 @@
   --search-pill-open-ink: #f9f1e2;
   --search-disc: #f1e7d3;
   --search-hover: #f8ebdd;
-  --search-toast-tick: #e3b38d;
 
   --search-ink-6: color-mix(in srgb, var(--color-ink) 6%, transparent);
   --search-ink-10: color-mix(in srgb, var(--color-ink) 10%, transparent);
@@ -88,16 +87,6 @@
   }
 }
 
-@keyframes search-toast-in {
-  from {
-    opacity: 0;
-    transform: translate(-50%, 10px);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, 0);
-  }
-}
 
 /*
  * Laid over everything while the search is open, so a press anywhere else
@@ -640,32 +629,6 @@
   right: 4px;
 }
 
-/* What just happened, said once at the foot of the map and gone again. */
-.search-toast {
-  position: fixed;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 11px 18px;
-  border-radius: var(--radius-pill);
-  background: var(--color-ink);
-  color: var(--search-surface);
-  box-shadow: 0 8px 24px color-mix(in srgb, var(--color-ink) 25%, transparent);
-  font-size: var(--text-small);
-  font-weight: 600;
-  line-height: 1;
-  white-space: nowrap;
-  pointer-events: none;
-  transform: translate(-50%, 0);
-  animation: search-toast-in 0.28s var(--search-ease);
-}
-
-.search-toast > svg {
-  flex: none;
-  color: var(--search-toast-tick);
-}
-
 @media (prefers-reduced-motion: reduce) {
   .search-bar,
   .search-pill,
@@ -683,8 +646,7 @@
   .search-word,
   .search-dot[data-moved] > :first-child,
   .search-ripple,
-  .search-name[data-moved],
-  .search-toast {
+  .search-name[data-moved] {
     animation: none;
   }
 }

@@ -530,8 +530,8 @@ The city pill: the city's dot and name in bold on a tint of the accent, darker u
 pointer, pressing in a little when pressed. Open, it turns to the accent's deepest brown
 with its words in warm paper, its dot takes the lighter tint of the city's colour and
 its chevron turns over. Choosing a city pops the dot with a ring of its colour spreading
-from it and slides the new name in, and a dark pill at the foot of the map says "Day 2
-is now in Hue".
+from it and slides the new name in, which is how the move is told: nothing else on the
+page announces it, since the pill and the day already show it.
 
 The panels, the places the field finds and the cities the pill offers, hold the
 product's own list rather than the file's, drawn from one set of classes in
@@ -665,8 +665,7 @@ map, whose movement is its design file's and is written out under Components and
 `place-search.css`: its glow on and off, a quick search sinking a little as it is
 pressed and gliding along when an arrow moves the row, the pill's colours and chevron turning, its
 dot popping and name sliding in on a move, the empty field's words turning over, a
-spinner while it waits, and a sentence rising at the foot of the map when something is
-done. A city's dot
+and a spinner while it waits. A city's dot
 also turns to the next city's colour over 200ms `ease-out` when what it marks changes
 city, with the name beside it, so the pill in the search does not flash as days change.
 

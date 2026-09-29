@@ -7,7 +7,7 @@ import type { DayCity } from "@/core/model/day";
 import type { CityIdentity } from "@/core/model/day-city";
 import type { PlaceKind } from "@/core/model/place-kind";
 import type { LatLng, Place } from "@/core/model/place";
-import { CheckIcon, CloseIcon, SearchIcon } from "@/ui/icons";
+import { CloseIcon, SearchIcon } from "@/ui/icons";
 import { useScrollBar } from "@/ui/use-scroll-bar";
 import { Notice } from "@/ui/notice";
 import { useOutsidePress } from "@/ui/use-outside-press";
@@ -36,12 +36,6 @@ const HINTS = ["for a place", "cafés", "museums", "hotels"] as const;
 /** How long each of those stays before the next. */
 const HINT_EVERY_MS = 2600;
 
-/** How long the sentence at the foot of the map says what just happened. */
-const TOAST_MS = 2400;
-
-/** Room between the sentence and the foot of the map, in pixels. */
-const TOAST_LIFT = 32;
-
 /** Where a chosen place is and what it is called, as the preview answers. */
 const previewSchema = object({
   place: object({
@@ -55,14 +49,6 @@ const previewSchema = object({
 interface AddPlaceOutcome {
   readonly added: string | null;
   readonly error: string | null;
-}
-
-/** What just happened, where it is said, and which saying of it this is. */
-interface Toast {
-  readonly message: string;
-  readonly key: number;
-  readonly left: number;
-  readonly bottom: number;
 }
 
 /** Which panel hangs from the bar: its places, the city pill's cities, or neither. Never both. */
@@ -80,11 +66,6 @@ interface PlaceSearchProps {
    * empty day offers a way to start looking, and this is where it points.
    */
   readonly field: RefObject<HTMLInputElement | null>;
-  /**
-   * The map the bar floats over, so what just happened is said at its foot,
-   * in the middle of it, wherever the bar itself is.
-   */
-  readonly mapBox: RefObject<HTMLElement | null>;
   /** Where to look first, or null when the trip has nothing on it yet. */
   readonly near: LatLng | null;
   /**
@@ -190,7 +171,6 @@ export function PlaceSearch({
   dayId,
   dayName,
   field,
-  mapBox,
   near,
   dayCity,
   cities,
@@ -226,7 +206,8 @@ export function PlaceSearch({
   const [added, setAdded] = useState<ReadonlySet<string>>(new Set());
   /** What went wrong with the last add from a row, under the list. */
   const [addError, setAddError] = useState<string | null>(null);
-  const [toast, setToast] = useState<Toast | null>(null);
+  /** The last thing done from the bar, for a reader who cannot see the page change. */
+  const [announced, setAnnounced] = useState("");
   /** The quick search the list is showing in place of the city's best known, or null. */
   const [picked, setPicked] = useState<PlaceKind | null>(null);
 
@@ -250,7 +231,6 @@ export function PlaceSearch({
    * either landed.
    */
   const queue = useRef<Promise<void>>(Promise.resolve());
-  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   /**
    * Whether the next mouseup in the field is the one that follows focus
    * taking the whole of a held name. Left to the browser it would put the
@@ -340,15 +320,6 @@ export function PlaceSearch({
     };
   }, [panel, field]);
 
-  useEffect(
-    () => () => {
-      if (toastTimer.current !== null) {
-        clearTimeout(toastTimer.current);
-      }
-    },
-    [],
-  );
-
   useOutsidePress(container, placesOpen, () => {
     setPanel(null);
   });
@@ -359,25 +330,13 @@ export function PlaceSearch({
     field.current?.blur();
   };
 
-  /** Say what just happened at the foot of the map, in the middle of it. */
+  /**
+   * Say what just happened to a reader who cannot see it. Nothing is shown
+   * for it: the day's list takes the place added, and the city pill slides
+   * the new city in, so the page already says it.
+   */
   const say = (message: string): void => {
-    const area = mapBox.current?.getBoundingClientRect() ?? {
-      left: 0,
-      width: window.innerWidth,
-      bottom: window.innerHeight,
-    };
-    if (toastTimer.current !== null) {
-      clearTimeout(toastTimer.current);
-    }
-    setToast((last) => ({
-      message,
-      key: (last?.key ?? 0) + 1,
-      left: area.left + area.width / 2,
-      bottom: window.innerHeight - area.bottom + TOAST_LIFT,
-    }));
-    toastTimer.current = setTimeout(() => {
-      setToast(null);
-    }, TOAST_MS);
+    setAnnounced(message);
   };
 
   /** Let go of a look still on its way, so it neither lands nor goes on saying it is looking. */
@@ -745,21 +704,9 @@ export function PlaceSearch({
         ) : null}
       </div>
 
-      {toast === null ? null : (
-        <div
-          key={toast.key}
-          aria-hidden="true"
-          className="search-toast"
-          style={{ left: toast.left, bottom: toast.bottom }}
-        >
-          <CheckIcon size={14} strokeWidth={3} />
-          {toast.message}
-        </div>
-      )}
-      {/* The same sentence for a reader who cannot see it, in a region that
-          is always there so each new one is read out. */}
+      {/* In a region that is always there, so each new sentence is read out. */}
       <p aria-live="polite" className="sr-only">
-        {toast?.message ?? ""}
+        {announced}
       </p>
     </div>
   );
