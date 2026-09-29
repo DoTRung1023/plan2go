@@ -20,8 +20,8 @@ const ENDPOINT = "https://maps.googleapis.com/maps/api/staticmap";
 
 /**
  * The sheet's width in map pixels, doubled for print. A4 less its margins is a
- * little under seven inches, and two to one is the shape the design file gives
- * the map at the top of the page.
+ * little over seven inches, and the shape is the one the design for the
+ * printed trip gives the map across the top of a day.
  */
 const SIZE = `${String(STATIC_MAP_SIZE.width)}x${String(STATIC_MAP_SIZE.height)}`;
 const SCALE = 2;

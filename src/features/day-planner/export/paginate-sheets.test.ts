@@ -28,6 +28,14 @@ describe("paginate", () => {
     expect(paginate([100, 2000, 100], 500, 500)).toEqual([[0], [1], [2]]);
   });
 
+  it("leaves the first sheet to its opening when even the first row does not fit under it", () => {
+    expect(paginate([300, 100], 200, 800)).toEqual([[], [0, 1]]);
+  });
+
+  it("still keeps a row too tall for any sheet on the first, rather than a blank sheet before it", () => {
+    expect(paginate([2000], 200, 800)).toEqual([[0]]);
+  });
+
   it("makes one empty sheet of a day with no rows", () => {
     expect(paginate([], 500, 500)).toEqual([[]]);
   });

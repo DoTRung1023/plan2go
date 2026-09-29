@@ -16,6 +16,9 @@
   --color-paper: #f5ead8;
   --color-paper-raised: #f9f4ed;
   --color-paper-sunken: #ebddc5;
+  /* What a printed sheet is drawn on, a step lighter than paper-raised, so a
+     page of it is warm without being a page of ink. */
+  --color-sheet: #fffaf1;
 
   --color-ink: #201e1d;
   --color-ink-muted: color-mix(in srgb, #201e1d 68%, transparent);
@@ -23,11 +26,13 @@
 
   --color-rule: color-mix(in srgb, #201e1d 13%, transparent);
   --color-rule-strong: color-mix(in srgb, #201e1d 28%, transparent);
+  --color-neutral-100: #f9f4ed;
   --color-neutral-200: #eee7db;
   --color-neutral-300: #dcd3c4;
   --color-neutral-400: #c0b6a5;
   --color-neutral-600: #82796a;
   --color-neutral-700: #645c50;
+  --color-neutral-800: #474238;
   --color-neutral-900: #2e2b25;
 
   --color-terracotta: #c67139;
@@ -378,111 +383,26 @@
 /*
  * The printed page, from DESIGN.md: a first class target rather than a
  * fallback. What prints is not the planner but the sheets it keeps for the
- * purpose, one day to a sheet, drawn by printed-trip.tsx. Without this an
- * export would hand somebody a screenshot of an application, map and all,
- * rather than the days they asked for.
- *
- * One column, no chrome. Surfaces print as unpainted paper because a cream
- * ground over a whole page is a great deal of ink for something a reader
- * already has, and the times keep the display face so they stay the loudest
- * thing on the sheet.
+ * purpose, drawn by printed-trip.tsx and styled in printed-trip.css. Without
+ * this an export would hand somebody a screenshot of an application, map and
+ * all, rather than the days they asked for.
  */
-/* What a sheet is drawn on, for anything on it that has to hide the thread
-   behind it: the raised paper on screen, and white paper when printed. */
-.printed-trip,
-.printed-measure {
-  --sheet: var(--color-paper-raised);
-}
-
-/* The words on a sheet at a size other than the planner's, for eyes or for
-   small paper: every step of the scale, from the sizes DESIGN.md gives them,
-   by one factor, so the sheet keeps its proportions. Spelled out rather than
-   taken from the scale's own variables, which a variable cannot be defined
-   from itself. Applied to the sheets and to the copy of each day that is
-   measured to deal them, so what is measured is what is drawn. */
-.printed-text-small {
-  --sheet-text: 0.9;
-}
-
-.printed-text-large {
-  --sheet-text: 1.15;
-}
-
-.printed-text-small,
-.printed-text-large {
-  --text-headline: calc(32px * var(--sheet-text));
-  --text-title: calc(23px * var(--sheet-text));
-  --text-lead: calc(20px * var(--sheet-text));
-  --text-place: calc(16px * var(--sheet-text));
-  --text-time: calc(14.5px * var(--sheet-text));
-  --text-body: calc(14px * var(--sheet-text));
-  --text-small: calc(13px * var(--sheet-text));
-  --text-meta: calc(12px * var(--sheet-text));
-  --text-micro: calc(11.5px * var(--sheet-text));
-  --text-label: calc(10.5px * var(--sheet-text));
-}
-
-/* A sheet for a printer with no colour in it: everything the map's colours
-   picked out is in ink, and the map itself is grey. Where a wash of a leg's
-   ink lay under its glyph there is a wash of ink. A city's dot and thread
-   are ink too, and its name beside them says which city. */
-.printed-mono {
-  --color-city-1: var(--color-ink);
-  --color-city-2: var(--color-ink);
-  --color-city-3: var(--color-ink);
-  --color-city-4: var(--color-ink);
-  --color-city-5: var(--color-ink);
-  --color-city-6: var(--color-ink);
-  --color-terracotta: var(--color-ink);
-  --color-terracotta-700: var(--color-ink);
-  --color-terracotta-800: var(--color-ink);
-  --color-terracotta-900: var(--color-ink);
-  --color-sage-600: var(--color-ink);
-  --color-sage-700: var(--color-ink);
-  --color-neutral-700: var(--color-ink);
-}
-
-.printed-mono img {
-  filter: grayscale(1);
-}
-
-/* Each day laid out once at a sheet's width, to be measured and dealt onto
-   sheets. Laid out, so it has heights, and never seen: no size of its own,
-   nothing drawn, nothing it can be pointed at, and off the page it prints. */
-.printed-measure {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: var(--sheet-content, 672px);
-  height: 0;
-  overflow: hidden;
-  visibility: hidden;
-  pointer-events: none;
-}
-
-/* The page the server's own browser prints: the sheets at the width they
-   print and nothing else, so what it lays out on screen is what it lays on
-   paper, and a sheet opened by hand reads as one. */
-.print-page .printed-trip {
-  width: var(--sheet-content, 672px);
-  margin: 0 auto;
-}
-
 @media print {
-  .printed-measure {
-    display: none;
-  }
-
+  /* No margin of the page's own: a sheet carries its margins on its own
+     ground, so the colour it is drawn on runs to the paper's edge. */
   @page {
     size: A4;
-    margin: 16mm;
+    margin: 0;
   }
 
+  /* Behind the sheets, the colour they are drawn on, so the hair a sheet is
+     kept short of its page by, which is what stops rounding spilling a
+     blank page, reads as more of the same sheet. */
   html,
   body {
     height: auto;
     overflow: visible;
-    background: #fff;
+    background: var(--color-sheet);
   }
 
   /* The planner is for the screen. What is printed is the sheets, which are
@@ -495,44 +415,5 @@
     display: block !important;
     height: auto !important;
     overflow: visible !important;
-  }
-
-  /* Every sheet after the first starts a page of its own, and each is as
-     tall as the page, a hair under A4 less its margins so that rounding never
-     spills a blank page, which is what puts the sheet's foot at the foot of
-     the page. */
-  .printed-page + .printed-page {
-    break-before: page;
-  }
-
-  .printed-sheet {
-    min-height: var(--page-room, 264mm);
-  }
-
-  .printed-sheet-one-page {
-    height: var(--page-room, 264mm);
-    overflow: hidden;
-  }
-
-  /* A stop is never split across two sheets, and a day's name is never
-     left at the foot of one with the day itself on the next. */
-  .printed-stop {
-    break-inside: avoid;
-  }
-
-  .printed-sheet > header {
-    break-after: avoid;
-  }
-
-  /* The discs the stops hang on are the one fill on the page, and a browser
-     that drops backgrounds to save ink would drop the numbers with them. */
-  .printed-trip * {
-    print-color-adjust: exact;
-    -webkit-print-color-adjust: exact;
-  }
-
-  /* The sheet is white paper here, not the raised paper it is drawn on. */
-  .printed-trip {
-    --sheet: #fff;
   }
 }

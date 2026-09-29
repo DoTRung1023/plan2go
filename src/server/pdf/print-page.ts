@@ -66,6 +66,21 @@ export async function printPageToPdf(job: PrintJob): Promise<Uint8Array<ArrayBuf
     page.setDefaultTimeout(job.timeoutMs);
     await page.goto(job.url, { waitUntil: "networkidle0", timeout: job.timeoutMs });
     await page.waitForSelector(job.readySelector, { timeout: job.timeoutMs });
+    // Every picture on the page, arrived or failed, and not only the ones
+    // the sheets say they wait for: the lockup on a sheet that has no map
+    // is drawn with the sheet, a moment before the sheets say they are done.
+    await page.evaluate(async () => {
+      await Promise.all(
+        [...document.images].map((image) =>
+          image.complete
+            ? Promise.resolve()
+            : new Promise<void>((resolve) => {
+                image.addEventListener("load", () => resolve(), { once: true });
+                image.addEventListener("error", () => resolve(), { once: true });
+              }),
+        ),
+      );
+    });
     await page.evaluate(() => document.fonts.ready);
     const margin = `${String(job.marginMm)}mm`;
     const pdf = await page.pdf({

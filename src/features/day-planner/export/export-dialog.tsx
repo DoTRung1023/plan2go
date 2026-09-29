@@ -519,7 +519,7 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
               <div className="-mx-[10px] mt-[6px]">
                 <Option
                   label="Cover page"
-                  note="Name, dates and every day"
+                  note="Route, stays and every day at a glance"
                   on={coverOnly || cover}
                   onToggle={flip(setCover, cover)}
                   disabled={coverOnly}

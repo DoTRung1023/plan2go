@@ -110,7 +110,7 @@ describe("googleStaticMapUrl", () => {
     expect(params(url).has("key")).toBe(false);
     expect(params(url).get("center")).toBe(`${center.lat.toFixed(6)},${center.lng.toFixed(6)}`);
     expect(params(url).get("zoom")).toBe(String(zoom));
-    expect(params(url).get("size")).toBe("640x320");
+    expect(params(url).get("size")).toBe("640x216");
     expect(params(url).get("scale")).toBe("2");
   });
 

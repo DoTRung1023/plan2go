@@ -245,6 +245,27 @@ export function FlagIcon(props: IconProps) {
   );
 }
 
+/** A ring round a dot: where something begins, as the start of a trip on paper. */
+export function TargetIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="3" />
+    </Glyph>
+  );
+}
+
+/** A circle with a mark of exclamation: this needs a look, said beside the words that say why. */
+export function AlertIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <circle cx="12" cy="12" r="9.5" />
+      <path d="M12 7.5v5.5" />
+      <path d="M12 16.5h.01" />
+    </Glyph>
+  );
+}
+
 export function ClockIcon(props: IconProps) {
   return (
     <Glyph {...props}>

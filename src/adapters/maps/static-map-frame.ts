@@ -4,8 +4,10 @@ import type { LatLng } from "@/core/model/place";
  * The static map's picture in its own pixels, which is what the provider is
  * told and what a place is placed in. The file comes back at twice this, for
  * print, and is drawn on the sheet at whatever width the sheet gives it.
+ * Wide and low, a little under three to one, the shape the design for the
+ * printed trip gives the map across the top of a day.
  */
-export const STATIC_MAP_SIZE = { width: 640, height: 320 } as const;
+export const STATIC_MAP_SIZE = { width: 640, height: 216 } as const;
 
 /** How wide the whole world is at zoom 0, in the provider's pixels. */
 const WORLD_PX = 256;

@@ -1,0 +1,798 @@
+/*
+ * The trip on paper, drawn to its design, "PlanToGo trip PDF": the sheets'
+ * ground, their type and every part of them, on screen in the export's
+ * preview, on the page the server's own browser prints, and in the browser's
+ * own print window alike.
+ *
+ * Every size is the design's own at the middle size of words, multiplied by
+ * --sheet-text, so the words can be printed smaller or larger for eyes and
+ * for paper while the sheet keeps its proportions. The colours are the
+ * product's tokens, which the design's are.
+ */
+
+.printed-trip,
+.printed-measure {
+  --sheet: var(--color-sheet);
+  --sheet-text: 1;
+  --sheet-display: var(--font-sheet-display), var(--font-display);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+}
+
+.printed-text-small {
+  --sheet-text: 0.9;
+}
+
+.printed-text-large {
+  --sheet-text: 1.15;
+}
+
+/* A link on paper is the words it is made of, in their own ink: the PDF
+   keeps where it goes, and the page does not have to say so. */
+.printed-trip a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* The display face, at its heaviest, softest and smallest optical size,
+   where it is as round and as even as the face the design was drawn in. */
+.printed-display {
+  font-family: var(--sheet-display);
+  font-weight: 900;
+  font-variation-settings:
+    "SOFT" 100,
+    "opsz" 9;
+}
+
+/* A sheet: its margins as its own padding, on its own ground, so the ground
+   runs to the paper's edge. Its size comes from the paper, told to it by
+   the sheets. */
+.printed-sheet {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  padding: var(--sheet-top, 48px) var(--sheet-side, 56px) var(--sheet-bottom, 32px);
+  background: var(--sheet);
+}
+
+/* What is dealt onto a sheet, under what opens it. A container, so a row
+   can lay itself out for paper narrower than A4 is wide. */
+.printed-rows {
+  flex-shrink: 0;
+  container-type: inline-size;
+}
+
+/* Each part laid out once at a sheet's width, to be measured and dealt onto
+   sheets. Laid out, so it has heights, and never seen: no size of its own,
+   nothing drawn, nothing it can be pointed at, and off the page it prints. */
+.printed-measure {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--sheet-content, 681px);
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  pointer-events: none;
+  container-type: inline-size;
+}
+
+/* The page the server's own browser prints: the sheets at the paper's width
+   and nothing else, so a sheet opened by hand reads as one. */
+.print-page .printed-trip {
+  width: var(--sheet-w, 793px);
+  margin: 0 auto;
+}
+
+/* Spaces under what opens a sheet, above what is dealt onto it, as parts of
+   the opening so they are measured with it. */
+.printed-space-10 {
+  height: 10px;
+}
+
+.printed-space-20 {
+  height: 20px;
+}
+
+.printed-space-22 {
+  height: 22px;
+}
+
+/* The lockup the front door wears, as its mark and its name. */
+.printed-brand {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+}
+
+.printed-brand-mark {
+  display: block;
+  width: auto;
+  height: 22px;
+}
+
+.printed-brand-word {
+  display: block;
+  width: auto;
+  height: 19px;
+}
+
+.printed-brand-cover .printed-brand-mark {
+  height: 25px;
+}
+
+.printed-brand-cover .printed-brand-word {
+  height: 21px;
+}
+
+/* The head of every sheet but the cover: the trip and its dates, and the
+   lockup in the corner. */
+.printed-head {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 16px;
+}
+
+.printed-head-trip {
+  flex: 1;
+  min-width: 0;
+  color: var(--color-neutral-600);
+  font-size: calc(11.5px * var(--sheet-text));
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* A word over what follows it: "Route", "Where you sleep". */
+.printed-label {
+  color: var(--color-neutral-600);
+  font-size: calc(11.5px * var(--sheet-text));
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* The foot of every sheet: who made this, and which sheet it is of how
+   many. Pushed to the sheet's foot, with room over it however full the
+   sheet is. */
+.printed-foot {
+  flex-shrink: 0;
+  margin-top: auto;
+  padding-top: 20px;
+}
+
+.printed-foot-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-neutral-200);
+  color: var(--color-neutral-600);
+  font-size: calc(11.5px * var(--sheet-text));
+  font-weight: 500;
+  line-height: 1;
+}
+
+.printed-foot-credit {
+  flex: 1;
+  min-width: 0;
+}
+
+.printed-foot-page {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The cover: the lockup on the right, then the trip, its dates and what it
+   comes to. */
+.printed-cover-brand {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.printed-cover-intro {
+  margin-top: 64px;
+}
+
+.printed-eyebrow {
+  color: var(--color-terracotta-700);
+  font-size: calc(12px * var(--sheet-text));
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.printed-headline {
+  margin-top: 16px;
+  font-size: calc(60px * var(--sheet-text));
+  line-height: 1.1;
+}
+
+.printed-dates {
+  margin-top: 14px;
+  font-size: calc(19px * var(--sheet-text));
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.printed-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.printed-chip {
+  padding: 7px 14px;
+  border-radius: var(--radius-pill);
+  font-size: calc(13px * var(--sheet-text));
+  font-weight: 700;
+  line-height: 1;
+}
+
+.printed-chip-days {
+  background: var(--color-terracotta-100);
+  color: var(--color-terracotta-800);
+}
+
+.printed-chip-cities {
+  background: var(--color-sage-100);
+  color: var(--color-sage-800);
+}
+
+.printed-chip-stops {
+  background: var(--color-neutral-100);
+  color: var(--color-neutral-800);
+}
+
+/* The route: each stay in a city, when, and an arrow on to the next, in a
+   line that wraps rather than squeezing its names. */
+.printed-cover-route {
+  margin-top: 44px;
+}
+
+.printed-route {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  margin-top: 14px;
+}
+
+.printed-route-stay {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.printed-route-city {
+  font-size: calc(18px * var(--sheet-text));
+  line-height: 1.25;
+}
+
+.printed-route-when {
+  margin-top: 3px;
+  color: var(--color-neutral-600);
+  font-size: calc(12px * var(--sheet-text));
+  font-weight: 500;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.printed-route-arrow {
+  flex-shrink: 0;
+  color: var(--color-terracotta);
+}
+
+/* Where the trip starts and where it finishes, side by side: in sage where
+   the plan says, and dashed where it has not been set. */
+.printed-cover-ends {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  margin-top: 40px;
+}
+
+.printed-cover-end {
+  padding: 20px 22px;
+  border-radius: 28px;
+  background: var(--color-sage-100);
+}
+
+.printed-cover-end-unset {
+  border: 2px dashed var(--color-neutral-300);
+  background: var(--color-neutral-100);
+}
+
+.printed-cover-end-kind {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-sage-800);
+  font-size: calc(11.5px * var(--sheet-text));
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.printed-cover-end-unset .printed-cover-end-kind {
+  color: var(--color-neutral-700);
+}
+
+.printed-cover-end-name {
+  margin-top: 12px;
+  font-size: calc(21px * var(--sheet-text));
+  line-height: 1.25;
+}
+
+.printed-cover-end-when {
+  margin-top: 8px;
+  font-size: calc(14px * var(--sheet-text));
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.printed-cover-end-more {
+  margin-top: 4px;
+  color: var(--color-neutral-700);
+  font-size: calc(13.5px * var(--sheet-text));
+  line-height: 1.45;
+}
+
+/* Where each night is spent, a row for each stay. */
+.printed-sleep-label {
+  margin-top: 36px;
+}
+
+.printed-sleep-label-later {
+  margin-top: 28px;
+}
+
+.printed-sleep {
+  display: grid;
+  grid-template-columns: calc(150px * var(--sheet-text)) minmax(0, 1fr);
+  gap: 16px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--color-neutral-200);
+}
+
+.printed-sleep-when {
+  font-size: calc(14px * var(--sheet-text));
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.printed-sleep-name {
+  font-size: calc(15px * var(--sheet-text));
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.printed-sleep-none .printed-sleep-name {
+  color: var(--color-neutral-600);
+}
+
+.printed-sleep-line {
+  margin-top: 2px;
+  color: var(--color-neutral-600);
+  font-size: calc(13px * var(--sheet-text));
+  line-height: 1.45;
+}
+
+/* A sheet's own heading, over what fills it: "Day by day". */
+.printed-page-title {
+  margin-top: 30px;
+  font-size: calc(36px * var(--sheet-text));
+  line-height: 1.05;
+}
+
+.printed-kicker + .printed-page-title {
+  margin-top: 10px;
+}
+
+/* Every day of the trip on a line: the day, its city and date, its places,
+   and its hours at the far end. */
+.printed-summary {
+  display: grid;
+  grid-template-columns:
+    calc(70px * var(--sheet-text)) calc(150px * var(--sheet-text)) minmax(0, 1fr)
+    calc(104px * var(--sheet-text));
+  gap: 16px;
+  align-items: baseline;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--color-neutral-200);
+}
+
+.printed-summary-day {
+  font-size: calc(14px * var(--sheet-text));
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.printed-summary-city {
+  color: var(--color-terracotta-800);
+  font-size: calc(18px * var(--sheet-text));
+  line-height: 1.25;
+}
+
+.printed-summary-date {
+  margin-top: 3px;
+  color: var(--color-neutral-600);
+  font-size: calc(12.5px * var(--sheet-text));
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.printed-summary-stops {
+  font-size: calc(14px * var(--sheet-text));
+  line-height: 1.45;
+}
+
+.printed-summary-empty {
+  color: var(--color-neutral-600);
+}
+
+.printed-summary-hours {
+  color: var(--color-neutral-700);
+  font-size: calc(13px * var(--sheet-text));
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* On paper narrower than A4 is wide, the hours go under the places, so the
+   places keep the room to be read as a line. */
+@container (max-width: 560px) {
+  .printed-summary {
+    grid-template-columns: calc(56px * var(--sheet-text)) calc(118px * var(--sheet-text)) minmax(0, 1fr);
+    row-gap: 4px;
+  }
+
+  .printed-summary-hours {
+    grid-column: 3;
+    text-align: left;
+  }
+}
+
+/* A day's own heading: which day, in the accent, over the city it is in. */
+.printed-kicker {
+  margin-top: 28px;
+  color: var(--color-terracotta-700);
+  font-size: calc(13px * var(--sheet-text));
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0.06em;
+}
+
+.printed-city {
+  margin-top: 10px;
+  font-size: calc(40px * var(--sheet-text));
+  line-height: 1.25;
+}
+
+/* What the day comes to, in a strip under its name: as many columns as
+   there are numbers, between a rule of ink and a hairline. */
+.printed-stats {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 14px 0;
+  border-top: 2px solid var(--color-ink);
+  border-bottom: 1px solid var(--color-neutral-200);
+}
+
+.printed-stat-label {
+  color: var(--color-neutral-600);
+  font-size: calc(11px * var(--sheet-text));
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.printed-stat-value {
+  margin-top: 7px;
+  font-size: calc(18px * var(--sheet-text));
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* What opens a day's rows on a sheet after its first, where there are no
+   numbers to. */
+.printed-rule {
+  margin-top: 20px;
+  border-top: 2px solid var(--color-ink);
+}
+
+/* The map of the day, in an over rounded frame on the neutral ground. */
+.printed-map {
+  position: relative;
+  flex-shrink: 0;
+  margin: 18px auto 0;
+  overflow: hidden;
+  border-radius: 28px;
+  background: var(--color-neutral-100);
+}
+
+/* A row of the day: the time in a column of its own, the marker, and the
+   rest. The time column is as wide as the longest leg, "12 hr 55 min", and
+   grows with the words. */
+.printed-row {
+  display: grid;
+  grid-template-columns: calc(72px * var(--sheet-text)) 28px minmax(0, 1fr);
+  column-gap: 12px;
+}
+
+.printed-row-at {
+  align-items: start;
+}
+
+/* The room between the rows of a day when no leg stands between them. */
+.printed-gap {
+  padding-top: 14px;
+}
+
+/* A leg: how long, a length of the dotted thread, and the way and how far. */
+.printed-leg-time,
+.printed-leg-words {
+  padding: 6px 0;
+  color: var(--color-neutral-600);
+  font-size: calc(13px * var(--sheet-text));
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.printed-leg-time {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.printed-leg-thread {
+  display: flex;
+  justify-content: center;
+}
+
+.printed-leg-thread > span {
+  width: 2px;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--color-neutral-300) 0 4px,
+    transparent 4px 8px
+  );
+}
+
+/* When a row happens: the time it starts, and under a stop the time it is
+   left. */
+.printed-when {
+  text-align: right;
+}
+
+.printed-when-at {
+  font-size: calc(15px * var(--sheet-text));
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.printed-when-until {
+  margin-top: 2px;
+  color: var(--color-neutral-600);
+  font-size: calc(12.5px * var(--sheet-text));
+  font-weight: 500;
+  line-height: 1.3;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.printed-mark {
+  display: flex;
+  justify-content: center;
+}
+
+/* A stop: its number on a disc of ink, the place in the display face, and
+   what there is to know about it under its name. */
+.printed-badge {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-pill);
+  background: var(--color-ink);
+  color: var(--sheet);
+  font-size: calc(12px * var(--sheet-text));
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.printed-stop-words {
+  min-width: 0;
+  padding-bottom: 4px;
+}
+
+.printed-stop-name {
+  font-size: calc(17px * var(--sheet-text));
+  line-height: 1.25;
+}
+
+.printed-stop-address {
+  margin-top: 3px;
+  color: var(--color-neutral-700);
+  font-size: calc(13px * var(--sheet-text));
+  line-height: 1.4;
+}
+
+.printed-stop-hours {
+  margin-top: 3px;
+  color: var(--color-sage-800);
+  font-size: calc(13px * var(--sheet-text));
+  font-weight: 600;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+
+.printed-stop-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 3px;
+  color: var(--color-terracotta-700);
+  font-size: calc(13px * var(--sheet-text));
+  font-weight: 700;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The glyph on the middle of the sentence's first line. */
+.printed-stop-warning > svg {
+  flex-shrink: 0;
+  margin-top: calc(0.7em - 7px);
+}
+
+.printed-stop-note {
+  max-width: 60ch;
+  margin-top: 6px;
+  padding-left: 8px;
+  border-left: 2px solid var(--color-neutral-300);
+  font-size: calc(13px * var(--sheet-text));
+  line-height: 1.45;
+}
+
+/* Where the day leaves from and where it finishes: a sage square with the
+   map's own glyph for it, and the place on a card of sage. */
+.printed-end-mark {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  border-radius: 6px;
+  background: var(--color-sage-600);
+  color: var(--sheet);
+}
+
+.printed-end-card {
+  padding: 9px 14px;
+  border-radius: 12px;
+  background: var(--color-sage-100);
+}
+
+.printed-end-role {
+  color: var(--color-sage-800);
+  font-size: calc(11px * var(--sheet-text));
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.printed-end-place {
+  margin-top: 5px;
+  font-size: calc(15px * var(--sheet-text));
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.printed-end-address {
+  margin-top: 2px;
+  color: var(--color-neutral-700);
+  font-size: calc(13px * var(--sheet-text));
+  line-height: 1.4;
+}
+
+/* The lines to write on, to the sheet's foot. A rule under each of a column
+   of empty rows, more than the sheet has room for and the rest clipped at
+   its foot, rather than one gradient repeated down the box: a printer can
+   be told to keep a background and still leave a gradient off the page,
+   where a border is ink and always printed. */
+.printed-lines {
+  flex: 1;
+  min-height: 240px;
+  margin: 22px 0 18px;
+  overflow: hidden;
+  border-top: 2px solid var(--color-ink);
+}
+
+.printed-lines > span {
+  box-sizing: border-box;
+  display: block;
+  height: 34px;
+  border-bottom: 1px solid var(--color-neutral-200);
+}
+
+/* A sheet for a printer with no colour in it: everything the accents picked
+   out is in ink, every tint of them is the neutral one, and the pictures
+   are grey. */
+.printed-mono {
+  --color-city-1: var(--color-ink);
+  --color-city-2: var(--color-ink);
+  --color-city-3: var(--color-ink);
+  --color-city-4: var(--color-ink);
+  --color-city-5: var(--color-ink);
+  --color-city-6: var(--color-ink);
+  --color-terracotta: var(--color-ink);
+  --color-terracotta-100: var(--color-neutral-100);
+  --color-terracotta-700: var(--color-ink);
+  --color-terracotta-800: var(--color-ink);
+  --color-terracotta-900: var(--color-ink);
+  --color-sage-100: var(--color-neutral-100);
+  --color-sage-600: var(--color-ink);
+  --color-sage-700: var(--color-ink);
+  --color-sage-800: var(--color-ink);
+  --color-neutral-700: var(--color-ink);
+}
+
+.printed-mono img {
+  filter: grayscale(1);
+}
+
+@media print {
+  .printed-measure {
+    display: none;
+  }
+
+  /* Every sheet after the first starts a page of its own, and each is as
+     tall as the page, a hair under it so that rounding never spills a blank
+     page, which is what puts the sheet's foot at the foot of the page. */
+  .printed-page + .printed-page {
+    break-before: page;
+  }
+
+  .printed-sheet {
+    min-height: var(--page-room, 296mm);
+  }
+
+  .printed-sheet-one-page {
+    height: var(--page-room, 296mm);
+    overflow: hidden;
+  }
+
+  /* A row is never split across two sheets, and a sheet's head is never
+     left at the foot of one with what it heads on the next. */
+  .printed-stop {
+    break-inside: avoid;
+  }
+
+  .printed-sheet > header {
+    break-after: avoid;
+  }
+
+  /* The sheet's ground, the tints and the discs are colour a browser would
+     drop to save ink, and the sheet is made of them. */
+  .printed-trip,
+  .printed-trip * {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}

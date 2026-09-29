@@ -184,6 +184,8 @@ paper and ink.
 - **paper-raised:** stop cards, the trip's row, floating controls, inputs, the search
   panel, menus.
 - **paper-sunken:** the planner's ground, wells, the map gutter, a hovered control.
+- **sheet:** what a printed sheet is drawn on, a step lighter than paper-raised, so a
+  page of it is warm without being a page of ink.
 - **rule:** hairlines and card borders, drawn as ink at low opacity so one value works
   over all three surfaces.
 - **rule-strong:** the border of a control under the pointer, and dashed outlines.
@@ -195,7 +197,8 @@ paper and ink.
 - **sage:** the second accent. 100 and 200 mark today in the day strip, 600 is the marker
   for the ends of a day, 700 draws the public transport route line.
 - **neutral:** the warm greys behind everything, used for the drive tint and the map's
-  own geometry.
+  own geometry. On paper, 100 is the ground of the map and of an end of the trip not yet
+  set, and 800 the words on the pill that counts the stops.
 - **city:** six colours, one for each city a trip goes to, handed out in the order the
   trip reaches them and round again for a seventh: terracotta, sage, ochre, deep clay,
   deep sage and rose clay. They mark which days share a city and nothing else. A city
@@ -227,7 +230,9 @@ for paragraphs, so accent coloured text at body size uses `terracotta-700`.
 
 ## Typography
 
-Two families, no more, and both of them carry Vietnamese. Baloo 2 for display, falling
+Two families, no more, and both of them carry Vietnamese. Paper is the one exception:
+the printed sheets set their display face in Fraunces, which carries Vietnamese too, and
+nothing else does (see Print). Baloo 2 for display, falling
 back to Be Vietnam Pro, system-ui, sans-serif. Be Vietnam Pro for body, falling back to
 system-ui, -apple-system, "Segoe UI", sans-serif. Both are loaded with the latin,
 latin-ext and vietnamese subsets named explicitly.
@@ -710,81 +715,107 @@ says the search is waiting.
 
 ## Print
 
-The printed page is a first class target, not a fallback.
+The printed page is a first class target, not a fallback. The sheets are drawn to the
+design for them, "PlanToGo trip PDF", in everything but the lockup and the map, which
+are the product's own.
 
-One column, full width. No map, no tabs, no controls, no navigation.
+One column. No tabs, no controls, no navigation.
 
 ```
-@page { margin: 16mm; }
+@page { margin: 0; }
 ```
 
-Every stop card sets `break-inside: avoid`. Every day after the first sets
-`break-before: page`.
+The page has no margin of its own. A sheet carries its margins as its own padding, 48px
+over, 56px either side and 32px under on A4, in the same proportion to the page on A5,
+and is drawn on `sheet`, a step lighter than `paper-raised`, which runs to the paper's
+edge. Behind the sheets the page is `sheet` too, so the hair a sheet is kept short of
+its page by reads as more of it. Every row sets `break-inside: avoid`, and every sheet
+after the first sets `break-before: page`.
 
-Surfaces print as unpainted paper. Backgrounds are removed, hairlines drop to 0.5pt in
-neutral 400, and text stays `ink`. Times keep the display face and stay the loudest
-thing on the page.
+The display face on paper is Fraunces at 900, at its softest and its smallest optical
+size, where it is as round and as even as the face the design was drawn in. That face
+carries no Vietnamese and this one does. It is the one exception to two families, on the
+sheets and nowhere else, and it is fetched when a sheet is first drawn rather than with
+every page that could draw one. Body type on paper is Be Vietnam Pro, as everywhere.
+Nothing in the display face on paper is set under 1.25 where a place name can reach it,
+the trip's name included, since the traveller writes it; only the heading over the list
+of days, which is the same three words on every trip, is set tighter. A label over what
+it names is in capitals, tracked wide: the trip and its dates at the head of a sheet,
+"Route", "Where you sleep", the strip's numbers, the ends of the day. Every size on a
+sheet is the design's own at the middle size of words, and the words are printed
+smaller or larger by one factor every size is multiplied by, so a sheet keeps its
+proportions.
 
-A day on paper is read down its times: the trip's name and dates on a line over the
-day's own name, a strip under them saying when it leaves, when it is done, how many
-stops and how long is spent travelling, the map if it was asked for, and then the
-day down a dashed thread with each time in a column of its own on the left, the
-marker beside it, and the place, its address, its hours and the note on it to the
-right. The trip's name, never a city's: a trip's days can be in different cities. So
-the city goes beside each day's own name, its dot and its name in semibold ink ahead
-of its date, "● Hanoi · Tuesday 13 October", on every sheet of the day and on the
-ruled sheet after it, and a day with no city says none. A day longer than a sheet runs
-on to the next under its name, marked continued, with its numbers and map on the first
-alone; the rows are measured and dealt so that a sheet is never fuller than a page,
-and a row is never cut in two. A cover can go in front of the days, the trip's name
-and dates and every day at a glance, and a ruled sheet after each day for writing on.
-A footer on every sheet says it was made with plan2go and which sheet it is of how
-many, counting every sheet.
+The cover: the lockup on the right; "Itinerary" in `terracotta-700` over the trip's name
+at 60px in the display face, its dates, and what it comes to as three pills, the days on
+`terracotta-100`, the cities on `sage-100` and the stops on `neutral-100`. Then its
+route, each stay in a city in order with its dates under it and an arrow in the accent
+on to the next, in a line that wraps rather than squeezing its names; a city come back
+to is a second stay, and a trip kept before days had cities has no route to draw. Then
+where the trip starts and where it finishes, side by side: on `sage-100`, 28px round,
+where the plan says, the place in the display face, the day and when it is left or
+reached, and its address; dashed in `neutral-300` on `neutral-100` where it is not set,
+saying so, with the first or the last stop the plan reaches instead. Then where each
+night is spent. Every day but the last is followed by a night, spent where the next day
+leaves from, or where this one finishes when the next leaves from nowhere, and named
+with the city of the day before it. Nights in one place one after another are one row,
+and nights with nowhere in the plan are one row saying how many.
 
-Every sheet but the cover wears one head: the trip and its dates over what the sheet
-is, the day's number or "Notes", with the day in words beside it and the lockup in the
-corner, so a sheet on its own is placed the same way whichever it is. Under every head,
-the cover's included, a rule of ink 1.5px heavy opens what the sheet holds: the day's
-numbers, its rows on a sheet that carries on, the lines to write on, the cover's days.
-Every other line is a hairline. The strip says when the day is over in the words of
-the row it points at: back by when it ends where it began, finish by when it ends
-somewhere else, done by when it ends at its last stop.
+After the cover, every day of the trip on a line under "Day by day": the day, its city in
+the display face in `terracotta-800` over its date, its places, each name cut to what
+comes before the provider's dash or bracket, and its hours at the far end. On paper
+narrower than A4 is wide, the hours go under the places.
 
-Under a stop, what the place is comes a step apart and what is said about it two: the
-address, then its hours behind a clock, a step smaller; then the traveller's note on a
-hairline rule, and a conflict behind the warning triangle it wears on the card, the
-triangle in the accent, the sentence in ink. A glyph sits on the first line of what it
-leads. The spacing on a sheet is taken from one ladder of four pixel steps, except
-where a line of type is set against a marker, where the offset is whatever puts the
-two on one line. The day's thread starts at the first place the day leaves from and
-ends at the last it reaches, and never runs past either.
+A day's sheet: the head, which day in `terracotta-700` over the city it is in at 40px,
+then a strip of what the day comes to between a rule of ink 2px heavy and a hairline,
+as many columns as there are numbers: when it leaves; when it is over, in the words of
+the row it points at, back by when it ends where it began, finish by when it ends
+somewhere else, done by when it ends at its last stop; how many stops; how long is spent
+travelling; and on a day with walking in it, how far on foot. Then the map if it was
+asked for, and the day down a column of times. The head carries the trip's name and
+never a city's, since a trip's days can be in different cities; the city is the day's
+own heading.
 
-The cities on paper wear the dots they wear on the tabs, in their own colours, which
-mark which days share a city and nothing else, and in ink on a sheet in ink alone,
-where the name beside each dot says which city it is. The cover names the cities in
-its list alone, with no line of them under its dates: a trip through a dozen cities
-has no room for them in one line. In the cover's list the city has a column of its
-own between the date and the places, a stay being days one after another in one
-city, so a city come back to is a second stay: named on the first day of a stay, with a dashed thread in the city's colour
-running down from its dot through the days after it to a smaller dot on the last, so
-a stay is read as one run without the name said on every line. A trip kept before
-days had cities has no column for one. The dot is sized by the words beside it, so it
-grows with them when they are printed larger, and the list's columns are measured in
-the words' own size for the same reason. On paper narrower than a sheet of A4 is wide
-the day and its date share a column, one over the other, so the places keep the room
-to be read as a line.
+The rows of a day: each time in a column of its own on the left, the marker beside it,
+and the rest to the right. A stop is when it is reached over when it is left, its number
+on a disc of ink, and its name in the display face, with its address, its hours in
+`sage-800`, and a conflict in `terracotta-700` behind a circle with a mark of
+exclamation, said in place of the hours since it names them, then the traveller's note
+behind a rule of `neutral-300`. An end of the day is a sage square with the glyph the map
+marks it with, the house where the day starts and the flag where it finishes, and the
+place on a card of `sage-100` under what it is: leave from, finish at, or back at.
+Between two rows, the leg: how long, a length of the dotted thread, and the way and how
+far, which opens the journey in Google Maps. With the legs left off, the rows keep a gap
+of their own.
 
-The map on paper is a picture of the ground and the routes with nothing on them, asked
-for at a centre and a zoom worked out from the day rather than left to the provider, and
-the live map's own markers are laid over it where those numbers put each place: the
-numbered discs for the stops and the sage squares for the ends, the house where the day
-starts and the flag where it finishes. The provider's pins were its own, and drew both
-ends of the day as the same green pin. In ink alone the markers are ink, as every mark
-in the accent is.
+A sheet to write on after a day is headed as the day's sheet is, "Notes" ahead of which
+day, and ruled every 34px in `neutral-200` from a rule of ink to its foot. Every sheet
+ends in the same foot, over a hairline: made with plan2go, as the front door says it,
+and which sheet it is of how many, counting every sheet.
+
+Every run of sheets is dealt by measuring it: the cover, whose rows are the ends of the
+trip and its stays; the list of days; and each day. Rows go onto a sheet under what
+opens it until the next would not fit, then onto a sheet that carries on under the head
+again, marked continued where it picks a list up part way through. A sheet is never
+fuller than a page and a row is never cut in two, and a first sheet whose opening leaves
+no room for even its first row, which small paper can do to the cover, hands the row on
+rather than running past its foot.
+
+The map on paper is a picture of the ground and the routes with nothing on them, wide
+and low, a little under three to one, as wide as the rows in a frame 28px round on
+`neutral-100`. It is asked for at a centre and a zoom worked out from the day rather than
+left to the provider, and the live map's own markers are laid over it where those
+numbers put each place: the numbered discs for the stops and the sage squares for the
+ends, the house where the day starts and the flag where it finishes. The provider's
+pins were its own, and drew both ends of the day as the same green pin.
+
+In ink alone, everything the accents pick out is ink, every tint of them is
+`neutral-100`, and the pictures are grey.
 
 The export is chosen in a window over the whole page, the deepest shadow's one use:
 the choices down a column on the left, first what to export as a row of two pills, the
-days or the cover only, the cover alone being the whole trip at a glance on one page,
+days or the cover only, the cover alone being the trip at a glance, the cover and the
+list of days after it,
 with every choice that is about a day's page faded while it is chosen and kept as it
 was for when the days are wanted again; then the days as chips, every day with
 something on it chosen to begin with, and a word that takes all of them or none, then what goes on the page as boxes with a line under
@@ -800,7 +831,7 @@ one format is in the button's own words, Export PDF.
 
 The file is drawn on the server. The export is spelled out in the address of a page
 that holds the sheets and nothing else, a browser of our own opens that page, waits
-for the sheets to be dealt and every map to arrive, and prints it with the same
+for the sheets to be dealt and every picture on them to arrive, and prints it with the same
 stylesheet the preview is drawn with. The file comes back as a download under the name
 in the field, so what was looked at and what comes out are one thing, the same on
 every reader's machine, and nothing of a print window, no header, no date, no address,
