@@ -59,3 +59,30 @@ export function citiesOf(days: readonly DayPlan[]): readonly DayCity[] {
   }
   return cities;
 }
+
+/** One stay: days one after another in the same city, by where they fall in the trip. */
+export interface CityStay {
+  readonly city: DayCity | null;
+  /** The stay's first day and its last, counted from zero along the trip. */
+  readonly first: number;
+  readonly last: number;
+}
+
+/**
+ * The trip as the stays it is made of, in order: each run of days one after
+ * another in one city. A city left and come back to is two stays, since the
+ * traveller arrives in it twice. Days with no city make a stay of their own,
+ * as they share the same nowhere.
+ */
+export function cityStays(days: readonly DayPlan[]): readonly CityStay[] {
+  const stays: CityStay[] = [];
+  days.forEach((day, index) => {
+    const current = stays[stays.length - 1];
+    if (current !== undefined && sameCity(current.city, day.city)) {
+      stays[stays.length - 1] = { ...current, last: index };
+    } else {
+      stays.push({ city: day.city, first: index, last: index });
+    }
+  });
+  return stays;
+}

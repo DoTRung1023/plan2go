@@ -424,8 +424,15 @@
 
 /* A sheet for a printer with no colour in it: everything the map's colours
    picked out is in ink, and the map itself is grey. Where a wash of a leg's
-   ink lay under its glyph there is a wash of ink. */
+   ink lay under its glyph there is a wash of ink. A city's dot and thread
+   are ink too, and its name beside them says which city. */
 .printed-mono {
+  --color-city-1: var(--color-ink);
+  --color-city-2: var(--color-ink);
+  --color-city-3: var(--color-ink);
+  --color-city-4: var(--color-ink);
+  --color-city-5: var(--color-ink);
+  --color-city-6: var(--color-ink);
   --color-terracotta: var(--color-ink);
   --color-terracotta-700: var(--color-ink);
   --color-terracotta-800: var(--color-ink);

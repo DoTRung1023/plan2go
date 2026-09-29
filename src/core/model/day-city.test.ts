@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { DayCity, DayPlan } from "./day";
-import { citiesOf, cityRun, sameCity } from "./day-city";
+import { citiesOf, cityRun, cityStays, sameCity } from "./day-city";
 
 function city(name: string, providerPlaceId: string | null = `g-${name}`): DayCity {
   return { providerPlaceId, name, position: { lat: 21.03, lng: 105.85 }, color: 0 };
@@ -76,5 +76,33 @@ describe("citiesOf", () => {
 
   it("leaves out days with no city", () => {
     expect(citiesOf([day("d1", null), day("d2", HUE)])).toEqual([HUE]);
+  });
+});
+
+describe("cityStays", () => {
+  it("makes one stay of the days one after another in a city", () => {
+    const days = [day("d1", HANOI), day("d2", HANOI), day("d3", HUE), day("d4", HOI_AN), day("d5", HOI_AN)];
+    expect(cityStays(days)).toEqual([
+      { city: HANOI, first: 0, last: 1 },
+      { city: HUE, first: 2, last: 2 },
+      { city: HOI_AN, first: 3, last: 4 },
+    ]);
+  });
+
+  it("counts a city come back to as a second stay", () => {
+    const days = [day("d1", HANOI), day("d2", HUE), day("d3", HANOI)];
+    expect(cityStays(days).map((stay) => [stay.city?.name, stay.first, stay.last])).toEqual([
+      ["Hanoi", 0, 0],
+      ["Hue", 1, 1],
+      ["Hanoi", 2, 2],
+    ]);
+  });
+
+  it("is one stay in nowhere for a trip with no city", () => {
+    expect(cityStays([day("d1", null), day("d2", null)])).toEqual([{ city: null, first: 0, last: 1 }]);
+  });
+
+  it("is nothing for no days", () => {
+    expect(cityStays([])).toEqual([]);
   });
 });

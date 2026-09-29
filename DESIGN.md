@@ -723,13 +723,29 @@ day's own name, a strip under them saying when it leaves, when it is done, how m
 stops and how long is spent travelling, the map if it was asked for, and then the
 day down a dashed thread with each time in a column of its own on the left, the
 marker beside it, and the place, its address, its hours and the note on it to the
-right. The trip's name, never a city's: a trip's days can be in different cities. A
-day longer than a sheet runs on to the next under its name, marked continued, with
-its numbers and map on the first alone; the rows are measured and dealt so that a
-sheet is never fuller than a page, and a row is never cut in two. A cover can go in
-front of the days, the trip's name and dates and every day at a glance, and a ruled
-sheet after each day for writing on. A footer on every sheet says it was made with
-plan2go and which sheet it is of how many, counting every sheet.
+right. The trip's name, never a city's: a trip's days can be in different cities. So
+the city goes beside each day's own name, its dot and its name in semibold ink ahead
+of its date, "● Hanoi · Tuesday 13 October", on every sheet of the day and on the
+ruled sheet after it, and a day with no city says none. A day longer than a sheet runs
+on to the next under its name, marked continued, with its numbers and map on the first
+alone; the rows are measured and dealt so that a sheet is never fuller than a page,
+and a row is never cut in two. A cover can go in front of the days, the trip's name
+and dates and every day at a glance, and a ruled sheet after each day for writing on.
+A footer on every sheet says it was made with plan2go and which sheet it is of how
+many, counting every sheet.
+
+The cities on paper wear the dots they wear on the tabs, in their own colours, which
+mark which days share a city and nothing else, and in ink on a sheet in ink alone,
+where the name beside each dot says which city it is. A trip that moves has its
+journey on the cover, under its dates: every stay in order, a stay being days one
+after another in one city, so a city come back to is a second stay. Each is its dot,
+its name in the display face and how many days it lasts, joined to the next by the
+dashed thread a day hangs on. A trip in one city has no journey, since the list says
+it. In the cover's list the city has a column of its own between the date and the
+places: named on the first day of a stay, with a dashed thread in the city's colour
+running down from its dot through the days after it to a smaller dot on the last, so
+a stay is read as one run without the name said on every line. A trip kept before
+days had cities has no column for one.
 
 The map on paper is a picture of the ground and the routes with nothing on them, asked
 for at a centre and a zoom worked out from the day rather than left to the provider, and
