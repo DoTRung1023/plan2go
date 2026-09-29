@@ -32,15 +32,19 @@ export interface ExportRequest {
   readonly ink: Ink;
 }
 
-/** What the export is until anything is chosen. */
+/**
+ * What the export is until anything is chosen: everything there is to put on
+ * the page, the cover and a ruled sheet after each day among it, so what the
+ * window opens on is the whole trip and a choice only ever takes away.
+ */
 export const DEFAULT_EXPORT: Omit<ExportRequest, "dayIds"> = {
-  cover: false,
+  cover: true,
   map: true,
   mapSize: "large",
   notes: true,
   legs: true,
   addresses: true,
-  ruled: false,
+  ruled: true,
   hours: true,
   paper: "a4",
   orientation: "portrait",

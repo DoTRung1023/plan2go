@@ -191,13 +191,13 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
   const [chosen, setChosen] = useState<ReadonlySet<string>>(
     () => new Set(printable.map((day) => day.plan.id)),
   );
-  const [cover, setCover] = useState(false);
-  const [map, setMap] = useState(true);
+  const [cover, setCover] = useState(DEFAULT_EXPORT.cover);
+  const [map, setMap] = useState(DEFAULT_EXPORT.map);
   const [mapSize, setMapSize] = useState<MapSize>(DEFAULT_EXPORT.mapSize);
-  const [notes, setNotes] = useState(true);
-  const [legs, setLegs] = useState(true);
-  const [addresses, setAddresses] = useState(true);
-  const [ruled, setRuled] = useState(false);
+  const [notes, setNotes] = useState(DEFAULT_EXPORT.notes);
+  const [legs, setLegs] = useState(DEFAULT_EXPORT.legs);
+  const [addresses, setAddresses] = useState(DEFAULT_EXPORT.addresses);
+  const [ruled, setRuled] = useState(DEFAULT_EXPORT.ruled);
   const [hours, setHours] = useState(DEFAULT_EXPORT.hours);
   const [paper, setPaper] = useState<PaperSize>(DEFAULT_EXPORT.paper);
   const [orientation, setOrientation] = useState<Orientation>(DEFAULT_EXPORT.orientation);
