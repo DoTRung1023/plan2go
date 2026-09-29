@@ -5,7 +5,10 @@ import type { Ink, MapSize, Orientation, PaperSize, TextSize } from "./paper";
  * because there is one: the browser's print window, where saving as a PDF is.
  */
 export interface ExportRequest {
-  /** The days to put on paper, in the trip's own order, each on a sheet of its own. */
+  /**
+   * The days to put on paper, in the trip's own order, each on a sheet of its
+   * own. None when the cover alone is asked for, as the trip at a glance.
+   */
   readonly dayIds: readonly string[];
   /** A sheet in front of the days: the trip's name, its dates, and every day at a glance. */
   readonly cover: boolean;

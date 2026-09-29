@@ -71,19 +71,23 @@ function Option({
   note,
   on,
   onToggle,
+  disabled = false,
 }: {
   readonly label: string;
   readonly note: string;
   readonly on: boolean;
   readonly onToggle: () => void;
+  /** Of no consequence for now, and drawn faded to say so. */
+  readonly disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       role="checkbox"
       aria-checked={on}
+      disabled={disabled}
       onClick={onToggle}
-      className="flex w-full items-start gap-[11px] rounded-chip px-[10px] py-[9px] text-left hover:bg-neutral-200 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta"
+      className="flex w-full items-start gap-[11px] rounded-chip px-[10px] py-[9px] text-left hover:bg-neutral-200 disabled:opacity-45 disabled:hover:bg-transparent focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta"
     >
       <span
         aria-hidden="true"
@@ -112,6 +116,7 @@ function Choice<T extends string>({
   value,
   onChange,
   disabled = false,
+  heading = false,
 }: {
   readonly label: string;
   readonly options: readonly { readonly value: T; readonly label: string }[];
@@ -119,14 +124,16 @@ function Choice<T extends string>({
   readonly onChange: (value: T) => void;
   /** Of no consequence for now, and drawn faded to say so. */
   readonly disabled?: boolean;
+  /** A group of its own, under a heading as the other groups are, rather than a row in one. */
+  readonly heading?: boolean;
 }) {
   return (
     <div className={disabled ? "opacity-45" : ""}>
-      <p className="text-micro font-semibold text-ink-muted">{label}</p>
+      <p className={heading ? HEADING : "text-micro font-semibold text-ink-muted"}>{label}</p>
       <div
         role="radiogroup"
         aria-label={label}
-        className="mt-[6px] grid auto-cols-fr grid-flow-col gap-[7px]"
+        className={`${heading ? "mt-[11px]" : "mt-[6px]"} grid auto-cols-fr grid-flow-col gap-[7px]`}
       >
         {options.map((option) => (
           <button
@@ -162,11 +169,12 @@ interface ExportDialogProps {
  *
  * A layer over the whole viewport, which is the one thing the deepest shadow
  * is kept for: the choices down the left and, on the right, the sheets
- * exactly as they will print, redrawn as each choice changes. Any days at
- * all can be chosen, so one day, a run of days and the whole trip are the
- * same control rather than three; a cover in front of them; what goes on
- * each sheet; a sheet to write on after each day; and what the file is
- * called. There is one format, so the button names it and nothing asks.
+ * exactly as they will print, redrawn as each choice changes. First, the
+ * days or the cover alone, which is the whole trip at a glance on one page.
+ * Any days at all can be chosen, so one day, a run of days and the whole
+ * trip are the same control rather than three; a cover in front of them;
+ * what goes on each sheet; a sheet to write on after each day; and what the
+ * file is called. There is one format, so the button names it and nothing asks.
  *
  * The preview is the file. The export is sent to the server, where a browser
  * of our own draws the same sheets with the same stylesheet and prints them,
@@ -191,6 +199,12 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
   const [chosen, setChosen] = useState<ReadonlySet<string>>(
     () => new Set(printable.map((day) => day.plan.id)),
   );
+  /**
+   * The cover alone, the trip at a glance, in place of the days. Everything
+   * chosen for the days is kept as it was, faded, for when the days are
+   * wanted again.
+   */
+  const [coverOnly, setCoverOnly] = useState(false);
   const [cover, setCover] = useState(DEFAULT_EXPORT.cover);
   const [map, setMap] = useState(DEFAULT_EXPORT.map);
   const [mapSize, setMapSize] = useState<MapSize>(DEFAULT_EXPORT.mapSize);
@@ -218,10 +232,12 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
 
   const picked = printable.filter((day) => chosen.has(day.plan.id));
   const allPicked = picked.length === printable.length && printable.length > 0;
+  /** Nothing to put on paper: no day chosen, and not the cover alone either. */
+  const nothing = !coverOnly && picked.length === 0;
 
   const request: ExportRequest = {
-    dayIds: picked.map((day) => day.plan.id),
-    cover,
+    dayIds: coverOnly ? [] : picked.map((day) => day.plan.id),
+    cover: coverOnly || cover,
     map,
     mapSize,
     notes,
@@ -255,6 +271,7 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
       .map((day, at) => (chosen.has(day.plan.id) ? at + 1 : null))
       .filter((at): at is number => at !== null),
     available: printable.length,
+    coverOnly,
   });
   const fileName = (typedName ?? suggestedName).trim() || suggestedName;
   /** The name has been cleared, so the export would fall back to the suggestion. */
@@ -448,12 +465,27 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
         <div className="export-body flex min-h-0 flex-1 flex-col border-t border-rule lg:flex-row">
           <aside className="export-chrome flex max-h-[55%] shrink-0 flex-col border-b border-rule lg:max-h-none lg:w-[300px] lg:border-r lg:border-b-0">
             <div className="scroll-quiet min-h-0 flex-1 overflow-y-auto px-6 pt-5 pb-[10px]">
+              <Choice
+                heading
+                label="What to export"
+                options={[
+                  { value: "days", label: "Days" },
+                  { value: "cover", label: "Cover only" },
+                ]}
+                value={coverOnly ? "cover" : "days"}
+                onChange={choose((value: "days" | "cover"): void => {
+                  setCoverOnly(value === "cover");
+                })}
+              />
+              <div className={DIVIDER} />
+
               <p className={HEADING}>Which days</p>
               <div className={CHIPS}>
                 {printable.length > 1 ? (
                   <button
                     type="button"
                     aria-pressed={allPicked}
+                    disabled={coverOnly}
                     onClick={toggleAll}
                     className={`${CHIP} ${allPicked ? CHIP_ON : CHIP_OFF}`}
                   >
@@ -468,7 +500,7 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
                       key={day.plan.id}
                       type="button"
                       aria-pressed={on}
-                      disabled={empty}
+                      disabled={empty || coverOnly}
                       title={empty ? "Nothing on this day yet" : undefined}
                       aria-label={`Day ${String(index + 1)}, ${formatDayTab(day.plan.date)}`}
                       onClick={() => {
@@ -488,8 +520,9 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
                 <Option
                   label="Cover page"
                   note="Name, dates and every day"
-                  on={cover}
+                  on={coverOnly || cover}
                   onToggle={flip(setCover, cover)}
+                  disabled={coverOnly}
                 />
               </div>
 
@@ -502,36 +535,42 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
                   note="At the top of each day"
                   on={map}
                   onToggle={flip(setMap, map)}
+                  disabled={coverOnly}
                 />
                 <Option
                   label="Notes on stops"
                   note="What you wrote"
                   on={notes}
                   onToggle={flip(setNotes, notes)}
+                  disabled={coverOnly}
                 />
                 <Option
                   label="How you get between stops"
                   note="Mode, time and distance"
                   on={legs}
                   onToggle={flip(setLegs, legs)}
+                  disabled={coverOnly}
                 />
                 <Option
                   label="Street addresses"
                   note="In the local language"
                   on={addresses}
                   onToggle={flip(setAddresses, addresses)}
+                  disabled={coverOnly}
                 />
                 <Option
                   label="Opening hours"
                   note="When each place is open that day"
                   on={hours}
                   onToggle={flip(setHours, hours)}
+                  disabled={coverOnly}
                 />
                 <Option
                   label="Notes page"
                   note="A blank lined page after each day"
                   on={ruled}
                   onToggle={flip(setRuled, ruled)}
+                  disabled={coverOnly}
                 />
               </div>
 
@@ -566,7 +605,7 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
                   ]}
                   value={mapSize}
                   onChange={choose(setMapSize)}
-                  disabled={!map}
+                  disabled={!map || coverOnly}
                 />
                 <Choice
                   label="Text size"
@@ -632,7 +671,7 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
             <div className="shrink-0 border-t border-rule px-6 pt-[14px] pb-[18px]">
               <button
                 type="button"
-                disabled={picked.length === 0 || exporting}
+                disabled={nothing || exporting}
                 onClick={() => {
                   void exportPdf();
                 }}
@@ -665,15 +704,17 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
                 <p className={HEADING}>Preview</p>
                 <span aria-hidden="true" className="h-px flex-1 bg-rule-strong/60" />
                 <p className="text-meta/none text-ink-muted">
-                  {picked.length === 0
-                    ? "No days chosen"
-                    : `${allPicked && picked.length > 1 ? "All " : ""}${String(picked.length)} ${dayWord}${pageCount === null ? "" : ` · ${pageCount}`}`}
+                  {coverOnly
+                    ? `Cover only${pageCount === null ? "" : ` · ${pageCount}`}`
+                    : picked.length === 0
+                      ? "No days chosen"
+                      : `${allPicked && picked.length > 1 ? "All " : ""}${String(picked.length)} ${dayWord}${pageCount === null ? "" : ` · ${pageCount}`}`}
                 </p>
               </div>
               {/* Its height is kept while there is nothing to say, so the sheets
                   do not shift when the first name arrives. */}
               <p className="mt-[10px] ml-[2px] min-h-[10.5px] text-label font-semibold text-ink-faint">
-                {picked.length === 0 ? "" : (onPage ?? "")}
+                {nothing ? "" : (onPage ?? "")}
               </p>
             </div>
 
@@ -682,7 +723,7 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
               onScroll={placeOnPage}
               className="export-scroll scroll-quiet min-h-0 flex-1 overflow-y-auto px-6 pb-7"
             >
-              {picked.length === 0 ? (
+              {nothing ? (
                 <p className="py-10 text-center text-small text-ink-muted">
                   Nothing to show until a day is chosen.
                 </p>

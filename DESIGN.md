@@ -783,8 +783,11 @@ ends of the day as the same green pin. In ink alone the markers are ink, as ever
 in the accent is.
 
 The export is chosen in a window over the whole page, the deepest shadow's one use:
-the choices down a column on the left, the days as chips, every day with something on it
-chosen to begin with, and a word that takes all of them or none, then what goes on the page as boxes with a line under
+the choices down a column on the left, first what to export as a row of two pills, the
+days or the cover only, the cover alone being the whole trip at a glance on one page,
+with every choice that is about a day's page faded while it is chosen and kept as it
+was for when the days are wanted again; then the days as chips, every day with
+something on it chosen to begin with, and a word that takes all of them or none, then what goes on the page as boxes with a line under
 each saying what it means, every one of them ticked to begin with, the cover and the
 ruled sheet after each day among them, so a choice only ever takes away, then the paper as rows of pills, its size, which way up,
 how much of it the map takes, how big the words are and whether it is in the map's

@@ -58,8 +58,13 @@ export function exportFileName(input: {
   readonly dayNumbers: readonly number[];
   /** How many days could have been chosen. The whole trip needs no qualifier. */
   readonly available: number;
+  /** The cover alone is in the file, whichever days are chosen. */
+  readonly coverOnly: boolean;
 }): string {
   const named = tidy(input.title) || tidy(input.cityName ?? "") || "Trip";
+  if (input.coverOnly) {
+    return `${named} - Cover`;
+  }
   if (input.dayNumbers.length === 0 || input.dayNumbers.length === input.available) {
     return named;
   }

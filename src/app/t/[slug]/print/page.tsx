@@ -77,7 +77,9 @@ export default async function PrintPage({ params, searchParams }: PrintPageProps
   }
   const days = await computeTrip(trip, await tripTravelProvider(trip));
   const chosen = chosenDays(days, request);
-  if (chosen.length === 0) {
+  // A cover alone is a page of its own, the trip at a glance; no days and
+  // no cover is no page at all.
+  if (chosen.length === 0 && !request.cover) {
     notFound();
   }
   const maps = request.map ? await drawnMaps(chosen) : {};

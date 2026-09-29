@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { exportFileName } from "./export-name";
 
-const trip = { title: "Hanoi in five days", cityName: "Hanoi", available: 5 };
+const trip = { title: "Hanoi in five days", cityName: "Hanoi", available: 5, coverOnly: false };
 
 describe("exportFileName", () => {
   it("names one day by its number in the trip", () => {
@@ -23,6 +23,12 @@ describe("exportFileName", () => {
   it("counts them once there are more than a few", () => {
     expect(exportFileName({ ...trip, dayNumbers: [1, 3, 4, 5] })).toBe(
       "Hanoi in five days - 4 days",
+    );
+  });
+
+  it("says the cover alone, whichever days were chosen before it", () => {
+    expect(exportFileName({ ...trip, dayNumbers: [2, 3], coverOnly: true })).toBe(
+      "Hanoi in five days - Cover",
     );
   });
 

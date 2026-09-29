@@ -47,8 +47,13 @@ describe("parseExportRequest", () => {
     expect(parseExportRequest(query)).toBeNull();
   });
 
-  it("refuses no days at all", () => {
-    const query = { ...fromQuery(exportRequestQuery(request)), days: "" };
+  it("reads the cover alone, with no days, as the trip at a glance", () => {
+    const coverOnly = { ...request, dayIds: [], cover: true };
+    expect(parseExportRequest(fromQuery(exportRequestQuery(coverOnly)))).toEqual(coverOnly);
+  });
+
+  it("refuses no days and no cover, which is no page at all", () => {
+    const query = { ...fromQuery(exportRequestQuery(request)), days: "", cover: "0" };
     expect(parseExportRequest(query)).toBeNull();
   });
 

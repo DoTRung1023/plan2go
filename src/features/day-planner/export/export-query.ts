@@ -2,9 +2,9 @@ import {
   array,
   enum as enumOf,
   maxLength,
-  minLength,
   object,
   pipe,
+  refine,
   regex,
   safeParse,
   string,
@@ -37,13 +37,17 @@ const flag = pipe(
 /** A day's id as the trip gives it, and nothing that could be read as anything else. */
 const dayId = string().check(regex(/^[A-Za-z0-9_-]{1,64}$/));
 
+/**
+ * Some days, or none when the cover alone is asked for, which is the whole
+ * trip at a glance on the one page. Never neither, which is no page at all.
+ */
 const schema = object({
   days: pipe(
     pipe(
       string(),
       transform((value) => value.split(",").filter((id) => id !== "")),
     ),
-    array(dayId).check(minLength(1), maxLength(60)),
+    array(dayId).check(maxLength(60)),
   ),
   cover: flag,
   map: flag,
@@ -57,7 +61,7 @@ const schema = object({
   orientation: enumOf(["portrait", "landscape"]),
   text: enumOf(["small", "medium", "large"]),
   ink: enumOf(["colour", "mono"]),
-});
+}).check(refine((request) => request.days.length > 0 || request.cover));
 
 const onOff = (on: boolean): string => (on ? "1" : "0");
 
