@@ -582,7 +582,8 @@ export function PlaceSearch({
   const listed = visible.length > 0;
   /** The quick searches, on an empty field, where there is a city to find them in. */
   const chips = !typed.searched && dayCity !== null;
-  const shown = placesOpen && (chips || listed || line !== null);
+  /** Whether the panel under the quick searches has anything to hold. */
+  const panelled = listed || line !== null || addError !== null;
   const busy = typed.searching || lookingUp !== null;
 
   return (
@@ -694,52 +695,56 @@ export function PlaceSearch({
           </button>
         )}
 
-        {/* Hung from the bar itself, as the city panel is, so the two are
-            the same width and the same distance under it. */}
-        {shown ? (
-          <div className="search-panel">
-            <div ref={watchList} className="search-list scroll-line">
-              {chips ? (
-                <QuickSearches
-                  chosen={picked}
-                  onChoose={(next) => {
-                    setPicked(next);
-                    setActive(0);
-                    setLookError(null);
-                  }}
-                />
-              ) : null}
+        {/* Hung from the bar itself, as the city panel is, so all of it is
+            the bar's width: the quick searches first, standing on the map on
+            their own rather than in the panel, and the panel under them. */}
+        {placesOpen && (chips || panelled) ? (
+          <div className="search-under">
+            {chips ? (
+              <QuickSearches
+                chosen={picked}
+                onChoose={(next) => {
+                  setPicked(next);
+                  setActive(0);
+                  setLookError(null);
+                }}
+              />
+            ) : null}
 
-              {line === null ? null : <p className="search-line">{line}</p>}
+            {panelled ? (
+              <div className="search-panel">
+                <div ref={watchList} className="search-list scroll-line">
+                  {line === null ? null : <p className="search-line">{line}</p>}
 
-              {listed ? (
-                <PlaceRows
-                  listId={listId}
-                  heading={heading}
-                  label={typed.searched ? "Places that match" : heading}
-                  places={visible}
-                  activeIndex={activeIndex}
-                  onActive={setActive}
-                  onChoose={choose}
-                  onAdd={addNow}
-                  adding={adding}
-                  onTheDay={(place) =>
-                    added.has(place.providerPlaceId) || onTheTrip.has(place.providerPlaceId)
-                  }
-                  dayName={dayName}
-                />
-              ) : null}
+                  {listed ? (
+                    <PlaceRows
+                      listId={listId}
+                      heading={heading}
+                      label={typed.searched ? "Places that match" : heading}
+                      places={visible}
+                      activeIndex={activeIndex}
+                      onActive={setActive}
+                      onChoose={choose}
+                      onAdd={addNow}
+                      adding={adding}
+                      onTheDay={(place) =>
+                        added.has(place.providerPlaceId) || onTheTrip.has(place.providerPlaceId)
+                      }
+                      dayName={dayName}
+                    />
+                  ) : null}
 
-              {addError === null ? null : (
-                <Notice role="alert" size="meta" className="mx-[4px] mt-1">
-                  {addError}
-                </Notice>
-              )}
-            </div>
+                  {addError === null ? null : (
+                    <Notice role="alert" size="meta" className="mx-[4px] mt-1">
+                      {addError}
+                    </Notice>
+                  )}
+                </div>
+              </div>
+            ) : null}
           </div>
         ) : null}
       </div>
-
     </div>
   );
 }

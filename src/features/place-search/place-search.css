@@ -339,6 +339,26 @@
   box-shadow: var(--search-lift);
 }
 
+/* What hangs under the bar for places: the quick searches, standing on the
+   map on their own, and under them the panel of places, each 8px under what
+   is above it and both exactly the bar's width. The city panel hangs on its
+   own, since it has no quick searches over it. */
+.search-under {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  left: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.search-under > .search-panel {
+  position: relative;
+  top: auto;
+}
+
 /* Where the rows scroll. Only the bar's own width on the right: the room a
    row leaves beside whatever sits at its end is the row's own, so it can
    match what that mark has on its other side. */
@@ -532,21 +552,22 @@
   color: var(--color-ink-faint);
 }
 
-/* The quick searches at the top of the place panel, drawn to design 10c of
-   "PlanToGo quick search options": one row that scrolls sideways, fading out
-   under a round arrow wherever there is more of it. */
-.search-kinds {
-  padding: 8px 0 10px;
-}
-
+/* The quick searches between the bar and the place panel, drawn to design
+   10c of "PlanToGo quick search options": one row on the map itself, the
+   bar's width, that scrolls sideways, fading out under a round arrow wherever
+   there is more of it. */
 .search-kinds-box {
   position: relative;
 }
 
+/* The row stands where the bar's edges do. Its padding is room for the
+   chips' shadows, which a row that scrolls would otherwise cut off, and is
+   taken back by its margin so the chips line up with the bar all the same. */
 .search-kinds-row {
   display: flex;
   gap: 6px;
-  padding: 0 7px;
+  margin: -2px -6px -8px;
+  padding: 2px 6px 8px;
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -555,9 +576,10 @@
   display: none;
 }
 
-/* A chip: the bar's surface inside a faint edge, taking the accent's edge
-   under the pointer, and pressing in a little when pressed. Held down, it
-   takes the city pill's colours inside the accent's edge. */
+/* A chip: the bar's surface inside a faint edge, over the map on the bar's
+   own resting shadow at a smaller size, taking the accent's edge under the
+   pointer, and pressing in a little when pressed. Held down, it takes the
+   city pill's colours inside the accent's edge. */
 .search-kind {
   display: flex;
   flex: none;
@@ -567,6 +589,7 @@
   border: 1px solid var(--search-ink-14);
   border-radius: var(--radius-pill);
   background: var(--search-surface);
+  box-shadow: 0 2px 6px var(--search-ink-10);
   color: var(--color-ink);
   font-size: var(--text-meta);
   font-weight: 600;
@@ -600,7 +623,8 @@
 }
 
 /* The round arrow over either end of the row, there only while there is
-   more of the row that way. */
+   more of the row that way, on the chips' shadow since it stands on the map
+   with them. */
 .search-kind-arrow {
   position: absolute;
   top: 50%;
@@ -612,6 +636,7 @@
   border: 1px solid var(--search-ink-12);
   border-radius: var(--radius-pill);
   background: var(--search-surface);
+  box-shadow: 0 2px 6px var(--search-ink-10);
   color: var(--color-ink);
   cursor: pointer;
   transform: translateY(-50%);

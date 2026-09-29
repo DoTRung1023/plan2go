@@ -29,7 +29,8 @@ interface QuickSearchesProps {
 /**
  * The quick searches, one for every kind of place in the order they are
  * named, in one row that scrolls sideways rather than wrapping, so they take a
- * single line of the panel however many there are. A press lists the best
+ * single line between the bar and the panel under it however many there are,
+ * standing on the map rather than in the panel. A press lists the best
  * known of that kind in the city, found by what the places are rather than by
  * what they are called, so "Park" lists parks and not the Park Hyatt. Drawn to
  * design 10c of "PlanToGo quick search options"; the look and the press are

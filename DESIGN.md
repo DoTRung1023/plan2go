@@ -537,45 +537,50 @@ The panels, the places the field finds and the cities the pill offers, hold the
 product's own list rather than the file's, drawn from one set of classes in
 `place-search.css`, so the two cannot drift apart. The panels themselves are the bar's,
 so the bar and what it opens read as one thing: each hangs from the bar, exactly its
-width and 8px under it, on the bar's surface inside an edge of ink at 10 percent at the
-`panel` radius, at the same lift as the bar in use, there or not there with no
-movement, and no taller than 330px, past which it scrolls.
+width and 8px under it, or 8px under the quick searches where they stand between the
+two, on the bar's surface inside an edge of ink at 10 percent at the `panel` radius, at
+the same lift as the bar in use, there or not there with no movement, and no taller
+than 330px, past which it scrolls.
 
-The place panel: before anything is typed, at its top and with no heading, a chip for
-each kind of place: Café, Street food, Museum, Temple, Market, Viewpoint, Park,
-Nightlife, Hotel, Shopping. A press lists the best known places of that kind in the
-day's city under "Parks in Hanoi", in place of the city's best known, and holds the chip
-down; pressing it again lets go and the city's best known come back. The kind is found by
+The quick searches: before anything is typed, between the bar and the place panel and
+outside the panel, standing on the map on their own, a chip for each kind of place:
+Café, Street food, Museum, Temple, Market, Viewpoint, Park, Nightlife, Hotel, Shopping.
+A press lists the best known places of that kind in the day's city under "Parks in
+Hanoi", in place of the city's best known, and holds the chip down; pressing it again lets go and the city's best known come back. The kind is found by
 what the places are, not by what they are called, which is why it is a chip and not a
 word typed: typed, "Park" finds the Park Hyatt and car parks. While the kind is being
 asked about the panel says "Looking for parks in Hanoi." They stand in one row that
-scrolls sideways rather than wrapping, with no scrollbar, 8px under the panel's top and 10px over the heading beneath.
+scrolls sideways rather than wrapping, with no scrollbar, exactly the bar's width with
+its first chip on the bar's edge, 8px under the bar and 8px over the panel.
 
 The row is drawn to design 10c of "PlanToGo quick search options", in the search's own
 palette in `place-search.css`, since it is the search's and not the list's. Each chip
-is a pill of the bar's surface inside an edge of ink at 14 percent, a 14px icon of what
-it finds before its word at the meta step in 600 `ink`, a step under a place's name so
-the chips weigh less than the list under them. Under the pointer its edge takes the
-accent; pressed, it sinks to 95 percent over 0.12s and comes back as it is let go, as
+is a pill of the bar's surface inside an edge of ink at 14 percent, on a small shadow of
+ink at 10 percent, `0 2px 6px`, since it stands on the map and not on the panel, a 14px
+icon of what it finds before its word at the meta step in 600 `ink`, a step under a
+place's name so the chips weigh less than the list under them. Under the pointer its
+edge takes the accent; pressed, it sinks to 95 percent over 0.12s and comes back as it is let go, as
 the city pill does; held down, it takes the city pill's colours, its
 tint with the pill's brown words, inside the accent's edge. Colours and edges change
 over 0.15s. Where there is more of the row beyond an end the chips fade out towards
 it, over 56px on the left and 80px on the right, and a 30px round arrow of the
-surface inside an edge of ink at 12 percent, with no shadow, stands 4px in from that
-end, warming to the row tint under the pointer, and moves the row on by 240px. The
+surface inside an edge of ink at 12 percent, on the chips' shadow, stands 4px in from
+that end, warming to the row tint under the pointer, and moves the row on by 240px. The
 arrows never take the cursor from the field; a keyboard
-goes from chip to chip instead, each scrolled into view as it takes the focus. Under
-the chips, the city's best known places headed "Popular in Hanoi", and once
-something is typed, "Matching places", each heading at the
-label step in `ink-muted`. A row has a pin in the accent at its front, the name at the
+goes from chip to chip instead, each scrolled into view as it takes the focus.
+
+The place panel: under the chips, the city's best known places headed "Popular in
+Hanoi", and once something is typed and the chips have gone, "Matching places", each
+heading at the label step in `ink-muted`. A row has a pin in the accent at its front, the name at the
 small step in 600 over its address at the micro step, the same as a start or end of
 the day in the planner beside the map, both wrapping rather than cut short, and at its
 end a plus on a 26px round, taking the pill's tint under the pointer, that puts the
 place on the day without the look, or a sage tick once the place is on the day. The row
 under the pointer or the arrow keys takes the search's warm tint, and the row itself
-opens the place. Nothing matching says "Nothing
-matched. Try the name of the place, or the street it is on." Adding says so at the foot
-of the map, as moving does.
+opens the place. Nothing matching says "Nothing matched. Try the name of the place, or
+the street it is on." Adding is said to a screen reader and nowhere on the page, as
+moving is, the same sentence whether the plus or the sheet added it: the day's list
+takes the place, which is how it is told.
 
 The city panel: over the rows, a field of its own for typing a city, the slim pill a
 start or end of the day is searched for in, 36px on `paper` inside a hairline that takes
