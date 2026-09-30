@@ -1,8 +1,15 @@
 import type { DayPlan } from "@/core/model/day";
 import type { StaticMapFrame } from "@/adapters/maps/static-map-frame";
 import { placeInFrame, STATIC_MAP_SIZE } from "@/adapters/maps/static-map-frame";
-import { ENDPOINT_GLYPH, ENDPOINT_MARKS, endpointMarks } from "./dom-marker";
+import { ENDPOINT_MARKS, endpointMarks } from "./dom-marker";
 import "./trip-map.css";
+
+/**
+ * An end's glyph in its square on the printed map, where the square is smaller
+ * than the live map's and the glyph with it, widened as it narrows so it stays
+ * the lines of a house and a flag.
+ */
+const PICTURE_GLYPH = { size: 11, strokeWidth: 3.25 } as const;
 
 interface PictureMarkersProps {
   readonly plan: DayPlan;
@@ -16,13 +23,15 @@ interface PictureMarkersProps {
  * The live map's markers, laid over a picture of the day: a numbered disc for
  * each stop and the sage square with its glyph for each end, in the classes
  * the live map draws them with, so a place is the same mark on paper as on
- * screen and the start of the day is told from its end.
+ * screen and the start of the day is told from its end. Smaller than on
+ * screen: the layer's own class sizes them for a picture that is a strip
+ * across the sheet rather than the whole window.
  *
  * Placed in the picture's own pixels, the ones its frame was worked out in,
  * and the whole layer scaled to the width the picture is drawn at, so each
- * marker is as big against the map as it is on screen. Ends first and stops
- * over them, the order the live map lays them in. Nothing here is read out:
- * the picture's own description says what the map shows.
+ * marker keeps its size against the map whatever width that is. Ends first
+ * and stops over them, the order the live map lays them in. Nothing here is
+ * read out: the picture's own description says what the map shows.
  */
 export function PictureMarkers({ plan, frame, width }: PictureMarkersProps) {
   const at = (position: { readonly lat: number; readonly lng: number }) => {
@@ -32,7 +41,7 @@ export function PictureMarkers({ plan, frame, width }: PictureMarkersProps) {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute top-0 left-0 origin-top-left"
+      className="trip-map-picture pointer-events-none absolute top-0 left-0 origin-top-left"
       style={{
         width: STATIC_MAP_SIZE.width,
         height: STATIC_MAP_SIZE.height,
@@ -47,11 +56,11 @@ export function PictureMarkers({ plan, frame, width }: PictureMarkersProps) {
         >
           <svg
             viewBox="0 0 24 24"
-            width={ENDPOINT_GLYPH.size}
-            height={ENDPOINT_GLYPH.size}
+            width={PICTURE_GLYPH.size}
+            height={PICTURE_GLYPH.size}
             fill="none"
             stroke="currentColor"
-            strokeWidth={ENDPOINT_GLYPH.strokeWidth}
+            strokeWidth={PICTURE_GLYPH.strokeWidth}
             strokeLinecap="round"
             strokeLinejoin="round"
           >

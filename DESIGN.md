@@ -138,7 +138,7 @@ components:
   endpoint-marker:
     backgroundColor: "{colors.sage-ramp.600}"
     textColor: "{colors.paper}"
-    rounded: "9px 9px 9px 3px"
+    rounded: "11px 11px 11px 3.5px"
   map-control:
     backgroundColor: "{colors.paper-raised}"
     textColor: "{colors.ink-muted}"
@@ -820,8 +820,10 @@ and low, a little under three to one, as wide as the rows in a frame 28px round 
 `neutral-100`. It is asked for at a centre and a zoom worked out from the day rather than
 left to the provider, and the live map's own markers are laid over it where those
 numbers put each place: the numbered discs for the stops and the sage squares for the
-ends, the house where the day starts and the flag where it finishes. The provider's
-pins were its own, and drew both ends of the day as the same green pin.
+ends, the house where the day starts and the flag where it finishes. On paper they
+are drawn smaller, 21px where the live map's are 26px, since the picture is a strip
+across the sheet rather than the whole window. The provider's pins were its own, and
+drew both ends of the day as the same green pin.
 
 In ink alone, everything the accents pick out is ink, every tint of them is
 `neutral-100`, and the pictures are grey.

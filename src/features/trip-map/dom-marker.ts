@@ -145,12 +145,13 @@ export const ENDPOINT_MARKS: Readonly<
 };
 
 /**
- * How an end's glyph is drawn in its marker, wherever the marker is. The width
- * is in the glyph's own 24 units, which the size divides down: at this size a
- * stroke drawn as thin as the marker is small would be a smudge rather than
- * the lines of a house, so it is widened as the glyph narrows.
+ * How an end's glyph is drawn in its marker on the live map. The width is in
+ * the glyph's own 24 units, which the size divides down: a stroke drawn as
+ * thin as a small marker is small would be a smudge rather than the lines of
+ * a house, so it is widened as the glyph narrows. The printed map, whose
+ * marks are smaller, keeps its own.
  */
-export const ENDPOINT_GLYPH = { size: 11, strokeWidth: 3.25 } as const;
+export const ENDPOINT_GLYPH = { size: 13, strokeWidth: 3 } as const;
 
 /**
  * The markers the ends of a day are drawn as, in the order they are drawn: one
