@@ -24,6 +24,15 @@ export const MODE_ICON: Readonly<Record<TravelMode, typeof WalkIcon>> = {
 const DISC_WASH = "16%";
 
 /**
+ * The leg's own ink as a colour to draw with: the one the map draws its line
+ * in, taken round the same six in the same order, so whatever is drawn in it
+ * is matched to that line by eye.
+ */
+export function legColor(index: number): string {
+  return `var(${legInk(index)})`;
+}
+
+/**
  * The disc behind the glyph on a closed row, in the leg's own ink: the glyph
  * in it outright, and the disc a wash of it. The map draws each leg in the
  * next colour along, and this is the same colour on the row that names the
@@ -38,6 +47,6 @@ export function legDisc(
   index: number,
   over = "transparent",
 ): { readonly color: string; readonly backgroundColor: string } {
-  const ink = `var(${legInk(index)})`;
+  const ink = legColor(index);
   return { color: ink, backgroundColor: `color-mix(in srgb, ${ink} ${DISC_WASH}, ${over})` };
 }

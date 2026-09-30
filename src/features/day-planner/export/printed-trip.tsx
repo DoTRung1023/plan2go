@@ -19,7 +19,7 @@ import { formatDateRange, formatDayDate, formatDayLong } from "../format-day-dat
 import { formatDayTime } from "../format-day-time";
 import { hoursOn } from "../format-opening-hours";
 import { formatStops } from "../format-stops";
-import { legDisc, MODE_ICON, MODE_WORDS } from "../leg-marks";
+import { legColor, legDisc, MODE_ICON, MODE_WORDS } from "../leg-marks";
 import type { DayMapSources } from "./day-map-source";
 import { drawnLegs } from "./day-map-source";
 import type { ExportRequest } from "./export-request";
@@ -594,10 +594,12 @@ function LegDuration({ minutes, rough }: { readonly minutes: number; readonly ro
 }
 
 /**
- * A leg between two rows of the day: how long it takes, a length of the
- * dotted thread with the way's glyph on a disc over it, in the ink the map
- * draws this leg's line in, and the way and how far, opening the journey in
- * Google Maps, where the live times are. On public transport, what to catch.
+ * A leg between two rows of the day, all of it in the ink the map draws this
+ * leg's line in: how long it takes, a length of the dotted thread with the
+ * way's glyph on a disc over it, and the way and how far, opening the journey
+ * in Google Maps, where the live times are. On public transport, what to
+ * catch. A leg with no way found is still coloured, since the map still draws
+ * its line.
  */
 function LegRow({ day, legIndex }: { readonly day: PlannedDay; readonly legIndex: number }) {
   const leg = day.computed.legs[legIndex];
@@ -615,7 +617,7 @@ function LegRow({ day, legIndex }: { readonly day: PlannedDay; readonly legIndex
   const Icon = MODE_ICON[leg.mode];
 
   return (
-    <div className="printed-row">
+    <div className="printed-row" style={{ color: legColor(leg.index) }}>
       <p className="printed-leg-time">
         {leg.durationMinutes === null ? null : (
           <LegDuration minutes={leg.durationMinutes} rough={rough} />

@@ -568,11 +568,11 @@
   padding-top: 14px;
 }
 
-/* A leg: how long, a length of the dotted thread, and the way and how far. */
+/* A leg: how long, a length of the dotted thread, and the way and how far,
+   all in the leg's own ink, which its row is given. */
 .printed-leg-time,
 .printed-leg-words {
   padding: 6px 0;
-  color: var(--color-neutral-600);
   font-size: calc(13px * var(--sheet-text));
   font-weight: 500;
   line-height: 1.3;
@@ -583,9 +583,10 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* The thread, and on it the way's glyph on a disc in the leg's own ink, the
-   colour its line is drawn in on the map, so the leg on the list and its line
-   are matched by eye. One cell for both, the disc over the thread. */
+/* The thread in the leg's own ink, the colour its line is drawn in on the
+   map, so the leg on the list and its line are matched by eye, and on it the
+   way's glyph on a disc of the same ink. One cell for both, the disc over the
+   thread. */
 .printed-leg-thread {
   display: grid;
   justify-items: center;
@@ -599,7 +600,7 @@
   width: 2px;
   background: repeating-linear-gradient(
     to bottom,
-    var(--color-neutral-300) 0 4px,
+    currentColor 0 4px,
     transparent 4px 8px
   );
 }

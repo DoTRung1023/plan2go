@@ -786,9 +786,9 @@ exclamation, said in place of the hours since it names them, then the traveller'
 behind a rule of `neutral-300`. An end of the day is a sage square with the glyph the map
 marks it with, the house where the day starts and the flag where it finishes, and the
 place on a card of `sage-100` under what it is: leave from, finish at, or back at.
-Between two rows, the leg: how long, a length of the dotted thread with the way's glyph
-on a disc over it, in the ink the map draws that leg's line in, the glyph outright and
-the disc a wash of it, and the way and how far, which opens the journey in Google Maps. With the legs left off, the rows keep a gap
+Between two rows, the leg, all of it in the ink the map draws that leg's line in: how
+long, a length of the dotted thread with the way's glyph on a disc over it, the disc a
+wash of the ink, and the way and how far, which opens the journey in Google Maps. With the legs left off, the rows keep a gap
 of their own.
 
 A sheet to write on after a day is headed as the day's sheet is, "Notes" ahead of which
