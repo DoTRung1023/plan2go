@@ -105,38 +105,6 @@ export function tripCounts(plans: readonly DayPlan[]): TripCounts {
   };
 }
 
-/** A stop the plan reaches, where and when, for an end of the trip nobody has set. */
-export interface PlannedStopAt {
-  readonly name: string;
-  readonly city: string | null;
-  readonly date: IsoDate;
-  /** When the trip is there: arriving, for the first stop; leaving, for the last. */
-  readonly time: ClockTime | null;
-}
-
-/** The first stop of the trip and when it is reached, or null on a trip with nothing on it. */
-export function firstPlannedStop(days: readonly PlannedDay[]): PlannedStopAt | null {
-  for (const day of days) {
-    const stop = day.computed.stops[0];
-    if (stop !== undefined) {
-      return { name: stop.placeName, city: day.plan.city?.name ?? null, date: day.plan.date, time: stop.arrival };
-    }
-  }
-  return null;
-}
-
-/** The last stop of the trip and when it is left, or null on a trip with nothing on it. */
-export function lastPlannedStop(days: readonly PlannedDay[]): PlannedStopAt | null {
-  for (let at = days.length - 1; at >= 0; at -= 1) {
-    const day = days[at];
-    const stop = day?.computed.stops[day.computed.stops.length - 1];
-    if (day !== undefined && stop !== undefined) {
-      return { name: stop.placeName, city: day.plan.city?.name ?? null, date: day.plan.date, time: stop.departure };
-    }
-  }
-  return null;
-}
-
 /** When a day is over, in the words of the row it points at. */
 export interface DayDone {
   /** Back where it began, finished somewhere else, or done at its last stop. */

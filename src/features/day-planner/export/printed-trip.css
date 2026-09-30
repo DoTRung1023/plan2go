@@ -309,62 +309,6 @@
   color: var(--color-terracotta);
 }
 
-/* Where the trip starts and where it finishes, side by side: in sage where
-   the plan says, and dashed where it has not been set. */
-.printed-cover-ends {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 16px;
-  margin-top: 40px;
-}
-
-.printed-cover-end {
-  padding: 20px 22px;
-  border-radius: 28px;
-  background: var(--color-sage-100);
-}
-
-.printed-cover-end-unset {
-  border: 2px dashed var(--color-neutral-300);
-  background: var(--color-neutral-100);
-}
-
-.printed-cover-end-kind {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--color-sage-800);
-  font-size: calc(11.5px * var(--sheet-text));
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.printed-cover-end-unset .printed-cover-end-kind {
-  color: var(--color-neutral-700);
-}
-
-.printed-cover-end-name {
-  margin-top: 12px;
-  font-size: calc(21px * var(--sheet-text));
-  line-height: 1.25;
-}
-
-.printed-cover-end-when {
-  margin-top: 8px;
-  font-size: calc(14px * var(--sheet-text));
-  font-weight: 600;
-  line-height: 1.4;
-}
-
-.printed-cover-end-more {
-  margin-top: 4px;
-  color: var(--color-neutral-700);
-  font-size: calc(13.5px * var(--sheet-text));
-  line-height: 1.45;
-}
-
 /* Where each night is spent, a row for each stay. */
 .printed-sleep-label {
   margin-top: 36px;

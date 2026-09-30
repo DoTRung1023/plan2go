@@ -762,11 +762,7 @@ as three pills, the days on `terracotta-100`, the cities on `sage-100` and the s
 route, each stay in a city in order with its dates under it and an arrow in the accent
 on to the next, in a line that wraps rather than squeezing its names; a city come back
 to is a second stay, and a trip kept before days had cities has no route to draw. Then
-where the trip starts and where it finishes, side by side: on `sage-100`, 28px round,
-where the plan says, the place in the display face, the day and when it is left or
-reached, and its address; dashed in `neutral-300` on `neutral-100` where it is not set,
-saying so, with the first or the last stop the plan reaches instead. Then where each
-night is spent. Every day but the last is followed by a night, spent where the next day
+where each night is spent. Every day but the last is followed by a night, spent where the next day
 leaves from, or where this one finishes when the next leaves from nowhere, and named
 with the city of the day before it. Nights in one place one after another are one row,
 and nights with nowhere in the plan are one row saying how many.
@@ -807,8 +803,8 @@ day, and ruled every 34px in `neutral-200` from a rule of ink to its foot. Every
 ends in the same foot, over a hairline: made with plan2go, as the front door says it,
 and which sheet it is of how many, counting every sheet.
 
-Every run of sheets is dealt by measuring it: the cover, whose rows are the ends of the
-trip and its stays; the list of days; and each day. Rows go onto a sheet under what
+Every run of sheets is dealt by measuring it: the cover, whose rows are the trip's
+stays; the list of days; and each day. Rows go onto a sheet under what
 opens it until the next would not fit, then onto a sheet that carries on under the head
 again, marked continued where it picks a list up part way through. A sheet is never
 fuller than a page and a row is never cut in two, and a first sheet whose opening leaves

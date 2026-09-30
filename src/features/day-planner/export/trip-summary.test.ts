@@ -8,8 +8,6 @@ import type { PlannedDay } from "../compute-trip";
 import {
   dayDone,
   daySpan,
-  firstPlannedStop,
-  lastPlannedStop,
   nightsOf,
   nightsWithoutStay,
   routeOf,
@@ -150,32 +148,6 @@ describe("tripCounts", () => {
       plan("2026-09-30"),
     ]);
     expect(counts).toEqual({ days: 3, cities: 2, stops: 3 });
-  });
-});
-
-describe("firstPlannedStop and lastPlannedStop", () => {
-  const days = [
-    planned(plan("2026-09-28")),
-    planned(plan("2026-09-29", { stops: [stop("Opera House"), stop("Old Quarter")] })),
-    planned(plan("2026-09-30", { city: HUE, stops: [stop("Citadel")] })),
-    planned(plan("2026-10-01")),
-  ];
-
-  it("finds the first stop of the trip and when it is reached", () => {
-    const first = firstPlannedStop(days);
-    expect(first).toMatchObject({ name: "Opera House", city: "Hanoi", date: "2026-09-29" });
-    expect(first?.time?.minutesFromMidnight).toBe(9 * 60);
-  });
-
-  it("finds the last stop of the trip and when it is left", () => {
-    const last = lastPlannedStop(days);
-    expect(last).toMatchObject({ name: "Citadel", city: "Hue", date: "2026-09-30" });
-    expect(last?.time?.minutesFromMidnight).toBe(10 * 60);
-  });
-
-  it("finds none on a trip with nothing on it", () => {
-    expect(firstPlannedStop([planned(plan("2026-09-28"))])).toBeNull();
-    expect(lastPlannedStop([planned(plan("2026-09-28"))])).toBeNull();
   });
 });
 

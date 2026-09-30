@@ -9,7 +9,7 @@ import type { ClockTime } from "@/core/time/compute-day";
 import { formatClock, formatDuration } from "@/core/time/minutes";
 import { PictureMarkers } from "@/features/trip-map/picture-markers";
 import { Credit } from "@/ui/credit";
-import { ArrowRightIcon, FlagIcon, HomeIcon, TargetIcon } from "@/ui/icons";
+import { ArrowRightIcon, FlagIcon, HomeIcon } from "@/ui/icons";
 import type { PlannedDay } from "../compute-trip";
 import { placeUrl } from "../directions-url";
 import { endpointName } from "../endpoint-name";
@@ -26,12 +26,10 @@ import { mapSize, sheetGeometry } from "./paper";
 import type { SheetGeometry } from "./paper";
 import { sheetDisplay } from "./sheet-face";
 import { rideSentence } from "./transit-ride";
-import type { NightStay, PlannedStopAt } from "./trip-summary";
+import type { NightStay } from "./trip-summary";
 import {
   dayDone,
   daySpan,
-  firstPlannedStop,
-  lastPlannedStop,
   nightsOf,
   nightsWithoutStay,
   routeOf,
@@ -168,120 +166,12 @@ function PageHead({ title, range }: { readonly title: string; readonly range: st
 }
 
 /**
- * The first stop or the last, said for an end of the trip nobody has set:
- * "Last planned stop: Po Nagar Temple, Nha Trang, done by 12:26 on Tue, 6 Oct."
- */
-function plannedStopSentence(lead: string, stop: PlannedStopAt, when: "from" | "done by"): string {
-  const where = stop.city === null ? stop.name : `${stop.name}, ${stop.city}`;
-  const at = stop.time === null ? "" : ` ${when} ${formatDayTime(stop.time)}`;
-  return `${lead}: ${where},${at} on ${formatDayDate(stop.date)}.`;
-}
-
-/**
- * Where the trip begins: the first day's point of departure and when it is
- * left, on sage; or, where the first day leaves from nowhere in particular,
- * a dashed card saying so, and the first stop the plan reaches.
- */
-function TripStart({ days }: { readonly days: readonly PlannedDay[] }) {
-  const first = days[0];
-  if (first === undefined) {
-    return null;
-  }
-  const start = first.plan.start;
-  const kind = (
-    <p className="printed-cover-end-kind">
-      <TargetIcon size={16} strokeWidth={2.75} />
-      Start
-    </p>
-  );
-  if (start !== null) {
-    return (
-      <div className="printed-cover-end">
-        {kind}
-        <p className="printed-display printed-cover-end-name">
-          <PlaceLink place={start.place} name={start.place.name} />
-        </p>
-        <p className="printed-cover-end-when">
-          {formatDayDate(first.plan.date)} · leave {formatClock(first.plan.startAtMinutes)}
-        </p>
-        {start.place.address === null ? null : (
-          <p className="printed-cover-end-more">{start.place.address}</p>
-        )}
-      </div>
-    );
-  }
-  const stop = firstPlannedStop(days);
-  return (
-    <div className="printed-cover-end printed-cover-end-unset">
-      {kind}
-      <p className="printed-display printed-cover-end-name">Not set yet</p>
-      <p className="printed-cover-end-when">{formatDayDate(first.plan.date)}</p>
-      {stop === null ? null : (
-        <p className="printed-cover-end-more">
-          {plannedStopSentence("First planned stop", stop, "from")}
-        </p>
-      )}
-    </div>
-  );
-}
-
-/**
- * Where the trip ends: the last day's point of arrival and when it is
- * reached, in the words of the day's own strip; or a dashed card saying it
- * is not set, and the last stop the plan reaches.
- */
-function TripFinish({ days }: { readonly days: readonly PlannedDay[] }) {
-  const last = days[days.length - 1];
-  if (last === undefined) {
-    return null;
-  }
-  const end = last.plan.end;
-  const kind = (
-    <p className="printed-cover-end-kind">
-      <FlagIcon size={16} strokeWidth={2.75} />
-      Finish
-    </p>
-  );
-  if (end !== null) {
-    const done = dayDone(last);
-    return (
-      <div className="printed-cover-end">
-        {kind}
-        <p className="printed-display printed-cover-end-name">
-          <PlaceLink place={end.place} name={end.place.name} />
-        </p>
-        <p className="printed-cover-end-when">
-          {formatDayDate(last.plan.date)}
-          {done.at === null ? "" : ` · ${done.label.toLowerCase()} ${formatDayTime(done.at)}`}
-        </p>
-        {end.place.address === null ? null : (
-          <p className="printed-cover-end-more">{end.place.address}</p>
-        )}
-      </div>
-    );
-  }
-  const stop = lastPlannedStop(days);
-  return (
-    <div className="printed-cover-end printed-cover-end-unset">
-      {kind}
-      <p className="printed-display printed-cover-end-name">Not set yet</p>
-      <p className="printed-cover-end-when">{formatDayDate(last.plan.date)}</p>
-      {stop === null ? null : (
-        <p className="printed-cover-end-more">
-          {plannedStopSentence("Last planned stop", stop, "done by")}
-        </p>
-      )}
-    </div>
-  );
-}
-
-/**
  * What opens the cover: a bar saying what the sheets are, on a pill, with the
  * lockup on the right, over a hairline; the trip's name, its dates and what
  * it comes to; and its route, the cities in order with their dates, in a line
- * that wraps. Where it starts and finishes, and where each night is spent,
- * are dealt under it as rows are, so paper too small for all of it carries
- * the rest on to the next sheet rather than running past its foot.
+ * that wraps. Where each night is spent is dealt under it as rows are, so
+ * paper too small for all of it carries the rest on to the next sheet rather
+ * than running past its foot.
  */
 function CoverHead({
   title,
@@ -331,16 +221,6 @@ function CoverHead({
         </section>
       )}
     </>
-  );
-}
-
-/** Where the trip starts and where it finishes, side by side. */
-function CoverEnds({ days }: { readonly days: readonly PlannedDay[] }) {
-  return (
-    <div className="printed-cover-ends">
-      <TripStart days={days} />
-      <TripFinish days={days} />
-    </div>
   );
 }
 
@@ -1113,15 +993,12 @@ export function PrintedTrip({
           ) : null}
         </>
       ),
-      // The ends of the trip are the first row, the first stay the second.
-      continuesAt: (firstRow) => firstRow > 1,
-      units: [
-        { key: "ends", node: <CoverEnds days={days} /> },
-        ...nights.map((stay, at) => ({
-          key: stay.from,
-          node: <SleepRow stay={stay} first={at === 0} />,
-        })),
-      ],
+      // The stays are the rows, the first under the heading over them all.
+      continuesAt: (firstRow) => firstRow > 0,
+      units: nights.map((stay, at) => ({
+        key: stay.from,
+        node: <SleepRow stay={stay} first={at === 0} />,
+      })),
       source: days,
       after: null,
     });
