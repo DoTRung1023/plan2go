@@ -594,12 +594,12 @@ function LegDuration({ minutes, rough }: { readonly minutes: number; readonly ro
 }
 
 /**
- * A leg between two rows of the day, all of it in the ink the map draws this
- * leg's line in: how long it takes, a length of the dotted thread with the
- * way's glyph on a disc over it, and the way and how far, opening the journey
- * in Google Maps, where the live times are. On public transport, what to
- * catch. A leg with no way found is still coloured, since the map still draws
- * its line.
+ * A leg between two rows of the day: how long it takes, a length of the
+ * dotted thread with the way's glyph on a disc over it, and the way and how
+ * far, opening the journey in Google Maps, where the live times are. On
+ * public transport, what to catch. The words and the glyph are in the ink the
+ * map draws this leg's line in, and the thread in its own grey. A leg with no
+ * way found is still coloured, since the map still draws its line.
  */
 function LegRow({ day, legIndex }: { readonly day: PlannedDay; readonly legIndex: number }) {
   const leg = day.computed.legs[legIndex];
@@ -655,36 +655,26 @@ function LegRow({ day, legIndex }: { readonly day: PlannedDay; readonly legIndex
 }
 
 /**
- * The thread from under a place's mark to the foot of its row, in the ink of
- * the leg that leaves the place, where the leg's own row takes it on to the
- * next place's mark, or with the legs left off the page, the gap over the
- * next row does, so the line runs unbroken from one mark to the next either
- * way. None under a place no leg leaves.
+ * The thread from under a place's mark to the foot of its row, where the
+ * leg's own row takes it on to the next place's mark, or with the legs left
+ * off the page, the gap over the next row does, so the line runs unbroken
+ * from one mark to the next either way. Drawn only under a place a leg leaves.
  */
-function ThreadBelow({ legIndex }: { readonly legIndex: number | null }) {
-  return legIndex === null ? null : (
-    <span
-      aria-hidden="true"
-      className="printed-leg-line printed-thread-below"
-      style={{ color: legColor(legIndex) }}
-    />
-  );
+function ThreadBelow() {
+  return <span aria-hidden="true" className="printed-leg-line printed-thread-below" />;
 }
 
 /**
  * With the legs left off the page, the gap a row stands below the one before,
- * with the thread carried down it to the row's mark in the ink of the leg that
- * arrives there. The gap is kept even with no leg to draw in it, so the mark
- * stays level with the words beside it.
+ * with the thread carried down it to the row's mark when a leg arrives there.
+ * The gap is kept even with no leg to draw in it, so the mark stays level
+ * with the words beside it.
  */
-function ThreadAbove({ legIndex }: { readonly legIndex: number | null }) {
-  return legIndex === null ? (
-    <span aria-hidden="true" className="printed-thread-above" />
-  ) : (
+function ThreadAbove({ drawn }: { readonly drawn: boolean }) {
+  return (
     <span
       aria-hidden="true"
-      className="printed-leg-line printed-thread-above"
-      style={{ color: legColor(legIndex) }}
+      className={drawn ? "printed-leg-line printed-thread-above" : "printed-thread-above"}
     />
   );
 }
@@ -712,21 +702,21 @@ function EndRow({
   readonly address: string | null;
   readonly finish: boolean;
   readonly gap: boolean;
-  /** The leg into this place, whose thread comes down the gap over the square, or null for none. */
-  readonly arriving: number | null;
-  /** The leg out of this place, whose thread runs on under the square, or null for none. */
-  readonly leaving: number | null;
+  /** A leg arrives here, so the thread comes down the gap over the square. */
+  readonly arriving: boolean;
+  /** A leg leaves here, so the thread runs on under the square. */
+  readonly leaving: boolean;
 }) {
   const Glyph = finish ? FlagIcon : HomeIcon;
   return (
     <div className={`printed-row printed-row-at ${gap ? "printed-gap" : ""}`}>
       <p className="printed-when printed-when-at">{time === null ? "" : formatDayTime(time)}</p>
       <div className="printed-mark">
-        {gap ? <ThreadAbove legIndex={arriving} /> : null}
+        {gap ? <ThreadAbove drawn={arriving} /> : null}
         <span className="printed-end-mark">
           <Glyph size={12} strokeWidth={3} />
         </span>
-        <ThreadBelow legIndex={leaving} />
+        {leaving ? <ThreadBelow /> : null}
       </div>
       <div className="printed-end-card">
         <p className="printed-end-role">{role}</p>
@@ -776,8 +766,8 @@ function dayUnits({ day, request }: DayContext): readonly Unit[] {
           address={request.addresses ? start.place.address : null}
           finish={false}
           gap={gapped()}
-          arriving={null}
-          leaving={computed.legs[0]?.index ?? null}
+          arriving={false}
+          leaving={computed.legs[0] !== undefined}
         />
       ),
     });
@@ -789,8 +779,8 @@ function dayUnits({ day, request }: DayContext): readonly Unit[] {
     const hours = place === undefined ? null : hoursOn(place, plan);
     const note = notes.get(stop.stopId) ?? null;
     const conflicts = conflictsAtStop(computed.conflicts, stop.stopId);
-    const arriving = legIndex < 0 ? null : (computed.legs[legIndex]?.index ?? null);
-    const leaving = computed.legs[legIndex + 1]?.index ?? null;
+    const arriving = legIndex >= 0 && computed.legs[legIndex] !== undefined;
+    const leaving = computed.legs[legIndex + 1] !== undefined;
     const gap = gapped();
     units.push({
       key: stop.stopId,
@@ -805,12 +795,12 @@ function dayUnits({ day, request }: DayContext): readonly Unit[] {
               )}
             </div>
             <div className="printed-mark">
-              {gap ? <ThreadAbove legIndex={arriving} /> : null}
+              {gap ? <ThreadAbove drawn={arriving} /> : null}
               <span className="printed-badge">
                 <span aria-hidden="true">{index + 1}</span>
                 <span className="sr-only">Stop {index + 1}</span>
               </span>
-              <ThreadBelow legIndex={leaving} />
+              {leaving ? <ThreadBelow /> : null}
             </div>
             <div className="printed-stop-words">
               <h2 className="printed-display printed-stop-name">
@@ -860,8 +850,8 @@ function dayUnits({ day, request }: DayContext): readonly Unit[] {
             address={request.addresses && !sameEnds ? end.place.address : null}
             finish={!sameEnds}
             gap={gap}
-            arriving={legToEnd.index}
-            leaving={null}
+            arriving={true}
+            leaving={false}
           />
         </>
       ),

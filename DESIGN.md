@@ -795,14 +795,13 @@ left off, when the hours are said as on any other stop, then the traveller's not
 behind a rule of `neutral-300`. An end of the day is a sage square with the glyph the map
 marks it with, the house where the day starts and the flag where it finishes, and the
 place on a card of `sage-100` under what it is: leave from, finish at, or back at.
-Between two rows, the leg, all of it in the ink the map draws that leg's line in: how
-long, a length of the dotted thread with the way's glyph on a disc over it, the disc a
-wash of the ink, and the way and how far, which opens the journey in Google Maps. The
-thread is unbroken from one place's mark to the next: it runs on from under a mark to
-the foot of that place's row in the ink of the leg that leaves it, through the leg's
-row, to the next mark, touching both. With the legs left off, the rows keep a gap
-of their own, and the thread is kept: it runs down that gap to the next mark instead,
-in the same ink.
+Between two rows, the leg: how long, a length of the dotted thread with the way's glyph
+on a disc over it, and the way and how far, which opens the journey in Google Maps. The
+words and the glyph are in the ink the map draws that leg's line in, the disc a wash of
+it. The thread is `neutral-300` whatever the leg, and unbroken from one place's mark to
+the next: it runs on from under a mark to the foot of that place's row, through the
+leg's row, to the next mark, touching both. With the legs left off, the rows keep a gap
+of their own, and the thread is kept: it runs down that gap to the next mark instead.
 
 A sheet to write on after a day is headed as the day's sheet is, "Notes" ahead of which
 day, and ruled every 34px in `neutral-200` from a rule of ink to its foot. Every sheet

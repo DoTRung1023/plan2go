@@ -586,7 +586,7 @@
 }
 
 /* A leg: how long, a length of the dotted thread, and the way and how far,
-   all in the leg's own ink, which its row is given. */
+   the words in the leg's own ink, which its row is given. */
 .printed-leg-time,
 .printed-leg-words {
   padding: 6px 0;
@@ -600,10 +600,9 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* The thread in the leg's own ink, the colour its line is drawn in on the
-   map, so the leg on the list and its line are matched by eye, and on it the
-   way's glyph on a disc of the same ink. One cell for both, the disc over the
-   thread. */
+/* The thread, and on it the way's glyph on a disc in the leg's own ink, the
+   colour its line is drawn in on the map, so the leg on the list and its line
+   are matched by eye. One cell for both, the disc over the thread. */
 .printed-leg-thread {
   display: grid;
   justify-items: center;
@@ -616,14 +615,15 @@
 /* Dashes of four with gaps of four, drawn from half a dash at each end and
    fitted to whole repeats, so a length of thread starts and stops on ink
    wherever it is cut: against a mark, it touches it, and where two lengths
-   meet, their halves make one dash. */
+   meet, their halves make one dash. One quiet grey whatever the leg: the
+   leg's own colour is its disc's and its words'. */
 .printed-leg-line {
   width: 2px;
   background-image: linear-gradient(
     to bottom,
-    currentColor 0 25%,
+    var(--color-neutral-300) 0 25%,
     transparent 25% 75%,
-    currentColor 75%
+    var(--color-neutral-300) 75%
   );
   background-size: 2px 8px;
   background-repeat: round;
