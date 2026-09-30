@@ -667,14 +667,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* The line a stop is found by, when it is reached and what it is, in the
-   accent its number is on, so the time, the disc and the name read as one
-   mark. What is said under them keeps its own ink. */
-.printed-stop-at,
-.printed-stop-name {
-  color: var(--color-terracotta);
-}
-
 .printed-stop-words {
   min-width: 0;
   padding-bottom: 4px;
