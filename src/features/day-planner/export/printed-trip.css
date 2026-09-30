@@ -429,8 +429,9 @@
   border-bottom: 1px solid var(--color-neutral-200);
 }
 
-/* The rule is what parts one day from the next, so the day a sheet ends on
-   has none drawn under it. */
+/* The rule is what parts one row from the next, a night's stay or a day,
+   so the row a sheet ends on has none drawn under it. */
+.printed-stop:last-child .printed-sleep,
 .printed-stop:last-child .printed-summary {
   border-bottom: none;
 }
