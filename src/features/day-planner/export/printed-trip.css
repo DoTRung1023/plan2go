@@ -478,8 +478,8 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* What opens a day's rows on a sheet after its first, where there are no
-   numbers to. */
+/* What opens a day's rows where there are no numbers to: on a sheet after
+   its first, and on its first with the strip of numbers left off. */
 .printed-rule {
   margin-top: 20px;
   border-top: 2px solid var(--color-ink);

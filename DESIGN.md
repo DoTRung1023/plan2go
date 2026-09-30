@@ -777,8 +777,9 @@ then a strip of what the day comes to between a rule of ink 2px heavy and a hair
 as many columns as there are numbers: when it leaves; when it is over, in the words of
 the row it points at, back by when it ends where it began, finish by when it ends
 somewhere else, done by when it ends at its last stop; how many stops; how long is spent
-travelling; and on a day with walking in it, how far on foot. Then the map if it was
-asked for, and the day down a column of times. The head carries the trip's name and
+travelling; and on a day with walking in it, how far on foot. With the day summary left
+off, the strip goes and its rule of ink stays under the head, as on a sheet that carries
+the day on. Then the map if it was asked for, and the day down a column of times. The head carries the trip's name and
 never a city's, since a trip's days can be in different cities; the city is the day's
 own heading.
 
@@ -832,10 +833,10 @@ the chosen one filled in `terracotta-800`, the cover alone being the trip at a g
 For the full trip the days follow as chips five across, each its weekday over its date,
 every day with something on it chosen to begin with and filled in `terracotta-800`, and
 a day with nothing on it dashed and out of reach; beside the heading, a word that takes
-all of them, Select all, or none, Clear. Then what the file includes, as seven toggles
+all of them, Select all, or none, Clear. Then what the file includes, as eight toggles
 two across, each a glyph and its words on one line: the cover page, the route map, the
-notes on stops, the travel between them, addresses, opening hours, and a ruled page for
-notes after each day. Every one is on to begin with, so a choice only ever takes away;
+notes on stops, the travel between them, addresses, opening hours, a ruled page for
+notes after each day, and the day summary, the strip of what each day comes to. Every one is on to begin with, so a choice only ever takes away;
 one that is on is `terracotta-100` inside `terracotta-300` with its words in
 `terracotta-900`, and one that is off is a `neutral-200` outline with its words in
 `neutral-500`. For the cover alone, neither the days nor what is included is shown.

@@ -1035,7 +1035,9 @@ export function PrintedTrip({
         <>
           <PageHead title={title} range={range} />
           <DayTitle day={day} number={context.number} />
-          <DayStats {...context} />
+          {/* With the strip left off, the rule of ink it hangs from is kept, as
+              on a sheet that carries the day on. */}
+          {request.stats ? <DayStats {...context} /> : <div className="printed-rule" />}
           {request.map ? <DayMap {...context} onSettled={live ? settle : undefined} /> : null}
           <div aria-hidden="true" className="printed-space-20" />
         </>

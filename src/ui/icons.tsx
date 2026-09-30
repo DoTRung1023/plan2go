@@ -530,3 +530,14 @@ export function LoaderIcon(props: IconProps) {
     </Glyph>
   );
 }
+
+/** Three bars of different heights: figures, read at a glance. */
+export function ChartIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="M18 20V10" />
+      <path d="M12 20V4" />
+      <path d="M6 20v-6" />
+    </Glyph>
+  );
+}

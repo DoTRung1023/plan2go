@@ -26,6 +26,11 @@ export interface ExportRequest {
   readonly ruled: boolean;
   /** When each place is open, under its address. */
   readonly hours: boolean;
+  /**
+   * What each day comes to, in a strip under its name: when it leaves, when it
+   * is over, how many stops and how long is spent travelling.
+   */
+  readonly stats: boolean;
   /** The paper the sheets are made for, and which way up. */
   readonly paper: PaperSize;
   readonly orientation: Orientation;
@@ -49,6 +54,7 @@ export const DEFAULT_EXPORT: Omit<ExportRequest, "dayIds"> = {
   addresses: true,
   ruled: true,
   hours: true,
+  stats: true,
   paper: "a4",
   orientation: "portrait",
   text: "medium",
@@ -66,6 +72,7 @@ export function exportRequestKey(request: ExportRequest): string {
     request.addresses ? "addresses" : "",
     request.ruled ? "ruled" : "",
     request.hours ? "hours" : "",
+    request.stats ? "stats" : "",
     request.paper,
     request.orientation,
     request.text,
