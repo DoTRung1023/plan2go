@@ -655,6 +655,18 @@ function LegRow({ day, legIndex }: { readonly day: PlannedDay; readonly legIndex
 }
 
 /**
+ * The thread from under a place's mark to the foot of its row, in the ink of
+ * the leg that leaves the place, where the leg's own row takes it on to the
+ * next place's mark, so the line runs unbroken from one mark to the next.
+ * None under a place no leg leaves, or with the legs left off the page.
+ */
+function ThreadBelow({ legIndex }: { readonly legIndex: number | null }) {
+  return legIndex === null ? null : (
+    <span aria-hidden="true" className="printed-leg-line" style={{ color: legColor(legIndex) }} />
+  );
+}
+
+/**
  * Where the day leaves from or where it finishes: when, a sage square with
  * the glyph the map marks it with, the house where the day starts and the
  * flag where it finishes, and the place on a card of sage under what it is.
@@ -667,6 +679,7 @@ function EndRow({
   address,
   finish,
   gap,
+  leaving,
 }: {
   readonly time: ClockTime | null;
   readonly role: string;
@@ -675,6 +688,8 @@ function EndRow({
   readonly address: string | null;
   readonly finish: boolean;
   readonly gap: boolean;
+  /** The leg out of this place, whose thread runs on under the square, or null for none. */
+  readonly leaving: number | null;
 }) {
   const Glyph = finish ? FlagIcon : HomeIcon;
   return (
@@ -684,6 +699,7 @@ function EndRow({
         <span className="printed-end-mark">
           <Glyph size={12} strokeWidth={3} />
         </span>
+        <ThreadBelow legIndex={leaving} />
       </div>
       <div className="printed-end-card">
         <p className="printed-end-role">{role}</p>
@@ -733,6 +749,7 @@ function dayUnits({ day, request }: DayContext): readonly Unit[] {
           address={request.addresses ? start.place.address : null}
           finish={false}
           gap={gapped()}
+          leaving={request.legs ? (computed.legs[0]?.index ?? null) : null}
         />
       ),
     });
@@ -744,6 +761,7 @@ function dayUnits({ day, request }: DayContext): readonly Unit[] {
     const hours = place === undefined ? null : hoursOn(place, plan);
     const note = notes.get(stop.stopId) ?? null;
     const conflicts = conflictsAtStop(computed.conflicts, stop.stopId);
+    const leaving = request.legs ? (computed.legs[legIndex + 1]?.index ?? null) : null;
     const gap = gapped();
     units.push({
       key: stop.stopId,
@@ -762,6 +780,7 @@ function dayUnits({ day, request }: DayContext): readonly Unit[] {
                 <span aria-hidden="true">{index + 1}</span>
                 <span className="sr-only">Stop {index + 1}</span>
               </span>
+              <ThreadBelow legIndex={leaving} />
             </div>
             <div className="printed-stop-words">
               <h2 className="printed-display printed-stop-name">
@@ -805,6 +824,7 @@ function dayUnits({ day, request }: DayContext): readonly Unit[] {
             address={request.addresses && !sameEnds ? end.place.address : null}
             finish={!sameEnds}
             gap={gap}
+            leaving={null}
           />
         </>
       ),

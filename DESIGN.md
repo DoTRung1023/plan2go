@@ -788,7 +788,10 @@ marks it with, the house where the day starts and the flag where it finishes, an
 place on a card of `sage-100` under what it is: leave from, finish at, or back at.
 Between two rows, the leg, all of it in the ink the map draws that leg's line in: how
 long, a length of the dotted thread with the way's glyph on a disc over it, the disc a
-wash of the ink, and the way and how far, which opens the journey in Google Maps. With the legs left off, the rows keep a gap
+wash of the ink, and the way and how far, which opens the journey in Google Maps. The
+thread is unbroken from one place's mark to the next: it runs on from under a mark to
+the foot of that place's row in the ink of the leg that leaves it, through the leg's
+row, to the next mark, touching both. With the legs left off, the rows keep a gap
 of their own.
 
 A sheet to write on after a day is headed as the day's sheet is, "Notes" ahead of which

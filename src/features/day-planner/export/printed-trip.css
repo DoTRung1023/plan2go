@@ -597,13 +597,27 @@
   grid-area: 1 / 1;
 }
 
+/* Dashes of four with gaps of four, drawn from half a dash at each end and
+   fitted to whole repeats, so a length of thread starts and stops on ink
+   wherever it is cut: against a mark, it touches it, and where two lengths
+   meet, their halves make one dash. */
 .printed-leg-line {
   width: 2px;
-  background: repeating-linear-gradient(
+  background-image: linear-gradient(
     to bottom,
-    currentColor 0 4px,
-    transparent 4px 8px
+    currentColor 0 25%,
+    transparent 25% 75%,
+    currentColor 75%
   );
+  background-size: 2px 8px;
+  background-repeat: round;
+}
+
+/* A pixel past the foot of its row, so it meets the mark of the place it
+   leads to: an end's square sits a pixel down, and a stop's disc is drawn
+   over it. */
+.printed-leg-thread > .printed-leg-line {
+  margin-bottom: -1px;
 }
 
 /* Smaller than a stop's disc, so it reads as a way between two stops rather
@@ -644,9 +658,18 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* The column a place's mark stands in, as tall as its row: the mark at the
+   top, and under it the thread of the leg that leaves the place, to the foot
+   of the row, where the leg's own row takes it on. */
 .printed-mark {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  align-self: stretch;
+}
+
+.printed-mark > .printed-leg-line {
+  flex: 1;
 }
 
 /* A stop: its number on a disc of the accent, the colour the map marks it
