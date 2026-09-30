@@ -626,15 +626,17 @@
   justify-content: center;
 }
 
-/* A stop: its number on a disc of ink, the place in the display face, and
-   what there is to know about it under its name. */
+/* A stop: its number on a disc of the accent, the colour the map marks it
+   with, so a stop on the list and its marker on the map are one mark; the
+   place in the display face, and what there is to know about it under its
+   name. */
 .printed-badge {
   display: grid;
   place-items: center;
   width: 24px;
   height: 24px;
   border-radius: var(--radius-pill);
-  background: var(--color-ink);
+  background: var(--color-terracotta);
   color: var(--sheet);
   font-size: calc(12px * var(--sheet-text));
   font-weight: 700;
