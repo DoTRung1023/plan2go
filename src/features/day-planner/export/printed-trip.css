@@ -732,24 +732,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.printed-stop-warning {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  margin-top: 3px;
-  color: var(--color-terracotta-700);
-  font-size: calc(13px * var(--sheet-text));
-  font-weight: 700;
-  line-height: 1.4;
-  font-variant-numeric: tabular-nums;
-}
-
-/* The glyph on the middle of the sentence's first line. */
-.printed-stop-warning > svg {
-  flex-shrink: 0;
-  margin-top: calc(0.7em - 7px);
-}
-
 .printed-stop-note {
   max-width: 60ch;
   margin-top: 6px;

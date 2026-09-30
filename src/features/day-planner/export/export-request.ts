@@ -26,11 +26,6 @@ export interface ExportRequest {
   readonly ruled: boolean;
   /** When each place is open, under its address. */
   readonly hours: boolean;
-  /**
-   * What is wrong with a visit, a place closed that day or shut before the
-   * stop is done, said under the stop it is about.
-   */
-  readonly warnings: boolean;
   /** The paper the sheets are made for, and which way up. */
   readonly paper: PaperSize;
   readonly orientation: Orientation;
@@ -54,7 +49,6 @@ export const DEFAULT_EXPORT: Omit<ExportRequest, "dayIds"> = {
   addresses: true,
   ruled: true,
   hours: true,
-  warnings: true,
   paper: "a4",
   orientation: "portrait",
   text: "medium",
@@ -72,7 +66,6 @@ export function exportRequestKey(request: ExportRequest): string {
     request.addresses ? "addresses" : "",
     request.ruled ? "ruled" : "",
     request.hours ? "hours" : "",
-    request.warnings ? "warnings" : "",
     request.paper,
     request.orientation,
     request.text,

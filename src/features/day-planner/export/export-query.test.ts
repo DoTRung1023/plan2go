@@ -11,7 +11,6 @@ const request: ExportRequest = {
   paper: "a5",
   orientation: "landscape",
   ink: "mono",
-  warnings: false,
 };
 
 function fromQuery(query: URLSearchParams): Record<string, string> {

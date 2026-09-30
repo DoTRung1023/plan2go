@@ -3,16 +3,14 @@
 import Image from "next/image";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { staticMapFrame } from "@/adapters/maps/google-static-map";
-import { conflictsAtStop } from "@/core/model/conflict";
 import { formatDistance } from "@/core/model/distance";
 import type { Place } from "@/core/model/place";
 import type { ClockTime } from "@/core/time/compute-day";
 import { formatClock, formatDuration } from "@/core/time/minutes";
 import { PictureMarkers } from "@/features/trip-map/picture-markers";
 import { Credit } from "@/ui/credit";
-import { AlertIcon, ArrowRightIcon, FlagIcon, HomeIcon, TargetIcon } from "@/ui/icons";
+import { ArrowRightIcon, FlagIcon, HomeIcon, TargetIcon } from "@/ui/icons";
 import type { PlannedDay } from "../compute-trip";
-import { conflictSentence } from "../conflict-sentence";
 import { placeUrl } from "../directions-url";
 import { endpointName } from "../endpoint-name";
 import { formatDateRange, formatDayDate, formatDayLong } from "../format-day-date";
@@ -778,7 +776,6 @@ function dayUnits({ day, request }: DayContext): readonly Unit[] {
     const place = places.get(stop.stopId);
     const hours = place === undefined ? null : hoursOn(place, plan);
     const note = notes.get(stop.stopId) ?? null;
-    const conflicts = conflictsAtStop(computed.conflicts, stop.stopId);
     const arriving = legIndex >= 0 && computed.legs[legIndex] !== undefined;
     const leaving = computed.legs[legIndex + 1] !== undefined;
     const gap = gapped();
@@ -809,21 +806,10 @@ function dayUnits({ day, request }: DayContext): readonly Unit[] {
               {request.addresses && place?.address ? (
                 <p className="printed-stop-address">{place.address}</p>
               ) : null}
-              {/* When the place is open, unless something is wrong with the
-                  visit, which is said instead with the hours in it, or with
-                  the warnings left off, not said at all: the line goes
-                  rather than turning into the hours. */}
-              {request.hours && hours !== null && conflicts.length === 0 ? (
-                <p className="printed-stop-hours">{hours}</p>
-              ) : null}
-              {request.warnings
-                ? conflicts.map((conflict, at) => (
-                    <p key={`${conflict.kind}-${String(at)}`} className="printed-stop-warning">
-                      <AlertIcon size={14} strokeWidth={2.75} />
-                      <span>{conflictSentence(conflict)}</span>
-                    </p>
-                  ))
-                : null}
+              {/* When the place is open that day, on every stop. The sheets
+                  carry no warnings: the hours are what the reader is given,
+                  a place closed that day included. */}
+              {request.hours && hours !== null ? <p className="printed-stop-hours">{hours}</p> : null}
               {request.notes && note !== null ? <p className="printed-stop-note">{note}</p> : null}
             </div>
           </div>
