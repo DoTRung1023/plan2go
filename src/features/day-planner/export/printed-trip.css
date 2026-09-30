@@ -186,6 +186,13 @@
   min-width: 0;
 }
 
+/* The name the credit is signed with, in the accent the heart beside it is
+   drawn in. Every other link on a sheet is its words' own ink, which is the
+   rule this one follows and outranks. */
+.printed-foot-credit a {
+  color: var(--color-terracotta);
+}
+
 .printed-foot-page {
   white-space: nowrap;
   font-variant-numeric: tabular-nums;

@@ -7,9 +7,10 @@
  * step of it that reads as text at these sizes, and the name is a link in
  * the same ink. On paper the link is still the name.
  *
- * Quiet, the name is a link in the words' own ink, and the heart is the
- * accent itself: the foot of a sheet, where nothing on the line is louder
- * than the rest of it.
+ * Quiet, the heart is the accent itself and the name is a link in whatever
+ * ink its line gives it, with no weight or underline of its own: the foot of
+ * a sheet, where nothing on the line is louder than the rest of it, and
+ * where the sheet draws the name in the heart's ink.
  */
 export function Credit({
   className = "",
