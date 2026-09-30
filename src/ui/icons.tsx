@@ -475,3 +475,68 @@ export function BagIcon(props: IconProps) {
     </Glyph>
   );
 }
+
+/** An open book, its two pages meeting at the spine. */
+export function BookOpenIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="M12 7v14" />
+      <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z" />
+    </Glyph>
+  );
+}
+
+/** A map folded in three, its creases standing up. */
+export function MapIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z" />
+      <path d="M15 5.764v15" />
+      <path d="M9 3.236v15" />
+    </Glyph>
+  );
+}
+
+/** A square note with one corner folded over. */
+export function NoteIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="M15.5 3H5a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3Z" />
+      <path d="M15 3v6h6" />
+    </Glyph>
+  );
+}
+
+/** Two points joined by a line that doubles back between them. */
+export function RouteIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15" />
+      <circle cx="6" cy="19" r="3" />
+      <circle cx="18" cy="5" r="3" />
+    </Glyph>
+  );
+}
+
+/** A notebook, its binding down the left and a margin ruled on the page. */
+export function NotebookIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="M2 6h4" />
+      <path d="M2 10h4" />
+      <path d="M2 14h4" />
+      <path d="M2 18h4" />
+      <rect width="16" height="20" x="4" y="2" rx="2" />
+      <path d="M16 2v20" />
+    </Glyph>
+  );
+}
+
+/** Most of a circle, left open: what is turned while something is waited on. */
+export function LoaderIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+    </Glyph>
+  );
+}

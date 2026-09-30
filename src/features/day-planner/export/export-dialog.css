@@ -4,7 +4,8 @@
  * pages laid out on the dialog's ground while the export is being chosen, and
  * as the pages themselves once the print window opens, when everything but
  * the sheets has to fall away. Nothing in this file introduces a value that
- * is not already a token, except the size of an A4 sheet.
+ * is not already a token, except the size of an A4 sheet and how fast the
+ * spinner turns while the file is drawn.
  */
 
 /* The sheets, scaled to the width the preview has, and centred in it. The
@@ -36,6 +37,19 @@
 
 .export-sheets .printed-page + .printed-page {
   margin-top: 24px;
+}
+
+/* The spinner in the bar while the file is drawn, a turn every 800ms. It
+   still turns under reduced motion, as the search's does, since it is what
+   says the export is waiting. */
+.export-spinner {
+  animation: export-spin 0.8s linear infinite;
+}
+
+@keyframes export-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media print {

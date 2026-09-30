@@ -41,6 +41,18 @@ export function formatDayTab(date: IsoDate): string {
 
 const DAY_ONLY = new Intl.DateTimeFormat("en-AU", { day: "numeric", timeZone: "UTC" });
 
+const WEEKDAY_ONLY = new Intl.DateTimeFormat("en-AU", { weekday: "short", timeZone: "UTC" });
+
+/**
+ * A tab's words, "Thu" and "10", apart, for a chip that sets the weekday over
+ * the date rather than beside it.
+ */
+export function formatDayChip(date: IsoDate): { readonly weekday: string; readonly day: string } {
+  const { year, month, day } = parseIsoDate(date);
+  const at = new Date(Date.UTC(year, month - 1, day));
+  return { weekday: WEEKDAY_ONLY.format(at), day: DAY_ONLY.format(at) };
+}
+
 const DAY_MONTH = new Intl.DateTimeFormat("en-AU", {
   day: "numeric",
   month: "short",

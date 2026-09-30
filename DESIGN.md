@@ -16,6 +16,7 @@ colors:
   terracotta-ramp:
     100: "#FFF2EB"
     200: "#FFE1D0"
+    300: "#FFC6A5"
     600: "#B2622D"
     700: "#8C491A"
     800: "#643312"
@@ -32,6 +33,7 @@ colors:
     200: "#EEE7DB"
     300: "#DCD3C4"
     400: "#C0B6A5"
+    500: "#A19786"
     600: "#82796A"
     700: "#645C50"
     900: "#2E2B25"
@@ -191,14 +193,15 @@ paper and ink.
 - **rule-strong:** the border of a control under the pointer, and dashed outlines.
 - **ink, ink-muted, ink-faint:** primary text, secondary text, and placeholders.
 - **terracotta:** the accent. 100 and 200 are tinted fills, 200 being the conflict block
-  and the error block, the base is the accent itself, 600 is hover, 700 is pressed and is
-  the step to use for accent coloured text, 800 is a chosen chip or menu row and the
-  words on the city pill in the search.
+  and the error block, the base is the accent itself, 300 is the edge of an export choice
+  that is on, 600 is hover, 700 is pressed and is the step to use for accent coloured
+  text, 800 is a chosen chip or menu row and the words on the city pill in the search.
 - **sage:** the second accent. 100 and 200 mark today in the day strip, 600 is the marker
   for the ends of a day, 700 draws the public transport route line.
 - **neutral:** the warm greys behind everything, used for the drive tint and the map's
   own geometry. On paper, 100 is the ground of the map and of an end of the trip not yet
-  set, and 800 the words on the pill that counts the stops.
+  set, and 800 the words on the pill that counts the stops. In the export's column, 500
+  is the words of a choice that is off and the .pdf after the file's name.
 - **city:** six colours, one for each city a trip goes to, handed out in the order the
   trip reaches them and round again for a seventh: terracotta, sage, ochre, deep clay,
   deep sage and rose clay. They mark which days share a city and nothing else. A city
@@ -670,9 +673,9 @@ and it is the product's own.
 
 ## Motion
 
-Five things animate: reordering a stop, the trip's actions unfolding, a place's sheet
-arriving and leaving, the chosen day's pill moving along the strip, and the search on the
-map, whose movement is its design file's and is written out under Components and in
+Six things animate: reordering a stop, the trip's actions unfolding, a place's sheet
+arriving and leaving, the chosen day's pill moving along the strip, the export's bar while
+its file is drawn, and the search on the map, whose movement is its design file's and is written out under Components and in
 `place-search.css`: its glow on and off, a quick search sinking a little as it is
 pressed and gliding along when an arrow moves the row, the pill's colours and chevron turning, its
 dot popping and name sliding in on a move, the empty field's words turning over, a
@@ -702,6 +705,10 @@ per tab, so choosing a day moves it there rather than one going out and another 
 on, the way a phone app's tab bar moves its highlight. Nothing else on the strip
 moves: a day's words and dot are the same on the pill as off it.
 
+The export's bar: its fill's `width` over 150ms `linear` each time the clock moves it
+on, and a spinner beside its words turning once every 800ms. The page setup's chevron
+turns over in one frame, as any panel opening does.
+
 Nothing else. No transitions on focus outside the search, any other panel opening, or map
 interaction, and no other transition on hover. Those changes are instant.
 
@@ -711,7 +718,8 @@ interactive element.
 Under `prefers-reduced-motion: reduce`, reordering, the sheet, the day's pill, a city's
 dot and everything in the search are instant too, and the empty field's words stay on
 the first of them rather than turning over. The spinner still turns, since it is what
-says the search is waiting.
+says the search is waiting, and so does the export's, for the same reason; the export's
+bar steps rather than slides.
 
 ## Print
 
@@ -819,21 +827,28 @@ In ink alone, everything the accents pick out is ink, every tint of them is
 `neutral-100`, and the pictures are grey.
 
 The export is chosen in a window over the whole page, the deepest shadow's one use:
-the choices down a column on the left, first what to export as a row of two pills, the
-days or the cover only, the cover alone being the trip at a glance, the cover and the
-list of days after it,
-with every choice that is about a day's page faded while it is chosen and kept as it
-was for when the days are wanted again; then the days as chips, every day with
-something on it chosen to begin with, and a word that takes all of them or none, then what goes on the page as boxes with a line under
-each saying what it means, every one of them ticked to begin with, the cover and the
-ruled sheet after each day among them, so a choice only ever takes away, then the paper as rows of pills, its size, which way up,
-how much of it the map takes, how big the words are and whether it is in the map's
-colours or in ink alone, then
-the file's name, and the sheets on the right exactly as they will print, redrawn as
-each choice changes, with the name of the one at the top held over them. The sheets
-are drawn at the paper's own size and the page rule is told the same size and way up,
-so what is chosen here is what comes out and nothing is shrunk or turned to fit. The
-one format is in the button's own words, Export PDF.
+the choices down a column 320px wide on the left, and the sheets on the right exactly
+as they will print, redrawn as each choice changes, with the name of the one at the top
+held over them. The column opens on a switch of two, the full trip or the cover only,
+the chosen one filled in `terracotta-800`, the cover alone being the trip at a glance.
+For the full trip the days follow as chips five across, each its weekday over its date,
+every day with something on it chosen to begin with and filled in `terracotta-800`, and
+a day with nothing on it dashed and out of reach; beside the heading, a word that takes
+all of them, Select all, or none, Clear. Then what the file includes, as seven toggles
+two across, each a glyph and its words on one line: the cover page, the route map, the
+notes on stops, the travel between them, addresses, opening hours, and a ruled page for
+notes after each day. Every one is on to begin with, so a choice only ever takes away;
+one that is on is `terracotta-100` inside `terracotta-300` with its words in
+`terracotta-900`, and one that is off is a `neutral-200` outline with its words in
+`neutral-500`. For the cover alone, neither the days nor what is included is shown.
+Last in the column is the page setup, folded to a line saying the paper, which way up
+and the ink, A4 · Portrait · Colour, and opening to a track of pills for each of those
+and for the size of the map and of the words, the one in force raised on `sheet`; the
+map's size is offered only for the full trip. Under the column, over a hairline, the
+file's name in a field shaped as a pill with .pdf after it, and the button, which names
+the one format and what the export comes to: Export PDF · 21 pages. The sheets are drawn
+at the paper's own size and the page rule is told the same size and way up, so what is
+chosen here is what comes out and nothing is shrunk or turned to fit.
 
 The file is drawn on the server. The export is spelled out in the address of a page
 that holds the sheets and nothing else, a browser of our own opens that page, waits
@@ -841,8 +856,15 @@ for the sheets to be dealt and every picture on them to arrive, and prints it wi
 stylesheet the preview is drawn with. The file comes back as a download under the name
 in the field, so what was looked at and what comes out are one thing, the same on
 every reader's machine, and nothing of a print window, no header, no date, no address,
-is in it. While it is drawn the button says so, and a file that could not be drawn is
-a sentence under the button saying what happened and what to do. The browser's own
+is in it. While it is drawn the column is faded and out of reach, and the
+button becomes a bar filling in `terracotta` over `terracotta-200`, with a spinner and
+how far along it is, and Cancel under it. The server says nothing until the file is
+done, so the bar is paced by the clock, quick at first and slower as it goes, never full
+before the file is, and the file arriving fills it. Once the file is saved, a `sage-600`
+pill says Saved over the file's name and how many pages it is, for a moment, before the
+button comes back. Pressing the button with the name cleared says so under the field and
+puts the cursor in it, and a file that could not be drawn is a sentence under the button
+saying what happened and what to do. The browser's own
 print command still prints the preview while the dialog is open, and the open day
 while it is not.
 

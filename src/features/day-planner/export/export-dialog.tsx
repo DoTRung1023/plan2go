@@ -2,31 +2,61 @@
 
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { object, optional, safeParse, string } from "zod/mini";
-import { CheckIcon, CloseIcon } from "@/ui/icons";
-import { Notice } from "@/ui/notice";
+import {
+  AlertIcon,
+  BookOpenIcon,
+  CheckIcon,
+  ChevronDownIcon,
+  ClockIcon,
+  CloseIcon,
+  DownloadIcon,
+  LoaderIcon,
+  MapIcon,
+  NotebookIcon,
+  NoteIcon,
+  PinIcon,
+  RouteIcon,
+} from "@/ui/icons";
 import type { PlannedDay } from "../compute-trip";
 import { dayMapSources } from "./day-map-source";
 import { exportRequestQuery } from "./export-query";
 import type { ExportRequest } from "./export-request";
 import { DEFAULT_EXPORT, exportRequestKey } from "./export-request";
-import { formatDayTab } from "../format-day-date";
+import { formatDayChip, formatDayTab } from "../format-day-date";
 import { exportFileName } from "./export-name";
 import type { Ink, MapSize, Orientation, PaperSize, TextSize } from "./paper";
 import { sheetGeometry } from "./paper";
 import { PrintedTrip } from "./printed-trip";
 import "./export-dialog.css";
 
-/** The heading over each group of choices. Sentence case, as every label here is. */
+/** The heading over the preview. Sentence case, as every label here is. */
 const HEADING = "text-label font-semibold text-ink-muted";
 
-/** The line between one group of choices and the next. */
-const DIVIDER = "my-[18px] h-px bg-rule";
+/** The heading over each group of choices in the column: Days, Include, Page setup. */
+const GROUP = "text-small/none font-bold text-neutral-700";
+
+/** The ring every control here takes under the keyboard, as everywhere in the product. */
+const FOCUS = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 /** What the export route says when it will not, or cannot, draw the file. */
 const refusalSchema = object({ error: string(), action: optional(string()) });
 
 /** What is said when the route could not be reached at all. */
 const UNREACHABLE = "Could not reach the server. Check your connection and export again.";
+
+/**
+ * How the bar moves while the server draws the file. The server says nothing
+ * until the file is done, so the bar is paced by the clock rather than told:
+ * each tick closes a share of what is left to its ceiling, quick at first and
+ * slower as it goes, so it is always seen to move and is never full before
+ * the file is. The file arriving fills the rest.
+ */
+const PROGRESS_TICK_MS = 140;
+const PROGRESS_SHARE = 0.05;
+const PROGRESS_CEILING = 90;
+
+/** How long Saved is said before the button comes back. */
+const SAVED_FOR_MS = 2600;
 
 /**
  * The file, saved: a link to it made, followed and taken away again in one
@@ -44,112 +74,93 @@ function saveFile(blob: Blob, fileName: string): void {
   }, 60_000);
 }
 
-/**
- * A day, as a pill that is either in the export or not. The pills are dealt
- * into as many equal columns as the row has room for, so they are all one
- * width and fill the row whatever width the column is, rather than sitting
- * at the ragged widths their labels happen to have.
- */
-const CHIPS = "mt-[11px] grid grid-cols-[repeat(auto-fill,minmax(72px,1fr))] gap-[7px]";
-
-const CHIP =
-  "rounded-pill border-[1.5px] px-1 py-2 text-center text-small/none font-semibold whitespace-nowrap disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
-
-const CHIP_ON = "border-terracotta-800 bg-terracotta-800 text-paper";
-
-const CHIP_OFF =
-  "border-rule bg-transparent text-ink-muted hover:border-terracotta hover:text-terracotta-700 disabled:hover:border-rule disabled:hover:text-ink-muted";
-
-/**
- * One thing the export can carry or leave off, with a word under it saying
- * what that means on the page. A box with a tick rather than a switch: a
- * switch is for a thing that is on or off in the product, and this is a
- * thing that is in the file or not.
- */
-function Option({
-  label,
-  note,
-  on,
-  onToggle,
-  disabled = false,
-}: {
+/** What a row of the page setup offers: a value, what its pill says, and what is read out. */
+interface SetupOption<T extends string> {
+  readonly value: T;
   readonly label: string;
-  readonly note: string;
-  readonly on: boolean;
-  readonly onToggle: () => void;
-  /** Of no consequence for now, and drawn faded to say so. */
-  readonly disabled?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      role="checkbox"
-      aria-checked={on}
-      disabled={disabled}
-      onClick={onToggle}
-      className="flex w-full items-start gap-[11px] rounded-chip px-[10px] py-[9px] text-left hover:bg-neutral-200 disabled:opacity-45 disabled:hover:bg-transparent focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta"
-    >
-      <span
-        aria-hidden="true"
-        className={`mt-[1px] grid h-[21px] w-[21px] shrink-0 place-items-center rounded-[7px] border-[1.5px] ${
-          on ? "border-terracotta-800 bg-terracotta-800 text-paper" : "border-rule-strong bg-transparent"
-        }`}
-      >
-        {on ? <CheckIcon size={12} strokeWidth={3.2} /> : null}
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-small font-semibold text-ink">{label}</span>
-        <span className="mt-[2px] block text-micro text-ink-muted">{note}</span>
-      </span>
-    </button>
-  );
+  /** Read out in place of the pill's words where they are shorter than the word: "S" is "Small". */
+  readonly spoken?: string;
+}
+
+const PAPERS: readonly SetupOption<PaperSize>[] = [
+  { value: "a4", label: "A4" },
+  { value: "a5", label: "A5" },
+];
+
+const ORIENTATIONS: readonly SetupOption<Orientation>[] = [
+  { value: "portrait", label: "Portrait" },
+  { value: "landscape", label: "Landscape" },
+];
+
+/** The map's size and the words', each said as its letter. */
+const SIZES: readonly SetupOption<MapSize & TextSize>[] = [
+  { value: "small", label: "S", spoken: "Small" },
+  { value: "medium", label: "M", spoken: "Medium" },
+  { value: "large", label: "L", spoken: "Large" },
+];
+
+const INKS: readonly SetupOption<Ink>[] = [
+  { value: "colour", label: "Colour" },
+  { value: "mono", label: "B&W", spoken: "Black and white" },
+];
+
+/** The two things there are to export: the whole trip, or its cover alone. */
+const MODES: readonly { readonly coverOnly: boolean; readonly label: string }[] = [
+  { coverOnly: false, label: "Full trip" },
+  { coverOnly: true, label: "Cover only" },
+];
+
+/** What the pill in force says, for the line the page setup folds to. */
+function labelOf<T extends string>(options: readonly SetupOption<T>[], value: T): string {
+  return options.find((option) => option.value === value)?.label ?? value;
 }
 
 /**
- * One thing about the paper that is one of a few, as a row of pills with the
- * one in force filled, under a word saying what the row is. A row of radio
- * buttons to a screen reader, which is what it is.
+ * One thing about the paper that is one of a few: a word, and beside it a
+ * track of pills with the one in force raised on the sheet's white. A row of
+ * radio buttons to a screen reader, which is what it is.
  */
-function Choice<T extends string>({
-  label,
+function SetupRow<T extends string>({
+  title,
   options,
   value,
   onChange,
-  disabled = false,
-  heading = false,
 }: {
-  readonly label: string;
-  readonly options: readonly { readonly value: T; readonly label: string }[];
+  readonly title: string;
+  readonly options: readonly SetupOption<T>[];
   readonly value: T;
   readonly onChange: (value: T) => void;
-  /** Of no consequence for now, and drawn faded to say so. */
-  readonly disabled?: boolean;
-  /** A group of its own, under a heading as the other groups are, rather than a row in one. */
-  readonly heading?: boolean;
 }) {
   return (
-    <div className={disabled ? "opacity-45" : ""}>
-      <p className={heading ? HEADING : "text-micro font-semibold text-ink-muted"}>{label}</p>
+    <div className="flex items-center gap-[10px]">
+      <span aria-hidden="true" className="w-[52px] shrink-0 text-[12.5px]/none font-semibold text-neutral-600">
+        {title}
+      </span>
       <div
         role="radiogroup"
-        aria-label={label}
-        className={`${heading ? "mt-[11px]" : "mt-[6px]"} grid auto-cols-fr grid-flow-col gap-[7px]`}
+        aria-label={title}
+        className="flex flex-1 gap-[2px] rounded-pill bg-neutral-200 p-[3px]"
       >
-        {options.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            role="radio"
-            aria-checked={option.value === value}
-            disabled={disabled}
-            onClick={() => {
-              onChange(option.value);
-            }}
-            className={`${CHIP} ${option.value === value ? CHIP_ON : CHIP_OFF}`}
-          >
-            {option.label}
-          </button>
-        ))}
+        {options.map((option) => {
+          const on = option.value === value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={on}
+              aria-label={option.spoken}
+              onClick={() => {
+                onChange(option.value);
+              }}
+              className={`flex-1 rounded-pill py-[7px] text-meta/none font-bold ${FOCUS} ${
+                on ? "bg-sheet text-ink shadow-sm" : "text-neutral-600"
+              }`}
+            >
+              {option.label}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -191,7 +202,8 @@ interface ExportDialogProps {
  */
 export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDialogProps) {
   const titleId = useId();
-  const nameId = useId();
+  const setupId = useId();
+  const nameErrorId = useId();
   const closeButton = useRef<HTMLButtonElement | null>(null);
   const preview = useRef<HTMLDivElement | null>(null);
   const scroller = useRef<HTMLDivElement | null>(null);
@@ -223,10 +235,21 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
   const [sheetsFor, setSheetsFor] = useState<{ readonly key: string; readonly count: number } | null>(
     null,
   );
-  /** The file was asked for and the server is drawing it. */
-  const [exporting, setExporting] = useState(false);
+  /** Where the export is: waiting to be asked for, being drawn, or just saved. */
+  const [phase, setPhase] = useState<"idle" | "busy" | "done">("idle");
+  /** How far along the bar is while the file is drawn, out of a hundred. */
+  const [progress, setProgress] = useState(0);
+  /** What the file was last saved as, said under Saved. */
+  const [savedAs, setSavedAs] = useState("");
+  /** The export was asked for with the name cleared. */
+  const [nameError, setNameError] = useState(false);
+  /** The page setup, open under its line or folded to it. */
+  const [setupOpen, setSetupOpen] = useState(false);
   /** Why the last export came back without a file, or null while there is nothing to say. */
   const [exportError, setExportError] = useState<string | null>(null);
+  /** The export being drawn, so Cancel can call it off. */
+  const asking = useRef<AbortController | null>(null);
+  const nameInput = useRef<HTMLInputElement | null>(null);
   /** The name of the page at the top of the preview: "Day 2", "Cover", "Day 2 · notes". */
   const [onPage, setOnPage] = useState<string | null>(null);
 
@@ -273,9 +296,9 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
     available: printable.length,
     coverOnly,
   });
-  const fileName = (typedName ?? suggestedName).trim() || suggestedName;
-  /** The name has been cleared, so the export would fall back to the suggestion. */
-  const unnamed = typedName !== null && typedName.trim() === "";
+  /** What the file is saved as, or nothing once the field is cleared, which the export asks to have filled. */
+  const fileName = (typedName ?? suggestedName).trim();
+  const busy = phase === "busy";
 
   /** Starts on the way out, so the keyboard lands on the way out too. */
   useEffect(() => {
@@ -369,21 +392,58 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
     placeOnPage();
   }, [placeOnPage, requestKey, sheets]);
 
+  /* The bar, moved on by the clock for as long as the file is being drawn. */
+  useEffect(() => {
+    if (phase !== "busy") {
+      return;
+    }
+    const tick = setInterval(() => {
+      setProgress((now) => now + (PROGRESS_CEILING - now) * PROGRESS_SHARE);
+    }, PROGRESS_TICK_MS);
+    return () => {
+      clearInterval(tick);
+    };
+  }, [phase]);
+
+  /* Saved is said for a moment, and then the button comes back. */
+  useEffect(() => {
+    if (phase !== "done") {
+      return;
+    }
+    const back = setTimeout(() => {
+      setPhase("idle");
+      setProgress(0);
+    }, SAVED_FOR_MS);
+    return () => {
+      clearTimeout(back);
+    };
+  }, [phase]);
+
   /**
    * The file, asked for and saved. The request is spelled out in the
    * address, the same way the server's browser is then told it, and the
    * name goes with it so the file arrives called what the field says. What
    * comes back is either the file or a sentence about why not, which is
-   * said under the button.
+   * said under the button. A cleared name is asked for in the field rather
+   * than sent. Cancel calls the request off, which is not a failure: the
+   * button simply comes back.
    */
   const exportPdf = async (): Promise<void> => {
-    setExporting(true);
+    if (fileName === "") {
+      setNameError(true);
+      nameInput.current?.focus();
+      return;
+    }
+    const controller = new AbortController();
+    asking.current = controller;
     setExportError(null);
+    setProgress(0);
+    setPhase("busy");
     try {
       const query = exportRequestQuery(request);
       query.set("slug", slug);
       query.set("name", fileName);
-      const response = await fetch(`/api/export?${query.toString()}`);
+      const response = await fetch(`/api/export?${query.toString()}`, { signal: controller.signal });
       if (!response.ok) {
         const refusal = safeParse(refusalSchema, await response.json().catch(() => null));
         setExportError(
@@ -391,13 +451,20 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
             ? [refusal.data.error, refusal.data.action].filter(Boolean).join(" ")
             : UNREACHABLE,
         );
+        setPhase("idle");
         return;
       }
       saveFile(await response.blob(), `${fileName}.pdf`);
+      setSavedAs(`${fileName}.pdf`);
+      setProgress(100);
+      setPhase("done");
     } catch {
-      setExportError(UNREACHABLE);
+      if (!controller.signal.aborted) {
+        setExportError(UNREACHABLE);
+      }
+      setPhase("idle");
     } finally {
-      setExporting(false);
+      asking.current = null;
     }
   };
 
@@ -413,10 +480,10 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
   };
 
   /**
-   * Everything, or nothing: the chip for it is drawn chosen while every day
-   * is, whichever way the days came to be chosen, and pressing it then takes
-   * every day off, the way a chip comes off. A day is then chosen from
-   * nothing, which reads as the choice it is; the export waits until one is.
+   * Everything, or nothing: the word beside the heading says Clear while
+   * every day is chosen, whichever way the days came to be, and takes every
+   * day off; otherwise it says Select all. A day is then chosen from nothing,
+   * which reads as the choice it is; the export waits until one is.
    */
   const toggleAll = (): void => {
     keepPlace();
@@ -427,6 +494,24 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
   const pageWord = sheets === 1 ? "page" : "pages";
   /** "3 pages", once the sheets have been dealt; nothing to say before. */
   const pageCount = sheets === null ? null : `${String(sheets)} ${pageWord}`;
+  /** What the file can carry or leave off, every one on to begin with, so a choice only ever takes away. */
+  const includes = [
+    { label: "Cover page", Icon: BookOpenIcon, on: cover, set: setCover },
+    { label: "Route map", Icon: MapIcon, on: map, set: setMap },
+    { label: "Stop notes", Icon: NoteIcon, on: notes, set: setNotes },
+    { label: "Travel", Icon: RouteIcon, on: legs, set: setLegs },
+    { label: "Addresses", Icon: PinIcon, on: addresses, set: setAddresses },
+    { label: "Opening hours", Icon: ClockIcon, on: hours, set: setHours },
+    { label: "Notes pages", Icon: NotebookIcon, on: ruled, set: setRuled },
+  ];
+  /** The page setup, folded to one line: "A4 · Portrait · Colour". */
+  const setupSummary = [
+    labelOf(PAPERS, paper),
+    labelOf(ORIENTATIONS, orientation),
+    ink === "mono" ? "Black & white" : "Colour",
+  ].join(" · ");
+  /** The bar's share, as it is said beside the spinner. */
+  const shown = Math.round(progress);
 
   return (
     <div
@@ -463,234 +548,263 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
         </header>
 
         <div className="export-body flex min-h-0 flex-1 flex-col border-t border-rule lg:flex-row">
-          <aside className="export-chrome flex max-h-[55%] shrink-0 flex-col border-b border-rule lg:max-h-none lg:w-[300px] lg:border-r lg:border-b-0">
-            <div className="scroll-quiet min-h-0 flex-1 overflow-y-auto px-6 pt-5 pb-[10px]">
-              <Choice
-                heading
-                label="What to export"
-                options={[
-                  { value: "days", label: "Days" },
-                  { value: "cover", label: "Cover only" },
-                ]}
-                value={coverOnly ? "cover" : "days"}
-                onChange={choose((value: "days" | "cover"): void => {
-                  setCoverOnly(value === "cover");
-                })}
-              />
-              <div className={DIVIDER} />
-
-              <p className={HEADING}>Which days</p>
-              <div className={CHIPS}>
-                {printable.length > 1 ? (
-                  <button
-                    type="button"
-                    aria-pressed={allPicked}
-                    disabled={coverOnly}
-                    onClick={toggleAll}
-                    className={`${CHIP} ${allPicked ? CHIP_ON : CHIP_OFF}`}
-                  >
-                    All days
-                  </button>
-                ) : null}
-                {days.map((day, index) => {
-                  const on = chosen.has(day.plan.id);
-                  const empty = day.plan.stops.length === 0;
+          <aside className="export-chrome flex max-h-[55%] shrink-0 flex-col border-b border-rule lg:max-h-none lg:w-[320px] lg:border-r lg:border-b-0">
+            {/* Faded and out of reach while the file is drawn, so nothing is
+                changed under an export already asked for. */}
+            <div
+              inert={busy}
+              className={`scroll-quiet min-h-0 flex-1 overflow-y-auto px-5 pt-[22px] pb-[18px] ${busy ? "opacity-45" : ""}`}
+            >
+              <div
+                role="radiogroup"
+                aria-label="What to export"
+                className="flex gap-[3px] rounded-pill bg-neutral-200 p-1"
+              >
+                {MODES.map((mode) => {
+                  const on = mode.coverOnly === coverOnly;
                   return (
                     <button
-                      key={day.plan.id}
+                      key={mode.label}
                       type="button"
-                      aria-pressed={on}
-                      disabled={empty || coverOnly}
-                      title={empty ? "Nothing on this day yet" : undefined}
-                      aria-label={`Day ${String(index + 1)}, ${formatDayTab(day.plan.date)}`}
+                      role="radio"
+                      aria-checked={on}
                       onClick={() => {
-                        toggleDay(day.plan.id);
+                        choose(setCoverOnly)(mode.coverOnly);
                       }}
-                      className={`${CHIP} ${on ? CHIP_ON : CHIP_OFF}`}
+                      className={`flex-1 rounded-pill py-[10px] text-[13.5px]/none font-bold ${FOCUS} ${
+                        on ? "bg-terracotta-800 text-sheet shadow-sm" : "text-neutral-700"
+                      }`}
                     >
-                      {formatDayTab(day.plan.date)}
+                      {mode.label}
                     </button>
                   );
                 })}
               </div>
-              <div className={DIVIDER} />
 
-              <p className={HEADING}>Extra pages</p>
-              <div className="-mx-[10px] mt-[6px]">
-                <Option
-                  label="Cover page"
-                  note="Route, stays and every day at a glance"
-                  on={coverOnly || cover}
-                  onToggle={flip(setCover, cover)}
-                  disabled={coverOnly}
-                />
-              </div>
+              {coverOnly ? null : (
+                <>
+                  <div className="mt-[26px]">
+                    <div className="flex items-baseline gap-2">
+                      <p className={`flex-1 ${GROUP}`}>Days</p>
+                      <button
+                        type="button"
+                        onClick={toggleAll}
+                        className={`-mx-[6px] -my-1 rounded-pill px-[6px] py-1 text-[12.5px]/none font-bold text-terracotta-700 hover:text-terracotta-900 ${FOCUS}`}
+                      >
+                        {allPicked ? "Clear" : "Select all"}
+                      </button>
+                    </div>
+                    {/* Five across, each day its weekday over its date. A day
+                        with nothing on it is dashed and cannot be chosen: a
+                        blank sheet is worse than no sheet. */}
+                    <div className="mt-3 grid grid-cols-5 gap-[6px]">
+                      {days.map((day, index) => {
+                        const on = chosen.has(day.plan.id);
+                        const empty = day.plan.stops.length === 0;
+                        const chip = formatDayChip(day.plan.date);
+                        return (
+                          <button
+                            key={day.plan.id}
+                            type="button"
+                            aria-pressed={on}
+                            disabled={empty}
+                            title={empty ? "No stops planned" : undefined}
+                            aria-label={`Day ${String(index + 1)}, ${formatDayTab(day.plan.date)}`}
+                            onClick={() => {
+                              toggleDay(day.plan.id);
+                            }}
+                            className={`flex flex-col items-center gap-1 rounded-chip border-[1.5px] pt-2 pb-[9px] ${FOCUS} ${
+                              empty
+                                ? "cursor-not-allowed border-dashed border-neutral-300 text-neutral-400"
+                                : on
+                                  ? "border-terracotta-800 bg-terracotta-800 text-sheet"
+                                  : "border-neutral-300 text-neutral-700"
+                            }`}
+                          >
+                            <span className="text-label font-semibold opacity-80">{chip.weekday}</span>
+                            <span className="text-[16px]/none font-bold">{chip.day}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
 
-              <div className={DIVIDER} />
+                  <div className="mt-[26px]">
+                    <p className={GROUP}>Include</p>
+                    <div className="mt-3 grid grid-cols-2 gap-[6px]">
+                      {includes.map(({ label, Icon, on, set }) => (
+                        <button
+                          key={label}
+                          type="button"
+                          aria-pressed={on}
+                          onClick={flip(set, on)}
+                          className={`flex items-center gap-2 rounded-chip border-[1.5px] px-[11px] py-[10px] text-left text-[12.5px]/[1.15] font-semibold ${FOCUS} ${
+                            on
+                              ? "border-terracotta-300 bg-terracotta-100 text-terracotta-900"
+                              : "border-neutral-200 text-neutral-500"
+                          }`}
+                        >
+                          <Icon size={16} strokeWidth={2.75} className="shrink-0" />
+                          {/* On one line, as every toggle is: the longest,
+                              Opening hours, is a pixel wider than the room
+                              beside its glyph, and takes it from the padding
+                              rather than breaking onto a second line. */}
+                          <span className="min-w-0 whitespace-nowrap">{label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
 
-              <p className={HEADING}>Details</p>
-              <div className="-mx-[10px] mt-[6px] flex flex-col gap-px">
-                <Option
-                  label="Map of the route"
-                  note="At the top of each day"
-                  on={map}
-                  onToggle={flip(setMap, map)}
-                  disabled={coverOnly}
-                />
-                <Option
-                  label="Notes on stops"
-                  note="What you wrote"
-                  on={notes}
-                  onToggle={flip(setNotes, notes)}
-                  disabled={coverOnly}
-                />
-                <Option
-                  label="How you get between stops"
-                  note="Mode, time and distance"
-                  on={legs}
-                  onToggle={flip(setLegs, legs)}
-                  disabled={coverOnly}
-                />
-                <Option
-                  label="Street addresses"
-                  note="In the local language"
-                  on={addresses}
-                  onToggle={flip(setAddresses, addresses)}
-                  disabled={coverOnly}
-                />
-                <Option
-                  label="Opening hours"
-                  note="When each place is open that day"
-                  on={hours}
-                  onToggle={flip(setHours, hours)}
-                  disabled={coverOnly}
-                />
-                <Option
-                  label="Notes page"
-                  note="A blank lined page after each day"
-                  on={ruled}
-                  onToggle={flip(setRuled, ruled)}
-                  disabled={coverOnly}
-                />
-              </div>
-
-              <div className={DIVIDER} />
-
-              <p className={HEADING}>Paper</p>
-              <div className="mt-[11px] flex flex-col gap-[14px]">
-                <Choice
-                  label="Size"
-                  options={[
-                    { value: "a4", label: "A4" },
-                    { value: "a5", label: "A5" },
-                  ]}
-                  value={paper}
-                  onChange={choose(setPaper)}
-                />
-                <Choice
-                  label="Way up"
-                  options={[
-                    { value: "portrait", label: "Portrait" },
-                    { value: "landscape", label: "Landscape" },
-                  ]}
-                  value={orientation}
-                  onChange={choose(setOrientation)}
-                />
-                <Choice
-                  label="Map size"
-                  options={[
-                    { value: "small", label: "Small" },
-                    { value: "medium", label: "Medium" },
-                    { value: "large", label: "Large" },
-                  ]}
-                  value={mapSize}
-                  onChange={choose(setMapSize)}
-                  disabled={!map || coverOnly}
-                />
-                <Choice
-                  label="Text size"
-                  options={[
-                    { value: "small", label: "Small" },
-                    { value: "medium", label: "Medium" },
-                    { value: "large", label: "Large" },
-                  ]}
-                  value={text}
-                  onChange={choose(setText)}
-                />
-                <Choice
-                  label="Ink"
-                  options={[
-                    { value: "colour", label: "Colour" },
-                    { value: "mono", label: "Black and white" },
-                  ]}
-                  value={ink}
-                  onChange={choose(setInk)}
-                />
-              </div>
-
-              <div className={DIVIDER} />
-
-              <label htmlFor={nameId} className={`block ${HEADING}`}>
-                File name
-              </label>
-              {/* The name as a line of text with .pdf on the end of it, edited
-                  in place. The field is as wide as what is in it: a copy of
-                  the name, laid under it and never seen, gives it its width,
-                  so the extension stays on the end of the name rather than at
-                  the far side of a box. A rule under the name, terracotta
-                  while it is being typed in, is what says it can be. */}
-              <div className="mt-[8px] flex items-baseline text-small">
-                <span className="grid min-w-0 overflow-hidden border-b border-rule-strong pb-[3px] focus-within:border-terracotta">
-                  {/* A space when the name is empty, so the copy still has a
-                      line, and the baseline .pdf sits on does not fall to the
-                      rule below. */}
-                  <span aria-hidden="true" className="invisible col-start-1 row-start-1 whitespace-pre">
-                    {(typedName ?? suggestedName) || "\u00A0"}
+              {/* The paper, folded to one line saying it, and opening to a
+                  track of pills for each thing about it. */}
+              <div className="mt-[26px]">
+                <button
+                  type="button"
+                  aria-expanded={setupOpen}
+                  aria-controls={setupId}
+                  onClick={() => {
+                    setSetupOpen(!setupOpen);
+                  }}
+                  className={`flex w-full items-center gap-[10px] rounded-chip bg-neutral-100 px-[14px] py-3 text-left hover:bg-neutral-200 ${FOCUS}`}
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className={`block ${GROUP}`}>Page setup</span>
+                    <span className="mt-[5px] block text-[12.5px]/[1.2] font-medium text-neutral-600">
+                      {setupSummary}
+                    </span>
                   </span>
-                  <input
-                    id={nameId}
-                    type="text"
-                    /* One character of its own width, so the copy alone decides it. */
-                    size={1}
-                    value={typedName ?? suggestedName}
-                    onChange={(event) => {
-                      setTypedName(event.target.value);
-                    }}
-                    className="col-start-1 row-start-1 w-full min-w-[2ch] border-0 bg-transparent p-0 text-small text-ink caret-terracotta outline-none"
+                  <ChevronDownIcon
+                    size={16}
+                    strokeWidth={2.75}
+                    className={`shrink-0 text-neutral-600 ${setupOpen ? "rotate-180" : ""}`}
                   />
-                </span>
-                <span className="shrink-0 text-ink-muted">.pdf</span>
+                </button>
+                {setupOpen ? (
+                  <div id={setupId} className="flex flex-col gap-[10px] px-[2px] pt-[14px] pb-[2px]">
+                    <SetupRow title="Paper" options={PAPERS} value={paper} onChange={choose(setPaper)} />
+                    <SetupRow
+                      title="Layout"
+                      options={ORIENTATIONS}
+                      value={orientation}
+                      onChange={choose(setOrientation)}
+                    />
+                    {coverOnly ? null : (
+                      <SetupRow title="Map" options={SIZES} value={mapSize} onChange={choose(setMapSize)} />
+                    )}
+                    <SetupRow title="Text" options={SIZES} value={text} onChange={choose(setText)} />
+                    <SetupRow title="Ink" options={INKS} value={ink} onChange={choose(setInk)} />
+                  </div>
+                ) : null}
               </div>
-              {unnamed ? (
-                <Notice role="alert" shape="note" className="mt-[10px]">
-                  Give the file a name, or it is saved as {suggestedName}.
-                </Notice>
-              ) : null}
             </div>
 
-            <div className="shrink-0 border-t border-rule px-6 pt-[14px] pb-[18px]">
-              <button
-                type="button"
-                disabled={nothing || exporting}
-                onClick={() => {
-                  void exportPdf();
-                }}
-                className="h-10 w-full rounded-pill bg-terracotta px-5 text-small/none font-semibold text-paper hover:bg-terracotta-600 active:bg-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+            <div className="shrink-0 border-t border-neutral-200 px-5 pt-[14px] pb-[18px]">
+              {/* The name, with .pdf after it, in a field shaped as a pill. */}
+              <div
+                className={`flex items-center gap-1 rounded-pill border-[1.5px] bg-sheet px-4 ${
+                  nameError ? "border-terracotta-700" : "border-neutral-300 focus-within:border-terracotta"
+                } ${busy ? "opacity-45" : ""}`}
               >
-                {exporting ? "Drawing the pages" : "Export PDF"}
-              </button>
-              {/* Always in the DOM so the announcement lands; empty, and so
-                  without height, until the server is drawing the file. */}
-              <p
-                aria-live="polite"
-                className={`text-center text-meta text-ink-muted ${exporting ? "mt-[10px]" : ""}`}
-              >
-                {exporting ? "This takes a few seconds." : null}
-              </p>
+                <input
+                  ref={nameInput}
+                  type="text"
+                  aria-label="File name"
+                  aria-invalid={nameError}
+                  aria-describedby={nameError ? nameErrorId : undefined}
+                  placeholder="File name"
+                  value={typedName ?? suggestedName}
+                  disabled={busy}
+                  onChange={(event) => {
+                    setTypedName(event.target.value);
+                    setNameError(false);
+                  }}
+                  className="min-w-0 flex-1 border-0 bg-transparent py-[11px] text-body/none font-medium text-ink outline-none placeholder:text-ink-faint"
+                />
+                <span className="shrink-0 text-body/none font-medium text-neutral-500">.pdf</span>
+              </div>
+              {nameError ? (
+                <p
+                  id={nameErrorId}
+                  role="alert"
+                  className="mt-2 ml-[14px] flex items-center gap-[6px] text-[12.5px]/[1.2] font-semibold text-terracotta-800"
+                >
+                  <AlertIcon size={14} strokeWidth={2.75} />
+                  Name your file to export
+                </p>
+              ) : null}
+
+              <div className="mt-3">
+                {phase === "idle" ? (
+                  <button
+                    type="button"
+                    disabled={nothing}
+                    onClick={() => {
+                      void exportPdf();
+                    }}
+                    className={`mt-[8.8px] flex w-full items-center justify-center gap-[9px] rounded-pill border border-transparent bg-terracotta px-5 py-[14px] font-display text-[15px]/[1.2] font-bold text-paper hover:bg-terracotta-600 active:bg-terracotta-700 disabled:cursor-not-allowed disabled:opacity-45 ${FOCUS}`}
+                  >
+                    <DownloadIcon size={17} strokeWidth={2.75} />
+                    <span>Export PDF</span>
+                    {pageCount === null ? null : <span className="font-medium opacity-80">· {pageCount}</span>}
+                  </button>
+                ) : null}
+
+                {/* While the file is drawn: a bar filling over its tint, with a
+                    spinner and how far along it is. Only the words are read
+                    out, once, rather than every step of the number. */}
+                {phase === "busy" ? (
+                  <>
+                    <div role="status" className="relative h-12 overflow-hidden rounded-pill bg-terracotta-200">
+                      <div
+                        className="absolute inset-y-0 left-0 rounded-pill bg-terracotta transition-[width] duration-150 ease-linear motion-reduce:transition-none"
+                        style={{ width: `${String(shown)}%` }}
+                      />
+                      <div className="relative flex h-full items-center justify-center gap-[9px] text-[15px]/none font-bold text-terracotta-900">
+                        <LoaderIcon size={17} strokeWidth={2.75} className="export-spinner" />
+                        <span>
+                          Making PDF…<span aria-hidden="true"> {shown}%</span>
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        asking.current?.abort();
+                      }}
+                      className={`mt-[6px] flex w-full items-center justify-center rounded-pill border border-transparent px-[14px] py-[9px] font-display text-[13.5px]/[1.2] font-bold text-terracotta hover:bg-terracotta/10 active:bg-terracotta/18 ${FOCUS}`}
+                    >
+                      Cancel
+                    </button>
+                  </>
+                ) : null}
+
+                {phase === "done" ? (
+                  <>
+                    <div
+                      role="status"
+                      className="flex h-12 items-center justify-center gap-[9px] rounded-pill bg-sage-600 text-[15px]/none font-bold text-sheet"
+                    >
+                      <CheckIcon size={18} strokeWidth={2.75} />
+                      <span>Saved</span>
+                    </div>
+                    <p className="mt-[9px] truncate text-center text-[12.5px]/[1.3] font-medium text-neutral-600">
+                      {savedAs}
+                      {pageCount === null ? "" : ` · ${pageCount}`}
+                    </p>
+                  </>
+                ) : null}
+              </div>
+
               {exportError === null ? null : (
-                <Notice role="alert" shape="note" className="mt-[10px]">
-                  {exportError}
-                </Notice>
+                <p
+                  role="alert"
+                  className="mt-[10px] ml-[14px] flex items-start gap-[6px] text-[12.5px]/[1.3] font-semibold text-terracotta-800"
+                >
+                  <AlertIcon size={14} strokeWidth={2.75} className="mt-px shrink-0" />
+                  <span>{exportError}</span>
+                </p>
               )}
             </div>
           </aside>
