@@ -800,7 +800,8 @@ wash of the ink, and the way and how far, which opens the journey in Google Maps
 thread is unbroken from one place's mark to the next: it runs on from under a mark to
 the foot of that place's row in the ink of the leg that leaves it, through the leg's
 row, to the next mark, touching both. With the legs left off, the rows keep a gap
-of their own.
+of their own, and the thread is kept: it runs down that gap to the next mark instead,
+in the same ink.
 
 A sheet to write on after a day is headed as the day's sheet is, "Notes" ahead of which
 day, and ruled every 34px in `neutral-200` from a rule of ink to its foot. Every sheet

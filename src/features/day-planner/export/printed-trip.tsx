@@ -657,12 +657,35 @@ function LegRow({ day, legIndex }: { readonly day: PlannedDay; readonly legIndex
 /**
  * The thread from under a place's mark to the foot of its row, in the ink of
  * the leg that leaves the place, where the leg's own row takes it on to the
- * next place's mark, so the line runs unbroken from one mark to the next.
- * None under a place no leg leaves, or with the legs left off the page.
+ * next place's mark, or with the legs left off the page, the gap over the
+ * next row does, so the line runs unbroken from one mark to the next either
+ * way. None under a place no leg leaves.
  */
 function ThreadBelow({ legIndex }: { readonly legIndex: number | null }) {
   return legIndex === null ? null : (
-    <span aria-hidden="true" className="printed-leg-line" style={{ color: legColor(legIndex) }} />
+    <span
+      aria-hidden="true"
+      className="printed-leg-line printed-thread-below"
+      style={{ color: legColor(legIndex) }}
+    />
+  );
+}
+
+/**
+ * With the legs left off the page, the gap a row stands below the one before,
+ * with the thread carried down it to the row's mark in the ink of the leg that
+ * arrives there. The gap is kept even with no leg to draw in it, so the mark
+ * stays level with the words beside it.
+ */
+function ThreadAbove({ legIndex }: { readonly legIndex: number | null }) {
+  return legIndex === null ? (
+    <span aria-hidden="true" className="printed-thread-above" />
+  ) : (
+    <span
+      aria-hidden="true"
+      className="printed-leg-line printed-thread-above"
+      style={{ color: legColor(legIndex) }}
+    />
   );
 }
 
@@ -679,6 +702,7 @@ function EndRow({
   address,
   finish,
   gap,
+  arriving,
   leaving,
 }: {
   readonly time: ClockTime | null;
@@ -688,6 +712,8 @@ function EndRow({
   readonly address: string | null;
   readonly finish: boolean;
   readonly gap: boolean;
+  /** The leg into this place, whose thread comes down the gap over the square, or null for none. */
+  readonly arriving: number | null;
   /** The leg out of this place, whose thread runs on under the square, or null for none. */
   readonly leaving: number | null;
 }) {
@@ -696,6 +722,7 @@ function EndRow({
     <div className={`printed-row printed-row-at ${gap ? "printed-gap" : ""}`}>
       <p className="printed-when printed-when-at">{time === null ? "" : formatDayTime(time)}</p>
       <div className="printed-mark">
+        {gap ? <ThreadAbove legIndex={arriving} /> : null}
         <span className="printed-end-mark">
           <Glyph size={12} strokeWidth={3} />
         </span>
@@ -749,7 +776,8 @@ function dayUnits({ day, request }: DayContext): readonly Unit[] {
           address={request.addresses ? start.place.address : null}
           finish={false}
           gap={gapped()}
-          leaving={request.legs ? (computed.legs[0]?.index ?? null) : null}
+          arriving={null}
+          leaving={computed.legs[0]?.index ?? null}
         />
       ),
     });
@@ -761,7 +789,8 @@ function dayUnits({ day, request }: DayContext): readonly Unit[] {
     const hours = place === undefined ? null : hoursOn(place, plan);
     const note = notes.get(stop.stopId) ?? null;
     const conflicts = conflictsAtStop(computed.conflicts, stop.stopId);
-    const leaving = request.legs ? (computed.legs[legIndex + 1]?.index ?? null) : null;
+    const arriving = legIndex < 0 ? null : (computed.legs[legIndex]?.index ?? null);
+    const leaving = computed.legs[legIndex + 1]?.index ?? null;
     const gap = gapped();
     units.push({
       key: stop.stopId,
@@ -776,6 +805,7 @@ function dayUnits({ day, request }: DayContext): readonly Unit[] {
               )}
             </div>
             <div className="printed-mark">
+              {gap ? <ThreadAbove legIndex={arriving} /> : null}
               <span className="printed-badge">
                 <span aria-hidden="true">{index + 1}</span>
                 <span className="sr-only">Stop {index + 1}</span>
@@ -824,6 +854,7 @@ function dayUnits({ day, request }: DayContext): readonly Unit[] {
             address={request.addresses && !sameEnds ? end.place.address : null}
             finish={!sameEnds}
             gap={gap}
+            arriving={legToEnd.index}
             leaving={null}
           />
         </>

@@ -564,9 +564,25 @@
   align-items: start;
 }
 
-/* The room between the rows of a day when no leg stands between them. */
+/* The room between the rows of a day when no leg stands between them. The
+   column of the row's mark reaches up through it, so the thread can be drawn
+   down it to the mark. */
 .printed-gap {
-  padding-top: 14px;
+  --printed-gap: 14px;
+  padding-top: var(--printed-gap);
+}
+
+.printed-gap .printed-mark {
+  margin-top: calc(-1 * var(--printed-gap));
+}
+
+/* The thread down that room, as tall as it and a pixel onto the mark below,
+   so it meets it: an end's square sits a pixel down, and a stop's disc is
+   drawn over it. */
+.printed-thread-above {
+  flex: none;
+  height: calc(var(--printed-gap) + 1px);
+  margin-bottom: -1px;
 }
 
 /* A leg: how long, a length of the dotted thread, and the way and how far,
@@ -668,7 +684,7 @@
   align-self: stretch;
 }
 
-.printed-mark > .printed-leg-line {
+.printed-thread-below {
   flex: 1;
 }
 
