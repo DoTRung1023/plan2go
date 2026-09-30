@@ -583,18 +583,39 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* The thread, and on it the way's glyph on a disc in the leg's own ink, the
+   colour its line is drawn in on the map, so the leg on the list and its line
+   are matched by eye. One cell for both, the disc over the thread. */
 .printed-leg-thread {
-  display: flex;
-  justify-content: center;
+  display: grid;
+  justify-items: center;
 }
 
-.printed-leg-thread > span {
+.printed-leg-thread > * {
+  grid-area: 1 / 1;
+}
+
+.printed-leg-line {
   width: 2px;
   background: repeating-linear-gradient(
     to bottom,
     var(--color-neutral-300) 0 4px,
     transparent 4px 8px
   );
+}
+
+/* Smaller than a stop's disc, so it reads as a way between two stops rather
+   than as a third, and on the middle of the first line of the words beside
+   it, whatever is said under them. Its wash is laid over the sheet, so the
+   thread stops at its edge rather than running through it. */
+.printed-leg-disc {
+  display: grid;
+  place-items: center;
+  align-self: start;
+  width: 20px;
+  height: 20px;
+  margin-top: calc(6px + (1.3 * 13px * var(--sheet-text) - 20px) / 2);
+  border-radius: var(--radius-pill);
 }
 
 /* When a row happens: the time it starts, and under a stop the time it is

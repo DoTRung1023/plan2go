@@ -19,7 +19,7 @@ import { formatDateRange, formatDayDate, formatDayLong } from "../format-day-dat
 import { formatDayTime } from "../format-day-time";
 import { hoursOn } from "../format-opening-hours";
 import { formatStops } from "../format-stops";
-import { MODE_WORDS } from "../leg-marks";
+import { legDisc, MODE_ICON, MODE_WORDS } from "../leg-marks";
 import type { DayMapSources } from "./day-map-source";
 import { drawnLegs } from "./day-map-source";
 import type { ExportRequest } from "./export-request";
@@ -595,8 +595,9 @@ function LegDuration({ minutes, rough }: { readonly minutes: number; readonly ro
 
 /**
  * A leg between two rows of the day: how long it takes, a length of the
- * dotted thread, and the way and how far, opening the journey in Google Maps,
- * where the live times are. On public transport, what to catch.
+ * dotted thread with the way's glyph on a disc over it, in the ink the map
+ * draws this leg's line in, and the way and how far, opening the journey in
+ * Google Maps, where the live times are. On public transport, what to catch.
  */
 function LegRow({ day, legIndex }: { readonly day: PlannedDay; readonly legIndex: number }) {
   const leg = day.computed.legs[legIndex];
@@ -611,6 +612,7 @@ function LegRow({ day, legIndex }: { readonly day: PlannedDay; readonly legIndex
   /** What to catch, which is the one thing about a leg worth having on paper. */
   const rides = leg.mode === "transit" ? (chosen?.rides ?? []) : [];
   const words = `${MODE_WORDS[leg.mode]}${distance === null ? "" : ` · ${distance}`}`;
+  const Icon = MODE_ICON[leg.mode];
 
   return (
     <div className="printed-row">
@@ -620,7 +622,13 @@ function LegRow({ day, legIndex }: { readonly day: PlannedDay; readonly legIndex
         )}
       </p>
       <div aria-hidden="true" className="printed-leg-thread">
-        <span />
+        <span className="printed-leg-line" />
+        {/* A leg nobody can cover this way names no way, so it has no glyph. */}
+        {leg.durationMinutes === null ? null : (
+          <span className="printed-leg-disc" style={legDisc(leg.index, "var(--sheet)")}>
+            <Icon size={12} strokeWidth={2.4} />
+          </span>
+        )}
       </div>
       <div className="printed-leg-words">
         {leg.durationMinutes === null ? (
