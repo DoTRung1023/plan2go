@@ -118,12 +118,16 @@
   height: 19px;
 }
 
+.printed-brand-cover {
+  gap: 7px;
+}
+
 .printed-brand-cover .printed-brand-mark {
-  height: 25px;
+  height: 27px;
 }
 
 .printed-brand-cover .printed-brand-word {
-  height: 21px;
+  height: 23px;
 }
 
 /* The head of every sheet but the cover: the trip and its dates, and the
@@ -187,30 +191,39 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* The cover: the lockup on the right, then the trip, its dates and what it
-   comes to. */
-.printed-cover-brand {
+/* The cover: a bar saying what the sheets are, with the lockup on the
+   right, over a hairline; then the trip, its dates and what it comes to. */
+.printed-cover-top {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--color-neutral-200);
 }
 
-.printed-cover-intro {
-  margin-top: 64px;
-}
-
-.printed-eyebrow {
-  color: var(--color-terracotta-700);
-  font-size: calc(12px * var(--sheet-text));
+/* What the sheets are, on a pill of the accent's tint. */
+.printed-cover-kind {
+  padding: 7px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--color-terracotta-100);
+  color: var(--color-terracotta-800);
+  font-size: calc(11.5px * var(--sheet-text));
   font-weight: 700;
   line-height: 1;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
+.printed-cover-intro {
+  margin-top: 48px;
+}
+
+/* The trip's name, which the traveller writes and a place name can reach,
+   so its lines keep the room two stacked marks need. */
 .printed-headline {
-  margin-top: 16px;
   font-size: calc(60px * var(--sheet-text));
-  line-height: 1.1;
+  line-height: 1.25;
 }
 
 .printed-dates {

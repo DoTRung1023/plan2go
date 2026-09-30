@@ -746,9 +746,11 @@ sheet is the design's own at the middle size of words, and the words are printed
 smaller or larger by one factor every size is multiplied by, so a sheet keeps its
 proportions.
 
-The cover: the lockup on the right; "Itinerary" in `terracotta-700` over the trip's name
-at 60px in the display face, its dates, and what it comes to as three pills, the days on
-`terracotta-100`, the cities on `sage-100` and the stops on `neutral-100`. Then its
+The cover opens on a bar over a hairline: what the sheets are, "Trip itinerary", in
+capitals of `terracotta-800` on a pill of `terracotta-100`, and the lockup on the right.
+Under it, the trip's name at 60px in the display face, its dates, and what it comes to
+as three pills, the days on `terracotta-100`, the cities on `sage-100` and the stops on
+`neutral-100`. Then its
 route, each stay in a city in order with its dates under it and an arrow in the accent
 on to the next, in a line that wraps rather than squeezing its names; a city come back
 to is a second stay, and a trip kept before days had cities has no route to draw. Then

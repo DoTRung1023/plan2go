@@ -278,11 +278,12 @@ function TripFinish({ days }: { readonly days: readonly PlannedDay[] }) {
 }
 
 /**
- * What opens the cover: the lockup on the right; the trip's name, its dates
- * and what it comes to; and its route, the cities in order with their dates,
- * in a line that wraps. Where it starts and finishes, and where each night is
- * spent, are dealt under it as rows are, so paper too small for all of it
- * carries the rest on to the next sheet rather than running past its foot.
+ * What opens the cover: a bar saying what the sheets are, on a pill, with the
+ * lockup on the right, over a hairline; the trip's name, its dates and what
+ * it comes to; and its route, the cities in order with their dates, in a line
+ * that wraps. Where it starts and finishes, and where each night is spent,
+ * are dealt under it as rows are, so paper too small for all of it carries
+ * the rest on to the next sheet rather than running past its foot.
  */
 function CoverHead({
   title,
@@ -298,11 +299,11 @@ function CoverHead({
   const route = routeOf(plans);
   return (
     <>
-      <div className="printed-cover-brand">
+      <div className="printed-cover-top">
+        <p className="printed-cover-kind">Trip itinerary</p>
         <Brand size="cover" />
       </div>
       <div className="printed-cover-intro">
-        <p className="printed-eyebrow">Itinerary</p>
         <h1 className="printed-display printed-headline">{title}</h1>
         <p className="printed-dates">{range}</p>
         <ul className="printed-chips">
