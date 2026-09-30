@@ -243,15 +243,12 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
   const [progress, setProgress] = useState(0);
   /** What the file was last saved as, said under Saved. */
   const [savedAs, setSavedAs] = useState("");
-  /** The export was asked for with the name cleared. */
-  const [nameError, setNameError] = useState(false);
   /** The page setup, open under its line or folded to it. */
   const [setupOpen, setSetupOpen] = useState(false);
   /** Why the last export came back without a file, or null while there is nothing to say. */
   const [exportError, setExportError] = useState<string | null>(null);
   /** The export being drawn, so Cancel can call it off. */
   const asking = useRef<AbortController | null>(null);
-  const nameInput = useRef<HTMLInputElement | null>(null);
   /** The name of the page at the top of the preview: "Day 2", "Cover", "Day 2 · notes". */
   const [onPage, setOnPage] = useState<string | null>(null);
 
@@ -299,8 +296,15 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
     available: printable.length,
     coverOnly,
   });
-  /** What the file is saved as, or nothing once the field is cleared, which the export asks to have filled. */
+  /** What the file is saved as, or nothing once the field is cleared. */
   const fileName = (typedName ?? suggestedName).trim();
+  /**
+   * The field is empty, or holds only spaces, so there is no name to save the
+   * file under. Said under the field the moment it is, and gone again with the
+   * first letter typed; the button is faded and out of reach meanwhile, as it
+   * is with no day chosen, so an export always goes with a name.
+   */
+  const nameError = fileName === "";
   const busy = phase === "busy";
 
   /** Starts on the way out, so the keyboard lands on the way out too. */
@@ -427,16 +431,10 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
    * address, the same way the server's browser is then told it, and the
    * name goes with it so the file arrives called what the field says. What
    * comes back is either the file or a sentence about why not, which is
-   * said under the button. A cleared name is asked for in the field rather
-   * than sent. Cancel calls the request off, which is not a failure: the
-   * button simply comes back.
+   * said under the button. Cancel calls the request off, which is not a
+   * failure: the button simply comes back.
    */
   const exportPdf = async (): Promise<void> => {
-    if (fileName === "") {
-      setNameError(true);
-      nameInput.current?.focus();
-      return;
-    }
     const controller = new AbortController();
     asking.current = controller;
     setExportError(null);
@@ -712,7 +710,6 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
                 } ${busy ? "opacity-45" : ""}`}
               >
                 <input
-                  ref={nameInput}
                   type="text"
                   aria-label="File name"
                   aria-invalid={nameError}
@@ -722,7 +719,6 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
                   disabled={busy}
                   onChange={(event) => {
                     setTypedName(event.target.value);
-                    setNameError(false);
                   }}
                   className="min-w-0 flex-1 border-0 bg-transparent py-[11px] text-body/none font-medium text-ink outline-none placeholder:text-ink-faint"
                 />
@@ -743,7 +739,7 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
                 {phase === "idle" ? (
                   <button
                     type="button"
-                    disabled={nothing}
+                    disabled={nothing || nameError}
                     onClick={() => {
                       void exportPdf();
                     }}

@@ -861,9 +861,10 @@ how far along it is, and Cancel under it. The server says nothing until the file
 done, so the bar is paced by the clock, quick at first and slower as it goes, never full
 before the file is, and the file arriving fills it. Once the file is saved, a `sage-600`
 pill says Saved over the file's name and how many pages it is, for a moment, before the
-button comes back. Pressing the button with the name cleared says so under the field and
-puts the cursor in it, and a file that could not be drawn is a sentence under the button
-saying what happened and what to do. The browser's own
+button comes back. A name cleared from the field is said under it the moment it is, the
+field's edge in `terracotta-700`, and gone with the first letter typed; until then the
+button is faded and out of reach, as it is with no day chosen. A file that could
+not be drawn is a sentence under the button saying what happened and what to do. The browser's own
 print command still prints the preview while the dialog is open, and the open day
 while it is not.
 
