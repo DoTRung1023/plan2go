@@ -136,7 +136,7 @@ components:
   endpoint-marker:
     backgroundColor: "{colors.sage-ramp.600}"
     textColor: "{colors.paper}"
-    rounded: "13px 13px 13px 4px"
+    rounded: "9px 9px 9px 3px"
   map-control:
     backgroundColor: "{colors.paper-raised}"
     textColor: "{colors.ink-muted}"

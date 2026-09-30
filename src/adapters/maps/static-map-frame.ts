@@ -14,7 +14,8 @@ const WORLD_PX = 256;
 
 /**
  * Kept clear at every edge, so a marker drawn on a place at the edge of the
- * day is on the map whole: a stop's disc reaches seventeen from its place.
+ * day is on the map whole: a stop's disc reaches twelve and a half from its
+ * place, and the margin keeps more than that clear.
  */
 const MARGIN_PX = 24;
 
