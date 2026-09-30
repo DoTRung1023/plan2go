@@ -810,12 +810,10 @@ function dayUnits({ day, request }: DayContext): readonly Unit[] {
                 <p className="printed-stop-address">{place.address}</p>
               ) : null}
               {/* When the place is open, unless something is wrong with the
-                  visit and the warnings are on the page, when it is said
-                  instead with the hours in it. With the warnings left off,
-                  the hours are said as on any other stop. */}
-              {request.hours &&
-              hours !== null &&
-              (conflicts.length === 0 || !request.warnings) ? (
+                  visit, which is said instead with the hours in it, or with
+                  the warnings left off, not said at all: the line goes
+                  rather than turning into the hours. */}
+              {request.hours && hours !== null && conflicts.length === 0 ? (
                 <p className="printed-stop-hours">{hours}</p>
               ) : null}
               {request.warnings

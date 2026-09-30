@@ -790,8 +790,9 @@ The rows of a day: each time in a column of its own on the left, the marker besi
 and the rest to the right. A stop is when it is reached over when it is left, its number
 on a `terracotta` disc, the colour the map marks it with, and its name in the display face, with its address, its hours in
 `sage-800`, and a conflict in `terracotta-700` behind a circle with a mark of
-exclamation, said in place of the hours since it names them, unless the warnings are
-left off, when the hours are said as on any other stop, then the traveller's note
+exclamation, said in place of the hours since it names them, and with the warnings left
+off neither is said, the line going rather than turning into the hours, then the
+traveller's note
 behind a rule of `neutral-300`. An end of the day is a sage square with the glyph the map
 marks it with, the house where the day starts and the flag where it finishes, and the
 place on a card of `sage-100` under what it is: leave from, finish at, or back at.
