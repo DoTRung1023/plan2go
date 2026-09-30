@@ -820,16 +820,22 @@ function dayUnits({ day, request }: DayContext): readonly Unit[] {
                 <p className="printed-stop-address">{place.address}</p>
               ) : null}
               {/* When the place is open, unless something is wrong with the
-                  visit, which is said instead with the hours in it. */}
-              {request.hours && hours !== null && conflicts.length === 0 ? (
+                  visit and the warnings are on the page, when it is said
+                  instead with the hours in it. With the warnings left off,
+                  the hours are said as on any other stop. */}
+              {request.hours &&
+              hours !== null &&
+              (conflicts.length === 0 || !request.warnings) ? (
                 <p className="printed-stop-hours">{hours}</p>
               ) : null}
-              {conflicts.map((conflict, at) => (
-                <p key={`${conflict.kind}-${String(at)}`} className="printed-stop-warning">
-                  <AlertIcon size={14} strokeWidth={2.75} />
-                  <span>{conflictSentence(conflict)}</span>
-                </p>
-              ))}
+              {request.warnings
+                ? conflicts.map((conflict, at) => (
+                    <p key={`${conflict.kind}-${String(at)}`} className="printed-stop-warning">
+                      <AlertIcon size={14} strokeWidth={2.75} />
+                      <span>{conflictSentence(conflict)}</span>
+                    </p>
+                  ))
+                : null}
               {request.notes && note !== null ? <p className="printed-stop-note">{note}</p> : null}
             </div>
           </div>

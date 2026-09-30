@@ -225,6 +225,7 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
   const [addresses, setAddresses] = useState(DEFAULT_EXPORT.addresses);
   const [ruled, setRuled] = useState(DEFAULT_EXPORT.ruled);
   const [hours, setHours] = useState(DEFAULT_EXPORT.hours);
+  const [warnings, setWarnings] = useState(DEFAULT_EXPORT.warnings);
   const [paper, setPaper] = useState<PaperSize>(DEFAULT_EXPORT.paper);
   const [orientation, setOrientation] = useState<Orientation>(DEFAULT_EXPORT.orientation);
   const [text, setText] = useState<TextSize>(DEFAULT_EXPORT.text);
@@ -268,6 +269,7 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
     addresses,
     ruled,
     hours,
+    warnings,
     paper,
     orientation,
     text,
@@ -503,6 +505,7 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
     { label: "Addresses", Icon: PinIcon, on: addresses, set: setAddresses },
     { label: "Opening hours", Icon: ClockIcon, on: hours, set: setHours },
     { label: "Notes pages", Icon: NotebookIcon, on: ruled, set: setRuled },
+    { label: "Warnings", Icon: AlertIcon, on: warnings, set: setWarnings },
   ];
   /** The page setup, folded to one line: "A4 · Portrait · Colour". */
   const setupSummary = [

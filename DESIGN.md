@@ -790,7 +790,8 @@ The rows of a day: each time in a column of its own on the left, the marker besi
 and the rest to the right. A stop is when it is reached over when it is left, its number
 on a `terracotta` disc, the colour the map marks it with, and its name in the display face, with its address, its hours in
 `sage-800`, and a conflict in `terracotta-700` behind a circle with a mark of
-exclamation, said in place of the hours since it names them, then the traveller's note
+exclamation, said in place of the hours since it names them, unless the warnings are
+left off, when the hours are said as on any other stop, then the traveller's note
 behind a rule of `neutral-300`. An end of the day is a sage square with the glyph the map
 marks it with, the house where the day starts and the flag where it finishes, and the
 place on a card of `sage-100` under what it is: leave from, finish at, or back at.
@@ -837,10 +838,10 @@ the chosen one filled in `terracotta-800`, the cover alone being the trip at a g
 For the full trip the days follow as chips five across, each its weekday over its date,
 every day with something on it chosen to begin with and filled in `terracotta-800`, and
 a day with nothing on it dashed and out of reach; beside the heading, a word that takes
-all of them, Select all, or none, Clear. Then what the file includes, as seven toggles
+all of them, Select all, or none, Clear. Then what the file includes, as eight toggles
 two across, each a glyph and its words on one line: the cover page, the route map, the
-notes on stops, the travel between them, addresses, opening hours, and a ruled page for
-notes after each day. Every one is on to begin with, so a choice only ever takes away;
+notes on stops, the travel between them, addresses, opening hours, a ruled page for
+notes after each day, and the warnings, what is wrong with a visit. Every one is on to begin with, so a choice only ever takes away;
 one that is on is `terracotta-100` inside `terracotta-300` with its words in
 `terracotta-900`, and one that is off is a `neutral-200` outline with its words in
 `neutral-500`. For the cover alone, neither the days nor what is included is shown.
