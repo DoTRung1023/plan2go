@@ -752,7 +752,9 @@ function dayUnits({ day, request }: DayContext): readonly Unit[] {
           {legIndex < 0 || !request.legs ? null : <LegRow day={day} legIndex={legIndex} />}
           <div className={`printed-row printed-row-at ${gap ? "printed-gap" : ""}`}>
             <div className="printed-when">
-              <p className="printed-when-at">{stop.arrival === null ? "" : formatDayTime(stop.arrival)}</p>
+              <p className="printed-when-at printed-stop-at">
+                {stop.arrival === null ? "" : formatDayTime(stop.arrival)}
+              </p>
               {stop.departure === null ? null : (
                 <p className="printed-when-until">to {formatDayTime(stop.departure)}</p>
               )}
