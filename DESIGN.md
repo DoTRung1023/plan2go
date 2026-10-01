@@ -867,9 +867,9 @@ is tidied as the suggested one is, of what a file system objects to and of a .pd
 end, and runs to 120 characters at most, so the file is saved under the name the dialog
 says it was. A name cleared from the field, or one with nothing left once tidied, is
 said over it, politely, so it is read out once the typing pauses rather than cutting in
-on it, in a pill of `sheet` on `shadow-sm` floating above the field over the column, so
-no room is kept for it and neither the field nor the button moves when it comes and
-goes; the field's edge is `terracotta-700`, its focus is that edge turning
+on it, in the bubble every field's notice hangs in, above the field rather than below so
+it does not cover the button, and over the column, so no room is kept for it and
+neither the field nor the button moves when it comes and goes; the field's edge is `terracotta-700`, its focus is that edge turning
 `terracotta` as on every other text field, with no ring around it as well, and
 the button is faded and out of reach until it has a name, as it is with no day chosen,
 saying why to whoever reaches it. One file holds 60 days at most: the first 60 with

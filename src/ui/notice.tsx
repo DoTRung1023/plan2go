@@ -10,6 +10,11 @@ interface NoticeProps {
    * field where the browser would have put its own, over whatever is below.
    */
   readonly shape?: "block" | "note" | "bubble";
+  /**
+   * Which side of its field a bubble hangs on: below, as the browser's own
+   * does, or above, where below is a button it would cover.
+   */
+  readonly hangs?: "below" | "above";
   /** Meta on a form's own line, micro inside a card or a row. */
   readonly size?: "meta" | "micro";
   /** "alert" for something that just went wrong, which a screen reader should hear at once. */
@@ -31,6 +36,7 @@ interface NoticeProps {
 export function Notice({
   children,
   shape = "block",
+  hangs = "below",
   size = "micro",
   role,
   className = "",
@@ -49,10 +55,11 @@ export function Notice({
     );
   }
   if (shape === "bubble") {
+    const side = hangs === "above" ? "bottom-full mb-[5px]" : "top-full mt-[5px]";
     return (
       <p
         role={role}
-        className={`absolute top-full z-20 mt-[5px] rounded-chip bg-terracotta-200 px-[11px] py-[6px] font-semibold shadow-md ${ink} ${className}`}
+        className={`absolute ${side} z-20 rounded-chip bg-terracotta-200 px-[11px] py-[6px] font-semibold shadow-md ${ink} ${className}`}
       >
         {children}
       </p>

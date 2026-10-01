@@ -18,6 +18,7 @@ import {
   PinIcon,
   RouteIcon,
 } from "@/ui/icons";
+import { Notice } from "@/ui/notice";
 import type { PlannedDay } from "../compute-trip";
 import { dayMapSources } from "./day-map-source";
 import { exportRequestQuery, MOST_DAYS } from "./export-query";
@@ -820,18 +821,15 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
                 </div>
                 {/* Polite, and in a region that is always there, so it is read
                     out once the typing pauses rather than cutting in on it. It
-                    floats above the field, over the column, so no room is kept
-                    for it and neither the field nor the button moves when it
-                    comes and goes. */}
-                <div aria-live="polite" className="pointer-events-none absolute bottom-full left-0 z-10 mb-2">
+                    hangs off the field as every field's bubble does, above
+                    rather than below so it does not cover the button, and over
+                    the column, so no room is kept for it and neither the field
+                    nor the button moves when it comes and goes. */}
+                <div id={nameErrorId} aria-live="polite">
                   {nameError ? (
-                    <p
-                      id={nameErrorId}
-                      className="flex items-center gap-[6px] rounded-pill border border-terracotta-200 bg-sheet px-3 py-[7px] text-[12.5px]/[1.2] font-semibold text-terracotta-800 shadow-sm"
-                    >
-                      <AlertIcon size={14} strokeWidth={2.75} className="shrink-0" />
+                    <Notice shape="bubble" hangs="above" className="left-0 max-w-full">
                       No file name. Type one to export.
-                    </p>
+                    </Notice>
                   ) : null}
                 </div>
               </div>
