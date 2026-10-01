@@ -793,46 +793,50 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
             </div>
 
             <div className="shrink-0 border-t border-neutral-200 px-5 pt-[14px] pb-[18px]">
-              {/* The name, with .pdf after it, in a field shaped as a pill. */}
-              <div
-                className={`flex items-center gap-1 rounded-pill border-[1.5px] bg-sheet px-4 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-terracotta ${
-                  nameError ? "border-terracotta-700" : "border-neutral-300 focus-within:border-terracotta"
-                } ${busy ? "opacity-45" : ""}`}
-              >
-                <input
-                  type="text"
-                  maxLength={LONGEST_FILE_NAME}
-                  aria-label="File name"
-                  aria-invalid={nameError}
-                  aria-describedby={nameError ? nameErrorId : undefined}
-                  placeholder="File name"
-                  value={typedName ?? suggestedName}
-                  disabled={busy}
-                  onChange={(event) => {
-                    setTypedName(event.target.value);
-                  }}
-                  className="min-w-0 flex-1 border-0 bg-transparent py-[11px] text-body/none font-medium text-ink outline-none placeholder:text-ink-faint"
-                />
-                <span className="shrink-0 text-body/none font-medium text-neutral-500">.pdf</span>
-              </div>
-              {/* Polite, and in a region that is always there, so it is read
-                  out once the typing pauses rather than cutting in on it. The
-                  room for its line is kept whether it is said or not, so
-                  neither the field being typed in nor the button moves when it
-                  comes and goes; it is the room between the two. */}
-              <div aria-live="polite" className="h-8 pt-2">
-                {nameError ? (
-                  <p
-                    id={nameErrorId}
-                    className="ml-[14px] flex items-center gap-[6px] text-[12.5px]/[1.2] font-semibold text-terracotta-800"
-                  >
-                    <AlertIcon size={14} strokeWidth={2.75} className="shrink-0" />
-                    No file name. Type one to export.
-                  </p>
-                ) : null}
+              <div className="relative">
+                {/* The name, with .pdf after it, in a field shaped as a pill.
+                    Its own edge turning terracotta is the focus, as on every
+                    other text field, so no ring is drawn around it as well. */}
+                <div
+                  className={`flex items-center gap-1 rounded-pill border-[1.5px] bg-sheet px-4 ${
+                    nameError ? "border-terracotta-700" : "border-neutral-300 focus-within:border-terracotta"
+                  } ${busy ? "opacity-45" : ""}`}
+                >
+                  <input
+                    type="text"
+                    maxLength={LONGEST_FILE_NAME}
+                    aria-label="File name"
+                    aria-invalid={nameError}
+                    aria-describedby={nameError ? nameErrorId : undefined}
+                    placeholder="File name"
+                    value={typedName ?? suggestedName}
+                    disabled={busy}
+                    onChange={(event) => {
+                      setTypedName(event.target.value);
+                    }}
+                    className="min-w-0 flex-1 border-0 bg-transparent py-[11px] text-body/none font-medium text-ink outline-none placeholder:text-ink-faint"
+                  />
+                  <span className="shrink-0 text-body/none font-medium text-neutral-500">.pdf</span>
+                </div>
+                {/* Polite, and in a region that is always there, so it is read
+                    out once the typing pauses rather than cutting in on it. It
+                    floats above the field, over the column, so no room is kept
+                    for it and neither the field nor the button moves when it
+                    comes and goes. */}
+                <div aria-live="polite" className="pointer-events-none absolute bottom-full left-0 z-10 mb-2">
+                  {nameError ? (
+                    <p
+                      id={nameErrorId}
+                      className="flex items-center gap-[6px] rounded-pill border border-terracotta-200 bg-sheet px-3 py-[7px] text-[12.5px]/[1.2] font-semibold text-terracotta-800 shadow-sm"
+                    >
+                      <AlertIcon size={14} strokeWidth={2.75} className="shrink-0" />
+                      No file name. Type one to export.
+                    </p>
+                  ) : null}
+                </div>
               </div>
 
-              <div>
+              <div className="mt-3">
                 {phase === "idle" ? (
                   <button
                     ref={exportButton}

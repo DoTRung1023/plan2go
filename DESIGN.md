@@ -866,9 +866,11 @@ never falls out of the dialog and out of reach of its Escape. A name typed in th
 is tidied as the suggested one is, of what a file system objects to and of a .pdf on its
 end, and runs to 120 characters at most, so the file is saved under the name the dialog
 says it was. A name cleared from the field, or one with nothing left once tidied, is
-said under it, politely, so it is read out once the typing pauses rather than cutting in
-on it, and in room kept for it between the field and the button whether it is said or
-not, so neither moves when it comes and goes; the field's edge is `terracotta-700`, it keeps its ring while it has the focus, and
+said over it, politely, so it is read out once the typing pauses rather than cutting in
+on it, in a pill of `sheet` on `shadow-sm` floating above the field over the column, so
+no room is kept for it and neither the field nor the button moves when it comes and
+goes; the field's edge is `terracotta-700`, its focus is that edge turning
+`terracotta` as on every other text field, with no ring around it as well, and
 the button is faded and out of reach until it has a name, as it is with no day chosen,
 saying why to whoever reaches it. One file holds 60 days at most: the first 60 with
 something on them are chosen to begin with, and more than that chosen is said under the
