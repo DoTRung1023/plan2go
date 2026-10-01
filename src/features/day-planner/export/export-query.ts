@@ -34,6 +34,12 @@ const flag = pipe(
   transform((value) => value === "1"),
 );
 
+/**
+ * The most days one file holds. A trip can run to a year, and a year of days
+ * is more than the server's browser can draw in the time it is given.
+ */
+export const MOST_DAYS = 60;
+
 /** A day's id as the trip gives it, and nothing that could be read as anything else. */
 const dayId = string().check(regex(/^[A-Za-z0-9_-]{1,64}$/));
 
@@ -47,7 +53,7 @@ const schema = object({
       string(),
       transform((value) => value.split(",").filter((id) => id !== "")),
     ),
-    array(dayId).check(maxLength(60)),
+    array(dayId).check(maxLength(MOST_DAYS)),
   ),
   cover: flag,
   map: flag,

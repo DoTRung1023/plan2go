@@ -861,12 +861,23 @@ how far along it is, and Cancel under it. The server says nothing until the file
 done, so the bar is paced by the clock, quick at first and slower as it goes, never full
 before the file is, and the file arriving fills it. Once the file is saved, a `sage-600`
 pill says Saved over the file's name and how many pages it is, for a moment, before the
-button comes back. A name cleared from the field is said under it the moment it is, the
-field's edge in `terracotta-700`, and gone with the first letter typed; until then the
-button is faded and out of reach, as it is with no day chosen. A file that could
-not be drawn is a sentence under the button saying what happened and what to do. The browser's own
-print command still prints the preview while the dialog is open, and the open day
-while it is not.
+button comes back. The focus goes from the button to Cancel and back with it, so it
+never falls out of the dialog and out of reach of its Escape. A name typed in the field
+is tidied as the suggested one is, of what a file system objects to and of a .pdf on its
+end, and runs to 120 characters at most, so the file is saved under the name the dialog
+says it was. A name cleared from the field, or one with nothing left once tidied, is
+said under it, politely, so it is read out once the typing pauses rather than cutting in
+on it, and in room kept for it between the field and the button whether it is said or
+not, so neither moves when it comes and goes; the field's edge is `terracotta-700`, it keeps its ring while it has the focus, and
+the button is faded and out of reach until it has a name, as it is with no day chosen,
+saying why to whoever reaches it. One file holds 60 days at most: the first 60 with
+something on them are chosen to begin with, and more than that chosen is said under the
+days with the numbers in it, the button out of reach until fewer are. A file that could
+not be drawn is a sentence under the button saying what happened and what to do, and a
+server that answered without saying why is told apart from one that was never reached.
+Closing the dialog while the file is drawn calls it off, and the server's browser stops
+drawing it. The browser's own print command still prints the preview while the dialog
+is open, and the open day while it is not.
 
 ## Banned in this product
 

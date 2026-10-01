@@ -20,11 +20,11 @@ import {
 } from "@/ui/icons";
 import type { PlannedDay } from "../compute-trip";
 import { dayMapSources } from "./day-map-source";
-import { exportRequestQuery } from "./export-query";
+import { exportRequestQuery, MOST_DAYS } from "./export-query";
 import type { ExportRequest } from "./export-request";
 import { DEFAULT_EXPORT, exportRequestKey } from "./export-request";
 import { formatDayChip, formatDayTab } from "../format-day-date";
-import { exportFileName } from "./export-name";
+import { exportFileName, LONGEST_FILE_NAME, tidyFileName } from "./export-name";
 import type { Ink, MapSize, Orientation, PaperSize, TextSize } from "./paper";
 import { sheetGeometry } from "./paper";
 import { PrintedTrip } from "./printed-trip";
@@ -44,6 +44,51 @@ const refusalSchema = object({ error: string(), action: optional(string()) });
 
 /** What is said when the route could not be reached at all. */
 const UNREACHABLE = "Could not reach the server. Check your connection and export again.";
+
+/**
+ * What is said when the server answered without saying why, which is what a
+ * platform says when the function ran out of time or fell over: the server
+ * was reached, so the connection is not the thing to check.
+ */
+const UNFINISHED = "Could not finish the file on the server. Your trip is saved, export again in a moment.";
+
+/** What asking the server for the file came to. */
+type Outcome =
+  | { readonly kind: "file"; readonly file: Blob }
+  | { readonly kind: "refused"; readonly said: string }
+  | { readonly kind: "called-off" };
+
+/**
+ * The file, asked for. The request is spelled out in the address, the same
+ * way the server's browser is then told it. What comes back is the file, or a
+ * sentence about why not: the server's own when it gave one, another when it
+ * answered without one, and another when it was never reached. Called off, it
+ * is none of those. Kept out of the dialog, which the compiler that keeps its
+ * preview from being drawn again on every keystroke cannot take with a try
+ * inside it.
+ */
+async function askForFile(request: ExportRequest, slug: string, signal: AbortSignal): Promise<Outcome> {
+  const query = exportRequestQuery(request);
+  query.set("slug", slug);
+  try {
+    const response = await fetch(`/api/export?${query.toString()}`, { signal });
+    if (response.ok) {
+      return { kind: "file", file: await response.blob() };
+    }
+    const refusal = safeParse(refusalSchema, await response.json().catch(() => null));
+    if (signal.aborted) {
+      return { kind: "called-off" };
+    }
+    return {
+      kind: "refused",
+      said: refusal.success
+        ? [refusal.data.error, refusal.data.action].filter(Boolean).join(" ")
+        : UNFINISHED,
+    };
+  } catch {
+    return signal.aborted ? { kind: "called-off" } : { kind: "refused", said: UNREACHABLE };
+  }
+}
 
 /**
  * How the bar moves while the server draws the file. The server says nothing
@@ -205,12 +250,17 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
   const titleId = useId();
   const setupId = useId();
   const nameErrorId = useId();
+  const daysErrorId = useId();
+  const emptyId = useId();
   const closeButton = useRef<HTMLButtonElement | null>(null);
+  const frame = useRef<HTMLDivElement | null>(null);
+  const exportButton = useRef<HTMLButtonElement | null>(null);
+  const cancelButton = useRef<HTMLButtonElement | null>(null);
   const preview = useRef<HTMLDivElement | null>(null);
   const scroller = useRef<HTMLDivElement | null>(null);
   const printable = days.filter((day) => day.plan.stops.length > 0);
   const [chosen, setChosen] = useState<ReadonlySet<string>>(
-    () => new Set(printable.map((day) => day.plan.id)),
+    () => new Set(printable.slice(0, MOST_DAYS).map((day) => day.plan.id)),
   );
   /**
    * The cover alone, the trip at a glance, in place of the days. Everything
@@ -256,6 +306,8 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
   const allPicked = picked.length === printable.length && printable.length > 0;
   /** Nothing to put on paper: no day chosen, and not the cover alone either. */
   const nothing = !coverOnly && picked.length === 0;
+  /** More days chosen than one file holds, which the server would refuse. */
+  const tooMany = !coverOnly && picked.length > MOST_DAYS;
 
   const request: ExportRequest = {
     dayIds: coverOnly ? [] : picked.map((day) => day.plan.id),
@@ -296,14 +348,9 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
     available: printable.length,
     coverOnly,
   });
-  /** What the file is saved as, or nothing once the field is cleared. */
-  const fileName = (typedName ?? suggestedName).trim();
-  /**
-   * The field is empty, or holds only spaces, so there is no name to save the
-   * file under. Said under the field the moment it is, and gone again with the
-   * first letter typed; the button is faded and out of reach meanwhile, as it
-   * is with no day chosen, so an export always goes with a name.
-   */
+  /** What the file is saved as: the field's name, tidied as the suggestion is. */
+  const fileName = tidyFileName(typedName ?? suggestedName);
+  /** No name to save the file under: the field is empty, or holds only what tidying removes. */
   const nameError = fileName === "";
   const busy = phase === "busy";
 
@@ -412,6 +459,44 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
     };
   }, [phase]);
 
+  /*
+   * The control that had the focus goes with the phase that drew it: Export
+   * as the file is asked for, Cancel as it arrives or is called off. Or it
+   * stays and is put out of reach, the field disabled and the column inert
+   * while the file is drawn, which is where a browser that does not focus a
+   * pressed button leaves it. Either way focus would fall to the page behind,
+   * out of the dialog and out of reach of its Escape, so it is handed to
+   * whatever stands in its place, or to the frame while nothing does. Focus
+   * somewhere else in the dialog, still in reach, is left where it is.
+   */
+  useEffect(() => {
+    const active = document.activeElement;
+    const lost =
+      active === null ||
+      active === document.body ||
+      active === frame.current ||
+      active.matches(":disabled") ||
+      active.closest("[inert]") !== null;
+    if (!lost) {
+      return;
+    }
+    const next = phase === "busy" ? cancelButton.current : phase === "idle" ? exportButton.current : null;
+    if (next !== null && !next.disabled) {
+      next.focus();
+      return;
+    }
+    frame.current?.focus();
+  }, [phase]);
+
+  /* Closed while the file is drawn: the request is called off with the
+     dialog, so no file arrives once it has gone, and the server stops. */
+  useEffect(
+    () => () => {
+      asking.current?.abort();
+    },
+    [],
+  );
+
   /* Saved is said for a moment, and then the button comes back. */
   useEffect(() => {
     if (phase !== "done") {
@@ -427,12 +512,10 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
   }, [phase]);
 
   /**
-   * The file, asked for and saved. The request is spelled out in the
-   * address, the same way the server's browser is then told it, and the
-   * name goes with it so the file arrives called what the field says. What
-   * comes back is either the file or a sentence about why not, which is
-   * said under the button. Cancel calls the request off, which is not a
-   * failure: the button simply comes back.
+   * The file, asked for and saved under the name in the field, which is the
+   * name the dialog then says it was saved as. A sentence about why there is
+   * no file is said under the button. Cancel calls the request off, which is
+   * not a failure: the button simply comes back.
    */
   const exportPdf = async (): Promise<void> => {
     const controller = new AbortController();
@@ -440,33 +523,19 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
     setExportError(null);
     setProgress(0);
     setPhase("busy");
-    try {
-      const query = exportRequestQuery(request);
-      query.set("slug", slug);
-      query.set("name", fileName);
-      const response = await fetch(`/api/export?${query.toString()}`, { signal: controller.signal });
-      if (!response.ok) {
-        const refusal = safeParse(refusalSchema, await response.json().catch(() => null));
-        setExportError(
-          refusal.success
-            ? [refusal.data.error, refusal.data.action].filter(Boolean).join(" ")
-            : UNREACHABLE,
-        );
-        setPhase("idle");
-        return;
-      }
-      saveFile(await response.blob(), `${fileName}.pdf`);
+    const outcome = await askForFile(request, slug, controller.signal);
+    asking.current = null;
+    if (outcome.kind === "file") {
+      saveFile(outcome.file, `${fileName}.pdf`);
       setSavedAs(`${fileName}.pdf`);
       setProgress(100);
       setPhase("done");
-    } catch {
-      if (!controller.signal.aborted) {
-        setExportError(UNREACHABLE);
-      }
-      setPhase("idle");
-    } finally {
-      asking.current = null;
+      return;
     }
+    if (outcome.kind === "refused") {
+      setExportError(outcome.said);
+    }
+    setPhase("idle");
   };
 
   const toggleDay = (id: string): void => {
@@ -512,6 +581,10 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
     labelOf(ORIENTATIONS, orientation),
     ink === "mono" ? "Black & white" : "Colour",
   ].join(" · ");
+  /** Why the button is out of reach, read out with it: whichever reasons stand. */
+  const unavailableBecause = [nothing ? emptyId : null, tooMany ? daysErrorId : null, nameError ? nameErrorId : null]
+    .filter((id) => id !== null)
+    .join(" ");
   /** The bar's share, as it is said beside the spinner. */
   const shown = Math.round(progress);
 
@@ -531,7 +604,11 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
       {/* The page behind, dimmed and closing the dialog when clicked. */}
       <div aria-hidden="true" onClick={onClose} className="export-scrim absolute inset-0 bg-ink/40" />
 
-      <div className="export-frame relative flex w-full max-w-[1120px] flex-col overflow-hidden bg-paper-raised shadow-lg lg:rounded-panel">
+      <div
+        ref={frame}
+        tabIndex={-1}
+        className="export-frame relative flex w-full max-w-[1120px] flex-col overflow-hidden bg-paper-raised shadow-lg outline-none lg:rounded-panel"
+      >
         <header className="export-chrome flex shrink-0 items-center gap-4 px-6 pt-5 pb-[18px]">
           <div className="min-w-0 flex-1">
             <h2 id={titleId} className="font-display text-title text-ink">
@@ -629,6 +706,19 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
                         );
                       })}
                     </div>
+                    <div aria-live="polite">
+                      {tooMany ? (
+                        <p
+                          id={daysErrorId}
+                          className="mt-3 flex items-start gap-[6px] text-[12.5px]/[1.3] font-semibold text-terracotta-800"
+                        >
+                          <AlertIcon size={14} strokeWidth={2.75} className="mt-px shrink-0" />
+                          <span>
+                            {`${String(picked.length)} days are chosen and one file holds ${String(MOST_DAYS)}. Choose ${String(picked.length - MOST_DAYS)} fewer to export.`}
+                          </span>
+                        </p>
+                      ) : null}
+                    </div>
                   </div>
 
                   <div className="mt-[26px]">
@@ -705,12 +795,13 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
             <div className="shrink-0 border-t border-neutral-200 px-5 pt-[14px] pb-[18px]">
               {/* The name, with .pdf after it, in a field shaped as a pill. */}
               <div
-                className={`flex items-center gap-1 rounded-pill border-[1.5px] bg-sheet px-4 ${
+                className={`flex items-center gap-1 rounded-pill border-[1.5px] bg-sheet px-4 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-terracotta ${
                   nameError ? "border-terracotta-700" : "border-neutral-300 focus-within:border-terracotta"
                 } ${busy ? "opacity-45" : ""}`}
               >
                 <input
                   type="text"
+                  maxLength={LONGEST_FILE_NAME}
                   aria-label="File name"
                   aria-invalid={nameError}
                   aria-describedby={nameError ? nameErrorId : undefined}
@@ -724,26 +815,34 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
                 />
                 <span className="shrink-0 text-body/none font-medium text-neutral-500">.pdf</span>
               </div>
-              {nameError ? (
-                <p
-                  id={nameErrorId}
-                  role="alert"
-                  className="mt-2 ml-[14px] flex items-center gap-[6px] text-[12.5px]/[1.2] font-semibold text-terracotta-800"
-                >
-                  <AlertIcon size={14} strokeWidth={2.75} />
-                  Name your file to export
-                </p>
-              ) : null}
+              {/* Polite, and in a region that is always there, so it is read
+                  out once the typing pauses rather than cutting in on it. The
+                  room for its line is kept whether it is said or not, so
+                  neither the field being typed in nor the button moves when it
+                  comes and goes; it is the room between the two. */}
+              <div aria-live="polite" className="h-8 pt-2">
+                {nameError ? (
+                  <p
+                    id={nameErrorId}
+                    className="ml-[14px] flex items-center gap-[6px] text-[12.5px]/[1.2] font-semibold text-terracotta-800"
+                  >
+                    <AlertIcon size={14} strokeWidth={2.75} className="shrink-0" />
+                    No file name. Type one to export.
+                  </p>
+                ) : null}
+              </div>
 
-              <div className="mt-3">
+              <div>
                 {phase === "idle" ? (
                   <button
+                    ref={exportButton}
                     type="button"
-                    disabled={nothing || nameError}
+                    disabled={nothing || tooMany || nameError}
+                    aria-describedby={unavailableBecause === "" ? undefined : unavailableBecause}
                     onClick={() => {
                       void exportPdf();
                     }}
-                    className={`mt-[8.8px] flex w-full items-center justify-center gap-[9px] rounded-pill border border-transparent bg-terracotta px-5 py-[14px] font-display text-[15px]/[1.2] font-bold text-paper hover:bg-terracotta-600 active:bg-terracotta-700 disabled:cursor-not-allowed disabled:opacity-45 ${FOCUS}`}
+                    className={`flex w-full items-center justify-center gap-[9px] rounded-pill border border-transparent bg-terracotta px-5 py-[14px] font-display text-[15px]/[1.2] font-bold text-paper hover:bg-terracotta-600 active:bg-terracotta-700 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-terracotta ${FOCUS}`}
                   >
                     <DownloadIcon size={17} strokeWidth={2.75} />
                     <span>Export PDF</span>
@@ -769,6 +868,7 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
                       </div>
                     </div>
                     <button
+                      ref={cancelButton}
                       type="button"
                       onClick={() => {
                         asking.current?.abort();
@@ -838,7 +938,7 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
               className="export-scroll scroll-quiet min-h-0 flex-1 overflow-y-auto px-6 pb-7"
             >
               {nothing ? (
-                <p className="py-10 text-center text-small text-ink-muted">
+                <p id={emptyId} className="py-10 text-center text-small text-ink-muted">
                   Nothing to show until a day is chosen.
                 </p>
               ) : (

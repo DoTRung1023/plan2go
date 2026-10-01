@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { exportFileName } from "./export-name";
+import { exportFileName, tidyFileName } from "./export-name";
 
 const trip = { title: "Hanoi in five days", cityName: "Hanoi", available: 5, coverOnly: false };
 
@@ -53,5 +53,27 @@ describe("exportFileName", () => {
     expect(exportFileName({ ...trip, title: "Nhà hát Lớn Hà Nội", dayNumbers: [1] })).toBe(
       "Nhà hát Lớn Hà Nội - Day 1",
     );
+  });
+});
+
+describe("tidyFileName", () => {
+  it("turns what a file system objects to into spaces, and closes them up", () => {
+    expect(tidyFileName("Hue/Hoi An: Day 1")).toBe("Hue Hoi An Day 1");
+  });
+
+  it("drops characters that draw nothing", () => {
+    expect(tidyFileName("Hanoi\u200b trip\u00ad")).toBe("Hanoi trip");
+  });
+
+  it("drops a .pdf typed on the end, since the file is given one", () => {
+    expect(tidyFileName("Rome.PDF")).toBe("Rome");
+  });
+
+  it("leaves nothing of a name made only of what it removes", () => {
+    expect(tidyFileName("/// ?\u200b")).toBe("");
+  });
+
+  it("keeps Vietnamese as it is written", () => {
+    expect(tidyFileName("  Hà Nội   và Huế ")).toBe("Hà Nội và Huế");
   });
 });

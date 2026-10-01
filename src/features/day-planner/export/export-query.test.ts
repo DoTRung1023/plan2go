@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { exportRequestQuery, parseExportRequest } from "./export-query";
+import { exportRequestQuery, MOST_DAYS, parseExportRequest } from "./export-query";
 import { DEFAULT_EXPORT } from "./export-request";
 import type { ExportRequest } from "./export-request";
 
@@ -61,6 +61,14 @@ describe("parseExportRequest", () => {
   it("refuses a day id that is not one the trip could have given", () => {
     const query = { ...fromQuery(exportRequestQuery(request)), days: "cm1abc,../etc" };
     expect(parseExportRequest(query)).toBeNull();
+  });
+
+  it("reads as many days as one file holds, and refuses one more", () => {
+    const ids = (count: number): string[] => Array.from({ length: count }, (_, at) => `cm1day${String(at)}`);
+    const most = { ...request, dayIds: ids(MOST_DAYS) };
+    expect(parseExportRequest(fromQuery(exportRequestQuery(most)))).toEqual(most);
+    const tooMany = { ...request, dayIds: ids(MOST_DAYS + 1) };
+    expect(parseExportRequest(fromQuery(exportRequestQuery(tooMany)))).toBeNull();
   });
 
   it("refuses a choice given twice", () => {

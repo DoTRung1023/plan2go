@@ -13,22 +13,38 @@
 /** More than this many separate days and the name says how many rather than which. */
 const NAMED_AT_MOST = 3;
 
-/** The longest a name may run before the day part is added to it. */
+/** The longest a trip's name may run before the day part is added to it. */
 const LONGEST = 80;
 
-/** Anything a file system would object to, and the runs of space they leave behind. */
-function tidy(name: string): string {
+/**
+ * The longest a name typed in the field may be: room for the longest name the
+ * dialog suggests, the trip's name with its days after it, and more besides.
+ */
+export const LONGEST_FILE_NAME = 120;
+
+/**
+ * A name a file system takes as it is. Anything it would object to, and
+ * anything that is there but draws nothing, becomes a space, the runs of space
+ * that leaves are closed up, and a .pdf typed on the end is dropped, since the
+ * file is given one anyway. A name typed in the field goes through this as the
+ * suggested one does, so what is saved is what the dialog says was saved.
+ */
+export function tidyFileName(name: string): string {
   return [...name]
     .map((character) => {
-      const code = character.codePointAt(0) ?? 0;
       const awkward = '/\\:*?"<>|';
-      return awkward.includes(character) || code < 0x20 ? " " : character;
+      return awkward.includes(character) || /[\p{Cc}\p{Cf}]/u.test(character) ? " " : character;
     })
     .join("")
     .replace(/\s+/g, " ")
     .trim()
-    .slice(0, LONGEST)
+    .replace(/\.pdf$/i, "")
     .trim();
+}
+
+/** A trip's name tidied, and cut to the length it may run before its days. */
+function tidy(name: string): string {
+  return tidyFileName(name).slice(0, LONGEST).trim();
 }
 
 /** "Day 3" for one, "Days 2-4" for a run, "Days 1, 4" for a scatter, "5 days" for more. */

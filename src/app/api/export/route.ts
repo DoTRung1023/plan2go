@@ -27,8 +27,6 @@ const SHEETS_READY = '[data-sheets="ready"]';
 
 const querySchema = z.object({
   slug: z.string().min(1).max(80),
-  /** What to call the file, without its extension. */
-  name: z.string().max(120).optional(),
 });
 
 /**
@@ -80,16 +78,26 @@ export async function GET(request: Request): Promise<NextResponse> {
       readySelector: SHEETS_READY,
       marginMm: PAGE_MARGIN_MM,
       timeoutMs: READY_WITHIN_MS,
+      // A reader who closes the export, or cancels it, has gone: the browser
+      // stops drawing rather than finishing a file nobody will receive.
+      signal: request.signal,
     });
     return new NextResponse(pdf, {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Length": String(pdf.byteLength),
-        "Content-Disposition": attachmentDisposition(parsed.data.name ?? trip.title, "pdf"),
+        // The dialog saves the file under the name in its field, so this
+        // name is only for the address opened on its own.
+        "Content-Disposition": attachmentDisposition(trip.title, "pdf"),
         "Cache-Control": "private, no-store",
       },
     });
   } catch (cause) {
+    // Called off by whoever asked: there is no one left to answer, and
+    // nothing failed, so nothing goes in the log.
+    if (request.signal.aborted) {
+      return new NextResponse(null, { status: 499 });
+    }
     // Kept in the function log so a browser that will not start, or a page
     // that never finished, is diagnosable, and turned into a sentence that
     // says what the reader should do about it.
