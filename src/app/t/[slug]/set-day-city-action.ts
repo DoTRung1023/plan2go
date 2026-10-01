@@ -1,9 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
+import { after } from "next/server";
 import { z } from "zod";
 import { createGooglePlacesProvider } from "@/adapters/places/google-places";
 import { EDIT_KEY_PATTERN, hashEditKey } from "@/server/ownership/edit-key";
+import { prepareCitiesToVisit } from "@/server/places/cities-to-visit";
 import { googleMapsApiKey } from "@/server/places/google-key";
 import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
 import type { CitySet } from "@/server/trips/set-day-city";
@@ -44,10 +47,11 @@ export async function setDayCityAction(input: unknown): Promise<DayCityState> {
   }
 
   const { editKey, ...rest } = parsed.data;
+  const places = createGooglePlacesProvider({ apiKey });
   const result = await setDayCity(
     { ...rest, editKeyHash: hashEditKey(editKey) },
     prismaTripRepository,
-    createGooglePlacesProvider({ apiKey }),
+    places,
   );
 
   if (result.status === "no-such-city") {
@@ -59,6 +63,13 @@ export async function setDayCityAction(input: unknown): Promise<DayCityState> {
         "This trip is not yours to change. Ask whoever sent you the link to change it, or start your own trip.",
     };
   }
+
+  // The cities worth going to from where the day is now, worked out after
+  // the answer has gone, so the picker opened next on this day finds them
+  // waiting rather than waiting for them.
+  const asked = await headers();
+  const movedTo = result.city.providerPlaceId;
+  after(() => prepareCitiesToVisit(asked, movedTo, places));
 
   revalidatePath(`/t/${parsed.data.slug}`, "layout");
   return { error: null, city: result.city };

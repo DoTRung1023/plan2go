@@ -1,16 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { citiesToVisit } from "@/server/places/cities-to-visit";
-import type { RateLimitPolicy } from "@/server/rate-limit/window";
+import {
+  CITIES_TO_VISIT_POLICY,
+  CITIES_TO_VISIT_ROUTE,
+  citiesToVisit,
+} from "@/server/places/cities-to-visit";
 import { placesRead, refuse } from "../places-read";
-
-/**
- * As tight as the typed search is loose: this is asked each time the city
- * picker opens, not once per few letters, so a person reaches it a handful of
- * times in a minute at most. A refusal leaves the list from the last opening
- * on the panel.
- */
-const POLICY: RateLimitPolicy = { windowSeconds: 60, maxRequests: 10 };
 
 /**
  * The towns near a city and the cities in its country come to twenty at
@@ -28,10 +23,14 @@ const querySchema = z.object({
  * known cities in its country, nearest first. A read, and the city is a
  * provider identifier that says nothing about anybody, so there is nothing
  * here to guard beyond the spend.
+ *
+ * Counted with the working out done ahead when a day is put in a city, so
+ * there is one budget for the list however it is reached. A refusal leaves
+ * the list from the last opening on the panel.
  */
 export const GET = placesRead({
-  route: "places-cities",
-  policy: POLICY,
+  route: CITIES_TO_VISIT_ROUTE,
+  policy: CITIES_TO_VISIT_POLICY,
   asking: { many: "searches", again: "try again", service: "place search service" },
   query: querySchema,
   failing: "Cities to visit failed",

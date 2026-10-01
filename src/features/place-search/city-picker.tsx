@@ -1,7 +1,7 @@
 "use client";
 
 import type { KeyboardEvent } from "react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useId, useRef, useState } from "react";
 import { array, number, object, safeParse, string } from "zod/mini";
 import type { DayCity } from "@/core/model/day";
 import type { CityIdentity } from "@/core/model/day-city";
@@ -174,10 +174,10 @@ export function CityPicker({
   const pill = useRef<HTMLButtonElement | null>(null);
   const field = useRef<HTMLInputElement | null>(null);
   /**
-   * Which city has been asked about since the panel opened, so each opening
-   * asks once however often its field is typed in and cleared, and let go of
-   * when the panel closes. A ref, because the effect that asks may not set
-   * state on the way in, only in the answer.
+   * Which city has been asked about since the panel last closed, so each
+   * opening asks once however often the pill is reached for and its field is
+   * typed in and cleared, and let go of when the panel closes. A ref, because
+   * the effect that asks may not set state on the way in, only in the answer.
    */
   const askedAbout = useRef<string | null>(null);
   const watchList = useScrollBar("y");
@@ -245,35 +245,44 @@ export function CityPicker({
   useOutsidePress(root, open, close);
 
   /**
-   * Asked each time the panel opens, and not on mounting: the answer costs
-   * searches the first time a city is asked about, and a reader who never
-   * opens the picker should never cause it. The list from the last opening
-   * stays up until the new one lands, so reopening never empties the panel.
+   * Asked once for each opening of the panel, and not on mounting: a reader
+   * who never reaches for the picker should never cause it. Reaching for it
+   * is enough, the pointer coming onto the pill or the focus landing on it,
+   * so the answer is on its way before the press rather than after it. The
+   * server works the list out when a day is put in a city, so this is
+   * usually a read of what it kept. The list from the last opening stays up
+   * until the new one lands, so reopening never empties the panel.
+   *
    * Asked about the city the pill says, which is where the distances are
    * from: the one just chosen while the page catches up to the move, so the
    * list is never measured from the city the day has left. A city kept from
    * before cities had identifiers has nothing to go on, and gets none.
    */
   const askAbout = shown?.providerPlaceId ?? null;
+  const lookUpCities = (): void => {
+    if (askAbout === null || askedAbout.current === askAbout) {
+      return;
+    }
+    const about = askAbout;
+    askedAbout.current = about;
+    // An answer that did not come keeps the list already there for the
+    // city, and with none there is kept as an empty one, so the panel stops
+    // saying it is looking and offers the search instead.
+    void askForCitiesToVisit(about).then((answer) => {
+      setToVisit((now) =>
+        answer === null && now?.about === about ? now : { about, cities: answer ?? [] },
+      );
+    });
+  };
+  const lookingUpCities = useEffectEvent(lookUpCities);
   useEffect(() => {
     if (!open) {
       askedAbout.current = null;
       return;
     }
-    if (searched || askAbout === null || askedAbout.current === askAbout) {
-      return;
+    if (!searched) {
+      lookingUpCities();
     }
-    askedAbout.current = askAbout;
-    // An answer that did not come keeps the list already there for the
-    // city, and with none there is kept as an empty one, so the panel stops
-    // saying it is looking and offers the search instead.
-    void askForCitiesToVisit(askAbout).then((answer) => {
-      setToVisit((now) =>
-        answer === null && now?.about === askAbout
-          ? now
-          : { about: askAbout, cities: answer ?? [] },
-      );
-    });
   }, [open, searched, askAbout]);
 
   /** The answer about this day's city, and not one left from another day's. */
@@ -394,6 +403,8 @@ export function CityPicker({
         ref={pill}
         type="button"
         onClick={toggle}
+        onPointerEnter={lookUpCities}
+        onFocus={lookUpCities}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls={panelId}

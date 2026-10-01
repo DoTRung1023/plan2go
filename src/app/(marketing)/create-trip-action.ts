@@ -2,8 +2,10 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { createGooglePlacesProvider } from "@/adapters/places/google-places";
 import { createGoogleTimeZoneProvider } from "@/adapters/time-zone/google-time-zone";
+import { prepareCitiesToVisit } from "@/server/places/cities-to-visit";
 import { googleMapsApiKey } from "@/server/places/google-key";
 import { placeDetailsFor } from "@/server/places/place-details";
 import { prismaTripRepository } from "@/server/repositories/prisma-trip-repository";
@@ -52,6 +54,7 @@ export async function createTripAction(
 
   const { cityPlaceId, ...rest } = parsed.data;
   const asked = await headers();
+  const places = createGooglePlacesProvider({ apiKey });
 
   // The city is looked up here rather than trusted from the form, so the map
   // opens where the place actually is and the clock is the one kept there.
@@ -63,7 +66,7 @@ export async function createTripAction(
   // slower call spent finding out. Where neither can, the request's own guess
   // is a better answer than refusing to open the trip.
   const lookedUp = async (): Promise<NewTripRequest | null> => {
-    const city = await placeDetailsFor(cityPlaceId, createGooglePlacesProvider({ apiKey }), null);
+    const city = await placeDetailsFor(cityPlaceId, places, null);
     if (city === null) {
       return null;
     }
@@ -81,7 +84,8 @@ export async function createTripAction(
     };
   };
 
-  const opened = await openTrip(asked, prismaTripRepository, lookedUp());
+  const request = lookedUp();
+  const opened = await openTrip(asked, prismaTripRepository, request);
 
   if (opened.status === "too-many") {
     return {
@@ -91,6 +95,16 @@ export async function createTripAction(
   }
   if (opened.status === "nowhere") {
     return { error: "That city could not be found. Choose it from the list again.", field: "city" };
+  }
+
+  // The cities worth going to from the trip's city, worked out once the
+  // traveller is on their way to the trip rather than when they first open
+  // the city picker and wait for it. Settled already: the trip was opened
+  // from it.
+  const opening = await request;
+  const openedIn = opening?.cityPlaceId ?? null;
+  if (openedIn !== null) {
+    after(() => prepareCitiesToVisit(asked, openedIn, places));
   }
 
   // Straight to the edit link: this is the one moment the key exists in the

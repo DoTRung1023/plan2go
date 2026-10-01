@@ -3,8 +3,20 @@ import { boxAround, metersBetween } from "@/core/model/distance";
 import type { LatLng } from "@/core/model/place";
 import { foldedName, plainName } from "@/core/model/place-name";
 import type { LandmarkPlace, PlaceSuggestion, PlacesProvider } from "@/core/ports/places-provider";
+import { consumeRateLimit } from "../rate-limit/ip-rate-limit";
+import type { RateLimitPolicy } from "../rate-limit/window";
 import { placeDetailsFor } from "./place-details";
 import { suggestionsFor } from "./suggestion-cache";
+
+/** What working out the cities worth going to is counted under, whoever asks for it. */
+export const CITIES_TO_VISIT_ROUTE = "places-cities";
+
+/**
+ * As tight as the typed search is loose: this is worked out once each time a
+ * day is put in a city and asked once each time the city picker opens, so a
+ * person reaches it a handful of times in a minute at most.
+ */
+export const CITIES_TO_VISIT_POLICY: RateLimitPolicy = { windowSeconds: 60, maxRequests: 10 };
 
 /** Landmarks asked for, which is as many as one text search answers with. */
 const LANDMARKS_ASKED = 20;
@@ -59,7 +71,10 @@ const MATCH_METERS = 30_000;
 /** Groups of landmarks looked up as towns, for each list, past which the rest are left. */
 const GROUPS_TRIED = 14;
 
-/** Names tried for one group before it is given up on, since each try is a search. */
+/**
+ * Names tried for one group, past which it is given up on. Each is a search,
+ * and they are all asked at once, so this is what a group costs every time.
+ */
 const NAMES_TRIED = 4;
 
 /** A town's answers read to find the one named, near the landmarks it is looked up for. */
@@ -213,6 +228,12 @@ export function namesFor(group: readonly LandmarkPlace[]): readonly GroupName[] 
  * that it is the city the landmarks are in and not the one down the road:
  * Sa Pa's landmarks are in Lào Cai province, and Lào Cai, the town, is 20 km
  * from them.
+ *
+ * Every name is asked about at once rather than one after another, since a
+ * list is built while somebody waits for it, and asking in turn put a round
+ * trip to the provider in front of each name the last one missed. The answers
+ * are still read in the order the names were ranked, so the town is the same
+ * one asking in turn would have found.
  */
 export async function townFor(
   group: readonly LandmarkPlace[],
@@ -222,14 +243,20 @@ export async function townFor(
   if (first === undefined) {
     return null;
   }
-  for (const { name, province } of namesFor(group).slice(0, NAMES_TRIED)) {
-    const found = await provider.search({
-      query: name,
-      near: first.position,
-      limit: MATCHES_READ,
-      only: "areas",
-      session: null,
-    });
+  const names = namesFor(group).slice(0, NAMES_TRIED);
+  const answers = await Promise.all(
+    names.map(({ name }) =>
+      provider.search({
+        query: name,
+        near: first.position,
+        limit: MATCHES_READ,
+        only: "areas",
+        session: null,
+      }),
+    ),
+  );
+  for (const [at, { name, province }] of names.entries()) {
+    const found = answers[at] ?? [];
     const within = province ? NEAREST_METERS : MATCH_METERS;
     const match = found.find(
       (one) =>
@@ -409,4 +436,25 @@ export async function citiesToVisit(
     placed.filter((one) => one !== null),
     limit,
   );
+}
+
+/**
+ * The cities worth going to from a city, worked out and kept as soon as a day
+ * is in it, so the picker's first opening there is answered from our own
+ * tables instead of waiting on every step above. A city worked out lately
+ * costs only the reads.
+ *
+ * Counted against the picker's own budget, so putting a day in one city after
+ * another is no way around it. Past the budget nothing is worked out, and the
+ * picker asks for itself when it opens.
+ */
+export async function prepareCitiesToVisit(
+  headers: Headers,
+  cityPlaceId: string,
+  provider: PlacesProvider,
+): Promise<void> {
+  const limit = await consumeRateLimit(CITIES_TO_VISIT_ROUTE, headers, CITIES_TO_VISIT_POLICY);
+  if (limit.allowed) {
+    await citiesToVisit(cityPlaceId, NEARBY_KEPT + POPULAR_KEPT, provider);
+  }
 }

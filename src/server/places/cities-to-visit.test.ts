@@ -150,7 +150,19 @@ describe("townFor", () => {
       landmark(SON_DOONG, "Thượng Trạch", "Quảng Bình"),
     ];
     expect((await townFor(group, provider))?.name).toBe("Phong Nha");
-    expect(asked).toEqual(["Quang Binh Province", "Phong Nha"]);
+    expect(asked).toEqual(["Quang Binh Province", "Phong Nha", "Thượng Trạch"]);
+  });
+
+  it("takes the first name that matches, though every name was asked at once", async () => {
+    const { provider } = knowing([
+      { name: "Phong Nha", at: { lat: 17.59, lng: 106.28 } },
+      { name: "Thượng Trạch", at: { lat: 17.47, lng: 106.29 } },
+    ]);
+    const group = [
+      landmark(PHONG_NHA, "Phong Nha", null),
+      landmark(SON_DOONG, "Thượng Trạch", null),
+    ];
+    expect((await townFor(group, provider))?.name).toBe("Phong Nha");
   });
 
   it("takes the town a ward is named for", async () => {

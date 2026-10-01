@@ -27,9 +27,8 @@ function keyFor(request: PlaceSearchRequest): SuggestionCacheKey {
 
 /**
  * A typed search as our own table answered it recently, or null when it has
- * not. Reading the table costs nothing, so it is read while the request is
- * still being counted, and the provider, which is paid, is asked only on a
- * miss and only once the count says the request may spend.
+ * not. Read only once the request has been counted and allowed, as every
+ * places read is, and the provider, which is paid, is asked only on a miss.
  */
 export function cachedSearch(
   request: PlaceSearchRequest,

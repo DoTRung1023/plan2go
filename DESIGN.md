@@ -610,7 +610,10 @@ it in and ranked by how many landmarks each town has: the country's best known
 landmarks for its cities, and the places people go to stay on a weekend away from the
 city for the towns near it, since asked for anything near a city the provider answers
 with the city itself. Each is asked once a day, for each country and for each city,
-and kept, and both are rough at their tails, where a town with one landmark can come
+and kept, worked out on the server as soon as a trip is opened in a city or a day is
+moved to one, and asked for by the pill as the pointer or the focus reaches it rather
+than when it is pressed, so the panel opens on the list rather than waiting for it.
+Both are rough at their tails, where a town with one landmark can come
 up as the hamlet the landmark stands in. Typing a city lists
 the cities that match, nearest the day's city first, each the trip already goes to with
 its dot in the pin's place and any other with a pin, since a city has no colour until a
