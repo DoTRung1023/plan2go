@@ -46,10 +46,14 @@ export function SavedNote({ at }: SavedNoteProps) {
       {/* The word is always here, so the tick, the word and the pill under
           them fade as one thing. Rendered only while showing, it would vanish
           on the first frame of a fade the rest of the badge was still in the
-          middle of. */}
+          middle of.
+
+          In the corner of the window on a phone, where the panel is the whole
+          page: in the panel's corner there, it was under the last stop of the
+          day and seen only by whoever had scrolled to it. */}
       <p
         aria-hidden="true"
-        className={`pointer-events-none absolute right-[14px] bottom-4 z-20 flex items-center gap-[4px] rounded-pill bg-sage-600 px-[10px] py-[4px] text-label font-semibold text-paper shadow-sm transition-opacity ${
+        className={`pointer-events-none fixed right-[14px] bottom-4 z-20 flex items-center gap-[4px] rounded-pill bg-sage-600 px-[10px] py-[4px] text-label font-semibold text-paper shadow-sm transition-opacity lg:absolute ${
           showing ? "opacity-100" : "opacity-0"
         }`}
       >

@@ -109,8 +109,21 @@ export function DayPlanner({
 
           Two things laid on the panel's sunken ground, the trip's pill and
           the day's card, in from the edge by the gutter and standing above
-          the day, which scrolls under them. */}
-      <div className={`relative z-20 shrink-0 pt-[14px] ${GUTTER}`}>
+          the day, which scrolls under them.
+
+          On a phone the page scrolls rather than the day, and the block goes
+          up with it until the days reach the strip of map, where they stay.
+          Sixty eight is the strip's 140 less the room over the trip's row and
+          the row itself, 14 and 54, and the four its shadow reaches under it,
+          so the row slides away under the map and the days stop eight under
+          its edge. A step under the strip there rather than level with it:
+          level, and later in the page, the block was drawn over the map, and
+          over the list the search hangs from it. Its ground is the panel's
+          own, so the day going up under it is hidden rather than seen
+          through it. */}
+      <div
+        className={`sticky top-[68px] z-10 shrink-0 bg-paper-sunken pt-[14px] ${GUTTER} lg:relative lg:top-auto lg:z-20`}
+      >
         {settings ?? (
           <>
             <div className={HEADING_BAND}>

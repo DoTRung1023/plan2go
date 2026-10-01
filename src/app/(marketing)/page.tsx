@@ -15,7 +15,9 @@ export default function MarketingPage() {
      * What the product is on one side, the form that starts one on the other.
      * The columns are auto-fit rather than a breakpoint, so the pair splits when
      * there is room for both and stacks when there is not, without this page
-     * having to name the width at which that happens.
+     * having to name the width at which that happens. A column is never wider
+     * than the page, so a phone narrower than one still gets a column that fits
+     * rather than a page that scrolls sideways.
      *
      * Aligned along their tops, as the canvas has them: the lockup sits level
      * with the top of the card, and the words hang from it. The pair as a whole
@@ -23,7 +25,7 @@ export default function MarketingPage() {
      * below the shorter column is shared out above and beneath the pair rather
      * than piled under it.
      */
-    <div className="grid items-start gap-14 [grid-template-columns:repeat(auto-fit,minmax(300px,1fr))]">
+    <div className="grid items-start gap-14 [grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr))]">
       <div className="flex flex-col gap-[26px] pt-[6px]">
         <Image
           src={lockup}
