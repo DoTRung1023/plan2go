@@ -827,7 +827,8 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
                     nor the button moves when it comes and goes. */}
                 <div id={nameErrorId} aria-live="polite">
                   {nameError ? (
-                    <Notice shape="bubble" hangs="above" className="left-0 max-w-full">
+                    <Notice shape="bubble" hangs="above" className="left-0 flex max-w-full items-center gap-[6px]">
+                      <AlertIcon size={14} strokeWidth={2.75} className="shrink-0" />
                       No file name. Type one to export.
                     </Notice>
                   ) : null}
