@@ -158,12 +158,16 @@ export function EndpointPicker({
             setQuery(event.target.value);
           }}
           onKeyDown={onKeyDown}
-          className="min-w-0 flex-1 py-[9px] text-meta text-ink caret-terracotta outline-none placeholder:text-ink-faint"
+          /* 16px on a phone, where iOS zooms the page into any field set
+             smaller as it takes the cursor. */
+          className="min-w-0 flex-1 py-[9px] text-meta text-ink caret-terracotta outline-none placeholder:text-ink-faint max-lg:text-[16px]"
         />
+        {/* As tall as the field on a phone, so it is a button a finger finds
+            rather than a word at the end of the line. */}
         <button
           type="button"
           onClick={onCancel}
-          className="shrink-0 rounded-chip px-1 text-label font-semibold text-ink-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+          className="shrink-0 rounded-chip px-1 text-label font-semibold text-ink-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta max-lg:-mr-2 max-lg:self-stretch max-lg:px-3"
         >
           Cancel
         </button>

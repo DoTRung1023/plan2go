@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { FINGER_ROOM } from "@/ui/finger-room";
 import { ArrowLeftIcon, MoreIcon } from "@/ui/icons";
 import { useOutsidePress } from "@/ui/use-outside-press";
 
@@ -125,8 +126,9 @@ export function TripMenu({ label, children }: TripMenuProps) {
         // Thirty-two, a little over the name's line of thirty, so it sits in
         // the round end of the pill the row is with a pixel of the pill's
         // padding either side of it. Taller and this one button would set
-        // the height of the whole name row.
-        className={`grid h-8 w-8 place-items-center rounded-pill border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${
+        // the height of the whole name row. On a phone it answers a finger
+        // over the pill's padding round it instead.
+        className={`grid h-8 w-8 place-items-center rounded-pill border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${FINGER_ROOM} ${
           open
             ? "border-terracotta-800 bg-terracotta-800 text-paper"
             : "border-rule bg-transparent text-ink-muted hover:bg-neutral-200 hover:text-ink"

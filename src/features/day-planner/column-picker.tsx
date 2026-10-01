@@ -8,12 +8,17 @@ import "./column-picker.css";
  * narrow as two digits in a pill can be: the columns are read, not searched,
  * and a wide panel over a small control looked like more than it was.
  */
-const LIST = "column-picker-list h-[196px] w-[44px] overflow-y-auto";
+/**
+ * Seven rows in sight. On a phone each row is thirty six tall rather than
+ * twenty eight, a finger's height, and the column a little wider for it.
+ */
+const LIST =
+  "column-picker-list h-[196px] w-[44px] overflow-y-auto max-lg:h-[252px] max-lg:w-[52px]";
 
 // Two digits every time, so they are centred rather than ranged left against
 // a column no wider than they are.
 const ROW =
-  "block w-full rounded-chip py-[6px] text-center font-display text-time text-ink tabular-nums hover:bg-terracotta-100 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta";
+  "block w-full rounded-chip py-[6px] text-center font-display text-time text-ink tabular-nums hover:bg-terracotta-100 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta max-lg:py-[10px]";
 
 const ROW_CHOSEN = "bg-terracotta-800 text-paper hover:bg-terracotta-800";
 

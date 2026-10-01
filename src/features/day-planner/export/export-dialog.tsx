@@ -669,7 +669,9 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
                       <button
                         type="button"
                         onClick={toggleAll}
-                        className={`-mx-[6px] -my-1 rounded-pill px-[6px] py-1 text-[12.5px]/none font-bold text-terracotta-700 hover:text-terracotta-900 ${FOCUS}`}
+                        // Ten over and under the word on a phone, inside the
+                        // room the heading keeps, so a finger finds it.
+                        className={`-mx-[6px] -my-1 rounded-pill px-[6px] py-1 text-[12.5px]/none font-bold text-terracotta-700 hover:text-terracotta-900 max-lg:-my-[10px] max-lg:py-[10px] ${FOCUS}`}
                       >
                         {allPicked ? "Clear" : "Select all"}
                       </button>
@@ -815,9 +817,14 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
                     onChange={(event) => {
                       setTypedName(event.target.value);
                     }}
-                    className="min-w-0 flex-1 border-0 bg-transparent py-[11px] text-body/none font-medium text-ink outline-none placeholder:text-ink-faint"
+                    // 16px on a phone, where iOS zooms the page into any
+                    // field set smaller as it takes the cursor, and the .pdf
+                    // after it with it.
+                    className="min-w-0 flex-1 border-0 bg-transparent py-[11px] text-body/none font-medium text-ink outline-none placeholder:text-ink-faint max-lg:text-[16px]"
                   />
-                  <span className="shrink-0 text-body/none font-medium text-neutral-500">.pdf</span>
+                  <span className="shrink-0 text-body/none font-medium text-neutral-500 max-lg:text-[16px]">
+                    .pdf
+                  </span>
                 </div>
                 {/* Polite, and in a region that is always there, so it is read
                     out once the typing pauses rather than cutting in on it. It

@@ -202,8 +202,13 @@ interface PlaceSheetProps {
   readonly onClose: () => void;
 }
 
+/**
+ * On a phone a link answers a finger four further above and below its line,
+ * into the room between the rows, and gives it back, so the rows stand where
+ * they do and no two reach each other.
+ */
 const LINK =
-  "flex items-center gap-2 text-meta text-ink hover:text-terracotta-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "flex items-center gap-2 text-meta text-ink hover:text-terracotta-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta max-lg:-my-1 max-lg:py-1";
 
 /** A rating drawn as five stars, the filled ones counted from the left. */
 function Stars({ rating, size }: { readonly rating: number; readonly size: number }) {
@@ -500,7 +505,7 @@ export function PlaceSheet({
       type="button"
       onClick={onLeave}
       aria-label="Close"
-      className="absolute top-3 right-3 grid h-8 w-8 place-items-center rounded-pill bg-paper-raised/90 text-ink shadow-sm hover:bg-paper-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:hidden"
+      className="absolute top-3 right-3 grid h-10 w-10 place-items-center rounded-pill bg-paper-raised/90 text-ink shadow-sm hover:bg-paper-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:hidden"
     >
       <CloseIcon size={16} strokeWidth={2.75} />
     </button>
@@ -773,7 +778,7 @@ export function PlaceSheet({
                     href={card.mapsUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-meta font-semibold text-terracotta-700 hover:text-terracotta-900"
+                    className="text-meta font-semibold text-terracotta-700 hover:text-terracotta-900 max-lg:-my-1 max-lg:inline-block max-lg:py-1"
                   >
                     Open in Google Maps
                   </a>

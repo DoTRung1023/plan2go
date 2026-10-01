@@ -111,14 +111,26 @@ const TRIGGER =
  */
 const SIZES = {
   inline: {
+    // On a phone the dates answer a finger the full height of the row, over
+    // the pill's padding above and below them, drawn no larger than here.
     trigger:
-      "w-auto rounded-pill border-transparent bg-transparent px-2 py-[5px] text-small/none font-semibold text-ink-muted hover:border-transparent hover:bg-terracotta-100 hover:text-terracotta-700",
+      "w-auto rounded-pill border-transparent bg-transparent px-2 py-[5px] text-small/none font-semibold text-ink-muted hover:border-transparent hover:bg-terracotta-100 hover:text-terracotta-700 max-lg:relative max-lg:after:absolute max-lg:after:-inset-x-[3px] max-lg:after:-inset-y-[9px]",
     change: "sr-only",
     stack: "shrink-0",
+    // On a phone the days stay stuck under the map as the page scrolls, and
+    // the calendar hangs from them, so it goes no further down the window
+    // than the window goes and scrolls inside itself, or its foot, where the
+    // dates are saved, is under the bottom of the window with no way to
+    // scroll to it. Never shorter than a month, for a phone on its side,
+    // where the days scroll away and the page scrolls to the foot instead.
+    panel: "max-lg:scroll-quiet max-lg:max-h-[max(330px,calc(100dvh-162px))] max-lg:overflow-y-auto",
   },
   large: {
     trigger: "gap-2 px-5 py-[14px]",
     change: "sr-only",
+    // The starter page is an ordinary page that scrolls, so the calendar is
+    // as long as it is.
+    panel: "",
     // The container the day's format is measured against. Not the pill itself:
     // a button cannot be a size container, and the wrapper is exactly as wide.
     stack: "@container flex flex-col",
@@ -449,7 +461,7 @@ export function DateRangeField({
           role="dialog"
           aria-label={`Choose the ${label.toLowerCase()}`}
           style={{ left: shift }}
-          className="absolute top-full z-30 mt-3 w-[min(600px,calc(100vw-2rem))] rounded-card border border-rule bg-paper-raised px-5 pt-4 pb-2 shadow-md"
+          className={`absolute top-full z-30 mt-3 w-[min(600px,calc(100vw-2rem))] rounded-card border border-rule bg-paper-raised px-5 pt-4 pb-2 shadow-md ${dressed.panel}`}
         >
           {/* The line over the months: which click comes next, and a step of
               one month at either end of it. */}

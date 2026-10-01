@@ -260,7 +260,10 @@ everything else.
 
 Ten steps and no others. Every size in the planner is one of them, set with its own
 line height and, where it is a pill, with `text-step/none` rather than a second leading
-utility fighting the first. Lead is the heading of what opens over the page: the place
+utility fighting the first. There is one exception, and it is only ever a field's: below
+1024px every field, and what stands in a field such as the search's empty words and the
+.pdf after a file's name, is 16px, because iOS zooms the whole page into any field set
+smaller as it takes the cursor and leaves it zoomed. Lead is the heading of what opens over the page: the place
 open in the sheet, and the question asked before a trip is deleted. Small is the tier the interface is mostly made of,
 tab labels, menu rows, the words on a leg, which used to be a scatter of 13px and 13.5px
 chosen one component at a time. A number that is not on the scale is a number that has
@@ -337,9 +340,54 @@ nothing drawn edge to edge.
 the top of the viewport, with the day tabs stuck directly beneath it. The page is the
 scrolling surface.
 
-The strip carries one control, a pill button reading **Expand map**. Expanded, the map
-covers the viewport and the same button reads **Collapse map**. Both states show the
-word. Neither is an icon on its own.
+The trip's row and the strip of days are one block, and as the page scrolls the block
+goes up with it until the days are 8px under the strip's edge, where they stay; the
+trip's row, and the shadow under it, slide away under the map. The block is a step under
+the strip, so the map and the search's panels are drawn over it and never under it. On a
+phone on its side, under 480px tall, the strip and the days together left a third of
+the window for the day, so there the block scrolls away with the page and only the strip
+stays. Whatever the page brings into view, a card the map points at or a control the
+keyboard moves to, is brought to just under what is stuck rather than under it.
+
+The strip is a glimpse of the day rather than a map to work in. Across its top is the
+search, at the strip's whole width, so the field always has the room for its longest
+words and the city pill keeps as much of its name as it can. At its foot on the right
+is its one button, a 40px pill reading **Expand map**, where the desk's own button is
+and where a thumb reaches first. Expanded, the map covers the viewport, the same button
+reads **Collapse map**, the zoom pair stands under it, and the route key comes out in
+the bottom left, clear of Google's mark, which the map has to show whole; the key and
+the zoom pair are not in the strip. Both states of the button show the word. Neither
+is an icon on its own. Opened, the map moves under one finger; in the strip one finger
+scrolls the page and two move the map.
+
+A stop card is laid out for the narrow column. The times and the tools are one line,
+level with the disc, with the times on the left and the tools at the right end; the
+name and the address are under them at the card's whole width, which on a desk they
+share with the column of times. An end of the day is laid out the same way, level with
+its marker. On the narrowest phones the pill that sets when the day leaves and three
+tools are more than the line holds, and the tools drop under the times.
+
+Everything on a phone is pressed with a finger. The tools on a card and on an end of
+the day are 40px round buttons with the glyph unchanged in the middle; the stay, the
+menu's rows, the zoom pair and the button that opens the map are 40px tall; the hours
+and minutes in a picker are rows 36px tall. A control that cannot be drawn that large
+in the row it stands in, the trip's menu button, the dates beside the name, the button
+that adds a day, the leaving time's pill, answers a finger over the padding around it
+and is drawn no larger. Nothing that answers a finger reaches into what another answers.
+
+The grip on a card carries the card under a finger, since a phone has no drag of its
+own: the card goes where the finger takes it, on the shadow of what floats, the card it
+is over is outlined as a drop is on a desk, and letting go puts it there, brought into
+sight if it landed past the edge of the window. Held near the top or the foot of what
+can be seen of the day, the day scrolls on under it. A press on the grip that goes
+nowhere is only a press.
+
+A field is 16px on a phone, whatever step it is set at on a desk, because under that
+iOS zooms the whole page into a field as it takes the cursor and leaves it zoomed (see
+Typography). The calendar under the trip's dates goes no further down the window than
+the window goes, and scrolls inside itself, since it hangs from the days, which do not
+scroll away. The word that says a change is saved stands in the corner of the window
+rather than of the panel, which on a phone is the whole page.
 
 ## Elevation and depth
 
@@ -347,7 +395,8 @@ Three steps, all tuned to the cream ground rather than to a white one.
 
 ```
 --shadow-sm   a floating control: the search field, the zoom pair, a map marker
---shadow-md   a panel that opens over the page: the search results, the calendar
+--shadow-md   a panel that opens over the page: the search results, the calendar, and a
+              stop card while a finger carries it on a phone
 --shadow-lg   reserved, for a layer over the whole viewport
 ```
 
@@ -671,7 +720,8 @@ underneath, and a product whose whole surface is one warm ramp cannot have its l
 element opt out of it. Every one of Google's controls is off and ours are drawn over the
 map instead: the search in the top left, the route key in the bottom left, and in the
 bottom right the button that fills the screen with the zoom pair under it, where a thumb
-reaches first. What the map is drawn on is not offered as a choice. There is one ground,
+reaches first. On a phone the strip carries only the search and the button, and the key
+and the zoom pair come out with the map opened (see Layout). What the map is drawn on is not offered as a choice. There is one ground,
 and it is the product's own.
 
 ## Motion
@@ -687,7 +737,9 @@ also turns to the next city's colour over 200ms `ease-out` when what it marks ch
 city, with the name beside it, so the pill in the search does not flash as days change.
 
 Reordering: `transform` over 160ms `ease-out` on the card being moved and on the cards
-displacing around it. Nothing else, no opacity, no scale.
+displacing around it. Nothing else, no opacity, no scale. A card carried by a finger on
+a phone is not animated at all: it is wherever the finger is, at once, which is the
+finger moving it rather than the page.
 
 The trip's actions: `grid-template-columns` from `0fr` to `1fr` over 200ms `ease-out`,
 so the row grows from nothing without anything having to know how wide the buttons are.

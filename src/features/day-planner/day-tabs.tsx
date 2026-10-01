@@ -5,6 +5,7 @@ import { useLayoutEffect, useRef, useState, useTransition } from "react";
 import { useScrollBar } from "@/ui/use-scroll-bar";
 import type { DayPlan } from "@/core/model/day";
 import { CityDot } from "@/ui/city-dot";
+import { FINGER_ROOM } from "@/ui/finger-room";
 import { PlusIcon } from "@/ui/icons";
 import type { EditOutcome } from "./day-actions";
 import { formatDayDate, formatDayTab } from "./format-day-date";
@@ -288,7 +289,8 @@ export function DayTabs({ days, selectedIndex, onSelect, onAddDay }: DayTabsProp
             // words are in, since the ring already says it is only an offer.
             // Under the pointer the dash takes the whole accent, as every
             // dashed control's does, over the same sunken paper a day takes.
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-pill border-[1.5px] border-dashed border-rule-strong text-ink-muted hover:border-terracotta hover:bg-paper-sunken hover:text-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+            // On a phone it answers a finger as tall as the days beside it.
+            className={`grid h-8 w-8 shrink-0 place-items-center rounded-pill border-[1.5px] border-dashed border-rule-strong text-ink-muted hover:border-terracotta hover:bg-paper-sunken hover:text-terracotta-700 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${FINGER_ROOM}`}
           >
             <PlusIcon size={15} strokeWidth={2.75} />
           </button>

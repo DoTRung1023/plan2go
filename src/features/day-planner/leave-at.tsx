@@ -51,8 +51,14 @@ function twoDigits(value: number): string {
  * Only an enabled pill lifts. While a time is being saved it cannot be
  * pressed, and a pill that still rose under the pointer said it could.
  */
+/**
+ * On a phone the pill answers a finger forty tall, though it is drawn no
+ * taller than the time it stands in for: the room it answers in reaches over
+ * and under it, into the card's padding and the gap over the name, where
+ * nothing else is pressed.
+ */
 const TRIGGER =
-  "flex items-center gap-[5px] rounded-pill border border-dashed py-px pr-[4px] pl-[6px] font-display text-time text-terracotta-700 tabular-nums enabled:hover:border-terracotta enabled:hover:bg-paper-raised disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "flex items-center gap-[5px] rounded-pill border border-dashed py-px pr-[4px] pl-[6px] font-display text-time text-terracotta-700 tabular-nums enabled:hover:border-terracotta enabled:hover:bg-paper-raised disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta max-lg:relative max-lg:before:absolute max-lg:before:-inset-x-1 max-lg:before:-inset-y-[10px]";
 
 /** Minutes from midnight on the clock: "09:05". */
 function toClock(minutes: number): string {

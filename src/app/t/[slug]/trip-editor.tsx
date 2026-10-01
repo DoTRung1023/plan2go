@@ -397,6 +397,9 @@ export function TripEditor({
     >
       <section
         aria-label="Map of this day"
+        // Stuck over the page on a phone, and says so, for whatever has to
+        // know how much of the window is under it.
+        data-sticky=""
         className={
           // Opened, the map covers the planner beside it rather than the
           // window: the browser keeps its own chrome, and getting back is the
@@ -459,12 +462,14 @@ export function TripEditor({
             />
           )}
           {/* The corner of the map, where a map search belongs. The row itself
-              takes no clicks, so the map still drags in the gap between the
-              search and the toggle. On a desk it is over the sheet as well as
-              the map, the way a map search floats over the panel it opened:
-              the field stays put whatever is under it, and the sheet keeps
-              its own top clear for it. Not on a phone, where the sheet is
-              the window and has a close of its own. */}
+              takes no clicks, so the map still drags beside the search. On a
+              desk it is over the sheet as well as the map, the way a map
+              search floats over the panel it opened: the field stays put
+              whatever is under it, and the sheet keeps its own top clear for
+              it. Not on a phone, where the sheet is the window and has a close
+              of its own. On a phone the search has the strip's whole width:
+              the button that opens the map is at the strip's foot instead,
+              where the map's own controls are. */}
           <div className="pointer-events-none absolute inset-x-[14px] top-[14px] z-[3] flex items-start gap-2 lg:inset-x-[24px] lg:top-[28px] lg:z-40">
             {editKey !== null && selected !== undefined ? (
               /* Where a map search sits in the panel it opened: 16px in from
@@ -514,15 +519,6 @@ export function TripEditor({
                 />
               </div>
             ) : null}
-            <button
-              type="button"
-              onClick={() => {
-                setExpanded(!expanded);
-              }}
-              className="pointer-events-auto ml-auto flex h-[30px] shrink-0 items-center rounded-pill border border-rule bg-paper-raised px-[11px] text-micro font-semibold text-ink-muted shadow-sm hover:bg-paper-sunken hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:hidden"
-            >
-              {expanded ? "Collapse map" : "Expand map"}
-            </button>
           </div>
         </div>
       </section>

@@ -1,5 +1,6 @@
 "use client";
 
+import { FINGER_ROOM } from "@/ui/finger-room";
 import { DownloadIcon } from "@/ui/icons";
 import { MENU_ITEM } from "@/ui/menu";
 
@@ -14,7 +15,7 @@ const TITLE = "Export";
 const TRIGGERS = {
   menu: { rest: MENU_ITEM },
   heading: {
-    rest: "inline-flex h-8 shrink-0 items-center gap-[7px] rounded-pill border border-rule bg-transparent px-[13px] text-small/none font-semibold text-ink-muted hover:bg-neutral-200 hover:text-ink disabled:opacity-45 disabled:hover:bg-transparent disabled:hover:text-ink-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta",
+    rest: `inline-flex h-8 shrink-0 items-center gap-[7px] rounded-pill border border-rule bg-transparent px-[13px] text-small/none font-semibold text-ink-muted hover:bg-neutral-200 hover:text-ink disabled:opacity-45 disabled:hover:bg-transparent disabled:hover:text-ink-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${FINGER_ROOM}`,
   },
 } as const;
 

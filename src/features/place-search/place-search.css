@@ -664,6 +664,61 @@
   right: 4px;
 }
 
+/*
+ * On a phone, which is anything under the width where the planner is two
+ * panes.
+ *
+ * Both fields are 16px. Under that, iOS zooms the whole page into a field as
+ * it takes the cursor and leaves it zoomed, so the words are the one size off
+ * the type scale, and only ever a field's. The empty field's words stand in
+ * the field, so they come up with it.
+ *
+ * What is pressed is a finger's size rather than a pointer's: the plus on a
+ * row, the quick searches and the arrows along them. The field and the city
+ * pill answer a finger over the bar's whole height, though neither is drawn
+ * any taller: the field fills the box its words stand in, and the pill's room
+ * reaches over the bar's padding round it.
+ *
+ * And a panel is never taller than the window has room for under the bar and
+ * the quick searches, so on a phone on its side its last rows are still in
+ * reach rather than under the bottom of the window.
+ */
+@media (width < 1024px) {
+  .search-input,
+  .search-words,
+  .search-city-field > input {
+    font-size: 16px;
+  }
+
+  .search-input {
+    align-self: stretch;
+  }
+
+  .search-pill::after {
+    content: "";
+    position: absolute;
+    inset: -7px -3px;
+  }
+
+  .search-row-end {
+    width: 36px;
+    height: 36px;
+  }
+
+  .search-kind {
+    padding-block: 11px;
+  }
+
+  .search-kind-arrow {
+    width: 36px;
+    height: 36px;
+  }
+
+  .search-panel {
+    max-height: min(330px, calc(100dvh - 128px));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .search-bar,
   .search-pill,

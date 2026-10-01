@@ -33,9 +33,13 @@ const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/;
  *
  * It shares its row with the trip's actions and gives way to them, down to the
  * width a trip name still reads at, below which the row wraps instead.
+ *
+ * On a phone it is the row's full height to a finger, forty four, giving back
+ * the seven above and below it takes from the row's padding, so the row is no
+ * taller and the name stands where it does.
  */
 const NAME_FIELD =
-  "h-[30px] min-w-0 flex-1 border-0 bg-transparent px-0 py-0 font-display text-title tracking-[-0.01em] text-ink caret-terracotta outline-none placeholder:text-ink-faint aria-invalid:text-terracotta-700 focus-visible:rounded-[6px] focus-visible:outline-2 focus-visible:outline-offset-[4px] focus-visible:outline-terracotta";
+  "h-[30px] min-w-0 flex-1 border-0 bg-transparent px-0 py-0 font-display text-title tracking-[-0.01em] text-ink caret-terracotta outline-none placeholder:text-ink-faint aria-invalid:text-terracotta-700 focus-visible:rounded-[6px] focus-visible:outline-2 focus-visible:outline-offset-[4px] focus-visible:outline-terracotta max-lg:-my-[7px] max-lg:h-11";
 
 interface TripSettingsProps {
   readonly slug: string;

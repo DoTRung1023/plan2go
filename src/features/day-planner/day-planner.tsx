@@ -120,9 +120,17 @@ export function DayPlanner({
           level, and later in the page, the block was drawn over the map, and
           over the list the search hangs from it. Its ground is the panel's
           own, so the day going up under it is hidden rather than seen
-          through it. */}
+          through it.
+
+          Not on a phone on its side, under 480 tall, where the strip and the
+          days together left a third of the window for the day; there the
+          block goes up with the page. Height, not shape, so a phone upright
+          with its browser's bars out is never taken for one on its side. It
+          says where it sticks, for whatever has to know how much of the
+          window is under it. */}
       <div
-        className={`sticky top-[68px] z-10 shrink-0 bg-paper-sunken pt-[14px] ${GUTTER} lg:relative lg:top-auto lg:z-20`}
+        data-sticky=""
+        className={`sticky top-[68px] z-10 shrink-0 bg-paper-sunken pt-[14px] ${GUTTER} lg:relative lg:top-auto lg:z-20 [@media(max-height:479px)]:relative [@media(max-height:479px)]:top-auto`}
       >
         {settings ?? (
           <>

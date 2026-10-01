@@ -122,12 +122,15 @@ function Option({
  */
 function DirectionsLink({ href }: { readonly href: string }) {
   return (
+    /* On a phone the link answers a finger over the room above and below its
+       line, the room between the row over it and the card under it, which
+       is given back so nothing on the day moves. */
     <div className="mt-[3px] px-[10px]">
       <a
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className="mt-[3px] inline-block rounded-pill text-meta font-semibold text-terracotta-700 hover:text-terracotta-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+        className="mt-[3px] inline-block rounded-pill text-meta font-semibold text-terracotta-700 hover:text-terracotta-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta max-lg:-mt-[3px] max-lg:-mb-[6px] max-lg:py-[6px] max-lg:pr-2"
       >
         Live times in Google Maps
       </a>
@@ -296,12 +299,14 @@ export function LegRow({
               {/* No distance beside the heading: every way of covering the leg
                   is about to say its own, and they are not all the same. */}
               <p className="text-small/none font-semibold text-ink-muted">How you get there</p>
+              {/* Thirty two tall on a phone, given back above and below, so it
+                  is pressed rather than aimed at and the panel keeps its shape. */}
               <button
                 type="button"
                 onClick={() => {
                   setOpen(false);
                 }}
-                className="ml-auto flex items-center gap-1 rounded-pill px-1 py-[2px] text-micro/none font-semibold text-ink-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+                className="ml-auto flex items-center gap-1 rounded-pill px-1 py-[2px] text-micro/none font-semibold text-ink-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta max-lg:-my-[9px] max-lg:-mr-1 max-lg:px-2 max-lg:py-[11px]"
               >
                 Collapse
                 <ChevronUpIcon size={13} strokeWidth={2.75} />

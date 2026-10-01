@@ -16,7 +16,14 @@ import { formatDayDate } from "./format-day-date";
 import { hoursOn } from "./format-opening-hours";
 import { LeaveAt } from "./leave-at";
 import { LegRow } from "./leg-row";
-import { AboutPlaceButton, StopCard, TOOL, TOOL_GLYPH } from "./stop-card";
+import {
+  AboutPlaceButton,
+  StopCard,
+  TIMES_ON_A_PHONE,
+  TOOL,
+  TOOL_GLYPH,
+  TOOLS_ON_A_PHONE,
+} from "./stop-card";
 import { Notice } from "@/ui/notice";
 
 /**
@@ -89,10 +96,19 @@ const MARKS = {
  * offers to find one, so an end of the day is one shape wherever it is seen,
  * and the row offering it shows the shape it will get.
  */
-function EndpointMark({ which }: { readonly which: keyof typeof MARKS }) {
+function EndpointMark({
+  which,
+  className = "",
+}: {
+  readonly which: keyof typeof MARKS;
+  /** Where a row puts it when not in the middle of the row, where it sits by default. */
+  readonly className?: string;
+}) {
   const Mark = MARKS[which];
   return (
-    <span className="grid h-[30px] w-[30px] shrink-0 place-items-center self-center rounded-[13px_13px_13px_4px] bg-sage-600 text-paper">
+    <span
+      className={`grid h-[30px] w-[30px] shrink-0 place-items-center self-center rounded-[13px_13px_13px_4px] bg-sage-600 text-paper ${className}`}
+    >
       <Mark size={15} strokeWidth={2.75} />
     </span>
   );
@@ -174,6 +190,10 @@ function Anchor({
      * ring on the map is. The marker sits in the middle of the shorter row
      * rather than at its top, where a disc sits on a card whose content runs
      * on below it; the words and the time sit at the top, as a card's do.
+     *
+     * On a phone it is laid out the way a stop card is there: the time and
+     * the tools on one line level with the marker, and the name and the
+     * address under them at the row's whole width.
      */
     <div
       ref={row}
@@ -183,16 +203,16 @@ function Anchor({
       onMouseLeave={() => {
         onHover(null);
       }}
-      className={`group ${ENDPOINT_ROW} border px-4 py-[9px] ${
+      className={`group ${ENDPOINT_ROW} border px-4 py-[9px] max-lg:grid-cols-[30px_minmax(0,1fr)] max-lg:items-start max-lg:gap-y-[6px] ${
         hovered ? "border-sage-600/55 bg-paper-sunken" : "border-rule bg-paper"
       }`}
     >
-      <EndpointMark which={which} />
+      <EndpointMark which={which} className="max-lg:self-start" />
 
       {/* Words, not a button, as a stop's name and address are: what can be
           done to the place is in the tools, and a name that changed the
           place when it was pressed was a change nobody asked for. */}
-      <div className="min-w-0 self-start">
+      <div className="min-w-0 self-start max-lg:col-start-2 max-lg:row-start-2">
         <p className="break-words font-display text-place text-ink">{endpointName(endpoint)}</p>
         <p className="mt-[3px] break-words text-meta text-ink-faint">
           {endpoint.place.address ?? fallback}
@@ -218,13 +238,17 @@ function Anchor({
           glyph stands for is its name and its tooltip, so it is read out and
           can be hovered for. Drawn at 55 percent until the row is under the
           pointer, as a card's tools are. */}
-      <div className="flex flex-none flex-col items-end gap-[3px] self-start">
+      <div
+        className={`flex flex-none flex-col items-end gap-[3px] self-start max-lg:col-start-2 max-lg:row-start-1 ${TIMES_ON_A_PHONE}`}
+      >
         {setTime ?? (
           <p className="font-display text-time whitespace-nowrap text-terracotta-700 tabular-nums">
             {time ?? "Time not known"}
           </p>
         )}
-        <span className="-mr-1 flex items-center opacity-55 group-hover:opacity-100 focus-within:opacity-100">
+        <span
+          className={`-mr-1 flex items-center opacity-55 group-hover:opacity-100 focus-within:opacity-100 ${TOOLS_ON_A_PHONE}`}
+        >
           <AboutPlaceButton name={endpoint.place.name} onOpen={onOpen} />
           {onChange === null ? null : (
             <button

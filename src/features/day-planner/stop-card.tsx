@@ -1,6 +1,6 @@
 "use client";
 
-import type { DragEvent, ReactNode } from "react";
+import type { DragEvent, PointerEvent, ReactNode } from "react";
 import { useEffect, useRef, useState, useTransition } from "react";
 import type { Conflict } from "@/core/model/conflict";
 import type { ComputedStop } from "@/core/time/compute-day";
@@ -10,18 +10,77 @@ import type { DayActions } from "./day-actions";
 import { ConflictNotice } from "./conflict-notice";
 import { formatDayTime } from "./format-day-time";
 import { StayPicker } from "./stay-picker";
+import type { CardSpan } from "./touch-carry";
+import {
+  CARRY_SLOP,
+  cardUnder,
+  edgeScroll,
+  scrolledBy,
+  scrollerOf,
+  scrollOn,
+  spansBeside,
+  visibleBand,
+} from "./touch-carry";
 import { Notice } from "@/ui/notice";
 
 /** The one thing about this stop that is currently being written down. */
 type Busy = "stay" | "note" | "remove" | null;
 
 /**
+ * A card being carried by a finger on its grip. Kept in a ref rather than in
+ * state, since it changes with every movement of the finger and nothing is
+ * drawn from it but how far the card has been carried, which is state.
+ */
+interface Carry {
+  readonly pointer: number;
+  /** Where the finger went down, in the window, and how far the day was scrolled then. */
+  readonly fromY: number;
+  readonly fromScrolled: number;
+  readonly scroller: HTMLElement | null;
+  readonly cards: readonly CardSpan[];
+  /** Whether the finger has gone far enough for this to be a carry rather than a press. */
+  carried: boolean;
+  /** Where the finger is now, in the window. */
+  y: number;
+  /** The card it is over, which is where the stop goes when it is let go. */
+  over: number;
+  /** The frame that runs the day on under a finger held near an edge. */
+  frame: number;
+}
+
+/**
  * A small round button holding one glyph, for what acts on a whole row. The
  * ends of a day draw theirs the same way, so a control means the same thing
  * wherever on the thread it hangs.
+ *
+ * Forty on a phone, the glyph the same size in the middle of it. Pressed with
+ * a finger, three of them at twenty two side by side were a third of a
+ * fingertip each, and the third is the cross that takes the stop off the day
+ * at once.
  */
 export const TOOL =
-  "grid h-[22px] w-[22px] place-items-center rounded-pill text-ink-muted hover:bg-neutral-200 hover:text-ink disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
+  "grid h-[22px] w-[22px] place-items-center rounded-pill text-ink-muted hover:bg-neutral-200 hover:text-ink disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta max-lg:h-10 max-lg:w-10";
+
+/**
+ * The tools beside the times on a phone, where they share the times' line.
+ * Taller than the line, so they give back what they take over it above and
+ * below, and they hang out past the card's right edge by as much as the
+ * wider box puts round the glyph, so the cross still ends where the times
+ * end on a desk. At the right end of the line, wherever the line breaks.
+ */
+export const TOOLS_ON_A_PHONE = "max-lg:-my-[5px] max-lg:-mr-[13px] max-lg:ml-auto";
+
+/**
+ * The times and the tools on one line on a phone, over the name rather than
+ * beside it: the card is too narrow there for a column of times to stand
+ * beside a name without squeezing the name to a word a line. As tall as the
+ * disc, so the times sit level with it. On the narrowest phones the pill that
+ * sets the day's leaving time and three tools are more than the line holds,
+ * and the tools go under the times, far enough under that what each answers
+ * a finger over does not reach the other.
+ */
+export const TIMES_ON_A_PHONE =
+  "max-lg:min-h-[30px] max-lg:flex-row max-lg:flex-wrap max-lg:items-center max-lg:justify-between max-lg:gap-x-2 max-lg:gap-y-4";
 
 /**
  * The glyph that opens what a place is like: its pictures, its rating, what
@@ -251,10 +310,129 @@ export function StopCard({
     onDragOver(index);
   };
 
+  /**
+   * The grip under a finger. A pointer drags the card with the browser's own
+   * drag, as above; a finger has none on most phones, so here the card goes
+   * where the finger takes it, the card it is over is the one outlined, and
+   * letting go drops it there. The day itself is told through the same calls
+   * the browser's drag makes, so a move is settled in one place however it
+   * was made. A press that goes nowhere is only a press.
+   */
+  const carry = useRef<Carry | null>(null);
+  const [lift, setLift] = useState<number | null>(null);
+  /**
+   * Where the card was when a finger let it go somewhere else, until it has
+   * been drawn where it went. A stop let go over the last card lands after
+   * it, which near the foot of the window is under the foot of the window, so
+   * once it is there it is brought into sight, by the least the page can move.
+   */
+  const landing = useRef<number | null>(null);
+  useEffect(() => {
+    if (landing.current !== null && landing.current !== index) {
+      landing.current = null;
+      card.current?.scrollIntoView({ block: "nearest" });
+    }
+  }, [index]);
+
+  /** A card that goes while it is carried stops running the day on with it. */
+  useEffect(
+    () => () => {
+      const held = carry.current;
+      if (held !== null) {
+        cancelAnimationFrame(held.frame);
+      }
+    },
+    [],
+  );
+
+  /** The card under the finger, and the card drawn as far down as the finger has gone. */
+  const follow = (held: Carry): void => {
+    const scrolled = scrolledBy(held.scroller);
+    setLift(held.y + scrolled - (held.fromY + held.fromScrolled));
+    const under = cardUnder(held.y + scrolled, held.cards, held.over);
+    if (under !== held.over) {
+      held.over = under;
+      onDragOver(under);
+    }
+  };
+
+  /** Every frame of a carry: the day runs on under a finger held near its edge. */
+  const runOn = (): void => {
+    const held = carry.current;
+    if (held === null) {
+      return;
+    }
+    const band = visibleBand(held.scroller);
+    const by = edgeScroll(held.y, band.top, band.bottom);
+    if (by !== 0) {
+      scrollOn(held.scroller, by);
+      follow(held);
+    }
+    held.frame = requestAnimationFrame(runOn);
+  };
+
+  const pickUp = (event: PointerEvent<HTMLButtonElement>): void => {
+    const element = card.current;
+    if (event.pointerType === "mouse" || actions === null || element === null) {
+      return;
+    }
+    event.currentTarget.setPointerCapture(event.pointerId);
+    const scroller = scrollerOf(element);
+    carry.current = {
+      pointer: event.pointerId,
+      fromY: event.clientY,
+      fromScrolled: scrolledBy(scroller),
+      scroller,
+      cards: spansBeside(element, scroller),
+      carried: false,
+      y: event.clientY,
+      over: index,
+      frame: 0,
+    };
+  };
+
+  const move = (event: PointerEvent<HTMLButtonElement>): void => {
+    const held = carry.current;
+    if (held === null || event.pointerId !== held.pointer) {
+      return;
+    }
+    held.y = event.clientY;
+    if (!held.carried) {
+      if (Math.abs(held.y - held.fromY) < CARRY_SLOP) {
+        return;
+      }
+      held.carried = true;
+      onDragStart(index);
+      held.frame = requestAnimationFrame(runOn);
+    }
+    follow(held);
+  };
+
+  /** Let go: dropped where the finger is, or put back if the carry was cut off. */
+  const letGo = (drop: boolean): void => {
+    const held = carry.current;
+    if (held === null) {
+      return;
+    }
+    carry.current = null;
+    cancelAnimationFrame(held.frame);
+    setLift(null);
+    if (!held.carried) {
+      return;
+    }
+    if (drop) {
+      landing.current = held.over === index ? null : index;
+      onDrop(held.over);
+    } else {
+      onDragEnd();
+    }
+  };
+
   return (
     <article
       ref={card}
-      draggable={actions !== null}
+      data-stop-index={index}
+      draggable={actions !== null && lift === null}
       onDragStart={start}
       onDragOver={over}
       onDrop={(event) => {
@@ -268,8 +446,13 @@ export function StopCard({
       onMouseLeave={() => {
         onHover(null);
       }}
+      /* Carried by a finger, the card itself goes with it, over the rest of
+         the day and under the strip of days, lifted onto the shadow of what
+         floats; the browser's drag carries a picture of it instead, and
+         leaves the card faded where it was. */
+      style={lift === null ? undefined : { translate: `0 ${String(lift)}px` }}
       className={`day-stop group grid grid-cols-[30px_minmax(0,1fr)] gap-x-[13px] rounded-row border bg-paper-raised px-4 py-[13px] ${
-        dragging ? "opacity-35" : ""
+        lift !== null ? "relative z-[5] shadow-md" : dragging ? "opacity-35" : ""
       } ${
         dragOver && !dragging
           ? "border-terracotta outline-2 outline-offset-[3px] outline-dashed outline-terracotta"
@@ -309,8 +492,13 @@ export function StopCard({
             too. The tools stay under the times however many lines the name
             and the address run to, rather than dropping to the address's row
             when a long name takes two; the address keeps to the name's width
-            beside them. */}
-        <div className="flex items-start gap-[10px]">
+            beside them.
+
+            On a phone the times and the tools are one line over the name, the
+            times level with the disc, and the name and the address have the
+            card's whole width under them. The name comes first in the page
+            either way, so it is still what is read out first. */}
+        <div className="flex items-start gap-[10px] max-lg:flex-col-reverse max-lg:items-stretch max-lg:gap-[6px]">
           <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
             <h3 className="min-w-0 font-display text-place text-ink">{stop.placeName}</h3>
             {address === null ? null : (
@@ -318,7 +506,7 @@ export function StopCard({
             )}
           </div>
 
-          <div className="flex flex-none flex-col items-end gap-[3px]">
+          <div className={`flex flex-none flex-col items-end gap-[3px] ${TIMES_ON_A_PHONE}`}>
             {/* Read, never set, but for one: every time on the day follows
                 from when it leaves, worked out through the legs and the stays,
                 so the one clock to change is that one, set where it shows.
@@ -360,7 +548,7 @@ export function StopCard({
             </div>
 
             <div
-              className={`-mr-1 flex items-center group-hover:opacity-100 focus-within:opacity-100 ${
+              className={`-mr-1 flex items-center group-hover:opacity-100 focus-within:opacity-100 ${TOOLS_ON_A_PHONE} ${
                 hovered ? "opacity-100" : "opacity-55"
               }`}
             >
@@ -370,12 +558,28 @@ export function StopCard({
               {actions === null ? null : (
                 <>
                   {/* A handle, not a shortcut. The arrow keys are left to the
-                      page, so a card under the pointer still scrolls. */}
+                      page, so a card under the pointer still scrolls. Under a
+                      finger it carries the card, and the page does not scroll
+                      from it, which is what lets the finger move the card
+                      rather than the day. */}
                   <button
                     type="button"
                     title="Drag to reorder"
                     aria-label={`Move ${stop.placeName} by dragging it`}
-                    className={`${TOOL} cursor-grab active:cursor-grabbing`}
+                    onPointerDown={pickUp}
+                    onPointerMove={move}
+                    onPointerUp={() => {
+                      letGo(true);
+                    }}
+                    onPointerCancel={() => {
+                      letGo(false);
+                    }}
+                    // After a let go has been dealt with this finds nothing to
+                    // do; before one, the browser took the finger away.
+                    onLostPointerCapture={() => {
+                      letGo(false);
+                    }}
+                    className={`${TOOL} cursor-grab touch-none active:cursor-grabbing`}
                   >
                     <GripIcon size={TOOL_GLYPH.grip} />
                   </button>
@@ -429,12 +633,15 @@ export function StopCard({
 
         {shownNote === null && !writingNote ? (
           actions === null ? null : (
+            /* Thirty six tall on a phone, reaching up into the gap over it
+               rather than across whatever is over the gap, so a finger gets a
+               button and not a line of small print. */
             <button
               type="button"
               onClick={() => {
                 setWritingNote(true);
               }}
-              className="flex items-center gap-[5px] self-start pr-1 text-micro font-semibold text-ink-muted hover:text-terracotta-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+              className="flex items-center gap-[5px] self-start pr-1 text-micro font-semibold text-ink-muted hover:text-terracotta-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta max-lg:-mt-2 max-lg:min-h-9"
             >
               <PlusIcon size={12} strokeWidth={2.75} />
               Add a note
@@ -455,7 +662,9 @@ export function StopCard({
             }}
             placeholder="A note for whoever you are travelling with."
             aria-label={`Note about ${stop.placeName}`}
-            className="w-full resize-none overflow-hidden rounded-chip border border-rule bg-paper px-[11px] py-[7px] text-meta text-ink caret-terracotta outline-none placeholder:text-ink-faint focus-visible:border-terracotta"
+            /* 16px on a phone, where iOS zooms the page into any field set
+               smaller as it takes the cursor. */
+            className="w-full resize-none overflow-hidden rounded-chip border border-rule bg-paper px-[11px] py-[7px] text-meta text-ink caret-terracotta outline-none placeholder:text-ink-faint focus-visible:border-terracotta max-lg:text-[16px]"
           />
         )}
 
@@ -473,7 +682,9 @@ export function StopCard({
           the name above. The time is when this stop is left, which is when
           the way to the next one would begin, not when that one would start:
           the leg between them comes first. One button for the row, so the
-          whole of it can be pressed on a phone.
+          whole of it can be pressed on a phone, where it is forty tall: five
+          over and under the ring, reaching into the room around the row
+          rather than adding to it, so the ring stands where it does on a desk.
 
           A second row of the card's grid, set as far below the body as the
           body is from the card's edge. Everything in it is drawn the way the
@@ -522,7 +733,7 @@ export function StopCard({
               ? `Add a place as stop ${String(position + 1)}`
               : `Add a place as stop ${String(position + 1)}, after leaving ${stop.placeName} at ${formatDayTime(stop.departure)}`
           }
-          className="group/next col-span-2 mt-[13px] grid grid-cols-[30px_minmax(0,1fr)_auto] items-center gap-x-[13px] rounded-pill pr-[10px] text-left hover:bg-neutral-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+          className="group/next col-span-2 mt-[13px] grid grid-cols-[30px_minmax(0,1fr)_auto] items-center gap-x-[13px] rounded-pill pr-[10px] text-left hover:bg-neutral-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta max-lg:mt-2 max-lg:-mb-[5px] max-lg:py-[5px]"
         >
           <span
             aria-hidden="true"
