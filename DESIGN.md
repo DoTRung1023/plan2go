@@ -397,13 +397,14 @@ on the rail in the second, 26px; and the words in the rest, 10px between each.
   edge of sage at 40 percent, the way's glyph, its name and how long it takes, "Drive 22
   min", in bold at the small step in sage 800, with a chevron, 40px tall. A leg that
   cannot be made the way the day has it says so on a pill of `paper` in `ink-muted`.
-- An end of the day: when the day passes it, a 26px sage 600 circle with the end's
-  glyph, and what the day does there, "Leave Central Station", "Finish at", "Back at", at
-  the body step in 600. The words open the place, its hours are under them when it
-  keeps any, and for someone who may edit the pencil and the cross follow them, 40px
-  each. Without an end, someone who may edit is offered one on a dashed sage circle, in
-  sage 800 over what kind of place goes there. The start's time is the pill that sets
-  when the day leaves, its chevron left off to fit the column.
+- An end of the day: when the day passes it, the map's marker for an end, a 26px sage
+  600 square with one corner cut, with the end's glyph, and what the day does there,
+  "Leave Central Station", "Finish at", "Back at", at the body step in 600. The words
+  open the place, its hours are under them when it keeps any, and for someone who may
+  edit the pencil and the cross follow them, 40px each. Without an end, someone who may
+  edit is offered one beside the same marker, as a desk offers it, in sage 800 over what
+  kind of place goes there. The start's time is the pill that sets when the day leaves,
+  its chevron left off to fit the column.
 - After the last stop, for someone who may edit, the next place on the rail: a dashed
   circle of the accent and **Add a place** in bold at the body step in
   `terracotta-800`, one button.

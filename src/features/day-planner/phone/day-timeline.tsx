@@ -20,7 +20,7 @@ import { formatDayTime } from "../format-day-time";
 import { hoursOn } from "../format-opening-hours";
 import { LeaveAt } from "../leave-at";
 import { TOOL, TOOL_GLYPH } from "../stop-card";
-import { RAIL_MARK, RAIL_ROW } from "./rail";
+import { RAIL_END_MARK, RAIL_MARK, RAIL_ROW } from "./rail";
 import { TimelineLeg } from "./timeline-leg";
 
 interface DayTimelineProps {
@@ -49,12 +49,12 @@ function endVerb(which: "start" | "end", day: DayPlan): string {
 
 /**
  * One end of the day on the rail: the time the day passes it in the column of
- * times, a sage circle with the end's glyph on the rail, and what the day does
+ * times, the end's marker with its glyph on the rail, and what the day does
  * there, "Leave The Old Clare Hotel", as design 1b writes the start. The
  * words open the place, as a stop's do; for someone who may edit, the pencil
  * that changes the end and the cross that takes it off follow them, each
  * named for what it does. Without an end, someone who may edit is offered
- * one, on a dashed sage circle where the end's would be.
+ * one beside the marker it will get, as a desk offers it.
  *
  * The start's time is when the day leaves, which for someone who may edit is
  * the pill that sets it. When the place keeps hours they are under its name,
@@ -84,6 +84,15 @@ function EndLine({
   const words = ENDS[which];
   const Mark = MARKS[which];
   const hours = endpoint === null ? null : hoursOn(endpoint.place, day);
+  /**
+   * One marker for the line with the place and the line offering one, so the
+   * offer shows the shape the end will get.
+   */
+  const mark = (
+    <span className={RAIL_END_MARK}>
+      <Mark size={13} strokeWidth={2.75} />
+    </span>
+  );
 
   return (
     <div>
@@ -94,9 +103,7 @@ function EndLine({
               <p className="font-display text-time whitespace-nowrap text-ink tabular-nums">{time}</p>
             )}
           </div>
-          <span className={`${RAIL_MARK} bg-sage-600 text-paper`}>
-            <Mark size={13} strokeWidth={2.75} />
-          </span>
+          {mark}
           <div className="flex min-w-0 items-center gap-1">
             <button
               type="button"
@@ -170,12 +177,9 @@ function EndLine({
             onClick={() => {
               setPicking(true);
             }}
-            className={`group/end col-span-2 grid grid-cols-[26px_minmax(0,1fr)] items-center gap-x-[10px] rounded-pill py-[6px] text-left disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta`}
+            className="col-span-2 grid grid-cols-[26px_minmax(0,1fr)] items-center gap-x-[10px] rounded-pill py-[6px] text-left disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
           >
-            <span
-              aria-hidden="true"
-              className={`${RAIL_MARK} border-2 border-dashed border-sage-600/55 group-hover/end:border-sage-600`}
-            />
+            {mark}
             <span className="min-w-0">
               <span className="block text-small/[1.15] font-semibold text-sage-800">{words.add}</span>
               <span className="mt-[3px] block text-micro/[1.25] text-ink-muted">{words.hint}</span>
