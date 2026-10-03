@@ -42,7 +42,7 @@ export function Credit({
           quiet ? "text-inherit" : "font-semibold text-terracotta-700 underline underline-offset-2"
         }
       >
-        vietbrosinaus
+        viciousbuilders
       </a>
     </span>
   );
