@@ -172,11 +172,18 @@ function SetupRow<T extends string>({
   options,
   value,
   onChange,
+  roomy = false,
 }: {
   readonly title: string;
   readonly options: readonly SetupOption<T>[];
   readonly value: T;
   readonly onChange: (value: T) => void;
+  /**
+   * On a phone's page of its own rather than in the dialog's column: the track
+   * sunk into the page, as the switch between the full trip and the cover is
+   * there, and each pill a finger's height.
+   */
+  readonly roomy?: boolean;
 }) {
   return (
     <div className="flex items-center gap-[10px]">
@@ -186,7 +193,7 @@ function SetupRow<T extends string>({
       <div
         role="radiogroup"
         aria-label={title}
-        className="flex flex-1 gap-[2px] rounded-pill bg-neutral-200 p-[3px]"
+        className={`flex flex-1 gap-[2px] rounded-pill ${roomy ? "bg-paper-sunken p-1" : "bg-neutral-200 p-[3px]"}`}
       >
         {options.map((option) => {
           const on = option.value === value;
@@ -200,7 +207,7 @@ function SetupRow<T extends string>({
               onClick={() => {
                 onChange(option.value);
               }}
-              className={`flex-1 rounded-pill py-[7px] text-meta/none font-bold ${FOCUS} ${
+              className={`flex-1 rounded-pill font-bold ${roomy ? "py-[10px] text-small/none" : "py-[7px] text-meta/none"} ${FOCUS} ${
                 on ? "bg-sheet text-ink shadow-sm" : "text-neutral-600"
               }`}
             >
@@ -219,14 +226,24 @@ interface ExportDialogProps {
   /** Stands in for the trip's name in the file's name when it has none. */
   readonly cityName: string | null;
   readonly days: readonly PlannedDay[];
+  /**
+   * The dialog's way out, the close and Escape. On a phone's page, which the
+   * bar of views goes away from, Escape alone.
+   */
   readonly onClose: () => void;
+  /**
+   * A dialog over the whole window beside a preview of the sheets, which is
+   * how a desk exports; or a page of its own with no preview, which is how a
+   * phone does, as the Export view in the bar at the foot of its window.
+   */
+  readonly layout?: "dialog" | "page";
 }
 
 /**
  * The export, chosen beside a preview of what it will be.
  *
- * A layer over the whole viewport, which is the one thing the deepest shadow
- * is kept for: the choices down the left and, on the right, the sheets
+ * A layer over the whole viewport, under the deepest shadow: the choices
+ * down the left and, on the right, the sheets
  * exactly as they will print, redrawn as each choice changes. First, the
  * days or the cover alone, which is the whole trip at a glance on one page.
  * Any days at all can be chosen, so one day, a run of days and the whole
@@ -247,7 +264,14 @@ interface ExportDialogProps {
  * the panel, since the whole trip is what is most often handed over.
  * Escape closes the dialog, as does the scrim around it.
  */
-export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDialogProps) {
+export function ExportDialog({
+  title,
+  slug,
+  cityName,
+  days,
+  onClose,
+  layout = "dialog",
+}: ExportDialogProps) {
   const titleId = useId();
   const setupId = useId();
   const nameErrorId = useId();
@@ -255,6 +279,7 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
   const emptyId = useId();
   const closeButton = useRef<HTMLButtonElement | null>(null);
   const frame = useRef<HTMLDivElement | null>(null);
+  const asPage = layout === "page";
   const exportButton = useRef<HTMLButtonElement | null>(null);
   const cancelButton = useRef<HTMLButtonElement | null>(null);
   const preview = useRef<HTMLDivElement | null>(null);
@@ -355,7 +380,10 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
   const nameError = fileName === "";
   const busy = phase === "busy";
 
-  /** Starts on the way out, so the keyboard lands on the way out too. */
+  /**
+   * Starts on the way out, so the keyboard lands on the way out too. A page
+   * has none, and leaves the keyboard on the view that brought it up.
+   */
   useEffect(() => {
     closeButton.current?.focus();
   }, []);
@@ -588,6 +616,351 @@ export function ExportDialog({ title, slug, cityName, days, onClose }: ExportDia
     .join(" ");
   /** The bar's share, as it is said beside the spinner. */
   const shown = Math.round(progress);
+
+  if (asPage) {
+    return (
+      <>
+        {/*
+         * A phone's Export view, drawn to the Export tab of design 1b of
+         * "PlanToGo iPhone": a page of its own over the whole window, under
+         * the bar of views, which stays and says Export is the view on show.
+         * The choices are the dialog's own, every one of them with its own
+         * glyph, laid out as the design lays its out: the switch between the
+         * full trip and the cover, the days five across, what the file
+         * includes as pills that wrap, the page setup folded to its line, the
+         * file's name, and the button. There is no preview, as there is none
+         * in the design: the sheets are laid out unseen below, for how many
+         * pages the export comes to and for the browser's own print command.
+         *
+         * Nothing here is a dialog: no scrim, no close. The bar of views is
+         * the way to anywhere else, and Escape goes back to the day.
+         *
+         * The page scrolls in its own box, so whatever the box brings into
+         * view, the file's name as it takes the cursor, is brought to clear
+         * of the bar floating over its foot rather than under it.
+         */}
+        <div
+          ref={frame}
+          tabIndex={-1}
+          role="region"
+          aria-labelledby={titleId}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              event.preventDefault();
+              onClose();
+            }
+          }}
+          className="fixed inset-0 z-20 scroll-pt-4 scroll-pb-[calc(104px+env(safe-area-inset-bottom))] overflow-y-auto overscroll-contain bg-paper outline-none lg:hidden print:hidden"
+        >
+          <div className="mx-auto max-w-[640px] px-5 pt-4 pb-[calc(120px+env(safe-area-inset-bottom))]">
+            <h1 id={titleId} className="font-display text-headline text-ink">
+              Export PDF
+            </h1>
+
+            {/* Faded and out of reach while the file is drawn, so nothing is
+                changed under an export already asked for. */}
+            <div inert={busy} className={busy ? "opacity-45" : ""}>
+              <div
+                role="radiogroup"
+                aria-label="What to export"
+                className="mt-[18px] flex gap-[3px] rounded-pill bg-paper-sunken p-1"
+              >
+                {MODES.map((mode) => {
+                  const on = mode.coverOnly === coverOnly;
+                  return (
+                    <button
+                      key={mode.label}
+                      type="button"
+                      role="radio"
+                      aria-checked={on}
+                      onClick={() => {
+                        setCoverOnly(mode.coverOnly);
+                      }}
+                      className={`flex-1 rounded-pill py-3 text-body/none font-bold ${FOCUS} ${
+                        on ? "bg-terracotta-800 text-paper" : "text-ink-muted"
+                      }`}
+                    >
+                      {mode.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {coverOnly ? null : (
+                <>
+                  <div className="mt-6">
+                    <div className="flex items-center gap-2">
+                      <p className="flex-1 text-body/none font-bold text-ink">Days</p>
+                      <button
+                        type="button"
+                        onClick={toggleAll}
+                        className={`-mr-1 rounded-pill px-1 py-[10px] text-small/none font-bold text-terracotta-700 hover:text-terracotta-900 ${FOCUS}`}
+                      >
+                        {allPicked ? "Clear" : "Select all"}
+                      </button>
+                    </div>
+                    {/* Five across, each day its weekday over its date, filled
+                        in the accent's deepest brown when it is in the file. A
+                        day with nothing on it is dashed and cannot be chosen:
+                        a blank sheet is worse than no sheet. */}
+                    <div className="mt-[6px] grid grid-cols-5 gap-2">
+                      {days.map((day, index) => {
+                        const on = chosen.has(day.plan.id);
+                        const empty = day.plan.stops.length === 0;
+                        const chip = formatDayChip(day.plan.date);
+                        return (
+                          <button
+                            key={day.plan.id}
+                            type="button"
+                            aria-pressed={on}
+                            disabled={empty}
+                            title={empty ? "No stops planned" : undefined}
+                            aria-label={`Day ${String(index + 1)}, ${formatDayTab(day.plan.date)}`}
+                            onClick={() => {
+                              toggleDay(day.plan.id);
+                            }}
+                            className={`flex flex-col items-center gap-[5px] rounded-chip border-[1.5px] py-[10px] ${FOCUS} ${
+                              empty
+                                ? "cursor-not-allowed border-dashed border-neutral-300 text-neutral-400"
+                                : on
+                                  ? "border-terracotta-800 bg-terracotta-800 text-paper"
+                                  : "border-neutral-300 text-ink"
+                            }`}
+                          >
+                            <span className="text-micro/none font-semibold opacity-80">{chip.weekday}</span>
+                            <span className="text-place/none font-bold">{chip.day}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div aria-live="polite">
+                      {tooMany ? (
+                        <p
+                          id={daysErrorId}
+                          className="mt-3 flex items-start gap-[6px] text-small/[1.3] font-semibold text-terracotta-800"
+                        >
+                          <AlertIcon size={14} strokeWidth={2.75} className="mt-[2px] shrink-0" />
+                          <span>
+                            {`${String(picked.length)} days are chosen and one file holds ${String(MOST_DAYS)}. Choose ${String(picked.length - MOST_DAYS)} fewer to export.`}
+                          </span>
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  {/* Pills that wrap, as the design draws them, each with the
+                      glyph the dialog gives it, in the accent's lightest tint
+                      inside its edge while it is in the file and quiet on the
+                      page while it is not. */}
+                  <div className="mt-6">
+                    <p className="text-body/none font-bold text-ink">Include</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {includes.map(({ label, Icon, on, set }) => (
+                        <button
+                          key={label}
+                          type="button"
+                          aria-pressed={on}
+                          onClick={() => {
+                            set(!on);
+                          }}
+                          className={`flex items-center gap-[7px] rounded-pill border-[1.5px] px-[14px] py-[11px] text-small/none font-semibold whitespace-nowrap ${FOCUS} ${
+                            on
+                              ? "border-terracotta-300 bg-terracotta-100 text-terracotta-900"
+                              : "border-rule text-ink-muted"
+                          }`}
+                        >
+                          <Icon size={15} strokeWidth={2.75} className="shrink-0" />
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* The paper, folded to the line saying it, on a card of the
+                  sheet's white, opening to a track of pills for each thing
+                  about it. */}
+              <div className="mt-6">
+                <button
+                  type="button"
+                  aria-expanded={setupOpen}
+                  aria-controls={setupId}
+                  onClick={() => {
+                    setSetupOpen(!setupOpen);
+                  }}
+                  className={`flex w-full items-center gap-[10px] rounded-card border-[1.5px] border-rule bg-sheet px-[18px] py-[14px] text-left hover:border-rule-strong ${FOCUS}`}
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-body/none font-bold text-ink">Page setup</span>
+                    <span className="mt-[6px] block text-meta/[1.2] font-medium text-ink-muted">
+                      {setupSummary}
+                    </span>
+                  </span>
+                  <ChevronDownIcon
+                    size={16}
+                    strokeWidth={2.75}
+                    className={`shrink-0 text-ink-muted ${setupOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+                {setupOpen ? (
+                  <div id={setupId} className="flex flex-col gap-[10px] px-[2px] pt-[14px]">
+                    <SetupRow title="Paper" options={PAPERS} value={paper} onChange={setPaper} roomy />
+                    <SetupRow
+                      title="Layout"
+                      options={ORIENTATIONS}
+                      value={orientation}
+                      onChange={setOrientation}
+                      roomy
+                    />
+                    {coverOnly ? null : (
+                      <SetupRow title="Map" options={SIZES} value={mapSize} onChange={setMapSize} roomy />
+                    )}
+                    <SetupRow title="Text" options={SIZES} value={text} onChange={setText} roomy />
+                    <SetupRow title="Ink" options={INKS} value={ink} onChange={setInk} roomy />
+                  </div>
+                ) : null}
+              </div>
+            </div>
+
+            <p className="mt-6 text-body/none font-bold text-ink">File name</p>
+            {/* The name, with .pdf after it, in a field shaped as a pill on
+                the sheet's white. Its own edge turning terracotta is the
+                focus, as on every other text field. 16px, since iOS zooms the
+                page into any field set smaller as it takes the cursor. */}
+            <div
+              className={`mt-[10px] flex items-center gap-1 rounded-pill border-[1.5px] bg-sheet px-[18px] ${
+                nameError ? "border-terracotta-700" : "border-rule focus-within:border-terracotta"
+              } ${busy ? "opacity-45" : ""}`}
+            >
+              <input
+                type="text"
+                maxLength={LONGEST_FILE_NAME}
+                aria-label="File name"
+                aria-invalid={nameError}
+                aria-describedby={nameError ? nameErrorId : undefined}
+                placeholder="File name"
+                value={typedName ?? suggestedName}
+                disabled={busy}
+                onChange={(event) => {
+                  setTypedName(event.target.value);
+                }}
+                className="min-w-0 flex-1 border-0 bg-transparent py-[15px] text-[16px]/none font-medium text-ink outline-none placeholder:text-ink-faint"
+              />
+              <span className="shrink-0 text-[16px]/none font-medium text-neutral-500">.pdf</span>
+            </div>
+            {/* Under the field, where the page has room for it, read out once
+                the typing pauses rather than cutting in on it. */}
+            <div id={nameErrorId} aria-live="polite">
+              {nameError ? (
+                <p className="mt-[9px] ml-4 flex items-center gap-[6px] text-small/[1.2] font-semibold text-terracotta-800">
+                  <AlertIcon size={14} strokeWidth={2.75} className="shrink-0" />
+                  No file name. Type one to export.
+                </p>
+              ) : null}
+            </div>
+
+            <div className="mt-[22px]">
+              {phase === "idle" ? (
+                <button
+                  ref={exportButton}
+                  type="button"
+                  disabled={nothing || tooMany || nameError}
+                  aria-describedby={unavailableBecause === "" ? undefined : unavailableBecause}
+                  onClick={() => {
+                    void exportPdf();
+                  }}
+                  className={`flex w-full items-center justify-center gap-[9px] rounded-pill border border-transparent bg-terracotta px-5 py-4 font-display text-place/[1.2] font-bold text-paper hover:bg-terracotta-600 active:bg-terracotta-700 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-terracotta ${FOCUS}`}
+                >
+                  <DownloadIcon size={18} strokeWidth={2.75} />
+                  <span>Export PDF</span>
+                  {pageCount === null ? null : <span className="font-medium opacity-80">· {pageCount}</span>}
+                </button>
+              ) : null}
+
+              {/* While the file is drawn: a bar filling over its tint, with a
+                  spinner and how far along it is, and Cancel under it. Only
+                  the words are read out, once, rather than every step. */}
+              {phase === "busy" ? (
+                <>
+                  <div role="status" className="relative h-[54px] overflow-hidden rounded-pill bg-terracotta-200">
+                    <div
+                      className="absolute inset-y-0 left-0 rounded-pill bg-terracotta transition-[width] duration-150 ease-linear motion-reduce:transition-none"
+                      style={{ width: `${String(shown)}%` }}
+                    />
+                    <div className="relative flex h-full items-center justify-center gap-[9px] text-place/none font-bold text-terracotta-900">
+                      <LoaderIcon size={18} strokeWidth={2.75} className="export-spinner" />
+                      <span>
+                        Making PDF…<span aria-hidden="true"> {shown}%</span>
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    ref={cancelButton}
+                    type="button"
+                    onClick={() => {
+                      asking.current?.abort();
+                    }}
+                    className={`mt-2 flex w-full items-center justify-center rounded-pill border border-transparent px-[14px] py-[13px] font-display text-body/[1.2] font-bold text-terracotta-700 hover:bg-terracotta/10 active:bg-terracotta/18 ${FOCUS}`}
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : null}
+
+              {phase === "done" ? (
+                <>
+                  <div
+                    role="status"
+                    className="flex h-[54px] items-center justify-center gap-[9px] rounded-pill bg-sage-600 text-place/none font-bold text-sheet"
+                  >
+                    <CheckIcon size={18} strokeWidth={2.75} />
+                    <span>Saved</span>
+                  </div>
+                  <p className="mt-[10px] truncate text-center text-small/[1.3] font-medium text-ink-muted">
+                    {savedAs}
+                    {pageCount === null ? "" : ` · ${pageCount}`}
+                  </p>
+                </>
+              ) : null}
+            </div>
+
+            {/* Why the button is out of reach with nothing chosen, said where
+                the dialog's preview says it. */}
+            {nothing ? (
+              <p id={emptyId} className="mt-[10px] text-center text-small text-ink-muted">
+                Nothing to export until a day is chosen.
+              </p>
+            ) : null}
+
+            {exportError === null ? null : (
+              <p
+                role="alert"
+                className="mt-[10px] ml-4 flex items-start gap-[6px] text-small/[1.3] font-semibold text-terracotta-800"
+              >
+                <AlertIcon size={14} strokeWidth={2.75} className="mt-[2px] shrink-0" />
+                <span>{exportError}</span>
+              </p>
+            )}
+          </div>
+        </div>
+
+        {nothing ? null : (
+          <PrintedTrip
+            key={requestKey}
+            title={title}
+            days={days}
+            maps={maps}
+            request={request}
+            visible={false}
+            onSheets={(count) => {
+              setSheetsFor({ key: requestKey, count });
+            }}
+          />
+        )}
+      </>
+    );
+  }
 
   return (
     <div

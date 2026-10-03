@@ -351,10 +351,9 @@ The bar of views is a pill of `ink` under `shadow-lg`, centred 20px clear of the
 the window, holding three pills a finger's height, each a glyph and its word at the
 small step in bold: **Plan**, **Map** and **Export**. The view on show stands on a pill
 of `paper` with its words in `ink`; the others are `paper` at 75 percent on the ink.
-Plan and Map change what the window shows. Export opens the export over the whole
-window, as it does on a desk, and is out of reach on a trip with nothing to export.
-Nothing else floats over the page: the word that says a change is saved stands centred
-12px over the bar.
+Each changes what the window shows, and Export is out of reach on a trip with nothing to
+export. Nothing else floats over the page: the word that says a change is saved stands
+centred 12px over the bar.
 
 Plan is the page itself, on `paper`, and scrolls as a document. Nothing on it is stuck
 to the top of the window. It keeps 20px at either side, is no wider than 640px on a
@@ -1021,6 +1020,21 @@ server that answered without saying why is told apart from one that was never re
 Closing the dialog while the file is drawn calls it off, and the server's browser stops
 drawing it. The browser's own print command still prints the preview while the dialog
 is open, and the open day while it is not.
+
+On a phone the export is not a dialog but the Export view, a page of its own under the
+bar of views, drawn to the Export tab of design 1b of "PlanToGo iPhone" with the
+dialog's own choices, every one with its own glyph. "Export PDF" at the headline step;
+the switch of the full trip and the cover alone, on a track sunk into the page with the
+chosen one in `terracotta-800`; the days five across, a chosen one filled in
+`terracotta-800`; what the file includes as pills that wrap rather than toggles two
+across, at the small step, `terracotta-100` inside `terracotta-300` while on and quiet on
+the page inside `rule` while off; the page setup folded to its line on a card of `sheet`,
+its tracks sunk into the page as the switch is; the file's name under its own heading,
+in the same pill on `sheet`, and what is wrong with it said under it rather than over it,
+since the page has the room; and the button, the bar and Saved at 54px. There is no
+preview, as there is none in the design: the sheets are laid out unseen, for the count
+on the button and for the browser's own print command, which prints them while the view
+is up. Escape goes back to the day, and every other way out is the bar of views.
 
 ## Banned in this product
 

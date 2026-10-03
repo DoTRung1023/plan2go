@@ -78,6 +78,21 @@ const ExportDialog = dynamic(
   },
 );
 
+/**
+ * The same export as a phone's Export view, a page of its own rather than a
+ * dialog, fetched the first time that view is chosen. What is drawn while it
+ * arrives is the page's ground, so the view is seen to change at once.
+ */
+const ExportPage = dynamic(
+  async () => {
+    const loaded = await import("@/features/day-planner/export/export-dialog");
+    return loaded.ExportDialog;
+  },
+  {
+    loading: () => <div className="fixed inset-0 z-20 bg-paper lg:hidden" />,
+  },
+);
+
 /** The sheets kept for the browser's own print command carry no map pictures. */
 const NO_MAPS: DayMapSources = {};
 
@@ -298,9 +313,10 @@ export function TripEditor({
     return true;
   };
   /**
-   * Whether the export dialog is open. While it is, its preview is what the
-   * printer gets; while it is not, the page keeps the open day as a sheet for
-   * the browser's own print command, so the two come out the same way.
+   * Whether the export dialog is open, on a desk. While it is, its preview is
+   * what the printer gets, as a phone's Export view's sheets are while that
+   * is up; while neither is, the page keeps the open day as a sheet for the
+   * browser's own print command, so the two come out the same way.
    */
   const [exportOpen, setExportOpen] = useState(false);
   /**
@@ -337,14 +353,17 @@ export function TripEditor({
     field.focus();
   };
   /**
-   * A window widened past a phone's while the search is up as a page puts the
-   * page away: on a desk the search is the bar in the map's corner.
+   * A window widened past a phone's puts away what only a phone has: the
+   * search up as a page, which on a desk is the bar in the map's corner, and
+   * a view other than the day's, since a desk shows the map and the day side
+   * by side and exports from a dialog.
    */
   useEffect(() => {
     const wide = window.matchMedia(WIDE_WINDOW);
     const widened = (): void => {
       if (wide.matches) {
         setSearching(false);
+        setView("plan");
       }
     };
     wide.addEventListener("change", widened);
@@ -376,14 +395,20 @@ export function TripEditor({
   const last = days[days.length - 1];
 
   const nothingToExport = days.every((day) => day.plan.stops.length === 0);
+  /**
+   * Whichever way the export is asked for, from the trip's menu or the bar of
+   * views: on a desk the dialog over the window, on a phone its Export view.
+   */
+  const openExport = (): void => {
+    if (narrowWindow()) {
+      setView("export");
+      setPicked(null);
+      return;
+    }
+    setExportOpen(true);
+  };
   const exportControl = (where: "menu" | "heading") => (
-    <TripExport
-      where={where}
-      disabled={nothingToExport}
-      onOpen={() => {
-        setExportOpen(true);
-      }}
-    />
+    <TripExport where={where} disabled={nothingToExport} onOpen={openExport} />
   );
 
   /**
@@ -639,7 +664,7 @@ export function TripEditor({
           it. */}
       <section
         className={`relative flex min-h-0 flex-col border-rule bg-paper-sunken lg:h-full lg:min-h-0 lg:border-l max-lg:mx-auto max-lg:w-full max-lg:max-w-[640px] max-lg:bg-transparent ${
-          view === "map" || searching ? "max-lg:invisible" : ""
+          view !== "plan" || searching ? "max-lg:invisible" : ""
         }`}
       >
         <PaneHandle shell={shell} />
@@ -775,12 +800,25 @@ export function TripEditor({
             setView(next);
             setPicked(null);
           }}
-          onExport={() => {
-            setExportOpen(true);
-          }}
           exportDisabled={nothingToExport}
         />
       )}
+
+      {/* A phone's Export view, under the bar of views. It lays out the
+          sheets it is choosing, unseen, and they are what the printer gets
+          while it is up, as the dialog's preview is. */}
+      {view === "export" && selected !== undefined ? (
+        <ExportPage
+          title={title}
+          slug={slug}
+          cityName={cityName}
+          days={days}
+          layout="page"
+          onClose={() => {
+            setView("plan");
+          }}
+        />
+      ) : null}
 
       {exportOpen && selected !== undefined ? (
         <ExportDialog
@@ -792,7 +830,7 @@ export function TripEditor({
             setExportOpen(false);
           }}
         />
-      ) : (
+      ) : view === "export" && selected !== undefined ? null : (
         <PrintedTrip
           key={selected?.plan.id}
           title={title}
