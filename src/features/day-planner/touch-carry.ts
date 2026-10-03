@@ -69,9 +69,9 @@ export function edgeScroll(y: number, top: number, bottom: number): number {
 }
 
 /**
- * What the day scrolls in: its own box on a desk, where the list scrolls
- * under the trip's name, and the window on a phone, where the page does. A
- * box counts only while it actually has more in it than it shows.
+ * What the day scrolls in: its own box, where the list scrolls under the
+ * trip's name, and the window when nothing does. A box counts only while it
+ * actually has more in it than it shows.
  */
 export function scrollerOf(element: HTMLElement): HTMLElement | null {
   for (let node = element.parentElement; node !== null && node !== document.body; node = node.parentElement) {
@@ -98,21 +98,15 @@ export function scrollOn(scroller: HTMLElement | null, by: number): void {
 }
 
 /**
- * The part of the window the day can be seen in, top and bottom. On a phone
- * the top is under whatever stays stuck over the page as it scrolls, the strip
- * of map and the days, which mark themselves with data-sticky, so a finger
- * carrying a stop up the day starts the page back before it reaches them.
+ * The part of the window the day can be seen in, top and bottom: the box it
+ * scrolls in, or the whole window when the day is short enough not to.
  */
 export function visibleBand(scroller: HTMLElement | null): { readonly top: number; readonly bottom: number } {
   if (scroller !== null) {
     const box = scroller.getBoundingClientRect();
     return { top: box.top, bottom: box.bottom };
   }
-  const stuck = Array.from(
-    document.querySelectorAll<HTMLElement>("[data-sticky]"),
-    (element) => element.getBoundingClientRect().bottom,
-  );
-  return { top: Math.max(0, ...stuck), bottom: window.innerHeight };
+  return { top: 0, bottom: window.innerHeight };
 }
 
 /**

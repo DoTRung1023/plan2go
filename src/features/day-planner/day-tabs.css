@@ -37,8 +37,12 @@
     width 250ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-[data-placed] > .day-pill {
-  display: block;
+/* On a desk only. On a phone the chosen day is its filled circle and there is
+   no pill to slide. */
+@media (width >= 1024px) {
+  [data-placed] > .day-pill {
+    display: block;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

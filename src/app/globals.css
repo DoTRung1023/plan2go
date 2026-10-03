@@ -339,28 +339,22 @@
   }
 
   /*
-   * Below that width the strip of map and the days stay stuck over the top of
-   * the page as it scrolls, so whatever the page brings into view, a field the
-   * keyboard moves to or a card the map points at, is brought to just under
-   * them rather than under them, where it cannot be seen or pressed. On a
-   * phone on its side only the strip stays, and the days go up with the page.
+   * Below that width the planner is the page, and nothing is stuck over the
+   * top of it; what floats is the bar of views at its foot. So whatever the
+   * page brings into view, a field the keyboard moves to or a row it opens,
+   * is brought to clear of that bar rather than under it, where it cannot be
+   * seen or pressed.
    *
    * Scroll anchoring off, as it is on the day's own list on a desk and for the
    * same reason: the browser holds whatever it picked still when something
-   * above it changes, so a stop carried down the day and let go was moved out
-   * of sight to keep the card it passed where it was. Off, the page stays
-   * where it is and the stop lands where the finger left it.
+   * above it changes, so a stop moved down the day was moved out of sight to
+   * keep the row it passed where it was. Off, the page stays where it is.
    */
   @media (width < 1024px) {
     html:has(.planner-shell) {
-      scroll-padding-top: 220px;
+      scroll-padding-top: 16px;
+      scroll-padding-bottom: 104px;
       overflow-anchor: none;
-    }
-  }
-
-  @media (width < 1024px) and (max-height: 479px) {
-    html:has(.planner-shell) {
-      scroll-padding-top: 152px;
     }
   }
 

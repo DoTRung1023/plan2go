@@ -44,6 +44,13 @@ const CITY_ZOOM = 12;
 const FIT_PADDING = 56;
 
 /**
+ * The same room on a phone, where the map is its own view with the days laid
+ * over its top and the day's stops and the bar of views over its foot: the
+ * day is framed in what those leave of the window, so no marker is under them.
+ */
+const PHONE_FIT_PADDING = { top: 84, right: 40, bottom: 196, left: 40 } as const;
+
+/**
  * Tailwind's lg, from which the planner is two panes side by side and a sheet
  * is a panel over the map's edge rather than the whole window; globals.css
  * stops the window scrolling at the same width. Below it nothing laid over
@@ -85,14 +92,11 @@ const PILL = "overflow-hidden rounded-pill border border-rule bg-paper-raised sh
 const CONTROL =
   "flex items-center justify-center bg-paper-raised text-ink-muted hover:bg-paper-sunken hover:text-ink focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta";
 
-/**
- * A glyph on its own sits in a square, so a column of them has one edge. Forty
- * on a phone, where it is pressed with a finger rather than pointed at.
- */
-const ICON_CONTROL = `${CONTROL} h-[30px] w-[30px] text-[17px] max-lg:h-10 max-lg:w-10`;
+/** A glyph on its own sits in a square, so a column of them has one edge. */
+const ICON_CONTROL = `${CONTROL} h-[30px] w-[30px] text-[17px]`;
 
 interface TripMapProps {
-  /** Whether the map has been opened over the planner beside it. */
+  /** Whether the map has been opened over the planner beside it, on a desk. */
   readonly expanded: boolean;
   /** The stop under the pointer, here or in the panel beside the map. */
   readonly hoveredStopId: string | null;
@@ -463,6 +467,10 @@ export function TripMap({
           // Google's place cards open Google's own interface over ours, and the
           // stops for the day are already listed beside the map.
           clickableIcons: false,
+          // One finger moves the map. On a desk the page never scrolls, and
+          // on a phone the map is only ever seen as its own view over the
+          // whole window, with nothing under it to scroll either.
+          gestureHandling: "greedy",
         }),
       });
     };
@@ -478,20 +486,6 @@ export function TripMap({
       stopWatching();
     };
   }, []);
-
-  /**
-   * One finger moves the map once it is opened over the page, where there is
-   * nothing under it to scroll. Shut on a phone it is a strip in a page that
-   * scrolls, and one finger there is the page's, so two move the map, which
-   * is what Google does by itself on a page that scrolls. On a desk the page
-   * never scrolls, and the two settings come to the same thing.
-   */
-  useEffect(() => {
-    if (state.status !== "ready") {
-      return;
-    }
-    state.map.setOptions({ gestureHandling: expanded ? "greedy" : "auto" });
-  }, [state, expanded]);
 
   /**
    * The map pressed, as map-press tells one apart. What the press closed, if
@@ -725,12 +719,12 @@ export function TripMap({
     for (const point of points) {
       bounds.extend(point);
     }
-    map.fitBounds(bounds, {
-      top: FIT_PADDING,
-      right: FIT_PADDING,
-      bottom: FIT_PADDING,
-      left: FIT_PADDING + seen,
-    });
+    map.fitBounds(
+      bounds,
+      window.matchMedia(WIDE_WINDOW).matches
+        ? { top: FIT_PADDING, right: FIT_PADDING, bottom: FIT_PADDING, left: FIT_PADDING + seen }
+        : PHONE_FIT_PADDING,
+    );
   }, [state, start, end, stops, centre, candidate, covered]);
 
   const drawnLegs = routeLegs(start, end, stops, endTravelMode).length;
@@ -813,32 +807,14 @@ export function TripMap({
       ) : null}
 
       {state.status === "ready" ? (
-        /* On a phone the column stands over the route key while the key is
-           out, which is only while the map is opened over the page. */
-        <div
-          className={`absolute right-[14px] bottom-[14px] z-[2] flex flex-col items-end gap-2 lg:right-[22px] lg:bottom-[22px] ${
-            expanded && drawnLegs > 0 ? "max-lg:bottom-[72px]" : ""
-          }`}
-        >
-          {/* The phone's own way to open the map, in words, as DESIGN.md has
-              it: the strip is too short to read and the button says what it
-              does rather than drawing it. At the foot of the strip, where
-              the desk's button is and where a thumb reaches first, so the
-              search above it has the strip's whole width. */}
-          <button
-            type="button"
-            onClick={onToggleExpanded}
-            className="flex h-10 items-center rounded-pill border border-rule bg-paper-raised px-4 text-small/none font-semibold text-ink-muted shadow-sm hover:bg-paper-sunken hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:hidden"
-          >
-            {expanded ? "Collapse map" : "Expand map"}
-          </button>
-
+        /* On a desk only. On a phone the map is a view of its own, as design
+           1b of "PlanToGo iPhone" has it, with the days over its top and the
+           day's stops along its foot, and nothing else drawn over it: it is
+           already the whole window, and two fingers zoom it. */
+        <div className="absolute right-[22px] bottom-[22px] z-[2] flex flex-col items-end gap-2 max-lg:hidden">
           {/* Wrapped the way the zoom pair is, so the rule sits outside the
               button rather than inside its width and the two line up. */}
-          {/* Only where there is a planner beside the map to grow over. On a
-              phone the button above says it in words, and two controls for
-              one thing is one too many. */}
-          <div className={`${PILL} hidden lg:block`}>
+          <div className={PILL}>
             <button type="button" onClick={onToggleExpanded} className={ICON_CONTROL}>
               {expanded ? <ShrinkIcon size={15} /> : <ExpandIcon size={15} />}
               <span className="trip-map-name">
@@ -847,10 +823,7 @@ export function TripMap({
             </button>
           </div>
 
-          {/* Not in the strip a phone keeps over the page, which is a glimpse
-              of the day rather than a map to work in: zooming it is done by
-              opening it, and with the pair gone the strip shows more map. */}
-          <div className={`${PILL} flex flex-col ${expanded ? "" : "max-lg:hidden"}`}>
+          <div className={`${PILL} flex flex-col`}>
             <button
               type="button"
               onClick={() => {
@@ -888,16 +861,10 @@ export function TripMap({
          * says which leg it is, not how it is travelled, so a coloured sample
          * would be a key to nothing.
          *
-         * On a phone only while the map is opened over the page: across the
-         * foot of the strip it covered most of what little map there was. It
-         * stands clear of Google's mark there, which the map has to show
-         * whole, and a step tighter, so the three fit a phone 320 wide.
+         * On a desk only. On a phone the foot of the map is the day's stops,
+         * and every leg says its way in words on the day's own view.
          */
-        <ul
-          className={`pointer-events-none absolute bottom-[14px] left-[14px] z-[2] flex list-none items-center gap-4 rounded-pill border border-rule bg-paper-raised/90 px-[18px] py-[10px] text-micro/none text-ink-muted lg:bottom-[22px] lg:left-[22px] max-lg:bottom-[30px] max-lg:gap-3 max-lg:px-[14px] ${
-            expanded ? "" : "max-lg:hidden"
-          }`}
-        >
+        <ul className="pointer-events-none absolute bottom-[22px] left-[22px] z-[2] flex list-none items-center gap-4 rounded-pill border border-rule bg-paper-raised/90 px-[18px] py-[10px] text-micro/none text-ink-muted max-lg:hidden">
           {ROUTE_STROKES.map((stroke) => (
             <li key={stroke.mode} className="flex items-center gap-[7px]">
               <svg

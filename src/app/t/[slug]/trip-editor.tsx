@@ -2,12 +2,15 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import type { LatLng, Place } from "@/core/model/place";
 import type { PlannedDay } from "@/features/day-planner/compute-trip";
 import type { EndpointRef } from "@/features/day-planner/day-itinerary";
 import { DayPlanner } from "@/features/day-planner/day-planner";
 import { PlaceSearch } from "@/features/place-search/place-search";
 import { DayTabs } from "@/features/day-planner/day-tabs";
+import { MapDay } from "@/features/day-planner/phone/map-day";
+import { StopDetails } from "@/features/day-planner/phone/stop-details";
 import type { DayMapSources } from "@/features/day-planner/export/day-map-source";
 import type { ExportRequest } from "@/features/day-planner/export/export-request";
 import { DEFAULT_EXPORT } from "@/features/day-planner/export/export-request";
@@ -38,6 +41,20 @@ import { setDayEndpointAction } from "./set-day-endpoint-action";
 import { setDayStartAction } from "./set-day-start-action";
 import { setLegModeAction } from "./set-leg-mode-action";
 import { updateTripAction } from "./update-trip-action";
+import type { View } from "./view-tabs";
+import { ViewTabs } from "./view-tabs";
+
+/**
+ * Tailwind's lg, from which the planner is two panes side by side. Under it
+ * the planner is a phone's: one view at a time, with the bar of views at the
+ * foot of the window.
+ */
+const WIDE_WINDOW = "(min-width: 1024px)";
+
+/** Whether the window is a phone's, asked at the moment something is pressed. */
+function narrowWindow(): boolean {
+  return !window.matchMedia(WIDE_WINDOW).matches;
+}
 
 /**
  * Fetched when the export is first opened, not with the page. The dialog is a
@@ -138,9 +155,11 @@ interface TripEditorProps {
 }
 
 /**
- * The two panes. Map left and list right on a desktop, and on a phone a sticky
- * strip of map above a scrolling list, which expands to the full viewport when
- * the reader asks for it.
+ * The two panes. Map left and list right on a desktop. On a phone, design 1b
+ * of "PlanToGo iPhone": the list is the page, the map is a view of its own over
+ * the whole window, and a bar of views floating at the foot of the window goes
+ * between them and opens the export. "Add a place" there brings the search up
+ * as a page of its own.
  *
  * The selected day is held here because both panes show it and neither feature
  * may reach into the other. It is also the day the search on the map adds to,
@@ -155,7 +174,23 @@ export function TripEditor({
   editKey,
 }: TripEditorProps) {
   const [chosenIndex, setChosenIndex] = useState(0);
+  /** Whether the map has been opened over the planner beside it, on a desk. */
   const [expanded, setExpanded] = useState(false);
+  /** Which view a phone is showing. A desk shows both, and never reads this. */
+  const [view, setView] = useState<View>("plan");
+  /** Whether a phone has the search up as a page of its own, over everything else. */
+  const [searching, setSearching] = useState(false);
+  /**
+   * The stop picked out on a phone's map, by its card along the map's foot or
+   * by its marker: its card takes the accent's edge and its marker is drawn
+   * large, and pressing the card again opens the place. A desk has the
+   * pointer for this, and never sets it.
+   */
+  const [picked, setPicked] = useState<string | null>(null);
+  const chooseDay = (index: number): void => {
+    setChosenIndex(index);
+    setPicked(null);
+  };
   const shell = useRef<HTMLElement | null>(null);
   /**
    * How many changes have landed. Every way of changing this trip reports
@@ -283,6 +318,15 @@ export function TripEditor({
    */
   const searchField = useRef<HTMLInputElement | null>(null);
   const findPlace = (): void => {
+    // On a phone the field is on a page that is not up yet. It is put up
+    // before the field is focused, and at once rather than on the next
+    // render, because a phone only brings its keyboard up for a field
+    // focused inside the press itself.
+    if (narrowWindow()) {
+      flushSync(() => {
+        setSearching(true);
+      });
+    }
     const field = searchField.current;
     if (field === null) {
       return;
@@ -291,6 +335,27 @@ export function TripEditor({
       field.blur();
     }
     field.focus();
+  };
+  /**
+   * A window widened past a phone's while the search is up as a page puts the
+   * page away: on a desk the search is the bar in the map's corner.
+   */
+  useEffect(() => {
+    const wide = window.matchMedia(WIDE_WINDOW);
+    const widened = (): void => {
+      if (wide.matches) {
+        setSearching(false);
+      }
+    };
+    wide.addEventListener("change", widened);
+    return () => {
+      wide.removeEventListener("change", widened);
+    };
+  }, []);
+  /** The phone's search page put away, back to whatever it was opened from. */
+  const closeSearch = (): void => {
+    setSearching(false);
+    searchField.current?.blur();
   };
 
   const recording = <T extends { readonly error: string | null }>(
@@ -336,8 +401,21 @@ export function TripEditor({
     opened?.kind === "stop"
       ? days.findIndex((day) => day.plan.stops.some((stop) => stop.id === opened.stopId))
       : -1;
+  const openedStopPlanned = openedStopDay === -1 ? undefined : days[openedStopDay];
   const openStop = (stopId: string): void => {
     open({ kind: "stop", stopId });
+  };
+  /**
+   * A stop's marker pressed. On a desk that opens the place beside the map; on
+   * a phone it picks the stop out, as its card along the map's foot does, and
+   * the card opens it.
+   */
+  const pressStop = (stopId: string): void => {
+    if (narrowWindow()) {
+      setPicked(stopId);
+      return;
+    }
+    openStop(stopId);
   };
   /** The place being looked at from a search, for the map to pin, or null. */
   const candidate = opened?.kind === "candidate" ? opened.place : null;
@@ -397,31 +475,33 @@ export function TripEditor({
     >
       <section
         aria-label="Map of this day"
-        // Stuck over the page on a phone, and says so, for whatever has to
-        // know how much of the window is under it.
-        data-sticky=""
         className={
-          // Opened, the map covers the planner beside it rather than the
-          // window: the browser keeps its own chrome, and getting back is the
-          // same button rather than a key nobody was told about.
+          // Opened on a desk, the map covers the planner beside it rather
+          // than the window: the browser keeps its own chrome, and getting
+          // back is the same button rather than a key nobody was told about.
           //
-          // The strip's z-index is for the phone, where it stays over the
-          // planner scrolling under it. On a desk it comes off: a grid item
-          // with one is a stacking context of its own, and the search field
-          // in the map's corner has to be able to float over the sheet,
-          // which is laid over the map from outside it.
-          expanded
-            ? "fixed inset-0 z-40 bg-paper-sunken"
-            : "sticky top-0 z-20 h-[140px] border-b border-rule bg-paper-sunken lg:static lg:z-auto lg:h-full lg:min-h-0 lg:border-b-0"
+          // On a phone the map is a view of its own over the whole window,
+          // under the bar of views. It is kept in the page at that size
+          // while the day's list is shown, only not seen, so the day is
+          // framed for the window it will be seen in whenever the map view
+          // is chosen. Not while the search is up as a page over it.
+          //
+          // On a desk the section has no z-index: a grid item with one is a
+          // stacking context of its own, and the search field in the map's
+          // corner has to be able to float over the sheet, which is laid
+          // over the map from outside it.
+          `bg-paper-sunken max-lg:fixed max-lg:inset-0 max-lg:z-20 ${
+            view === "map" && !searching ? "" : "max-lg:invisible"
+          } ${expanded ? "lg:fixed lg:inset-0 lg:z-40" : "lg:static lg:h-full lg:min-h-0"}`
         }
       >
         <div className="relative h-full w-full">
           {selected === undefined ? null : (
             <TripMap
-              hoveredStopId={hoveredStopId}
+              hoveredStopId={hoveredStopId ?? picked}
               onHoverStop={setHoveredStopId}
               openedStopId={opened?.kind === "stop" ? opened.stopId : null}
-              onOpenStop={openStop}
+              onOpenStop={pressStop}
               onOpenEndpoint={(which) => {
                 // The map says which end was pressed; which day, and what stands
                 // there, is known here.
@@ -461,78 +541,114 @@ export function TripEditor({
               centre={selected.plan.city?.position ?? centre}
             />
           )}
-          {/* The corner of the map, where a map search belongs. The row itself
-              takes no clicks, so the map still drags beside the search. On a
-              desk it is over the sheet as well as the map, the way a map
-              search floats over the panel it opened: the field stays put
-              whatever is under it, and the sheet keeps its own top clear for
-              it. Not on a phone, where the sheet is the window and has a close
-              of its own. On a phone the search has the strip's whole width:
-              the button that opens the map is at the strip's foot instead,
-              where the map's own controls are. */}
-          <div className="pointer-events-none absolute inset-x-[14px] top-[14px] z-[3] flex items-start gap-2 lg:inset-x-[24px] lg:top-[28px] lg:z-40">
-            {editKey !== null && selected !== undefined ? (
-              /* Where a map search sits in the panel it opened: 16px in from
-                 the sheet's sides and 20px down from its top, which is 24px
-                 and 28px from the map's corner with the sheet standing 8px
-                 in. As wide as the sheet less the 16px at each side, 376px,
-                 so over the sheet it sits centred in it, and over the map
-                 alone it is the same field in the same place. */
-              <div className="pointer-events-auto w-full max-w-[376px] min-w-0">
-                <PlaceSearch
-                  slug={slug}
-                  editKey={editKey}
-                  dayId={selected.plan.id}
-                  dayName={`Day ${String(selectedIndex + 1)}`}
-                  field={searchField}
-                  near={searchBias(
-                    days.map((day) => day.plan),
-                    selectedIndex,
-                  )}
-                  dayCity={selected.plan.city}
-                  cities={citiesOf(days.map((day) => day.plan))}
-                  cityColorFor={(city) =>
-                    colorAfterMove(
-                      days.map((day) => day.plan),
-                      selected.plan.id,
-                      city,
-                    )
-                  }
-                  onChangeCity={(providerPlaceId) =>
-                    recording(
-                      setDayCityAction({
-                        slug,
-                        editKey,
-                        dayId: selected.plan.id,
-                        providerPlaceId,
-                      }),
-                    )
-                  }
-                  onTheTrip={placesOnTheTrip(days.map((day) => day.plan))}
-                  showing={openedPlace?.name ?? null}
-                  onChoose={(place) => {
-                    open({ kind: "candidate", place });
-                  }}
-                  onClear={dismiss}
-                  onAdd={(input) => recording(addStopAction({ ...input, editKey }))}
-                  onAnnounce={setAnnounced}
-                />
-              </div>
-            ) : null}
-          </div>
+          {/* A phone's map view carries the days across its top and the
+              day's stops along its foot. Never on a desk, where both are in
+              the planner beside the map. */}
+          <MapDay
+            days={days}
+            selectedIndex={selectedIndex}
+            onSelect={chooseDay}
+            picked={picked}
+            onPick={setPicked}
+            onOpen={openStop}
+          />
         </div>
       </section>
 
+      {/* The search. On a desk it sits in the corner of the map, where a map
+          search belongs, 24px in and 28px down, and over the sheet as well as
+          the map, the way a map search floats over the panel it opened: the
+          field stays put whatever is under it, and the sheet keeps its own
+          top clear for it. That is where a map search sits in the panel it
+          opened: 16px in from the sheet's sides and 20px down from its top,
+          with the sheet standing 8px in. As wide as the sheet less the 16px
+          at each side, 376px, so over the sheet it sits centred in it, and
+          over the map alone it is the same field in the same place.
+
+          On a phone it is a page of its own over the whole window, put up by
+          "Add a place" and put away by Done beside the field, as design 1b
+          has it. Out of the page while it is not up. */}
+      {editKey !== null && selected !== undefined ? (
+        <div
+          onKeyDown={(event) => {
+            if (event.key === "Escape" && searching) {
+              closeSearch();
+            }
+          }}
+          className={`print:hidden lg:absolute lg:top-[28px] lg:left-[24px] lg:z-40 lg:w-[376px] ${
+            searching ? "max-lg:fixed max-lg:inset-0 max-lg:z-40 max-lg:bg-paper" : "max-lg:hidden"
+          }`}
+        >
+          <div className="flex items-center gap-2 max-lg:px-4 max-lg:pt-3">
+            <div className="min-w-0 flex-1">
+              <PlaceSearch
+                slug={slug}
+                editKey={editKey}
+                dayId={selected.plan.id}
+                dayName={`Day ${String(selectedIndex + 1)}`}
+                field={searchField}
+                near={searchBias(
+                  days.map((day) => day.plan),
+                  selectedIndex,
+                )}
+                dayCity={selected.plan.city}
+                cities={citiesOf(days.map((day) => day.plan))}
+                cityColorFor={(city) =>
+                  colorAfterMove(
+                    days.map((day) => day.plan),
+                    selected.plan.id,
+                    city,
+                  )
+                }
+                onChangeCity={(providerPlaceId) =>
+                  recording(
+                    setDayCityAction({
+                      slug,
+                      editKey,
+                      dayId: selected.plan.id,
+                      providerPlaceId,
+                    }),
+                  )
+                }
+                onTheTrip={placesOnTheTrip(days.map((day) => day.plan))}
+                showing={openedPlace?.name ?? null}
+                onChoose={(place) => {
+                  open({ kind: "candidate", place });
+                }}
+                onClear={dismiss}
+                onAdd={(input) => recording(addStopAction({ ...input, editKey }))}
+                onAnnounce={setAnnounced}
+                page={searching}
+              />
+            </div>
+            <button
+              type="button"
+              onClick={closeSearch}
+              className="shrink-0 rounded-pill px-1 py-3 text-body/none font-bold text-terracotta-800 hover:text-terracotta-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:hidden"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       {/* Sunken paper: the ground the trip's pill, the day's card and the
-          stops are laid on, each a step or two up from it. */}
-      <section className="relative flex min-h-0 flex-col border-rule bg-paper-sunken lg:h-full lg:min-h-0 lg:border-l">
+          stops are laid on, each a step or two up from it. On a phone it is
+          the page itself, on the page's own paper, no wider than reads well
+          on a tablet held upright, and not seen while another view is over
+          it. */}
+      <section
+        className={`relative flex min-h-0 flex-col border-rule bg-paper-sunken lg:h-full lg:min-h-0 lg:border-l max-lg:mx-auto max-lg:w-full max-lg:max-w-[640px] max-lg:bg-transparent ${
+          view === "map" || searching ? "max-lg:invisible" : ""
+        }`}
+      >
         <PaneHandle shell={shell} />
 
         {/* A reader who cannot edit has no actions to put on the name's row,
             so what they get instead is the reason why. Over the pill, on
             the gutter, and close enough to it to read as its caption. */}
         {editKey === null ? (
-          <p className="-mb-[6px] shrink-0 px-[18px] pt-3 text-meta text-ink-muted">
+          <p className="-mb-[6px] shrink-0 px-[18px] pt-3 text-meta text-ink-muted max-lg:-mb-2 max-lg:px-5 max-lg:pt-4">
             Shared with you, read only
           </p>
         ) : null}
@@ -553,7 +669,7 @@ export function TripEditor({
           hoveredEndpointId={hoveredEndpointId}
           onHoverEndpoint={setHoveredEndpointId}
           selectedIndex={selectedIndex}
-          onSelect={setChosenIndex}
+          onSelect={chooseDay}
           exporting={exportControl("heading")}
           onFindPlace={editKey === null ? null : findPlace}
           onAddDay={
@@ -622,7 +738,7 @@ export function TripEditor({
                   <DayTabs
                     days={days.map((day) => day.plan)}
                     selectedIndex={selectedIndex}
-                    onSelect={setChosenIndex}
+                    onSelect={chooseDay}
                     onAddDay={
                       editKey === null
                         ? null
@@ -650,6 +766,21 @@ export function TripEditor({
           }
         />
       </section>
+
+      {/* Not while the search is up as a page over everything. */}
+      {searching ? null : (
+        <ViewTabs
+          view={view}
+          onView={(next) => {
+            setView(next);
+            setPicked(null);
+          }}
+          onExport={() => {
+            setExportOpen(true);
+          }}
+          exportDisabled={nothingToExport}
+        />
+      )}
 
       {exportOpen && selected !== undefined ? (
         <ExportDialog
@@ -728,6 +859,30 @@ export function TripEditor({
                         recording(removeStopAction({ slug, editKey, stopId: opened.stopId })),
                     }
                   : null
+          }
+          /* On a phone a stop is changed here rather than on the day: its
+             times, its stay, its note and its place in the day, under its
+             name. Drawn on a phone only. */
+          details={
+            opened.kind === "stop" && openedStopPlanned !== undefined ? (
+              <StopDetails
+                day={openedStopPlanned}
+                dayIndex={openedStopDay}
+                stopId={opened.stopId}
+                actions={
+                  editKey === null
+                    ? null
+                    : {
+                        setStay: ({ stopId, stayMinutes }) =>
+                          recording(setStopStayAction({ slug, editKey, stopId, stayMinutes })),
+                        setNote: ({ stopId, note }) =>
+                          recording(setStopNoteAction({ slug, editKey, stopId, note })),
+                        moveStop: ({ stopId, toPosition }) =>
+                          recording(moveStopAction({ slug, editKey, stopId, toPosition })),
+                      }
+                }
+              />
+            ) : null
           }
           leaving={leaving}
           onLeave={dismiss}

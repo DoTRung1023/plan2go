@@ -133,6 +133,13 @@ interface PlaceSearchProps {
    * ways of adding a place are heard the same.
    */
   readonly onAnnounce: (message: string) => void;
+  /**
+   * Drawn as a page of its own rather than as a bar over the map: on a phone,
+   * where "Add a place" opens the search over the whole window, as design 1b
+   * of "PlanToGo iPhone" has it. The list is open for as long as the page is,
+   * under the bar at the window's whole width, and says which day it adds to.
+   */
+  readonly page?: boolean;
 }
 
 /**
@@ -192,6 +199,7 @@ export function PlaceSearch({
   onClear,
   onAdd,
   onAnnounce,
+  page = false,
 }: PlaceSearchProps) {
   const [query, setQuery] = useState(showing ?? "");
   /** The name the field was last given to hold, so a new one is told from a re-render. */
@@ -269,7 +277,8 @@ export function PlaceSearch({
    */
   const words = showing !== null && trimmed === showing.trim() ? "" : trimmed;
   const holding = words === "" && trimmed !== "";
-  const placesOpen = panel === "places";
+  /** The place panel is up: asked for, or the whole of a page that has nothing else open. */
+  const placesOpen = panel === "places" || (page && panel === null);
 
   const typed = useTypedSearch(
     words,
@@ -510,7 +519,12 @@ export function PlaceSearch({
    */
   const cityLabel = dayCity?.name ?? "this city";
   const cityWords = cityListWords(picked, cityLabel);
-  const heading = typed.searched ? "Matching places" : cityWords.heading;
+  const listWords = typed.searched ? "Matching places" : cityWords.heading;
+  /**
+   * On a page the heading also says which day the plus adds to, since the
+   * day is no longer in sight beside the search.
+   */
+  const heading = page ? `${listWords} · adding to ${dayName}` : listWords;
 
   /**
    * Clamped, because the list under the field is swapped for a shorter one the
@@ -587,7 +601,7 @@ export function PlaceSearch({
   const busy = typed.searching || lookingUp !== null;
 
   return (
-    <div className="place-search relative" ref={container}>
+    <div className="place-search relative" ref={container} data-page={page ? "" : undefined}>
       {/* The page under the bar, dimmed while it is in use; a press on it
           closes the bar rather than landing on the map. */}
       {panel === null ? null : <div aria-hidden="true" className="search-scrim" onClick={closeAll} />}
@@ -720,7 +734,7 @@ export function PlaceSearch({
                     <PlaceRows
                       listId={listId}
                       heading={heading}
-                      label={typed.searched ? "Places that match" : heading}
+                      label={typed.searched ? "Places that match" : listWords}
                       places={visible}
                       activeIndex={activeIndex}
                       onActive={setActive}

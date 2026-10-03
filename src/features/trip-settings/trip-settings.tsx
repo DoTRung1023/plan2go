@@ -3,7 +3,8 @@
 import type { ReactNode } from "react";
 import { useActionState, useId, useRef, useState } from "react";
 import { daysBetween } from "@/core/time/zoned";
-import { HEADING_BAND, HEADING_BODY } from "@/features/day-planner/panel-heading";
+import { formatTripDates } from "@/features/day-planner/format-day-date";
+import { HEADING_BAND, HEADING_BODY, HEADING_DATES } from "@/features/day-planner/panel-heading";
 import { useLocalToday } from "@/ui/use-local-today";
 import { DateRangeField } from "./date-range-field";
 import { Notice } from "@/ui/notice";
@@ -34,12 +35,11 @@ const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/;
  * It shares its row with the trip's actions and gives way to them, down to the
  * width a trip name still reads at, below which the row wraps instead.
  *
- * On a phone it is the row's full height to a finger, forty four, giving back
- * the seven above and below it takes from the row's padding, so the row is no
- * taller and the name stands where it does.
+ * On a phone it is the page's headline, the step the trip's name is set at
+ * wherever it heads a page, forty tall, which is also a finger's height.
  */
 const NAME_FIELD =
-  "h-[30px] min-w-0 flex-1 border-0 bg-transparent px-0 py-0 font-display text-title tracking-[-0.01em] text-ink caret-terracotta outline-none placeholder:text-ink-faint aria-invalid:text-terracotta-700 focus-visible:rounded-[6px] focus-visible:outline-2 focus-visible:outline-offset-[4px] focus-visible:outline-terracotta max-lg:-my-[7px] max-lg:h-11";
+  "h-[30px] min-w-0 flex-1 border-0 bg-transparent px-0 py-0 font-display text-title tracking-[-0.01em] text-ink caret-terracotta outline-none placeholder:text-ink-faint aria-invalid:text-terracotta-700 focus-visible:rounded-[6px] focus-visible:outline-2 focus-visible:outline-offset-[4px] focus-visible:outline-terracotta max-lg:h-10 max-lg:w-full max-lg:text-headline";
 
 interface TripSettingsProps {
   readonly slug: string;
@@ -215,6 +215,11 @@ export function TripSettings({
           }}
           className={NAME_FIELD}
         />
+        {/* Under the name on a phone, where the dates field beside it is a
+            round button with a calendar on it and says no dates of its own.
+            The dates as they are being chosen, so the line follows the
+            calendar the way the field does on a desk. */}
+        <p className={HEADING_DATES}>{formatTripDates(first, last)}</p>
         <DateRangeField
           id={`${fieldId}-dates`}
           startName="startDate"

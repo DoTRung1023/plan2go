@@ -717,6 +717,131 @@
   .search-panel {
     max-height: min(330px, calc(100dvh - 128px));
   }
+
+  /*
+   * The search as a page of its own, which is how a phone opens it: "Add a
+   * place" brings it over the whole window, the way design 1b of "PlanToGo
+   * iPhone" draws its search. The bar is a field on the page rather than a
+   * thing floating over a map, so it keeps its edge and loses its lift, and
+   * the page under it is the search, so nothing is dimmed.
+   *
+   * What hangs under the bar runs the window's whole width and down to its
+   * foot: the quick searches, and under them the list, which is no longer a
+   * panel but the rest of the page, scrolling on its own. It stands 8px under
+   * the bar, which sits 12px down the page, so 68px down the window.
+   *
+   * The rows are a finger's: the pin on a disc of the accent's lightest tint
+   * at the front, the name at the body step over the address, and at the end
+   * the plus on a disc the same size, which becomes sage's tick once the
+   * place is on the day.
+   */
+  .place-search[data-page] .search-scrim {
+    display: none;
+  }
+
+  .place-search[data-page] .search-bar {
+    box-shadow: inset 0 0 0 1.5px var(--search-ink-14);
+  }
+
+  .place-search[data-page] .search-bar[data-active] {
+    box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--color-terracotta) 60%, transparent);
+  }
+
+  .place-search[data-page] .search-under {
+    position: fixed;
+    top: calc(env(safe-area-inset-top) + 68px);
+    right: 0;
+    bottom: 0;
+    left: 0;
+    gap: 4px;
+  }
+
+  .place-search[data-page] .search-kinds-box {
+    margin: 0 16px;
+  }
+
+  .place-search[data-page] .search-panel {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .place-search[data-page] .search-list {
+    padding: 0 10px calc(40px + env(safe-area-inset-bottom));
+    overscroll-behavior: contain;
+  }
+
+  .place-search[data-page] .search-heading {
+    padding: 10px 10px 8px;
+    background: var(--color-paper);
+    box-shadow: 0 -7px 0 var(--color-paper);
+    font-size: var(--text-meta);
+    line-height: 1;
+  }
+
+  .place-search[data-page] .search-line {
+    padding: 12px 10px;
+  }
+
+  .place-search[data-page] .search-row {
+    padding-right: 10px;
+    border-radius: var(--radius-row);
+  }
+
+  /* On a page pressed with a finger, the row the arrow keys are on is not
+     drawn as picked out, which left the first row tinted as though chosen;
+     the tint follows the pointer, or the keyboard's focus, instead. */
+  .place-search[data-page] .search-row[data-active] {
+    background: transparent;
+  }
+
+  .place-search[data-page] .search-row:has(:focus-visible) {
+    background: var(--search-hover);
+  }
+
+  @media (hover: hover) {
+    .place-search[data-page] .search-row:hover {
+      background: var(--search-hover);
+    }
+  }
+
+  .place-search[data-page] .search-row-button {
+    gap: 12px;
+    min-height: 60px;
+    padding: 12px 6px 12px 10px;
+    border-radius: var(--radius-row);
+  }
+
+  .place-search[data-page] .search-mark {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-pill);
+    background: var(--color-terracotta-100);
+  }
+
+  .place-search[data-page] .search-row-name {
+    font-size: var(--text-body);
+    line-height: 1.3;
+  }
+
+  .place-search[data-page] .search-row-line {
+    font-size: var(--text-meta);
+    line-height: var(--text-meta--line-height);
+  }
+
+  .place-search[data-page] .search-add {
+    background: var(--color-terracotta-100);
+    color: var(--color-terracotta-800);
+  }
+
+  .place-search[data-page] .search-add[data-on-day] {
+    background: var(--color-sage-600);
+    color: var(--color-sheet);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

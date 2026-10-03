@@ -1,14 +1,17 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { citiesOf } from "@/core/model/day-city";
 import { useScrollBar } from "@/ui/use-scroll-bar";
 import type { PlannedDay } from "./compute-trip";
 import type { EndpointRef } from "./day-itinerary";
 import { DayItinerary } from "./day-itinerary";
+import { daySummary } from "./day-summary";
 import { DayTabs } from "./day-tabs";
-import { GUTTER, HEADING_BAND, HEADING_BODY } from "./panel-heading";
+import { GUTTER, HEADING_BAND, HEADING_BODY, HEADING_DATES } from "./panel-heading";
 import type { DayActions, EditOutcome } from "./day-actions";
-import { formatDateRange } from "./format-day-date";
+import { formatDateRange, formatTripDates } from "./format-day-date";
+import { DayTimeline } from "./phone/day-timeline";
 
 interface DayPlannerProps {
   readonly title: string;
@@ -68,14 +71,25 @@ function dateRange(days: readonly PlannedDay[]): string | null {
   return formatDateRange(first.plan.date, last.plan.date);
 }
 
+/** The same two ends with how many days they come to, for the line under the name on a phone. */
+function tripDates(days: readonly PlannedDay[]): string | null {
+  const first = days[0];
+  const last = days[days.length - 1];
+  if (first === undefined || last === undefined) {
+    return null;
+  }
+  return formatTripDates(first.plan.date, last.plan.date);
+}
+
 /**
  * The right hand panel: what the trip is called, which day is open, and the day
  * itself underneath.
  *
  * The trip name and the day tabs are fixed on a desktop and only the day
  * scrolls, so what you are reading is always named above it. On a phone the
- * page is the scrolling surface and the day tabs stay stuck under the map
- * strip, because choosing a day is what a reader reaches for most.
+ * page is the scrolling surface and all of it goes up with the page, as
+ * design 1b of "PlanToGo iPhone" has it: the trip's name, the strip of days,
+ * a line saying what the day comes to, and the day down a rail.
  */
 export function DayPlanner({
   title,
@@ -99,6 +113,8 @@ export function DayPlanner({
   const selected = days[selectedIndex] ?? days[0];
   const range = dateRange(days);
   const watchList = useScrollBar("y");
+  /** Whether the trip goes to more than one city, which the line over a phone's day then names. */
+  const manyCities = citiesOf(days.map((day) => day.plan)).length > 1;
 
   return (
     <>
@@ -109,42 +125,31 @@ export function DayPlanner({
 
           Two things laid on the panel's sunken ground, the trip's pill and
           the day's card, in from the edge by the gutter and standing above
-          the day, which scrolls under them.
+          the day, which scrolls under them, and over which its calendar and
+          its menu open.
 
-          On a phone the page scrolls rather than the day, and the block goes
-          up with it until the days reach the strip of map, where they stay.
-          Sixty eight is the strip's 140 less the room over the trip's row and
-          the row itself, 14 and 54, and the four its shadow reaches under it,
-          so the row slides away under the map and the days stop eight under
-          its edge. A step under the strip there rather than level with it:
-          level, and later in the page, the block was drawn over the map, and
-          over the list the search hangs from it. Its ground is the panel's
-          own, so the day going up under it is hidden rather than seen
-          through it.
-
-          Not on a phone on its side, under 480 tall, where the strip and the
-          days together left a third of the window for the day; there the
-          block goes up with the page. Height, not shape, so a phone upright
-          with its browser's bars out is never taken for one on its side. It
-          says where it sticks, for whatever has to know how much of the
-          window is under it. */}
-      <div
-        data-sticky=""
-        className={`sticky top-[68px] z-10 shrink-0 bg-paper-sunken pt-[14px] ${GUTTER} lg:relative lg:top-auto lg:z-20 [@media(max-height:479px)]:relative [@media(max-height:479px)]:top-auto`}
-      >
+          On a phone the block is the head of the page, on the page's own
+          paper, and goes up with it as it scrolls: nothing is stuck to the
+          top of the window there, and what floats is the bar of views at
+          its foot. */}
+      <div className={`relative shrink-0 pt-[14px] ${GUTTER} lg:z-20 lg:bg-paper-sunken max-lg:pt-4`}>
         {settings ?? (
           <>
             <div className={HEADING_BAND}>
-              <h1 className="min-w-0 flex-1 truncate font-display text-title/[1.3] tracking-[-0.01em] text-ink">
+              {/* The page's headline on a phone, wrapping rather than cut
+                  short, since nothing shares its line there. */}
+              <h1 className="min-w-0 flex-1 truncate font-display text-title/[1.3] tracking-[-0.01em] text-ink max-lg:overflow-visible max-lg:text-headline max-lg:whitespace-normal">
                 {title}
               </h1>
               {/* On the name's row rather than under it, the way an editor's
-                  dates are: a fact about the trip beside its name. */}
+                  dates are: a fact about the trip beside its name. Under the
+                  name on a phone, with how many days they come to. */}
               {range === null ? null : (
-                <p className="shrink-0 text-small/none font-semibold whitespace-nowrap text-ink-muted tabular-nums">
+                <p className="shrink-0 text-small/none font-semibold whitespace-nowrap text-ink-muted tabular-nums max-lg:hidden">
                   {range}
                 </p>
               )}
+              <p className={HEADING_DATES}>{tripDates(days)}</p>
               {exporting}
             </div>
             <div className={HEADING_BODY}>
@@ -179,23 +184,44 @@ export function DayPlanner({
            * where it was and the panel opens downwards, where it was clicked.
            */
           ref={watchList}
-          className={`scroll-line [--bar-width:6px] min-h-0 flex-1 overflow-x-hidden overflow-y-auto pt-3 pb-5 [overflow-anchor:none] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${GUTTER}`}
+          className={`scroll-line [--bar-width:6px] min-h-0 flex-1 overflow-x-hidden overflow-y-auto pt-3 pb-5 [overflow-anchor:none] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-terracotta ${GUTTER} max-lg:overflow-visible max-lg:pt-0 max-lg:pb-[calc(120px+env(safe-area-inset-bottom))]`}
         >
-          <DayItinerary
-            day={selected.plan}
-            computed={selected.computed}
-            legs={selected.legs}
-            hoveredStopId={hoveredStopId}
-            onHoverStop={onHoverStop}
-            onOpenStop={onOpenStop}
-            onOpenEndpoint={onOpenEndpoint}
-            hoveredLegIndex={hoveredLegIndex}
-            onHoverLeg={onHoverLeg}
-            hoveredEndpointId={hoveredEndpointId}
-            onHoverEndpoint={onHoverEndpoint}
-            actions={actions}
-            onFindPlace={onFindPlace}
-          />
+          {/* The same day, laid out for the room each has: on a desk the
+              cards on the panel beside the map, and on a phone the rail of
+              design 1b, under a line saying what the day comes to. The foot
+              of the phone's page keeps clear of the bar of views floating
+              over it. */}
+          <div className="max-lg:hidden">
+            <DayItinerary
+              day={selected.plan}
+              computed={selected.computed}
+              legs={selected.legs}
+              hoveredStopId={hoveredStopId}
+              onHoverStop={onHoverStop}
+              onOpenStop={onOpenStop}
+              onOpenEndpoint={onOpenEndpoint}
+              hoveredLegIndex={hoveredLegIndex}
+              onHoverLeg={onHoverLeg}
+              hoveredEndpointId={hoveredEndpointId}
+              onHoverEndpoint={onHoverEndpoint}
+              actions={actions}
+              onFindPlace={onFindPlace}
+            />
+          </div>
+          <div className="lg:hidden">
+            <p className="pt-[14px] pb-[14px] text-small font-semibold text-ink-muted tabular-nums">
+              {daySummary(selected, days.indexOf(selected), manyCities)}
+            </p>
+            <DayTimeline
+              day={selected.plan}
+              computed={selected.computed}
+              legs={selected.legs}
+              onOpenStop={onOpenStop}
+              onOpenEndpoint={onOpenEndpoint}
+              actions={actions}
+              onFindPlace={onFindPlace}
+            />
+          </div>
         </section>
       )}
     </>

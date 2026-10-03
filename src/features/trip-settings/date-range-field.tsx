@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import type { IsoDate } from "@/core/model/day";
 import { addDays, daysBetween, isoDateAsUtc, parseIsoDate, weekdayOf } from "@/core/time/zoned";
-import { ArrowLeftIcon, ArrowRightIcon } from "@/ui/icons";
+import { ArrowLeftIcon, ArrowRightIcon, CalendarIcon } from "@/ui/icons";
 import { useOutsidePress } from "@/ui/use-outside-press";
 import { formatDateRange } from "@/features/day-planner/format-day-date";
 
@@ -111,18 +111,19 @@ const TRIGGER =
  */
 const SIZES = {
   inline: {
-    // On a phone the dates answer a finger the full height of the row, over
-    // the pill's padding above and below them, drawn no larger than here.
+    // On a phone the dates are written under the trip's name instead, and
+    // this is the round button at the right of the name with a calendar on
+    // it, forty four across, on raised paper inside a hairline, as design 1b
+    // draws it.
     trigger:
-      "w-auto rounded-pill border-transparent bg-transparent px-2 py-[5px] text-small/none font-semibold text-ink-muted hover:border-transparent hover:bg-terracotta-100 hover:text-terracotta-700 max-lg:relative max-lg:after:absolute max-lg:after:-inset-x-[3px] max-lg:after:-inset-y-[9px]",
+      "w-auto rounded-pill border-transparent bg-transparent px-2 py-[5px] text-small/none font-semibold text-ink-muted hover:border-transparent hover:bg-terracotta-100 hover:text-terracotta-700 max-lg:h-11 max-lg:w-11 max-lg:justify-center max-lg:border-[1.5px] max-lg:border-rule max-lg:bg-paper-raised max-lg:p-0 max-lg:text-ink max-lg:hover:border-rule-strong max-lg:hover:bg-paper-raised max-lg:hover:text-ink",
     change: "sr-only",
     stack: "shrink-0",
-    // On a phone the days stay stuck under the map as the page scrolls, and
-    // the calendar hangs from them, so it goes no further down the window
-    // than the window goes and scrolls inside itself, or its foot, where the
-    // dates are saved, is under the bottom of the window with no way to
-    // scroll to it. Never shorter than a month, for a phone on its side,
-    // where the days scroll away and the page scrolls to the foot instead.
+    // On a phone the calendar hangs from the button at the top of the page,
+    // so it goes no further down the window than leaves it clear of the bar
+    // of views at the foot, and scrolls inside itself, or its foot, where the
+    // dates are saved, is under that bar. Never shorter than a month, for a
+    // phone on its side, where the page scrolls to the foot instead.
     panel: "max-lg:scroll-quiet max-lg:max-h-[max(330px,calc(100dvh-162px))] max-lg:overflow-y-auto",
   },
   large: {
@@ -451,7 +452,10 @@ export function DateRangeField({
             <End name="Last day" date={open ? shownEnd : end} />
           </>
         ) : (
-          <span className="truncate tabular-nums">{formatDateRange(start, end)}</span>
+          <>
+            <span className="truncate tabular-nums max-lg:hidden">{formatDateRange(start, end)}</span>
+            <CalendarIcon size={18} strokeWidth={2.75} className="shrink-0 lg:hidden" />
+          </>
         )}
         <span className={dressed.change}>{open ? "Close" : "Change"}</span>
       </button>

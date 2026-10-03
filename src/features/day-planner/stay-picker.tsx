@@ -24,9 +24,8 @@ const MINUTES = Array.from({ length: 12 }, (_unused, step) => step * 5);
  * carries the same chevron so the two are found the same way. The edge takes
  * the accent under the pointer and keeps it while the picker is open.
  */
-/** Forty tall on a phone, where it is the one number on the card a finger sets. */
 const TRIGGER =
-  "flex h-8 items-center gap-2 rounded-pill border bg-paper-raised pr-[10px] pl-3 text-small/none font-semibold text-ink tabular-nums hover:border-terracotta disabled:opacity-45 disabled:hover:border-rule focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta max-lg:h-10";
+  "flex h-8 items-center gap-2 rounded-pill border bg-paper-raised pr-[10px] pl-3 text-small/none font-semibold text-ink tabular-nums hover:border-terracotta disabled:opacity-45 disabled:hover:border-rule focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta";
 
 interface StayPickerProps {
   /** For the name the control is read out by: the time is at somewhere. */

@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { array, int, nullable, number, object, optional, safeParse, string } from "zod/mini";
 import type { Place, PlaceCard, PlacePhoto, PlaceReview } from "@/core/model/place";
@@ -182,6 +183,13 @@ interface PlaceSheetProps {
    */
   readonly action: TripAction | null;
   /**
+   * What the trip has to say about the place, under its name and over the
+   * button that changes the trip: on a phone, a stop's times, its stay and
+   * its note, which a phone changes here rather than on the day. Drawn by
+   * whoever knows the trip; the sheet only gives it its place.
+   */
+  readonly details?: ReactNode;
+  /**
    * Told to go. The sheet slides off before it is taken down, so it is
    * told, drawn going, and only then gone. Whoever opened it holds this
    * rather than the sheet, because the way out is not only on the sheet:
@@ -284,6 +292,7 @@ export function PlaceSheet({
   place,
   editKey,
   action,
+  details = null,
   leaving,
   onLeave,
   aside,
@@ -498,16 +507,18 @@ export function PlaceSheet({
 
   /**
    * The way out on a phone, where the sheet is the whole window and has no
-   * edge to hang anything on: the corner, over the picture or over the name.
+   * edge to hang anything on: the top left corner, over the picture or over
+   * the name, a round button of raised paper pointing back the way the sheet
+   * goes, as design 1b's page for a stop has it.
    */
   const close = (
     <button
       type="button"
       onClick={onLeave}
-      aria-label="Close"
-      className="absolute top-3 right-3 grid h-10 w-10 place-items-center rounded-pill bg-paper-raised/90 text-ink shadow-sm hover:bg-paper-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:hidden"
+      aria-label="Back"
+      className="absolute top-4 left-4 grid h-11 w-11 place-items-center rounded-pill bg-paper-raised text-ink shadow-sm hover:bg-paper-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:hidden"
     >
-      <CloseIcon size={16} strokeWidth={2.75} />
+      <ChevronLeftIcon size={18} strokeWidth={2.75} />
     </button>
   );
 
@@ -590,19 +601,20 @@ export function PlaceSheet({
           ref={watchSheet}
           className="scroll-line scroll-shy min-h-0 flex-1 overflow-y-auto lg:rounded-panel"
         >
-          {/* The corner is taken: on a phone by the close, on a desk by the
-              search field floating over the sheet. Either sits over the
+          {/* The corner is taken: on a phone by the way back, on a desk by
+              the search field floating over the sheet. Either sits over the
               picture when there is one and over the name when there is not,
               so it is in the same place either way, and a place with no
               picture holds its name down from the corner instead: past the
-              close, 32px at 12px in, or the field, 48px at 20px in, and the
-              same 8px under either. */}
+              way back, 44px at 16px in, or the field, 48px at 20px in, and
+              the same 8px under either. On a phone the picture is 300px
+              tall, as design 1b draws it. */}
           <div className="relative">
             {/* Plain img rather than the framework's: the picture is ours,
                 served from our own table at the width it is drawn, and the
                 framework would only fetch it again to make it smaller. */}
             {hero === undefined ? (
-              <div className="h-[52px] lg:h-[76px]" />
+              <div className="h-[68px] lg:h-[76px]" />
             ) : (
               <button
                 type="button"
@@ -622,7 +634,7 @@ export function PlaceSheet({
                   alt={`${place.name}${hero.by === null ? "" : `, photographed by ${hero.by}`}`}
                   width={hero.width}
                   height={hero.height}
-                  className="aspect-[16/10] w-full object-cover"
+                  className="aspect-[16/10] w-full object-cover max-lg:aspect-auto max-lg:h-[300px]"
                 />
               </button>
             )}
@@ -666,6 +678,8 @@ export function PlaceSheet({
                 </p>
               )}
             </div>
+
+            {details}
 
             {action === null ? null : (
               /* The one thing the sheet can do to the trip: the whole width,

@@ -126,12 +126,13 @@ export function TripMenu({ label, children }: TripMenuProps) {
         // Thirty-two, a little over the name's line of thirty, so it sits in
         // the round end of the pill the row is with a pixel of the pill's
         // padding either side of it. Taller and this one button would set
-        // the height of the whole name row. On a phone it answers a finger
-        // over the pill's padding round it instead.
-        className={`grid h-8 w-8 place-items-center rounded-pill border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta ${FINGER_ROOM} ${
+        // the height of the whole name row. On a phone there is no pill, and
+        // it is the round button beside the calendar's, forty four across on
+        // raised paper inside the same hairline, a finger's size as drawn.
+        className={`grid h-8 w-8 place-items-center rounded-pill border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta max-lg:h-11 max-lg:w-11 max-lg:border-[1.5px] ${FINGER_ROOM} ${
           open
             ? "border-terracotta-800 bg-terracotta-800 text-paper"
-            : "border-rule bg-transparent text-ink-muted hover:bg-neutral-200 hover:text-ink"
+            : "border-rule bg-transparent text-ink-muted hover:bg-neutral-200 hover:text-ink max-lg:bg-paper-raised max-lg:text-ink"
         }`}
       >
         <MoreIcon size={16} strokeWidth={2.75} />

@@ -48,12 +48,14 @@ export function SavedNote({ at }: SavedNoteProps) {
           on the first frame of a fade the rest of the badge was still in the
           middle of.
 
-          In the corner of the window on a phone, where the panel is the whole
-          page: in the panel's corner there, it was under the last stop of the
-          day and seen only by whoever had scrolled to it. */}
+          Fixed to the window on a phone, where the panel is the whole page:
+          in the panel's corner there, it was under the last stop of the day
+          and seen only by whoever had scrolled to it. Centred over the bar
+          of views that floats at the foot of the window, twelve clear of it,
+          since the corner it once had is where that bar now stands. */}
       <p
         aria-hidden="true"
-        className={`pointer-events-none fixed right-[14px] bottom-4 z-20 flex items-center gap-[4px] rounded-pill bg-sage-600 px-[10px] py-[4px] text-label font-semibold text-paper shadow-sm transition-opacity lg:absolute ${
+        className={`pointer-events-none fixed z-20 flex items-center gap-[4px] rounded-pill bg-sage-600 px-[10px] py-[4px] text-label font-semibold text-paper shadow-sm transition-opacity max-lg:bottom-[calc(max(20px,env(safe-area-inset-bottom))+66px)] max-lg:left-1/2 max-lg:-translate-x-1/2 lg:absolute lg:right-[14px] lg:bottom-4 ${
           showing ? "opacity-100" : "opacity-0"
         }`}
       >

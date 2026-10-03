@@ -3,12 +3,13 @@
 import { Fragment, useEffect, useOptimistic, useRef, useState, useTransition } from "react";
 import { conflictsAtStop } from "@/core/model/conflict";
 import type { DayEndpoint, DayId, DayPlan } from "@/core/model/day";
-import type { LatLng, PlaceId } from "@/core/model/place";
+import type { PlaceId } from "@/core/model/place";
 import type { ComputedDay, ComputedStop } from "@/core/time/compute-day";
 import { formatClock } from "@/core/time/minutes";
-import { ClockIcon, CloseIcon, FlagIcon, HomeIcon, PencilIcon, PlusIcon } from "@/ui/icons";
+import { ClockIcon, CloseIcon, PencilIcon, PlusIcon } from "@/ui/icons";
 import type { PlannedDay } from "./compute-trip";
 import type { DayActions } from "./day-actions";
+import { ENDS, MARKS, nearestPoint, useEndEdit } from "./day-ends";
 import { EmptyDay } from "./empty-day";
 import { endpointName } from "./endpoint-name";
 import { EndpointPicker } from "./endpoint-picker";
@@ -16,14 +17,7 @@ import { formatDayDate } from "./format-day-date";
 import { hoursOn } from "./format-opening-hours";
 import { LeaveAt } from "./leave-at";
 import { LegRow } from "./leg-row";
-import {
-  AboutPlaceButton,
-  StopCard,
-  TIMES_ON_A_PHONE,
-  TOOL,
-  TOOL_GLYPH,
-  TOOLS_ON_A_PHONE,
-} from "./stop-card";
+import { AboutPlaceButton, StopCard, TOOL, TOOL_GLYPH } from "./stop-card";
 import { Notice } from "@/ui/notice";
 
 /**
@@ -76,18 +70,6 @@ function movedWithin<T>(list: readonly T[], from: number, to: number): readonly 
   moved.splice(to, 0, taken);
   return moved;
 }
-
-/**
- * How each end of the day is marked. The same shape and the same sage for
- * both, a square with one corner cut, so they are one kind of thing against
- * the stops' discs, and a different glyph so they are told apart: a house is
- * where the day sets out from, which is most often where the traveller is
- * staying, and a flag is where it finishes.
- */
-const MARKS = {
-  start: HomeIcon,
-  end: FlagIcon,
-} as const;
 
 /**
  * The marker for an end of the day, as the map draws it: a sage square with
@@ -191,9 +173,7 @@ function Anchor({
      * rather than at its top, where a disc sits on a card whose content runs
      * on below it; the words and the time sit at the top, as a card's do.
      *
-     * On a phone it is laid out the way a stop card is there: the time and
-     * the tools on one line level with the marker, and the name and the
-     * address under them at the row's whole width.
+     * On a desk only: a phone draws the day as a timeline, in day-timeline.
      */
     <div
       ref={row}
@@ -203,16 +183,16 @@ function Anchor({
       onMouseLeave={() => {
         onHover(null);
       }}
-      className={`group ${ENDPOINT_ROW} border px-4 py-[9px] max-lg:grid-cols-[30px_minmax(0,1fr)] max-lg:items-start max-lg:gap-y-[6px] ${
+      className={`group ${ENDPOINT_ROW} border px-4 py-[9px] ${
         hovered ? "border-sage-600/55 bg-paper-sunken" : "border-rule bg-paper"
       }`}
     >
-      <EndpointMark which={which} className="max-lg:self-start" />
+      <EndpointMark which={which} />
 
       {/* Words, not a button, as a stop's name and address are: what can be
           done to the place is in the tools, and a name that changed the
           place when it was pressed was a change nobody asked for. */}
-      <div className="min-w-0 self-start max-lg:col-start-2 max-lg:row-start-2">
+      <div className="min-w-0 self-start">
         <p className="break-words font-display text-place text-ink">{endpointName(endpoint)}</p>
         <p className="mt-[3px] break-words text-meta text-ink-faint">
           {endpoint.place.address ?? fallback}
@@ -238,17 +218,13 @@ function Anchor({
           glyph stands for is its name and its tooltip, so it is read out and
           can be hovered for. Drawn at 55 percent until the row is under the
           pointer, as a card's tools are. */}
-      <div
-        className={`flex flex-none flex-col items-end gap-[3px] self-start max-lg:col-start-2 max-lg:row-start-1 ${TIMES_ON_A_PHONE}`}
-      >
+      <div className="flex flex-none flex-col items-end gap-[3px] self-start">
         {setTime ?? (
           <p className="font-display text-time whitespace-nowrap text-terracotta-700 tabular-nums">
             {time ?? "Time not known"}
           </p>
         )}
-        <span
-          className={`-mr-1 flex items-center opacity-55 group-hover:opacity-100 focus-within:opacity-100 ${TOOLS_ON_A_PHONE}`}
-        >
+        <span className="-mr-1 flex items-center opacity-55 group-hover:opacity-100 focus-within:opacity-100">
           <AboutPlaceButton name={endpoint.place.name} onOpen={onOpen} />
           {onChange === null ? null : (
             <button
@@ -293,36 +269,6 @@ function Anchor({
  */
 const ADD_ENDPOINT = `${ENDPOINT_ROW} group border-[1.5px] border-dashed border-rule-strong bg-paper px-[15.5px] py-[8.5px] hover:border-terracotta hover:bg-paper-raised disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta`;
 
-/** What each end of the day is called, wherever it has to be said out loud. */
-const ENDS = {
-  start: {
-    add: "Add start point",
-    hint: "Hotel, home or pickup",
-    label: "Where the day starts",
-    change: "Change where the day starts",
-    remove: "Remove where the day starts",
-  },
-  end: {
-    add: "Add end point",
-    hint: "Hotel, station or airport",
-    label: "Where the day ends",
-    change: "Change where the day ends",
-    remove: "Remove where the day ends",
-  },
-} as const;
-
-/**
- * Where to look first when choosing an end of this day: somewhere the day
- * already goes, so a search for "the station" answers with the one nearby.
- */
-function nearestPoint(day: DayPlan): LatLng | null {
-  const first = day.stops[0];
-  if (first !== undefined) {
-    return first.place.position;
-  }
-  return day.start?.place.position ?? day.end?.place.position ?? null;
-}
-
 /**
  * One end of a day: the point itself once there is one, the search while it is
  * being chosen, and otherwise the button that starts that off.
@@ -352,21 +298,8 @@ function EndpointSlot({
   readonly onHoverEndpoint: (placeId: string | null) => void;
   readonly onOpen: (endpoint: EndpointRef) => void;
 }) {
-  const [picking, setPicking] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [saving, startSaving] = useTransition();
+  const { picking, setPicking, saving, error, write } = useEndEdit(which, actions);
   const words = ENDS[which];
-
-  const write = (providerPlaceId: string | null): void => {
-    if (actions === null) {
-      return;
-    }
-    setPicking(false);
-    const change = actions.setDayEndpoint;
-    startSaving(async () => {
-      setError((await change({ which, providerPlaceId })).error);
-    });
-  };
 
   return (
     <div>

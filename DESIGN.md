@@ -197,7 +197,9 @@ paper and ink.
   that is on, 600 is hover, 700 is pressed and is the step to use for accent coloured
   text, 800 is a chosen chip or menu row and the words on the city pill in the search.
 - **sage:** the second accent. 100 and 200 mark today in the day strip, 600 is the marker
-  for the ends of a day, 700 draws the public transport route line.
+  for the ends of a day, 700 draws the public transport route line. On a phone 100 is the
+  pill a leg is drawn on, with its words in 800, and 200 the disc behind a way's glyph in
+  the sheet that changes it.
 - **neutral:** the warm greys behind everything, used for the drive tint and the map's
   own geometry. On paper, 100 is the ground of the map and of an end of the trip not yet
   set, and 800 the words on the pill that counts the stops. In the export's column, 500
@@ -264,7 +266,9 @@ utility fighting the first. There is one exception, and it is only ever a field'
 1024px every field, and what stands in a field such as the search's empty words and the
 .pdf after a file's name, is 16px, because iOS zooms the whole page into any field set
 smaller as it takes the cursor and leaves it zoomed. Lead is the heading of what opens over the page: the place
-open in the sheet, and the question asked before a trip is deleted. Small is the tier the interface is mostly made of,
+open in the sheet, and the question asked before a trip is deleted; and on a phone, which
+gives a stop a line of the window rather than a card, a stop's name on the rail and the
+date in a day's circle in the strip. Small is the tier the interface is mostly made of,
 tab labels, menu rows, the words on a leg, which used to be a scatter of 13px and 13.5px
 chosen one component at a time. A number that is not on the scale is a number that has
 not been thought about, and the marketing page, which the scale does not govern, is the
@@ -275,7 +279,8 @@ one place such a number may appear. Every element that renders a time or a durat
   other heading.
 - **title:** the heading of an empty day, the printed day, and a page that has nothing
   to show.
-- **place:** a place name, and the time against an anchor row.
+- **place:** a place name, and the time against an anchor row; on a phone, when a stop is
+  reached, in the column of times down the rail.
 - **time:** when a stop is arrived at and left, on its card.
 - **body:** running text.
 - **meta:** secondary text, addresses, the words in a leg row.
@@ -336,58 +341,128 @@ twelve under the start of the day when there is one. The next place is offered a
 the last stop card, where a place found in the search is added. Three surfaces, each a step up from the one it sits on, and
 nothing drawn edge to edge.
 
-**Mobile, below 1024px.** One column. The map collapses to a sticky strip 140px tall at
-the top of the viewport, with the day tabs stuck directly beneath it. The page is the
-scrolling surface.
+**Mobile, below 1024px.** Design 1b of "PlanToGo iPhone", the timeline: one view at a
+time, and a bar of views floating at the foot of the window to go between them. Drawn
+to the design file in everything but its faces and its sizes: the layout, the colours,
+the edges and the shadows are the file's, and every word is in this product's two
+families at the step of the scale nearest the file's own.
 
-The trip's row and the strip of days are one block, and as the page scrolls the block
-goes up with it until the days are 8px under the strip's edge, where they stay; the
-trip's row, and the shadow under it, slide away under the map. The block is a step under
-the strip, so the map and the search's panels are drawn over it and never under it. On a
-phone on its side, under 480px tall, the strip and the days together left a third of
-the window for the day, so there the block scrolls away with the page and only the strip
-stays. Whatever the page brings into view, a card the map points at or a control the
-keyboard moves to, is brought to just under what is stuck rather than under it.
+The bar of views is a pill of `ink` under `shadow-lg`, centred 20px clear of the foot of
+the window, holding three pills a finger's height, each a glyph and its word at the
+small step in bold: **Plan**, **Map** and **Export**. The view on show stands on a pill
+of `paper` with its words in `ink`; the others are `paper` at 75 percent on the ink.
+Plan and Map change what the window shows. Export opens the export over the whole
+window, as it does on a desk, and is out of reach on a trip with nothing to export.
+Nothing else floats over the page: the word that says a change is saved stands centred
+12px over the bar.
 
-The strip is a glimpse of the day rather than a map to work in. Across its top is the
-search, at the strip's whole width, so the field always has the room for its longest
-words and the city pill keeps as much of its name as it can. At its foot on the right
-is its one button, a 40px pill reading **Expand map**, where the desk's own button is
-and where a thumb reaches first. Expanded, the map covers the viewport, the same button
-reads **Collapse map**, the zoom pair stands under it, and the route key comes out in
-the bottom left, clear of Google's mark, which the map has to show whole; the key and
-the zoom pair are not in the strip. Both states of the button show the word. Neither
-is an icon on its own. Opened, the map moves under one finger; in the strip one finger
-scrolls the page and two move the map.
+Plan is the page itself, on `paper`, and scrolls as a document. Nothing on it is stuck
+to the top of the window. It keeps 20px at either side, is no wider than 640px on a
+tablet held upright, and keeps 120px at its foot so its last line clears the bar.
 
-A stop card is laid out for the narrow column. The times and the tools are one line,
-level with the disc, with the times on the left and the tools at the right end; the
-name and the address are under them at the card's whole width, which on a desk they
-share with the column of times. An end of the day is laid out the same way, level with
-its marker. On the narrowest phones the pill that sets when the day leaves and three
-tools are more than the line holds, and the tools drop under the times.
+At its head the trip's name at the headline step, and under it its dates as the desk
+writes them and how many days they come to, "· 5 days", at the small step in
+`ink-muted`. At the right of
+the name the round buttons, 44px on `paper-raised` inside a 1.5px hairline: for someone
+who may edit, the calendar that opens the dates, and the trip's menu. A reader has
+neither, and exports from the bar.
 
-Everything on a phone is pressed with a finger. The tools on a card and on an end of
-the day are 40px round buttons with the glyph unchanged in the middle; the stay, the
-menu's rows, the zoom pair and the button that opens the map are 40px tall; the hours
-and minutes in a picker are rows 36px tall. A control that cannot be drawn that large
-in the row it stands in, the trip's menu button, the dates beside the name, the button
-that adds a day, the leaving time's pill, answers a finger over the padding around it
-and is drawn no larger. Nothing that answers a finger reaches into what another answers.
+Under them the strip of days runs out to the window's edges, scrolling the days under
+them, 14px in at either end. A day is a column 54px wide: its weekday at the micro step
+in `ink-muted`, its date in a circle 44px across in the display face at the lead step,
+and under the circle a 5px dot when anything is planned on the day, terracotta, and
+`terracotta-800` under the chosen day. The chosen day's circle is filled in
+`terracotta-800` with its date in `paper`, the way a chosen chip is anywhere in the
+product; today, when it is not chosen, is in sage 100 with its date in sage 800. The
+strip names no city, so on a trip that goes to more than one, the line under the strip
+does. After the last day, on the circles' line and as far from them as they are from
+each other, the button that adds a day, a 44px dashed ring.
 
-The grip on a card carries the card under a finger, since a phone has no drag of its
-own: the card goes where the finger takes it, on the shadow of what floats, the card it
-is over is outlined as a drop is on a desk, and letting go puts it there, brought into
-sight if it landed past the edge of the window. Held near the top or the foot of what
-can be seen of the day, the day scrolls on under it. A press on the grip that goes
-nowhere is only a press.
+Then a line saying what the day comes to, at the small step in 600 `ink-muted`: "Day 1
+· 3 stops · done by 12:38", the day being over in the words the printed day uses, done,
+back or finish by, and "Day 2 · Sun 4 Oct" for a day with nothing on it.
 
-A field is 16px on a phone, whatever step it is set at on a desk, because under that
-iOS zooms the whole page into a field as it takes the cursor and leaves it zoomed (see
-Typography). The calendar under the trip's dates goes no further down the window than
-the window goes, and scrolls inside itself, since it hangs from the days, which do not
-scroll away. The word that says a change is saved stands in the corner of the window
-rather than of the panel, which on a phone is the whole page.
+Then the day, down a rail. Every line of it is laid on the same three columns: the times
+in the first, 50px wide and set to its right edge so they read as one column; the marks
+on the rail in the second, 26px; and the words in the rest, 10px between each.
+
+- A stop: when it is reached in the display face at the place step, over when it is
+  left at the micro step in `ink-faint`; its number on a 26px terracotta disc with a 2px
+  line of terracotta at 35 percent running on down from it; and beside them its name in
+  the display face at the lead step, its address at the meta step in `ink-muted`, and
+  how long is spent there, "1 hr 15 min here", at the meta step in 600
+  `terracotta-800`. The name, the address and the stay are one button, which opens the
+  place. A conflict is said under them in its block, and the traveller's note under
+  that, behind its glyph.
+- A leg: the dotted thread down the rail, and beside it a pill of sage 100 inside an
+  edge of sage at 40 percent, the way's glyph, its name and how long it takes, "Drive 22
+  min", in bold at the small step in sage 800, with a chevron, 40px tall. A leg that
+  cannot be made the way the day has it says so on a pill of `paper` in `ink-muted`.
+- An end of the day: when the day passes it, a 26px sage 600 circle with the end's
+  glyph, and what the day does there, "Leave Central Station", "Finish at", "Back at", at
+  the body step in 600. The words open the place, its hours are under them when it
+  keeps any, and for someone who may edit the pencil and the cross follow them, 40px
+  each. Without an end, someone who may edit is offered one on a dashed sage circle, in
+  sage 800 over what kind of place goes there. The start's time is the pill that sets
+  when the day leaves, its chevron left off to fit the column.
+- After the last stop, for someone who may edit, the next place on the rail: a dashed
+  circle of the accent and **Add a place** in bold at the body step in
+  `terracotta-800`, one button.
+
+A day with nothing planned says "Nothing planned yet" at the lead step in a dashed box
+the day's width, with **Add a place** on the accent's solid pill under it for someone
+who may edit.
+
+A leg pressed brings up a sheet from the foot of the window, over the page dimmed with
+`ink` at 35 percent: raised paper rounded 30px at the top under `shadow-lg`, with a
+handle, "Getting to Taronga Zoo Sydney" at the lead step over "From Sydney Opera House",
+and a row for every way of covering the leg, its glyph on a 38px disc of sage 200, its
+name in bold over how far it goes, and how long it takes in the display face at the lead
+step at the row's end. The way in use is `terracotta-100` inside a 2px edge of the
+accent, the rest `sheet` inside `rule`. Choosing one writes it, says the new times are
+being worked out, and lets the sheet go when they are, since the day under the sheet
+cannot be seen to change while it is up. The leg's live times in Google Maps, and the
+sentence saying a time is a guess, are in the sheet. A reader gets the sheet too, with
+the ways to compare and none to choose. Escape or a press on the dimmed page puts it
+away.
+
+A stop pressed opens its place, the whole window (see A place, opened), and on a phone a
+stop is changed there rather than on the day: under the place's name, its hours, "Day 1
+· arrive 09:13, leave 10:28", "Stay for" with a minus and a plus a quarter of an hour
+at a time on a 44px disc of `neutral-200` either side of the stay, on a card of `sheet`;
+the note; and two pills that move the stop one place earlier or later in the day, which
+on a desk is done by dragging its card. The stepper writes once its presses stop, so an
+hour more is one write rather than four.
+
+**Add a place** brings the search up as a page of its own over the whole window, the bar
+at its top with **Done** beside it in bold `terracotta-800`, the quick searches under
+the bar, and under them the list at the window's whole width, headed "Popular in Sydney
+· adding to Day 1". There the bar keeps its edge and loses its lift, nothing is dimmed,
+and a row is a finger's: the pin on a 36px disc of `terracotta-100`, the name at the
+body step over the address at the meta step, the plus on a disc the same size, sage 600
+with a tick in `sheet` once the place is on the day. Choosing a row opens the place over
+the page, as anywhere, and adding it leaves the page up for the next. Done puts it away.
+
+Map is the map over the whole window, with nothing of Google's drawn on it and none of
+ours but two rows. Across the top a chip for every day, a pill at the small step in bold
+on `paper-raised` under `shadow-sm`, the open day filled in `terracotta-800`, so the map
+goes from day to day without the list. Along the foot, 12px over the bar, a card 250px
+wide for every stop on the day, on `paper-raised` rounded at the `card` radius under
+`shadow-md`: its number on the disc the map marks it with, its name in the display face,
+and when it is reached and left. A card pressed picks its stop out, its edge taking the
+accent and its marker drawn large; pressed again it opens the place. A marker pressed
+picks its card out the same way, rather than opening the place as it does on a desk. The
+day is framed in what the two rows leave of the window. One finger moves the map and two
+zoom it, and there is no zoom pair and no route key: every leg says its way in words on
+Plan.
+
+Everything on a phone is pressed with a finger: what is drawn smaller than 40px answers a
+finger over the room around it and is drawn no larger, and nothing that answers a finger
+reaches into what another answers. A field is 16px on a phone, whatever step it is set
+at on a desk, because under that iOS zooms the whole page into a field as it takes the
+cursor and leaves it zoomed (see Typography). The calendar under the trip's dates goes
+no further down the window than leaves it clear of the bar of views, and scrolls inside
+itself.
 
 ## Elevation and depth
 
@@ -396,8 +471,9 @@ Three steps, all tuned to the cream ground rather than to a white one.
 ```
 --shadow-sm   a floating control: the search field, the zoom pair, a map marker
 --shadow-md   a panel that opens over the page: the search results, the calendar, and a
-              stop card while a finger carries it on a phone
---shadow-lg   reserved, for a layer over the whole viewport
+              stop card while a finger carries it
+--shadow-lg   a layer over the whole viewport: the export, and on a phone the bar of
+              views at the foot of the window and the sheet a leg opens
 ```
 
 Everything that is not floating separates with `rule` or with a change of surface
@@ -463,6 +539,14 @@ opens, and writes when it closes; the opening hours sit beside it in words, and 
 note is either a field or the one line offering to start one. Removing is immediate: a stop is a search away from
 coming back, and a dialog asking twice would be a modal over something editable in
 place.
+
+The grip on a card carries the card under a finger on a touch screen as wide as a desk,
+which has no drag of its own: the card goes where the finger takes it, on the shadow of
+what floats, the card it is over is outlined as a drop is under a pointer, and letting go
+puts it there, brought into sight if it landed past the edge of the list. Held near the
+top or the foot of what can be seen of the day, the day scrolls on under it. A press on
+the grip that goes nowhere is only a press. A phone has no cards and no grip: a stop is
+moved from its place's sheet (see Layout).
 
 When the day leaves is set where that time shows, on the day rather than above it: on
 the start point's time when the day has one, and otherwise on the first stop's arrival,
@@ -540,8 +624,10 @@ on its free edge, halfway down, pointing the way it goes, puts it aside rather t
 closing it: the map is seen whole, exactly as it was, and the pin, the name in the
 field and the place stay; the tab waits at the window's edge, pointing back, and
 brings the sheet back, as does opening anything. The map is framed for a sheet
-opening or closing and never moved for one going aside or coming back. On a phone a close button in
-the corner closes it, and so does Escape anywhere. The picture comes first because it answers
+opening or closing and never moved for one going aside or coming back. On a phone a round button
+of raised paper in the top left corner, pointing back the way the sheet goes, closes it,
+and so does Escape anywhere; there the picture is 300px tall, and a stop's own part of
+the sheet stands under its name (see Layout). The picture comes first because it answers
 fastest; then the name, the kind of place and its rating out of five with a filled
 terracotta star; then the sentence the provider has for it, a strip of more pictures, the
 address and the ways to reach it, and what people say, each with their stars and how
@@ -720,8 +806,8 @@ underneath, and a product whose whole surface is one warm ramp cannot have its l
 element opt out of it. Every one of Google's controls is off and ours are drawn over the
 map instead: the search in the top left, the route key in the bottom left, and in the
 bottom right the button that fills the screen with the zoom pair under it, where a thumb
-reaches first. On a phone the strip carries only the search and the button, and the key
-and the zoom pair come out with the map opened (see Layout). What the map is drawn on is not offered as a choice. There is one ground,
+reaches first. On a phone the map is a view of its own carrying none of them, only the
+days across its top and the day's stops along its foot (see Layout). What the map is drawn on is not offered as a choice. There is one ground,
 and it is the product's own.
 
 ## Motion
@@ -737,8 +823,8 @@ also turns to the next city's colour over 200ms `ease-out` when what it marks ch
 city, with the name beside it, so the pill in the search does not flash as days change.
 
 Reordering: `transform` over 160ms `ease-out` on the card being moved and on the cards
-displacing around it. Nothing else, no opacity, no scale. A card carried by a finger on
-a phone is not animated at all: it is wherever the finger is, at once, which is the
+displacing around it. Nothing else, no opacity, no scale. A card carried by a finger is
+not animated at all: it is wherever the finger is, at once, which is the
 finger moving it rather than the page.
 
 The trip's actions: `grid-template-columns` from `0fr` to `1fr` over 200ms `ease-out`,
@@ -880,7 +966,7 @@ drew both ends of the day as the same green pin.
 In ink alone, everything the accents pick out is ink, every tint of them is
 `neutral-100`, and the pictures are grey.
 
-The export is chosen in a window over the whole page, the deepest shadow's one use:
+The export is chosen in a window over the whole page, under the deepest shadow:
 the choices down a column 320px wide on the left, and the sheets on the right exactly
 as they will print, redrawn as each choice changes, with the name of the one at the top
 held over them. The column opens on a switch of two, the full trip or the cover only,

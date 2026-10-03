@@ -1,5 +1,5 @@
 import type { IsoDate } from "@/core/model/day";
-import { isoDateAsUtc, parseIsoDate } from "@/core/time/zoned";
+import { daysBetween, isoDateAsUtc, parseIsoDate } from "@/core/time/zoned";
 
 const DAY_FORMAT = new Intl.DateTimeFormat("en-AU", {
   weekday: "short",
@@ -85,4 +85,19 @@ export function formatDateRange(start: IsoDate, end: IsoDate): string {
     return `${DAY_MONTH.format(isoDateAsUtc(start))} – ${DAY_MONTH.format(isoDateAsUtc(end))}`;
   }
   return `${DAY_ONLY.format(isoDateAsUtc(start))}–${DAY_MONTH.format(isoDateAsUtc(end))}`;
+}
+
+/**
+ * The trip's two ends as formatDateRange writes them, then how many days they
+ * come to with both ends counted, "· 5 days": the line under the trip's name
+ * on a phone. A range that runs backwards, which the dates field says is
+ * wrong, has no count.
+ */
+export function formatTripDates(start: IsoDate, end: IsoDate): string {
+  const range = formatDateRange(start, end);
+  const days = daysBetween(start, end) + 1;
+  if (days < 1) {
+    return range;
+  }
+  return `${range} · ${String(days)} ${days === 1 ? "day" : "days"}`;
 }

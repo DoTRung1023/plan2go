@@ -144,6 +144,47 @@ export function PlusIcon(props: IconProps) {
   );
 }
 
+/** The plus without its upright: less of something. */
+export function MinusIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="M5 12h14" />
+    </Glyph>
+  );
+}
+
+/** Three lines with a dot in front of each: a list read top to bottom. */
+export function ListIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="M8 6h13M8 12h13M8 18h13" />
+      <path d="M3 6h.01M3 12h.01M3 18h.01" />
+    </Glyph>
+  );
+}
+
+/** A page of a calendar, its two rings standing up over the top. */
+export function CalendarIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="M8 2v4M16 2v4" />
+      <rect width="18" height="18" x="3" y="4" rx="3" />
+      <path d="M3 10h18" />
+    </Glyph>
+  );
+}
+
+/** A page with an arrow down it: a file to take away. */
+export function FileDownIcon(props: IconProps) {
+  return (
+    <Glyph {...props}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <path d="M14 2v6h6" />
+      <path d="M12 18v-6M9 15l3 3 3-3" />
+    </Glyph>
+  );
+}
+
 export function CheckIcon(props: IconProps) {
   return (
     <Glyph {...props}>

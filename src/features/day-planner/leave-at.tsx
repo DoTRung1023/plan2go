@@ -80,6 +80,19 @@ interface LeaveAtProps {
    */
   readonly clock: string;
   readonly onChoose: (minutes: number) => Promise<EditOutcome>;
+  /**
+   * Which end of the pill its picker and its notice hang from. The right on a
+   * desk's card, where the times stand at the right; the left on a phone,
+   * where they stand in a column down the left of the window, and a picker
+   * hung from the right ran off it.
+   */
+  readonly align?: "left" | "right";
+  /**
+   * Drawn without its chevron and with the edge as close round the time as
+   * the time's own room, for the phone's column of times, which is fifty wide
+   * and holds the time and nothing else. The dashed edge alone says it opens.
+   */
+  readonly compact?: boolean;
 }
 
 /**
@@ -100,7 +113,13 @@ interface LeaveAtProps {
  * when it closes, so a morning picked as an hour and then a minute is one
  * trip to the server rather than two.
  */
-export function LeaveAt({ value, clock, onChoose }: LeaveAtProps) {
+export function LeaveAt({
+  value,
+  clock,
+  onChoose,
+  align = "right",
+  compact = false,
+}: LeaveAtProps) {
   const [draft, setDraft] = useState(value);
   const [seen, setSeen] = useState(value);
   const [open, setOpen] = useState(false);
@@ -181,16 +200,18 @@ export function LeaveAt({ value, clock, onChoose }: LeaveAtProps) {
           }
           setOpen(true);
         }}
-        className={`${TRIGGER} ${open ? "border-terracotta bg-paper-raised" : "border-terracotta/55 bg-terracotta/10"}`}
+        className={`${TRIGGER} ${compact ? "pr-[5px] pl-[5px]" : ""} ${open ? "border-terracotta bg-paper-raised" : "border-terracotta/55 bg-terracotta/10"}`}
       >
         {shown}
-        <ChevronDownIcon size={12} strokeWidth={2.75} className="shrink-0 text-terracotta-700/65" />
+        {compact ? null : (
+          <ChevronDownIcon size={12} strokeWidth={2.75} className="shrink-0 text-terracotta-700/65" />
+        )}
       </button>
 
       {open ? (
         <ColumnPicker
           label="When the day leaves"
-          align="right"
+          align={align}
           onEscape={() => {
             close();
             trigger.current?.focus();
@@ -221,7 +242,11 @@ export function LeaveAt({ value, clock, onChoose }: LeaveAtProps) {
       {/* Hangs off the control, over what is under it rather than in the row
           with it, the way the name and the dates say what went wrong. */}
       {error === null ? null : (
-        <Notice role="alert" shape="bubble" className="right-0 max-w-[260px]">
+        <Notice
+          role="alert"
+          shape="bubble"
+          className={`${align === "right" ? "right-0" : "left-0 w-max"} max-w-[260px]`}
+        >
             {error}
         </Notice>
       )}

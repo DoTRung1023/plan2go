@@ -5,11 +5,12 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import type { Conflict } from "@/core/model/conflict";
 import type { ComputedStop } from "@/core/time/compute-day";
 import { formatDuration } from "@/core/time/minutes";
-import { ArrowRightIcon, ClockIcon, CloseIcon, GripIcon, InfoIcon, PlusIcon } from "@/ui/icons";
+import { ArrowRightIcon, ClockIcon, CloseIcon, GripIcon, InfoIcon } from "@/ui/icons";
 import type { DayActions } from "./day-actions";
 import { ConflictNotice } from "./conflict-notice";
 import { formatDayTime } from "./format-day-time";
 import { StayPicker } from "./stay-picker";
+import { StopNote } from "./stop-note";
 import type { CardSpan } from "./touch-carry";
 import {
   CARRY_SLOP,
@@ -53,34 +54,12 @@ interface Carry {
  * ends of a day draw theirs the same way, so a control means the same thing
  * wherever on the thread it hangs.
  *
- * Forty on a phone, the glyph the same size in the middle of it. Pressed with
- * a finger, three of them at twenty two side by side were a third of a
- * fingertip each, and the third is the cross that takes the stop off the day
- * at once.
+ * Forty on a phone, the glyph the same size in the middle of it, where the
+ * ends of a day on the timeline carry theirs: pressed with a finger, two of
+ * them at twenty two side by side were a third of a fingertip each.
  */
 export const TOOL =
   "grid h-[22px] w-[22px] place-items-center rounded-pill text-ink-muted hover:bg-neutral-200 hover:text-ink disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta max-lg:h-10 max-lg:w-10";
-
-/**
- * The tools beside the times on a phone, where they share the times' line.
- * Taller than the line, so they give back what they take over it above and
- * below, and they hang out past the card's right edge by as much as the
- * wider box puts round the glyph, so the cross still ends where the times
- * end on a desk. At the right end of the line, wherever the line breaks.
- */
-export const TOOLS_ON_A_PHONE = "max-lg:-my-[5px] max-lg:-mr-[13px] max-lg:ml-auto";
-
-/**
- * The times and the tools on one line on a phone, over the name rather than
- * beside it: the card is too narrow there for a column of times to stand
- * beside a name without squeezing the name to a word a line. As tall as the
- * disc, so the times sit level with it. On the narrowest phones the pill that
- * sets the day's leaving time and three tools are more than the line holds,
- * and the tools go under the times, far enough under that what each answers
- * a finger over does not reach the other.
- */
-export const TIMES_ON_A_PHONE =
-  "max-lg:min-h-[30px] max-lg:flex-row max-lg:flex-wrap max-lg:items-center max-lg:justify-between max-lg:gap-x-2 max-lg:gap-y-4";
 
 /**
  * The glyph that opens what a place is like: its pictures, its rating, what
@@ -199,29 +178,10 @@ export function StopCard({
   onDrop,
   onDragEnd,
 }: StopCardProps) {
-  const [writingNote, setWritingNote] = useState(false);
-  /**
-   * The note as it was last sent, held until the trip comes back carrying it.
-   *
-   * Leaving the field is what commits, so without this the card falls back to
-   * the trip's copy the instant the field is left, and the trip's copy is
-   * still the empty one it had a moment ago: a note just written blinks out,
-   * the button that offers to write one takes its place, and both are replaced
-   * again when the server answers. Undefined means nothing is in flight.
-   */
-  const [sent, setSent] = useState<string | null | undefined>(undefined);
   const card = useRef<HTMLElement | null>(null);
-  const noteField = useRef<HTMLTextAreaElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, startSaving] = useTransition();
   const [busy, setBusy] = useState<Busy>(null);
-
-  // Adjusted during the render that carries the new value rather than in an
-  // effect, because an effect would paint the stale one first.
-  if (sent !== undefined && sent === note) {
-    setSent(undefined);
-  }
-  const shownNote = sent === undefined ? note : sent;
 
   /**
    * Which of the card's own controls is waiting on the server, so only that
@@ -245,41 +205,6 @@ export function StopCard({
       setBusy(null);
     });
   };
-
-  const commitNote = (value: string): void => {
-    const tidied = value.trim() === "" ? null : value.trim();
-    setWritingNote(false);
-    if (actions === null || tidied === shownNote) {
-      return;
-    }
-    setSent(tidied);
-    run("note", () => actions.setNote({ stopId: stop.stopId, note: tidied }));
-  };
-
-  /**
-   * The field is exactly as tall as what is in it.
-   *
-   * A note is a line or a paragraph and there is no telling which, so a fixed
-   * two rows is either empty space under one line or a scrollbar hiding the
-   * end of five. Sized to its content there is neither, and the padding above
-   * and below is equal, which is what puts a short note in the middle of its
-   * own box rather than at the top of a box meant for a longer one.
-   *
-   * Height is cleared before it is read, because scrollHeight of an element
-   * already tall enough is its current height, and a field that had grown
-   * would never shrink again.
-   */
-  const fitNote = (element: HTMLTextAreaElement): void => {
-    element.style.height = "auto";
-    element.style.height = `${String(element.scrollHeight)}px`;
-  };
-
-  useEffect(() => {
-    const element = noteField.current;
-    if (element !== null) {
-      fitNote(element);
-    }
-  }, [shownNote, writingNote]);
 
   /**
    * Brought into the panel when the pointer finds it on the map, because a
@@ -492,13 +417,9 @@ export function StopCard({
             too. The tools stay under the times however many lines the name
             and the address run to, rather than dropping to the address's row
             when a long name takes two; the address keeps to the name's width
-            beside them.
-
-            On a phone the times and the tools are one line over the name, the
-            times level with the disc, and the name and the address have the
-            card's whole width under them. The name comes first in the page
-            either way, so it is still what is read out first. */}
-        <div className="flex items-start gap-[10px] max-lg:flex-col-reverse max-lg:items-stretch max-lg:gap-[6px]">
+            beside them. The name comes first in the page, so it is what is
+            read out first. */}
+        <div className="flex items-start gap-[10px]">
           <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
             <h3 className="min-w-0 font-display text-place text-ink">{stop.placeName}</h3>
             {address === null ? null : (
@@ -506,7 +427,7 @@ export function StopCard({
             )}
           </div>
 
-          <div className={`flex flex-none flex-col items-end gap-[3px] ${TIMES_ON_A_PHONE}`}>
+          <div className="flex flex-none flex-col items-end gap-[3px]">
             {/* Read, never set, but for one: every time on the day follows
                 from when it leaves, worked out through the legs and the stays,
                 so the one clock to change is that one, set where it shows.
@@ -548,7 +469,7 @@ export function StopCard({
             </div>
 
             <div
-              className={`-mr-1 flex items-center group-hover:opacity-100 focus-within:opacity-100 ${TOOLS_ON_A_PHONE} ${
+              className={`-mr-1 flex items-center group-hover:opacity-100 focus-within:opacity-100 ${
                 hovered ? "opacity-100" : "opacity-55"
               }`}
             >
@@ -631,42 +552,17 @@ export function StopCard({
           <ConflictNotice key={`${conflict.kind}-${String(at)}`} conflict={conflict} />
         ))}
 
-        {shownNote === null && !writingNote ? (
-          actions === null ? null : (
-            /* Thirty six tall on a phone, reaching up into the gap over it
-               rather than across whatever is over the gap, so a finger gets a
-               button and not a line of small print. */
-            <button
-              type="button"
-              onClick={() => {
-                setWritingNote(true);
-              }}
-              className="flex items-center gap-[5px] self-start pr-1 text-micro font-semibold text-ink-muted hover:text-terracotta-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta max-lg:-mt-2 max-lg:min-h-9"
-            >
-              <PlusIcon size={12} strokeWidth={2.75} />
-              Add a note
-            </button>
-          )
-        ) : (
-          <textarea
-            ref={noteField}
-            rows={1}
-            defaultValue={shownNote ?? ""}
-            autoFocus={writingNote}
-            readOnly={actions === null}
-            onInput={(event) => {
-              fitNote(event.currentTarget);
-            }}
-            onBlur={(event) => {
-              commitNote(event.target.value);
-            }}
-            placeholder="A note for whoever you are travelling with."
-            aria-label={`Note about ${stop.placeName}`}
-            /* 16px on a phone, where iOS zooms the page into any field set
-               smaller as it takes the cursor. */
-            className="w-full resize-none overflow-hidden rounded-chip border border-rule bg-paper px-[11px] py-[7px] text-meta text-ink caret-terracotta outline-none placeholder:text-ink-faint focus-visible:border-terracotta max-lg:text-[16px]"
-          />
-        )}
+        <StopNote
+          placeName={stop.placeName}
+          note={note}
+          onSave={
+            actions === null
+              ? null
+              : (written) => {
+                  run("note", () => actions.setNote({ stopId: stop.stopId, note: written }));
+                }
+          }
+        />
 
         {error === null ? null : (
           <Notice role="alert">
@@ -682,9 +578,7 @@ export function StopCard({
           the name above. The time is when this stop is left, which is when
           the way to the next one would begin, not when that one would start:
           the leg between them comes first. One button for the row, so the
-          whole of it can be pressed on a phone, where it is forty tall: five
-          over and under the ring, reaching into the room around the row
-          rather than adding to it, so the ring stands where it does on a desk.
+          whole of it can be pressed.
 
           A second row of the card's grid, set as far below the body as the
           body is from the card's edge. Everything in it is drawn the way the
@@ -733,7 +627,7 @@ export function StopCard({
               ? `Add a place as stop ${String(position + 1)}`
               : `Add a place as stop ${String(position + 1)}, after leaving ${stop.placeName} at ${formatDayTime(stop.departure)}`
           }
-          className="group/next col-span-2 mt-[13px] grid grid-cols-[30px_minmax(0,1fr)_auto] items-center gap-x-[13px] rounded-pill pr-[10px] text-left hover:bg-neutral-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta max-lg:mt-2 max-lg:-mb-[5px] max-lg:py-[5px]"
+          className="group/next col-span-2 mt-[13px] grid grid-cols-[30px_minmax(0,1fr)_auto] items-center gap-x-[13px] rounded-pill pr-[10px] text-left hover:bg-neutral-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
         >
           <span
             aria-hidden="true"
