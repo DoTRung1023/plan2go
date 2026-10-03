@@ -1029,12 +1029,25 @@ chosen one in `terracotta-800`; the days five across, a chosen one filled in
 `terracotta-800`; what the file includes as pills that wrap rather than toggles two
 across, at the small step, `terracotta-100` inside `terracotta-300` while on and quiet on
 the page inside `rule` while off; the page setup folded to its line on a card of `sheet`,
-its tracks sunk into the page as the switch is; the file's name under its own heading,
-in the same pill on `sheet`, and what is wrong with it said under it rather than over it,
-since the page has the room; and the button, the bar and Saved at 54px. There is no
-preview, as there is none in the design: the sheets are laid out unseen, for the count
-on the button and for the browser's own print command, which prints them while the view
-is up. Escape goes back to the day, and every other way out is the bar of views.
+its tracks sunk into the page as the switch is; the way to the preview; the file's name
+under its own heading, in the same pill on `sheet`, and what is wrong with it said under
+it rather than over it, since the page has the room; and the button, the bar and Saved
+at 54px. Escape goes back to the day, and every other way out is the bar of views.
+
+The preview is a card on raised paper, as the page setup's is: a page in small at its
+front, a bar of the accent over two lines of ink and a block where the map is, then
+**Preview** in bold over how many pages the export comes to, and a chevron. It opens over
+the whole window and the bar of views, on the sunken ground the desk's preview stands
+on: the way back on the left, the file's name in the middle, or Preview while there is
+none, and which page is in the middle of how many on the right. Under them the sheets
+themselves, the same ones the desk's preview draws, one beside the next in a row that
+snaps to each, every page scaled to 300px wide on a phone the design's width, or as tall
+as the window has room for, with the pages either side peeking in 51px and 16px apart,
+each on the deepest shadow. At the foot, **Export PDF** with the pages it comes to, which
+puts the preview away and begins the file, or, with no name to save it under, puts the
+preview away and takes the keyboard to the name. Escape puts it away. Until it is
+opened the sheets are laid out unseen, for the count and for the browser's own print
+command, which prints them while the view is up, the preview open or not.
 
 ## Banned in this product
 

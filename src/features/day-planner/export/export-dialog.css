@@ -39,6 +39,53 @@
   margin-top: 24px;
 }
 
+/* The phone's preview, drawn to design 1b of "PlanToGo iPhone": the same
+   sheets, one beside the next in a row that snaps to each, scaled so a page
+   is the width the design gives it with the next peeking in at either side.
+   The scale, and the room before the first and after the last that puts
+   either in the middle of the window, come from the export, which measures
+   the row. Both are said inside the scaled row, so they are given back. */
+.export-pages {
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.export-pages::-webkit-scrollbar {
+  display: none;
+}
+
+.export-pages .printed-trip {
+  display: flex;
+  align-items: center;
+  gap: calc(16px / var(--sheet-zoom, 1));
+  width: max-content;
+  zoom: var(--sheet-zoom, 1);
+}
+
+.export-pages .printed-page {
+  flex: none;
+  scroll-snap-align: center;
+}
+
+.export-pages .printed-page:first-child {
+  margin-left: calc(var(--page-side, 0px) / var(--sheet-zoom, 1));
+}
+
+.export-pages .printed-page:last-child {
+  margin-right: calc(var(--page-side, 0px) / var(--sheet-zoom, 1));
+}
+
+/* Every page the paper's own size, a sheet of the paper's white lifted off
+   the ground on the deepest shadow, as the design draws it. */
+.export-pages .printed-sheet {
+  width: var(--sheet-w, 793px);
+  height: var(--sheet-h, 1123px);
+  overflow: hidden;
+  border-radius: calc(6px / var(--sheet-zoom, 1));
+  box-shadow: 0 calc(10px / var(--sheet-zoom, 1)) calc(30px / var(--sheet-zoom, 1))
+    color-mix(in srgb, var(--color-neutral-900) 22%, transparent);
+}
+
 /* The spinner in the bar while the file is drawn, a turn every 800ms. It
    still turns under reduced motion, as the search's does, since it is what
    says the export is waiting. */
@@ -112,5 +159,33 @@
 
   .export-sheets .printed-page + .printed-page {
     margin-top: 0;
+  }
+
+  /* The phone's preview printed: the row is a column of pages again, at
+     full size, with nothing of the screen's sheet left on them. */
+  .export-pages .printed-trip {
+    display: block !important;
+    width: auto !important;
+    margin: 0 !important;
+    zoom: 1 !important;
+  }
+
+  .export-pages .printed-page:first-child,
+  .export-pages .printed-page:last-child {
+    margin: 0;
+  }
+
+  .export-pages .printed-sheet {
+    width: auto;
+    height: auto;
+    min-height: var(--page-room, 296mm);
+    overflow: visible;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .export-pages .printed-sheet-one-page {
+    height: var(--page-room, 296mm);
+    overflow: hidden;
   }
 }

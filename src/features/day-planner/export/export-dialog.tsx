@@ -8,6 +8,8 @@ import {
   ChartIcon,
   CheckIcon,
   ChevronDownIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
   ClockIcon,
   CloseIcon,
   DownloadIcon,
@@ -104,6 +106,14 @@ const PROGRESS_CEILING = 90;
 
 /** How long Saved is said before the button comes back. */
 const SAVED_FOR_MS = 2600;
+
+/**
+ * How much of the next page and the last peeks in either side of the page on
+ * show in a phone's preview, as design 1b gives it: a 300px page on a 402px
+ * window. The page is that much narrower than the window on each side, or as
+ * tall as the row has room for less this much again, whichever is smaller.
+ */
+const PAGE_PEEK = 51;
 
 /**
  * The file, saved: a link to it made, followed and taken away again in one
@@ -233,8 +243,9 @@ interface ExportDialogProps {
   readonly onClose: () => void;
   /**
    * A dialog over the whole window beside a preview of the sheets, which is
-   * how a desk exports; or a page of its own with no preview, which is how a
-   * phone does, as the Export view in the bar at the foot of its window.
+   * how a desk exports; or a page of its own, with the preview a screen of
+   * its own opened from it, which is how a phone does, as the Export view in
+   * the bar at the foot of its window.
    */
   readonly layout?: "dialog" | "page";
 }
@@ -327,6 +338,17 @@ export function ExportDialog({
   const asking = useRef<AbortController | null>(null);
   /** The name of the page at the top of the preview: "Day 2", "Cover", "Day 2 · notes". */
   const [onPage, setOnPage] = useState<string | null>(null);
+  /** A phone's preview of the sheets, up over the whole window or not. */
+  const [previewOpen, setPreviewOpen] = useState(false);
+  /** Which of the sheets is in the middle of a phone's preview, counted from zero. */
+  const [pageAt, setPageAt] = useState(0);
+  /** The row a phone's preview scrolls the sheets along. */
+  const pagesRow = useRef<HTMLDivElement | null>(null);
+  const previewButton = useRef<HTMLButtonElement | null>(null);
+  const previewBack = useRef<HTMLButtonElement | null>(null);
+  const nameField = useRef<HTMLInputElement | null>(null);
+  /** Where the keyboard goes once a phone's preview has gone, or nowhere. */
+  const afterPreview = useRef<HTMLElement | null>(null);
 
   const picked = printable.filter((day) => chosen.has(day.plan.id));
   const allPicked = picked.length === printable.length && printable.length > 0;
@@ -354,6 +376,8 @@ export function ExportDialog({
   const requestKey = exportRequestKey(request);
   /** How wide a sheet is drawn, which is what the preview scales down from. */
   const sheetWidth = sheetGeometry(paper, orientation).widthPx;
+  /** And how tall, which a phone's preview fits the page to as well. */
+  const sheetHeight = sheetGeometry(paper, orientation).heightPx;
   const sheets = sheetsFor?.key === requestKey ? sheetsFor.count : null;
   /** Where the preview fetches each day's map from: our own map route. */
   const maps = useMemo(() => dayMapSources(slug, days), [slug, days]);
@@ -474,6 +498,55 @@ export function ExportDialog({
     }
     placeOnPage();
   }, [placeOnPage, requestKey, sheets]);
+
+  /**
+   * A phone's preview fits a page to the row it scrolls along: as wide as
+   * the row less what of the pages either side peeks in, or as tall as the
+   * row has room for, whichever is smaller, so a page landscape or upright
+   * is seen whole. Said to the stylesheet before the browser paints, so the
+   * sheets are never seen at their full size first, and again whenever the
+   * row changes size.
+   */
+  useLayoutEffect(() => {
+    const row = pagesRow.current;
+    if (!previewOpen || row === null) {
+      return;
+    }
+    const fit = (): void => {
+      const width = row.clientWidth;
+      const height = row.clientHeight;
+      if (width <= 0 || height <= 0) {
+        return;
+      }
+      const zoom = Math.max(
+        0.05,
+        Math.min((width - 2 * PAGE_PEEK) / sheetWidth, (height - PAGE_PEEK) / sheetHeight),
+      );
+      row.style.setProperty("--sheet-zoom", String(zoom));
+      row.style.setProperty("--page-side", `${String((width - sheetWidth * zoom) / 2)}px`);
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(row);
+    return () => {
+      observer.disconnect();
+    };
+  }, [previewOpen, sheetWidth, sheetHeight]);
+
+  /**
+   * The keyboard goes to the way back as a phone's preview comes up, since it
+   * is over everything, and once it has gone, to whatever the way out chose:
+   * the button that opened it, or the file's name when that is why the file
+   * could not go, or nowhere when the export has begun and has its own.
+   */
+  useEffect(() => {
+    if (previewOpen) {
+      previewBack.current?.focus();
+      return;
+    }
+    afterPreview.current?.focus();
+    afterPreview.current = null;
+  }, [previewOpen]);
 
   /* The bar, moved on by the clock for as long as the file is being drawn. */
   useEffect(() => {
@@ -617,6 +690,51 @@ export function ExportDialog({
   /** The bar's share, as it is said beside the spinner. */
   const shown = Math.round(progress);
 
+  const openPreview = (): void => {
+    setPageAt(0);
+    setPreviewOpen(true);
+  };
+  /** The preview put away, the keyboard going back to the button that opened it. */
+  const closePreview = (): void => {
+    afterPreview.current = previewButton.current;
+    setPreviewOpen(false);
+  };
+  /**
+   * Export from the preview, which goes as the file is asked for, so the
+   * bar is seen filling on the page under it. With no name to save it under,
+   * the preview goes and the keyboard goes to the name, where that is said.
+   */
+  const exportFromPreview = (): void => {
+    if (nameError) {
+      afterPreview.current = nameField.current;
+      setPreviewOpen(false);
+      return;
+    }
+    afterPreview.current = null;
+    setPreviewOpen(false);
+    void exportPdf();
+  };
+  /** Which sheet is nearest the middle of the preview's row, for the count over it. */
+  const notePage = (): void => {
+    const row = pagesRow.current;
+    if (row === null) {
+      return;
+    }
+    const box = row.getBoundingClientRect();
+    const middle = box.left + box.width / 2;
+    let nearest = 0;
+    let closest = Number.POSITIVE_INFINITY;
+    row.querySelectorAll<HTMLElement>(".printed-page").forEach((page, index) => {
+      const at = page.getBoundingClientRect();
+      const off = Math.abs(at.left + at.width / 2 - middle);
+      if (off < closest) {
+        closest = off;
+        nearest = index;
+      }
+    });
+    setPageAt(nearest);
+  };
+
   if (asPage) {
     return (
       <>
@@ -628,8 +746,8 @@ export function ExportDialog({
          * glyph, laid out as the design lays its out: the switch between the
          * full trip and the cover, the days five across, what the file
          * includes as pills that wrap, the page setup folded to its line, the
-         * file's name, and the button. There is no preview, as there is none
-         * in the design: the sheets are laid out unseen below, for how many
+         * way to the preview, the file's name, and the button. The sheets are
+         * laid out unseen below until the preview is opened, for how many
          * pages the export comes to and for the browser's own print command.
          *
          * Nothing here is a dialog: no scrim, no close. The bar of views is
@@ -778,9 +896,9 @@ export function ExportDialog({
                 </>
               )}
 
-              {/* The paper, folded to the line saying it, on a card of the
-                  sheet's white, opening to a track of pills for each thing
-                  about it. */}
+              {/* The paper, folded to the line saying it, on a card of raised
+                  paper as the preview's is, opening to a track of pills for
+                  each thing about it. */}
               <div className="mt-6">
                 <button
                   type="button"
@@ -789,7 +907,7 @@ export function ExportDialog({
                   onClick={() => {
                     setSetupOpen(!setupOpen);
                   }}
-                  className={`flex w-full items-center gap-[10px] rounded-card border-[1.5px] border-rule bg-sheet px-[18px] py-[14px] text-left hover:border-rule-strong ${FOCUS}`}
+                  className={`flex w-full items-center gap-[10px] rounded-card border-[1.5px] border-rule bg-paper-raised px-[18px] py-[14px] text-left hover:border-rule-strong ${FOCUS}`}
                 >
                   <span className="min-w-0 flex-1">
                     <span className="block text-body/none font-bold text-ink">Page setup</span>
@@ -821,6 +939,35 @@ export function ExportDialog({
                   </div>
                 ) : null}
               </div>
+
+              {/* The way to the sheets, as design 1b draws it: a card with a
+                  page in small at its front, the word and how many pages the
+                  export comes to, and a chevron saying it opens. */}
+              <button
+                ref={previewButton}
+                type="button"
+                aria-haspopup="dialog"
+                disabled={nothing}
+                onClick={openPreview}
+                className={`mt-6 flex w-full items-center gap-[14px] rounded-card border-[1.5px] border-rule bg-paper-raised py-3 pr-4 pl-3 text-left hover:border-rule-strong disabled:opacity-45 disabled:hover:border-rule ${FOCUS}`}
+              >
+                <span
+                  aria-hidden="true"
+                  className="flex h-[72px] w-[52px] shrink-0 flex-col gap-1 rounded-[6px] bg-sheet px-[6px] py-[7px] shadow-sm"
+                >
+                  <span className="h-[5px] w-[60%] rounded-[2px] bg-terracotta" />
+                  <span className="h-[3px] w-[90%] rounded-[2px] bg-rule-strong" />
+                  <span className="h-[3px] w-[75%] rounded-[2px] bg-rule" />
+                  <span className="mt-[2px] flex-1 rounded-[3px] bg-paper-sunken" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-body/[1.2] font-bold text-ink">Preview</span>
+                  <span className="mt-[3px] block text-small/[1.3] font-medium text-ink-muted tabular-nums">
+                    {nothing ? "No days chosen" : (pageCount ?? "Laying out the pages")}
+                  </span>
+                </span>
+                <ChevronRightIcon size={16} strokeWidth={2.75} className="shrink-0 text-ink-faint" />
+              </button>
             </div>
 
             <p className="mt-6 text-body/none font-bold text-ink">File name</p>
@@ -834,6 +981,7 @@ export function ExportDialog({
               } ${busy ? "opacity-45" : ""}`}
             >
               <input
+                ref={nameField}
                 type="text"
                 maxLength={LONGEST_FILE_NAME}
                 aria-label="File name"
@@ -945,19 +1093,103 @@ export function ExportDialog({
           </div>
         </div>
 
-        {nothing ? null : (
-          <PrintedTrip
-            key={requestKey}
-            title={title}
-            days={days}
-            maps={maps}
-            request={request}
-            visible={false}
-            onSheets={(count) => {
-              setSheetsFor({ key: requestKey, count });
-            }}
-          />
-        )}
+        {/*
+         * The sheets, and the preview of them that design 1b opens from its
+         * card: over the whole window and the bar of views, on the sunken
+         * ground the desk's preview stands on, the way back and the file's
+         * name across the top with which page is in the middle of how many,
+         * the pages one beside the next in a row that snaps to each, and the
+         * export at the foot, which goes from here and leaves the bar filling
+         * on the page. Escape puts it away.
+         *
+         * The sheets are the one set, laid out unseen for their count while
+         * the preview is down and shown in its row while it is up, so they
+         * are never dealt twice. Down, nothing round them draws a box, and
+         * they lie where the page's own would.
+         */}
+        <div
+          role={previewOpen ? "dialog" : undefined}
+          aria-modal={previewOpen ? true : undefined}
+          aria-label={previewOpen ? "Preview of the export" : undefined}
+          // Up, it takes the keyboard from a press anywhere in it that lands
+          // on nothing that takes it itself, a page, so Escape still reaches
+          // it rather than the page behind.
+          tabIndex={previewOpen ? -1 : undefined}
+          onKeyDown={(event) => {
+            if (previewOpen && event.key === "Escape") {
+              event.preventDefault();
+              closePreview();
+            }
+          }}
+          className={
+            previewOpen
+              ? "export-dialog fixed inset-0 z-50 flex flex-col bg-paper-sunken outline-none lg:hidden"
+              : "contents"
+          }
+        >
+          {previewOpen ? (
+            <div className="export-chrome flex shrink-0 items-center gap-2 px-3 pt-[max(12px,env(safe-area-inset-top))] pb-[10px]">
+              <button
+                ref={previewBack}
+                type="button"
+                onClick={closePreview}
+                aria-label="Back to the export"
+                className={`grid h-11 w-11 shrink-0 place-items-center rounded-pill bg-paper-raised text-ink shadow-sm ${FOCUS}`}
+              >
+                <ChevronLeftIcon size={18} strokeWidth={2.75} />
+              </button>
+              <p className="min-w-0 flex-1 truncate text-center text-place/[1.25] font-bold text-ink">
+                {nameError ? "Preview" : `${fileName}.pdf`}
+              </p>
+              <p
+                aria-hidden="true"
+                className="w-11 shrink-0 text-center text-small/none font-semibold text-ink-muted tabular-nums"
+              >
+                {sheets === null ? "" : `${String(Math.min(pageAt + 1, sheets))} / ${String(sheets)}`}
+              </p>
+              <p aria-live="polite" className="sr-only">
+                {sheets === null ? "" : `Page ${String(Math.min(pageAt + 1, sheets))} of ${String(sheets)}`}
+              </p>
+            </div>
+          ) : null}
+
+          <div
+            ref={pagesRow}
+            onScroll={previewOpen ? notePage : undefined}
+            className={
+              previewOpen
+                ? "export-scroll export-pages flex min-h-0 flex-1 items-center overflow-x-auto overflow-y-hidden"
+                : "contents"
+            }
+          >
+            {nothing ? null : (
+              <PrintedTrip
+                key={requestKey}
+                title={title}
+                days={days}
+                maps={maps}
+                request={request}
+                visible={previewOpen}
+                onSheets={(count) => {
+                  setSheetsFor({ key: requestKey, count });
+                }}
+              />
+            )}
+          </div>
+
+          {previewOpen ? (
+            <div className="export-chrome shrink-0 px-5 pt-4 pb-[max(40px,env(safe-area-inset-bottom))]">
+              <button
+                type="button"
+                disabled={tooMany}
+                onClick={exportFromPreview}
+                className={`flex w-full items-center justify-center rounded-pill border border-transparent bg-terracotta px-5 py-4 font-display text-place/[1.2] font-bold text-paper hover:bg-terracotta-600 active:bg-terracotta-700 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-terracotta ${FOCUS}`}
+              >
+                {`Export PDF${pageCount === null ? "" : ` · ${pageCount}`}`}
+              </button>
+            </div>
+          ) : null}
+        </div>
       </>
     );
   }
