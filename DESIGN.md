@@ -409,9 +409,9 @@ on the rail in the second, 26px; and the words in the rest, 10px between each.
   circle of the accent and **Add a place** in bold at the body step in
   `terracotta-800`, one button.
 
-A day with nothing planned says "Nothing planned yet" at the lead step in a dashed box
-the day's width, with **Add a place** on the accent's solid pill under it for someone
-who may edit.
+A day with nothing planned says "Nothing planned yet" at the lead step, straight on the
+ground between the two ends with no box round it, as a desk says it, with **Add a
+place** on the accent's solid pill under it for someone who may edit.
 
 A leg pressed brings up a sheet from the foot of the window, over the page dimmed with
 `ink` at 35 percent: raised paper rounded 30px at the top under `shadow-lg`, with a

@@ -346,11 +346,12 @@ export function DayTimeline({
         onOpen={onOpenEndpoint}
       />
 
-      {/* Nothing planned: said in a dashed box the day's width, as design 1b
-          has it, with the way to the first place for someone who may edit,
-          in the accent's solid pill since it is the one thing to do. */}
+      {/* Nothing planned: said straight on the ground between the two ends,
+          with no box round it, as a desk says it, with the way to the first
+          place for someone who may edit, in the accent's solid pill since it
+          is the one thing to do. */}
       {day.stops.length === 0 ? (
-        <div className="mt-3 mb-3 flex flex-col items-center gap-[14px] rounded-card border-[1.5px] border-dashed border-rule-strong px-5 py-7 text-center">
+        <div className="flex flex-col items-center gap-[14px] px-5 py-10 text-center">
           <p className="font-display text-lead text-balance text-ink">Nothing planned yet</p>
           {onFindPlace === null ? null : (
             <button
